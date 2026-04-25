@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
 import { useUIStore } from './store/useUIStore';
+import ErrorBoundary from './components/ErrorBoundary';
 import Dashboard from './pages/Dashboard';
 import Notas from './pages/Notas';
 import Study from './pages/Study';
@@ -61,16 +62,18 @@ function App() {
         />
         
         <main className="flex-1 overflow-auto">
-          {currentPage === 'dashboard' && <Dashboard />}
-          {currentPage === 'notes' && <Notas />}
-          {currentPage === 'study' && <Study />}
-          {currentPage === 'flashcards' && <Flashcards />}
-          {currentPage === 'graph' && <Graph />}
-          {currentPage === 'statistics' && <Statistics />}
-          {currentPage === 'settings' && <Settings />}
-          {currentPage === 'poemas' && <Poemas />}
-          {currentPage === 'ai' && <AIChat onNavigate={setCurrentPage} />}
-          {currentPage === 'gerador' && <Gerador />}
+          <ErrorBoundary context={currentPage}>
+            {currentPage === 'dashboard' && <Dashboard />}
+            {currentPage === 'notes' && <Notas />}
+            {currentPage === 'study' && <Study />}
+            {currentPage === 'flashcards' && <Flashcards />}
+            {currentPage === 'graph' && <Graph />}
+            {currentPage === 'statistics' && <Statistics />}
+            {currentPage === 'settings' && <Settings />}
+            {currentPage === 'poemas' && <Poemas />}
+            {currentPage === 'ai' && <AIChat onNavigate={setCurrentPage} />}
+            {currentPage === 'gerador' && <Gerador />}
+          </ErrorBoundary>
         </main>
       </div>
     </div>

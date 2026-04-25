@@ -1,0 +1,18 @@
+appId: com.nexomente.app
+productName: NexoMente
+directories:
+  output: dist
+  buildResources: build
+files:
+  - dist/**/*
+  - electron/**/*
+  - package.json
+extraMetadata:
+  main: electron/main.js
+win:
+  target:
+    - target: dir
+      arch:
+        - x64
+  sign: false
+asar: false

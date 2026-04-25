@@ -1,0 +1,40 @@
+# Dependências
+node_modules/
+
+# Build outputs
+dist/
+dist-electron/
+dist_old/
+
+# Variáveis de ambiente — NUNCA versionar com valores reais
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Relatórios gerados (exceto o .example)
+reports/lighthouse*.html
+reports/bundle-stats.html
+reports/security-*.json
+
+# Cobertura
+coverage/
+
+# Electron builder
+build/
+release/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/settings.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln

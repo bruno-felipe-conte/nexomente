@@ -1,5 +1,5 @@
 import { app, BrowserWindow, ipcMain, dialog } from 'electron';
-import { join } from 'path';
+import { join, dirname } from 'path';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 
 const isDev = process.env.NODE_ENV === 'development';
