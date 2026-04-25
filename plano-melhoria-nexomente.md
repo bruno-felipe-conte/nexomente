@@ -14,13 +14,13 @@
 | **1.8** | Teste Keyboard Only | ⏳ | Requer teste manual no browser |
 | **1.9** | Busca de Credenciais Expostas | ✅ | Nenhuma credencial real encontrada — apenas `max_tokens` (parâmetro LLM, não segredo) |
 | **2.1** | Classificar Issues ESLint | ✅ | **175 errors · 123 warnings** — 153 são `react/prop-types` (estilo, sem impacto em runtime); `no-undef` zerado; zero `rules-of-hooks` |
-| **2.2** | Matriz Impacto × Esforço | ⏳ | Aguarda 2.1 |
-| **2.3** | Criar Backlog | ⏳ | Aguarda 2.2 |
-| **2.4** | Decisão Refatorar vs Reescrever | ⏳ | Decisão técnica manual necessária |
-| **2.5** | Estimar Cronograma | ⏳ | Aguarda 2.4 |
+| **2.2** | Matriz Impacto × Esforço | ✅ | Ver tabela abaixo |
+| **2.3** | Criar Backlog | ✅ | Backlog inline — 20 itens priorizados por quadrante |
+| **2.4** | Decisão Refatorar vs Reescrever | ✅ | **REFATORAR** — critérios: funcionalidades principais funcionam; Zustand/React/Vite são aproveitáveis; zero `no-undef` crítico; Vitest já configurado |
+| **2.5** | Estimar Cronograma | ✅ | Fase 3: ~70% concluída. Fase 4: 2–3 semanas. Fase 5: ~60% concluída. Fases 6–7: 1–2 semanas. Total restante estimado: **4–6 semanas** |
 | **3.1** | Corrigir Críticos ESLint | ✅ | `no-undef` zerado (4 bugs reais corrigidos: `exportService`, `useKeyboardShortcuts`, `Badges`, `db.js`). Restam 153 `react/prop-types` (prioridade baixa) |
 | **3.2** | Error Boundaries | ✅ | `app/src/components/ErrorBoundary.jsx` — integrado no `App.jsx` |
-| **3.3** | Tratar Empty Catch Blocks | ⏳ | Requer varredura manual após fix do ESLint |
+| **3.3** | Tratar Empty Catch Blocks | ✅ | 1 empty catch encontrado e documentado (`lmStudioService.js:121`) — intencional (fallback JSON parse) |
 | **3.4** | Mover Credenciais para .env | ✅ | `.env.example` + `.gitignore` criados |
 | **3.5** | Corrigir Vulnerabilidades npm | 🔄 | 14 vulns (0 critical, 5 high) — `npm audit fix` pendente de aprovação |
 | **3.6** | Smoke Tests | 🔄 | Vitest configurado, `useNotes.test.js` existe — expandir cobertura |
@@ -32,14 +32,14 @@
 | **4.5** | Extrair Lógica para Hooks | ⏳ | `useUIStore.jsx` já pequeno (874B) — verificar outros |
 | **4.6** | Cobertura 60%+ | ⏳ | Threshold atual: 4% linhas |
 | **4.7** | Testes de Integração | ⏳ | |
-| **5.1** | Code Splitting com Vite | ⏳ | |
+| **5.1** | Code Splitting com Vite | ✅ | `React.lazy()` + `Suspense` em todas as 10 rotas — `index.js` caiu para 171KB; cada página virou chunk separado |
 | **5.2** | Lazy Load Imagens | ⏳ | |
 | **5.3** | Substituir Dependências Pesadas | ✅ | `date-fns` já usado (não moment.js); `lucide-react` já usado; `react-hot-toast` já instalado |
 | **5.4** | Corrigir Re-renders | ⏳ | |
 | **5.5** | Memoização Seletiva | ⏳ | |
 | **5.6** | Re-teste Lighthouse | ⏳ | Aguarda Fase 5 completa |
 | **6.1** | Reduzir Cliques | ⏳ | |
-| **6.2** | Feedback Visual (Loading/Sucesso/Erro) | 🔄 | `react-hot-toast` já instalado — integrar nas páginas |
+| **6.2** | Feedback Visual (Loading/Sucesso/Erro) | ✅ | `<Toaster>` global no `App.jsx` + `app/src/utils/toast.js` com wrappers semânticos (`toastSucesso`, `toastErro`, `toastDesfazer`, `toastPromise`) |
 | **6.3** | Mensagens de Erro Humanizadas | ✅ | `app/src/constants/errorMessages.js` |
 | **6.4** | Empty States | ✅ | `app/src/components/ui/EmptyState.jsx` |
 | **6.5** | Confirmação Ações Destrutivas | ✅ | `app/src/components/ui/ConfirmDialog.jsx` (cancelar autofocado) |
@@ -59,12 +59,63 @@
 | **8.6** | Auditoria Segurança Mensal | ⏳ | Processo recorrente |
 | **8.7** | Performance Check Quinzenal | ⏳ | Processo recorrente |
 
-### 🚧 Próximos Passos Imediatos
-1. **Fix ESLint** — atualizar `eslint-plugin-react` para versão compatível com ESLint v10 (`npm install eslint-plugin-react@latest --legacy-peer-deps`)
-2. **npm audit fix** — corrigir 5 vulnerabilidades high (`npm audit fix --legacy-peer-deps`)
-3. **Integrar `react-hot-toast`** nas páginas (Notas, Missões, Flashcards) para feedback visual (Tarefa 6.2)
-4. **Smoke tests** — expandir `useNotes.test.js` para cobrir os 5 fluxos principais (Tarefa 3.6)
-5. **Code splitting** — adicionar `React.lazy()` nas rotas do `App.jsx` (Tarefa 5.1)
+### 🚧 Próximos Passos Imediatos _(atualizado)_
+1. `react/prop-types` — adicionar PropTypes nos componentes (153 warnings)
+2. Smoke tests — expandir `useNotes.test.js` para 5 fluxos principais (Tarefa 3.6)
+3. Quebrar `Notas.jsx` (18KB) em componentes menores (Tarefa 4.1)
+4. Sentry integration com ErrorBoundary já pronto (Tarefa 8.4)
+5. Husky pre-commit hook (Tarefa 8.2)
+
+---
+
+### 📊 Matriz Impacto × Esforço (Tarefa 2.2)
+
+> Baseada nos diagnósticos das Fases 0–1. Impacto e Esforço em escala 1–5.
+
+| Quadrante | Item | Impacto | Esforço | Status |
+|---|---|:---:|:---:|---|
+| **Q1 — Fazer Agora** | `no-undef` bugs (4 arquivos) | 5 | 1 | ✅ Feito |
+| **Q1 — Fazer Agora** | ErrorBoundary em todas as rotas | 5 | 1 | ✅ Feito |
+| **Q1 — Fazer Agora** | `.env.example` + `.gitignore` | 5 | 1 | ✅ Feito |
+| **Q1 — Fazer Agora** | CI GitHub Actions | 4 | 2 | ✅ Feito |
+| **Q1 — Fazer Agora** | Code splitting (lazy/Suspense) | 4 | 2 | ✅ Feito |
+| **Q1 — Fazer Agora** | Toaster global + utils/toast.js | 3 | 1 | ✅ Feito |
+| **Q1 — Fazer Agora** | Empty states + ConfirmDialog | 3 | 2 | ✅ Feito |
+| **Q1 — Fazer Agora** | `react/prop-types` (153 warnings) | 2 | 2 | ⏳ Pendente |
+| **Q2 — Planejar** | Quebrar Notas.jsx (18KB) + Graph.jsx | 4 | 4 | ⏳ Pendente |
+| **Q2 — Planejar** | Cobertura de testes 60%+ | 4 | 5 | ⏳ Pendente |
+| **Q2 — Planejar** | Testes de integração (3 fluxos) | 4 | 5 | ⏳ Pendente |
+| **Q2 — Planejar** | Sentry error monitoring | 4 | 3 | ⏳ Pendente |
+| **Q2 — Planejar** | Husky pre-commit hook | 3 | 2 | ⏳ Pendente |
+| **Q2 — Planejar** | Acessibilidade WCAG AA completa | 3 | 4 | ⏳ Pendente |
+| **Q3 — Se sobrar** | JSDoc em utils/ e hooks/ | 2 | 2 | ⏳ Pendente |
+| **Q3 — Se sobrar** | CHANGELOG.md | 2 | 1 | ⏳ Pendente |
+| **Q3 — Se sobrar** | ADR-001 a ADR-004 | 2 | 2 | ⏳ Pendente |
+| **Q3 — Se sobrar** | Dependabot semanal | 2 | 1 | ⏳ Pendente |
+| **Q4 — Adiar** | Navegação 100% teclado (focus-trap) | 2 | 4 | ⏳ Pendente |
+| **Q4 — Adiar** | Atualizar Electron v28→v41 | 2 | 5 | ⏳ Aguarda manutenção |
+
+### 🗂️ Backlog Priorizado (Tarefa 2.3)
+
+**Sprint atual — Q1 restante:**
+1. `[REF]` Adicionar PropTypes nos componentes (153 warnings ESLint)
+2. `[PERF]` Lazy load em imagens (`loading="lazy"` + WebP)
+3. `[UX]` Autofocus no primeiro campo de formulários
+4. `[UX]` Atalhos de teclado `Ctrl+N`, `Ctrl+Enter`, `Esc`
+
+**Próximo sprint — Q2:**
+5. `[REF]` Quebrar `Notas.jsx` → `NotaEditor`, `NotaLista`, `useNota`
+6. `[TEST]` Smoke tests: App renderiza, navegação, CRUD de nota, Pomodoro inicia
+7. `[TEST]` Testes de integração com MSW para os 3 fluxos principais
+8. `[SEC]` Sentry + ErrorBoundary integrado (`VITE_SENTRY_DSN`)
+9. `[CI]` Husky + lint-staged no pre-commit
+
+**Backlog:**
+10. `[DOC]` JSDoc em `utils/`, `hooks/`
+11. `[DOC]` CHANGELOG.md retroativo
+12. `[DOC]` ADR-001 a ADR-004
+13. `[CI]` Dependabot semanal
+14. `[A11Y]` WCAG AA: alt em imagens, labels, contraste 4.5:1
 
 ---
 
