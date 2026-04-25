@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useTamagotchiStore, getLevelData } from '../../store/useTamagotchiStore';
 import Card from '../ui/Card';
 
-export default function TamagotchiWidget() {
+export default function TamagotchiWidget({ className = '' }) {
   const { player, checkDailyStatus, registerStudySession } = useTamagotchiStore();
   const levelData = getLevelData(player.xp);
 
@@ -76,7 +76,7 @@ export default function TamagotchiWidget() {
   else if (isBouncing) currentVariant = "bouncing";
 
   return (
-    <Card className="flex flex-col items-center justify-center relative overflow-hidden" interactive>
+    <Card className={`flex flex-col items-center justify-center relative overflow-hidden ${className}`} interactive>
       {/* Background Effect based on level (optional, based on spec) */}
       {player.level >= 20 && (
         <div className="absolute inset-0 bg-gradient-to-tr from-accent-main/10 to-transparent animate-pulse rounded-[18px]" />
