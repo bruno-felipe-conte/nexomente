@@ -3,39 +3,218 @@
 @tailwind utilities;
 
 :root {
-  --bg-primary: #0F0E17;
-  --bg-secondary: #1A1826;
-  --bg-tertiary: #252338;
-  --accent-main: #6C63FF;
-  --accent-light: #A78BFA;
-  --text-primary: #F2F0FF;
-  --text-secondary: #9CA3AF;
-  --text-muted: #6B7280;
-  --border-subtle: #2D2B45;
+  /* Surfaces - Aclarado para melhor visibilidade em qualquer monitor */
+  --surface-base:    #181B28; /* Fundo mais cinza-azulado */
+  --surface-raised:  #1F2335; /* Sidebar */
+  --surface-card:    #2A2F45; /* Cards bem destacados */
+  --surface-elevated:#363C57; /* Hover / Inputs */
+  --surface-overlay: #424A69; /* Modais */
+  --surface-border:  #50597D; /* Bordas bem visíveis */
+
+  /* Text - Máximo Contraste */
+  --text-hi:   #FFFFFF;
+  --text-mid:  #D4D8E8;
+  --text-lo:   #949AB0;
+
+  /* Cards Extras */
+  --card-border: 1px solid #50597D;
+  --card-bg:     #2A2F45;
+
+  /* Brand / Modules */
+  --color-brand:      #7C6DFA;
+  --color-notas:      #5B9EFF;
+  --color-estudo:     #2DD4BF;
+  --color-flashcards: #B59EFF;
+  --color-gerador:    #F5A623;
+  --color-chat:       #818CF8;
+  --color-grafo:      #34D399;
+  --color-stats:      #FB923C;
+
+  /* State */
+  --color-success: #84E26E;
+  --color-warning: #F5A623;
+  --color-error: #FF6B9D;
+  --color-info: #4D9EFF;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.3);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
+  --shadow-glow-violet: 0 0 20px rgba(124,109,250,0.35);
+  --shadow-glow-teal: 0 0 20px rgba(45,212,191,0.35);
+
+  /* Radius */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* Motion */
+  --duration-micro: 80ms;
+  --duration-fast: 150ms;
+  --duration-normal: 220ms;
+  --duration-slow: 350ms;
+  --ease-standard: cubic-bezier(.4,0,.2,1);
+  --ease-spring: cubic-bezier(.34,1.56,.64,1);
 }
 
 .light {
-  --bg-primary: #F2F0FF;
-  --bg-secondary: #FFFFFF;
-  --bg-tertiary: #F9FAFB;
-  --text-primary: #111827;
-  --text-secondary: #4B5563;
-  --border-subtle: #E5E7EB;
+  --surface-base: #F0F1FF;
+  --surface-raised: #FFFFFF;
+  --surface-card: #F9FAFB;
+  --surface-border: #E5E7EB;
+  --text-hi: #0D0E14;
+  --text-mid: #555880;
+  --text-lo: #9B9EC8;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body, #root { height: 100%; width: 100%; overflow: hidden; }
-body { font-family: 'Inter', system-ui, sans-serif; background-color: var(--bg-primary); color: var(--text-primary); }
+body { font-family: 'DM Sans', system-ui, sans-serif; background-color: var(--surface-base); color: var(--text-hi); }
 
 ::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: var(--bg-secondary); }
-::-webkit-scrollbar-thumb { background: var(--border-subtle); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: var(--accent-main); }
-*:focus-visible { outline: 2px solid var(--accent-main); outline-offset: 2px; }
+::-webkit-scrollbar-track { background: var(--surface-base); }
+::-webkit-scrollbar-thumb { background: var(--surface-border); border-radius: var(--radius-sm); }
+::-webkit-scrollbar-thumb:hover { background: var(--color-brand); }
+*:focus-visible { outline: 2px solid var(--color-brand); outline-offset: 2px; }
 
-.ProseMirror { font-family: 'JetBrains Mono', monospace; font-size: 16px; line-height: 1.6; padding: 1rem; }
-.ProseMirror:focus { outline: none; }
+.ProseMirror { font-family: 'DM Sans', sans-serif; font-size: 16px; line-height: 1.6; padding: 1rem; }
 .ProseMirror p { margin-bottom: 0.75em; }
+.ProseMirror code { font-family: 'JetBrains Mono', monospace; }
 
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 .animate-spin { animation: spin 1s linear infinite; }
+
+/* ============================================================
+   FIXES PONTUAIS POR COMPONENTE
+   ============================================================ */
+
+/* Sidebar — aumentar contraste dos labels de grupo */
+.nav-group-label,
+[class*="group-label"],
+[class*="nav-label"] {
+  color: #949AB0 !important;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+/* Nav items — texto mais legível */
+.nav-item,
+[class*="nav-item"],
+[class*="sidebar-item"] {
+  color: #D4D8E8 !important;
+}
+
+.nav-item:hover,
+[class*="nav-item"]:hover {
+  color: #FFFFFF !important;
+  background: rgba(255,255,255,0.08) !important;
+}
+
+.nav-item.active,
+[class*="nav-item"][aria-current] {
+  color: #7C6DFA !important;
+}
+
+/* Cards de Estatística */
+.stat-card,
+[class*="stat-card"],
+[class*="stats-card"],
+[class*="metric-card"] {
+  background: #2A2F45 !important;
+  border: 1px solid #50597D !important;
+  border-radius: 14px !important;
+}
+
+.stat-card .value,
+[class*="stat-card"] .value,
+[class*="stat-value"],
+[class*="metric-value"] {
+  color: #FFFFFF !important;
+  font-size: 28px !important;
+  font-weight: 700 !important;
+}
+
+.stat-card .label,
+[class*="stat-label"],
+[class*="metric-label"] {
+  color: #D4D8E8 !important;
+  font-size: 11px !important;
+  letter-spacing: 1px !important;
+  text-transform: uppercase !important;
+}
+
+/* Card de Nível (XP) */
+[class*="level-card"],
+[class*="xp-card"] {
+  background: linear-gradient(135deg, #2A2F45 0%, #363C57 100%) !important;
+  border: 1px solid rgba(124, 109, 250, 0.4) !important;
+}
+
+[class*="level-title"],
+[class*="xp-title"] {
+  color: #FFFFFF !important;
+  font-size: 22px !important;
+  font-weight: 700 !important;
+}
+
+[class*="xp-value"],
+[class*="xp-amount"] { color: #D4D8E8 !important; }
+
+[class*="xp-remaining"],
+[class*="level-subtitle"] { color: #949AB0 !important; }
+
+/* Cards de Ação Rápida */
+[class*="quick-action"],
+[class*="action-card"] {
+  background: #2A2F45 !important;
+  border: 1px solid #50597D !important;
+}
+
+[class*="quick-action"]:hover,
+[class*="action-card"]:hover {
+  border-color: rgba(124, 109, 250, 0.6) !important;
+  background: #363C57 !important;
+}
+
+[class*="action-title"],
+[class*="quick-action"] h3,
+[class*="action-card"] h3 {
+  color: #FFFFFF !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+}
+
+[class*="action-desc"],
+[class*="quick-action"] p,
+[class*="action-card"] p {
+  color: #D4D8E8 !important;
+  font-size: 13px !important;
+}
+
+/* Títulos */
+h1, [class*="page-title"] {
+  color: #FFFFFF !important;
+  font-size: 32px !important;
+  font-weight: 700 !important;
+}
+
+[class*="page-subtitle"],
+[class*="page-description"] {
+  color: #D4D8E8 !important;
+  font-size: 14px !important;
+}
+
+/* Busca */
+[class*="search"],
+input[placeholder*="Buscar"] {
+  background: #2A2F45 !important;
+  border: 1px solid #50597D !important;
+  color: #FFFFFF !important;
+}
+
+input::placeholder { color: #949AB0 !important; }

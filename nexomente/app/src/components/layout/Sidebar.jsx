@@ -6,17 +6,33 @@ import {
   Sparkles, Cloud, Book, MessageSquare, ClipboardList
 } from 'lucide-react';
 
-const NAV_ITEMS = [
-  { id: 'dashboard', label: 'Dashboard',    icon: Home },
-  { id: 'notes',     label: 'Notas',       icon: FileText },
-  { id: 'study',     label: 'Estudo',      icon: BookOpen },
-  { id: 'flashcards',label: 'Flashcards', icon: Layers },
-  { id: 'poemas',    label: 'Poemas',      icon: Book },
-  { id: 'gerador',  label: 'Gerador',     icon: ClipboardList },
-  { id: 'ai',       label: 'Chat IA',     icon: MessageSquare },
-  { id: 'graph',    label: 'Grafo',       icon: GitBranch },
-  { id: 'statistics',label: 'Estatísticas',icon: BarChart3 },
+const NAV_GROUPS = [
+  {
+    label: 'APRENDER',
+    items: [
+      { id: 'notes',      label: 'Notas',       icon: FileText,      color: 'var(--color-notas)',      shortcut: 'Ctrl+2' },
+      { id: 'study',      label: 'Estudo',      icon: BookOpen,      color: 'var(--color-estudo)',     shortcut: 'Ctrl+3' },
+      { id: 'flashcards', label: 'Flashcards',  icon: Layers,        color: 'var(--color-flashcards)', shortcut: 'Ctrl+4' },
+    ]
+  },
+  {
+    label: 'CRIAR',
+    items: [
+      { id: 'gerador',    label: 'Gerador',     icon: ClipboardList, color: 'var(--color-gerador)',    shortcut: 'Ctrl+5' },
+      { id: 'poemas',     label: 'Poemas',      icon: Book,          color: 'var(--color-brand)',      shortcut: 'Ctrl+P' },
+    ]
+  },
+  {
+    label: 'EXPLORAR',
+    items: [
+      { id: 'ai',         label: 'Chat IA',     icon: MessageSquare, color: 'var(--color-chat)',       shortcut: 'Ctrl+6' },
+      { id: 'graph',      label: 'Grafo',       icon: GitBranch,     color: 'var(--color-grafo)',      shortcut: 'Ctrl+7' },
+      { id: 'statistics', label: 'Estatísticas',icon: BarChart3,     color: 'var(--color-stats)',      shortcut: 'Ctrl+8' },
+    ]
+  }
 ];
+
+const DASHBOARD_ITEM = { id: 'dashboard', label: 'Dashboard', icon: Home, color: 'var(--text-hi)', shortcut: 'Ctrl+1' };
 
 export default function Sidebar({ isOpen, currentPage, onNavigate }) {
   const navRef = useRef(null);
@@ -63,37 +79,79 @@ export default function Sidebar({ isOpen, currentPage, onNavigate }) {
         ref={navRef}
         role="navigation"
         aria-label="Menu principal"
-        className="flex-1 p-2 space-y-1"
+        className="flex-1 overflow-y-auto py-4 space-y-6"
       >
-        {NAV_ITEMS.map((item) => {
-          const Icon = item.icon;
-          const isActive = currentPage === item.id;
-          return (
-            <button
-              key={item.id}
-              id={`nav-${item.id}`}
-              tabIndex={isActive ? 0 : -1}
-              onClick={() => onNavigate(item.id)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') onNavigate(item.id);
-              }}
-              aria-label={item.label}
-              aria-current={isActive ? 'page' : undefined}
-              title={!isOpen ? item.label : undefined}
-              className={`
-                w-full flex items-center gap-3 px-3 py-2 rounded-lg
-                transition-all duration-150
-                ${isActive 
-                  ? 'bg-bg-tertiary text-accent-main border-l-2 border-accent-main' 
-                  : 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary'
-                }
-              `}
-            >
-              <Icon size={20} aria-hidden="true" />
-              {isOpen && <span className="text-sm font-medium">{item.label}</span>}
-            </button>
-          );
-        })}
+        <div className="px-2">
+          {(() => {
+            const isActive = currentPage === DASHBOARD_ITEM.id;
+            return (
+              <button
+                key={DASHBOARD_ITEM.id}
+                id={`nav-${DASHBOARD_ITEM.id}`}
+                tabIndex={isActive ? 0 : -1}
+                onClick={() => onNavigate(DASHBOARD_ITEM.id)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onNavigate(DASHBOARD_ITEM.id); }}
+                aria-label={DASHBOARD_ITEM.label}
+                aria-current={isActive ? 'page' : undefined}
+                title={`${DASHBOARD_ITEM.label} — ${DASHBOARD_ITEM.shortcut}`}
+                style={isActive ? {
+                  backgroundColor: `color-mix(in srgb, ${DASHBOARD_ITEM.color} 12%, transparent)`,
+                  borderLeft: `3px solid ${DASHBOARD_ITEM.color}`,
+                  color: DASHBOARD_ITEM.color
+                } : { borderLeft: '3px solid transparent' }}
+                className={`
+                  w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-150
+                  ${!isActive ? 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary' : ''}
+                `}
+              >
+                <DASHBOARD_ITEM.icon size={20} aria-hidden="true" style={{ color: isActive ? DASHBOARD_ITEM.color : 'inherit' }} />
+                {isOpen && <span className="text-sm font-medium">{DASHBOARD_ITEM.label}</span>}
+              </button>
+            );
+          })()}
+        </div>
+
+        {NAV_GROUPS.map((group, gIdx) => (
+          <div key={gIdx}>
+            {isOpen && (
+              <div className="px-5 mb-2 text-[10px] font-bold tracking-widest text-text-muted uppercase">
+                {group.label}
+              </div>
+            )}
+            {!isOpen && <div className="h-[1px] w-8 mx-auto bg-border-subtle mb-2" />}
+            
+            <div className="px-2 space-y-1">
+              {group.items.map((item) => {
+                const Icon = item.icon;
+                const isActive = currentPage === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    id={`nav-${item.id}`}
+                    tabIndex={isActive ? 0 : -1}
+                    onClick={() => onNavigate(item.id)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onNavigate(item.id); }}
+                    aria-label={item.label}
+                    aria-current={isActive ? 'page' : undefined}
+                    title={`${item.label} — ${item.shortcut}`}
+                    style={isActive ? {
+                      backgroundColor: `color-mix(in srgb, ${item.color} 12%, transparent)`,
+                      borderLeft: `3px solid ${item.color}`,
+                      color: item.color
+                    } : { borderLeft: '3px solid transparent' }}
+                    className={`
+                      w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-150
+                      ${!isActive ? 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary' : ''}
+                    `}
+                  >
+                    <Icon size={20} aria-hidden="true" style={{ color: isActive ? item.color : 'inherit' }} />
+                    {isOpen && <span className="text-sm font-medium">{item.label}</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
       {isOpen && (

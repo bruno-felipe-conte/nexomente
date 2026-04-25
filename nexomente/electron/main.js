@@ -12,9 +12,14 @@ let mainWindow;
 
 app.whenReady().then(() => {
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    const responseHeaders = { ...details.responseHeaders };
+    // Remove existing CORS to prevent duplicate '*, *' when fetching from Google Fonts
+    if (responseHeaders['Access-Control-Allow-Origin']) delete responseHeaders['Access-Control-Allow-Origin'];
+    if (responseHeaders['access-control-allow-origin']) delete responseHeaders['access-control-allow-origin'];
+    
     callback({
       responseHeaders: {
-        ...details.responseHeaders,
+        ...responseHeaders,
         'Access-Control-Allow-Origin': ['*'],
         'Access-Control-Allow-Headers': ['*'],
       },

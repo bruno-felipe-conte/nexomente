@@ -16,7 +16,7 @@ export function useAIModel() {
       if (res.status === 'online') {
         setStatus('online');
         const mods = res.models.length > 0
-          ? res.models.map(m => m.name || m)
+          ? res.models.map(m => typeof m === 'string' ? m : (m.id || m.name || 'unknown'))
           : [getModel()];
         setModelos(mods);
         if (!mods.includes(getModel())) {

@@ -117,14 +117,29 @@ nexomente/
 |--------|-----------|
 | Runtime | Electron v28 |
 | Frontend | React 18 + Vite |
-| Estilização | Tailwind CSS v3 |
+| Estilização | Tailwind CSS v3 + CSS Variables (Tokens) |
 | Editor | TipTap v2 |
 | Banco | sql.js (SQLite) |
 | Estado | Zustand |
 | Grafo | Cytoscape.js |
 | IA | Ollama (porta 11434) / LM Studio (porta 1234) |
-| Gamificação | Framer Motion |
+| Gamificação | Framer Motion (Animações), Lógica de Níveis |
 | Tests | Vitest + Testing Library |
+
+### Guia de Manutenção (Design System & Arquitetura)
+
+Para facilitar a manutenção futura, o código foi organizado seguindo um padrão rigoroso:
+
+1. **Design System & Tokens (`index.css`)**: 
+   Todas as cores de superfícies e textos são governadas por variáveis CSS (`--surface-base`, `--text-hi`). O *Tailwind* (`tailwind.config.js`) lê essas variáveis. **Nunca use cores hexadecimais hardcoded nos componentes React**, use sempre classes como `bg-bg-primary`, `text-text-primary`, `border-border-subtle`.
+2. **Componentes Padrão (`app/src/components/ui/`)**: 
+   Sempre reutilize os componentes `<Card>`, `<Button>`, `<Input>` e `<Badge>`. Eles concentram todo o comportamento de hover, focus e transições.
+3. **Animações**: 
+   Usamos o `framer-motion` para transições suaves. Exemplo: O *Flashcard* usa o layout de rotação 3D (`rotateY`) gerido pelo componente `<motion.div>`.
+4. **Comunicação Segura (IPC)**: 
+   O React nunca toca diretamente no banco de dados. Todas as chamadas passam pelo `window.api` (ex: `window.api.getNotes()`), configurado no `electron/preload.js` usando `contextBridge`.
+5. **Integração de IA (`lmStudioService.js`)**: 
+   Todo prompt enviado para a IA passa por uma camada de formatação e *fallback*. Se o modelo falhar ao retornar JSON puro, usamos Expressões Regulares (`regex`) para extrair os dados na força bruta.
 
 ---
 

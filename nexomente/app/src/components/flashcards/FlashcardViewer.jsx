@@ -8,10 +8,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Brain, RotateCcw, Check, X, ChevronLeft, ChevronRight, Edit } from 'lucide-react';
 import PropTypes from 'prop-types';
 
+import Button from '../ui/Button';
+import Card from '../ui/Card';
+
 const QUALITY_LABELS = {
-  1: { label: 'Errei', cor: '#EF4444' },
-  3: { label: 'Quase', cor: '#F59E0B' },
-  5: { label: 'Acertou', cor: '#10B981' },
+  1: { label: 'Errei', cor: 'var(--color-error)' },
+  2: { label: 'Difícil', cor: 'var(--color-warning)' },
+  3: { label: 'Bom', cor: 'var(--color-success)' },
+  4: { label: 'Fácil', cor: 'var(--color-brand)' },
 };
 
 export default function FlashcardViewer({
@@ -23,9 +27,11 @@ export default function FlashcardViewer({
     const handleKey = (e) => {
       if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
       if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); onViraCard(); }
+      else if (mostrandoFrente) return; // Só permite avaliar se o card estiver virado
       else if (e.key === '1') { e.preventDefault(); onRevisar(1); }
-      else if (e.key === '2' || e.key === '3') { e.preventDefault(); onRevisar(3); }
-      else if (e.key === '5') { e.preventDefault(); onRevisar(5); }
+      else if (e.key === '2') { e.preventDefault(); onRevisar(2); }
+      else if (e.key === '3') { e.preventDefault(); onRevisar(3); }
+      else if (e.key === '4') { e.preventDefault(); onRevisar(4); }
       else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); onAnterior(); }
       else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); onProximo(); }
       else if (e.key === 'e' || e.key === 'E') { e.preventDefault(); onEditar(cardAtual); }
@@ -40,56 +46,94 @@ export default function FlashcardViewer({
         <Brain size={48} className="mx-auto mb-4 text-text-muted opacity-25" />
         <p className="text-lg text-text-primary">Nenhum card para revisar!</p>
         <p className="text-sm text-text-muted mt-1">Volte mais tarde ou crie novos cards</p>
-        <button
-          onClick={onCriar}
-          className="mt-4 px-4 py-2 bg-accent-main rounded text-sm font-medium cursor-pointer"
-        >
+        <Button onClick={onCriar} variant="primary" className="mt-4">
           Criar card
-        </button>
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className="bg-bg-secondary rounded-xl border border-border-subtle">
-      {/* Conteúdo */}
-      <div className="p-8 text-center">
-        <p className="text-xs text-text-muted mb-4">
+    <div className="max-w-3xl mx-auto w-full flex flex-col items-center">
+      <div className="w-full flex justify-between items-center mb-6">
+        <span className="text-sm font-bold text-text-mid uppercase tracking-widest">
           {idxRevisao + 1} / {paraRevisao.length}
-        </p>
-        <AnimatePresence mode="wait">
-          <motion.p
-            key={`${cardAtual.id}-${mostrandoFrente}`}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="text-xl font-semibold text-text-primary mb-8 leading-relaxed"
-          >
-            {mostrandoFrente ? cardAtual.frente : cardAtual.verso}
-          </motion.p>
-        </AnimatePresence>
-        <button
-          onClick={onViraCard}
-          className="px-4 py-2 bg-bg-tertiary border border-border-subtle rounded text-sm cursor-pointer"
-        >
-          {mostrandoFrente ? 'Ver Resposta' : 'Ver Pergunta'}
-        </button>
+        </span>
+        <div className="flex gap-2">
+          <Button variant="ghost" size="sm" onClick={() => onEditar(cardAtual)}>
+            <Edit size={14} className="mr-2" /> Editar
+          </Button>
+        </div>
       </div>
 
-      {/* Botões de qualidade */}
-      <div className="border-t border-border-subtle p-4 flex justify-center gap-3">
-        {Object.entries(QUALITY_LABELS).map(([q, info]) => (
-          <button
-            key={q}
-            onClick={() => onRevisar(parseInt(q))}
-            className="px-5 py-3 rounded-xl font-medium transition-colors cursor-pointer flex items-center gap-2"
-            style={{ backgroundColor: `${info.cor}20`, border: `1px solid ${info.cor}40`, color: info.cor }}
+      {/* Container do Flip 3D */}
+      <div 
+        className="w-full aspect-[4/3] lg:aspect-[3/2] relative cursor-pointer group perspective-1000 mb-8"
+        onClick={onViraCard}
+        style={{ perspective: 1200 }}
+      >
+        <motion.div
+          className="w-full h-full relative preserve-3d"
+          animate={{ rotateY: mostrandoFrente ? 0 : 180 }}
+          transition={{ duration: 0.6, type: "spring", stiffness: 200, damping: 20 }}
+          style={{ transformStyle: "preserve-3d" }}
+        >
+          {/* Lado da Frente */}
+          <Card 
+            className="absolute inset-0 w-full h-full p-8 flex flex-col items-center justify-center text-center m-0 backface-hidden bg-surface-card border-accent-main/20 hover:border-accent-main/40 hover:shadow-glow-violet transition-all"
+            style={{ backfaceVisibility: "hidden" }}
           >
-            {parseInt(q) === 1 ? <X size={16} /> : parseInt(q) === 3 ? <RotateCcw size={16} /> : <Check size={16} />}
-            {info.label}
-          </button>
-        ))}
+            <p className="text-3xl md:text-5xl font-display font-bold text-text-hi leading-tight">
+              {cardAtual.frente}
+            </p>
+            <p className="absolute bottom-6 text-sm text-text-muted opacity-0 group-hover:opacity-100 transition-opacity">
+              Pressione <kbd className="px-2 py-1 bg-surface-base rounded mx-1">Espaço</kbd> para virar
+            </p>
+          </Card>
+
+          {/* Lado de Trás */}
+          <Card 
+            className="absolute inset-0 w-full h-full p-8 flex flex-col items-start justify-start text-left m-0 backface-hidden bg-surface-elevated overflow-y-auto"
+            style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
+          >
+            <div className="w-full pb-4 border-b border-surface-border mb-6">
+              <p className="text-sm font-display font-bold text-text-mid uppercase tracking-widest">Resposta</p>
+            </div>
+            <div className="prose prose-invert max-w-none text-lg text-text-hi leading-relaxed">
+              {cardAtual.verso}
+            </div>
+          </Card>
+        </motion.div>
       </div>
+
+      {/* Botões de avaliação aparecem apenas após virar */}
+      {!mostrandoFrente && (
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full"
+        >
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full">
+            {Object.entries(QUALITY_LABELS).map(([q, info]) => (
+              <button
+                key={q}
+                onClick={() => onRevisar(parseInt(q))}
+                className="group flex flex-col items-center justify-center p-4 rounded-xl border transition-all duration-200 cursor-pointer"
+                style={{ 
+                  backgroundColor: `color-mix(in srgb, ${info.cor} 10%, transparent)`,
+                  borderColor: `color-mix(in srgb, ${info.cor} 30%, transparent)`,
+                  color: info.cor
+                }}
+              >
+                <span className="font-bold text-lg group-hover:scale-110 transition-transform mb-1">
+                  {info.label}
+                </span>
+                <span className="text-xs opacity-60">Tecla {q}</span>
+              </button>
+            ))}
+          </div>
+        </motion.div>
+      )}
 
       {/* Navegação */}
       <div className="border-t border-border-subtle p-3 flex justify-between items-center">

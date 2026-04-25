@@ -22,6 +22,7 @@ import AIBar from '../components/editor/AIBar';
 import TagPickerModal from '../components/editor/TagPickerModal';
 import FlashcardApproveModal from '../components/editor/FlashcardApproveModal';
 import { getModel } from '../lib/ai/lmStudioService';
+import Button from '../components/ui/Button';
 
 export default function NotasPage() {
   const { notas, create, update, remove, search, getById, addTag, removeTag } = useNotes();
@@ -135,30 +136,35 @@ export default function NotasPage() {
                       ? () => setMostrandoMeta(p => !p)
                       : () => setMostrandoTags(p => !p);
                   return (
-                    <button key={label} onClick={toggle}
-                      className={`px-3 py-1.5 rounded text-xs border transition-colors cursor-pointer ${
-                        show ? 'bg-accent-main text-white border-accent-main'
-                             : 'bg-bg-tertiary text-text-secondary border-border-subtle hover:border-accent-main'
-                      }`}
-                    >{label}</button>
+                    <Button 
+                      key={label} 
+                      onClick={toggle}
+                      variant={show ? 'primary' : 'secondary'}
+                      size="sm"
+                    >
+                      {label}
+                    </Button>
                   );
                 })}
                 {editando ? (
-                  <button onClick={salvarNota}
-                    className="px-3 py-1.5 bg-success rounded text-xs font-medium hover:bg-success/90 transition-colors cursor-pointer">
+                  <Button onClick={salvarNota} variant="primary" size="sm" className="bg-success hover:bg-success/90">
                     Salvar
-                  </button>
+                  </Button>
                 ) : (
-                  <button onClick={() => setEditando(true)}
-                    className="px-3 py-1.5 bg-accent-main rounded text-xs font-medium hover:bg-accent-main/90 transition-colors cursor-pointer">
+                  <Button onClick={() => setEditando(true)} variant="primary" size="sm">
                     Editar
-                  </button>
+                  </Button>
                 )}
-                <button onClick={() => excluirNota(notaSelecionada.id)}
-                  aria-label="Excluir nota" title="Excluir nota"
-                  className="p-1.5 text-text-muted hover:text-danger transition-colors cursor-pointer">
-                  <Trash2 size={14} />
-                </button>
+                <Button 
+                  onClick={() => excluirNota(notaSelecionada.id)}
+                  variant="ghost" 
+                  size="icon-only"
+                  aria-label="Excluir nota" 
+                  title="Excluir nota"
+                  className="text-text-muted hover:text-danger hover:bg-danger/10"
+                >
+                  <Trash2 size={16} />
+                </Button>
               </div>
             )}
 

@@ -11,8 +11,11 @@
  * @param {function} onCriar - Callback ao criar nota (recebe tipo)
  */
 import { useState, useCallback, useRef } from 'react';
-import { FileText, BookOpen, Lightbulb, Search, Plus } from 'lucide-react';
+import { FileText, BookOpen, Lightbulb, Plus, Search } from 'lucide-react';
 import PropTypes from 'prop-types';
+import Input from '../ui/Input';
+import Button from '../ui/Button';
+import Badge from '../ui/Badge';
 
 const tipoIcons = {
   nota: FileText,
@@ -65,39 +68,43 @@ export default function NotaLista({ notas, notaSelecionada, busca, onBuscaChange
       else if (['ArrowDown', 'ArrowRight'].includes(e.key)) { e.preventDefault(); focusNota(1); }
     }}>
       {/* Busca + botões de criação */}
-      <div className="p-3 border-b border-border-subtle">
-        <div className="flex items-center gap-2 mb-3">
-          <Search size={14} className="text-text-muted flex-shrink-0" aria-hidden="true" />
-          <input
-            type="text"
+      <div className="p-4 border-b border-border-subtle bg-bg-primary/30">
+        <div className="mb-4">
+          <Input
+            icon={Search}
             placeholder="Buscar notas..."
             value={busca}
             onChange={(e) => onBuscaChange(e.target.value)}
-            className="flex-1 bg-bg-tertiary border border-border-subtle rounded px-2 py-1 text-sm text-text-primary placeholder-text-muted focus:border-accent-main focus:outline-none"
+            clearable={true}
+            onClear={() => onBuscaChange('')}
             aria-label="Buscar notas"
           />
         </div>
-        <div className="flex gap-1">
-          <button
+        <div className="flex gap-2">
+          <Button
+            variant="primary"
+            size="sm"
             onClick={() => onCriar('nota')}
-            className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-accent-main rounded text-xs font-medium hover:bg-accent-main/90 transition-colors cursor-pointer"
+            className="flex-1"
           >
-            <Plus size={12} aria-hidden="true" /> Nota
-          </button>
-          <button
+            <Plus size={14} className="mr-1.5" aria-hidden="true" /> Nota
+          </Button>
+          <Button
+            variant="secondary"
+            size="icon-only"
             onClick={() => onCriar('livro')}
-            className="px-2 py-1.5 bg-bg-tertiary border border-border-subtle rounded text-xs hover:border-accent-main transition-colors cursor-pointer"
             title="Novo Livro"
           >
-            <BookOpen size={12} aria-hidden="true" />
-          </button>
-          <button
+            <BookOpen size={16} aria-hidden="true" />
+          </Button>
+          <Button
+            variant="secondary"
+            size="icon-only"
             onClick={() => onCriar('ideia')}
-            className="px-2 py-1.5 bg-bg-tertiary border border-border-subtle rounded text-xs hover:border-accent-main transition-colors cursor-pointer"
             title="Nova Ideia"
           >
-            <Lightbulb size={12} aria-hidden="true" />
-          </button>
+            <Lightbulb size={16} aria-hidden="true" />
+          </Button>
         </div>
       </div>
 
@@ -141,12 +148,15 @@ export default function NotaLista({ notas, notaSelecionada, busca, onBuscaChange
                         <p className="text-xs text-text-muted truncate mt-0.5">{preview}...</p>
                       )}
                       {nota.tags?.length > 0 && (
-                        <div className="flex gap-1 mt-1 flex-wrap" aria-label="Tags">
+                        <div className="flex gap-1.5 mt-2 flex-wrap" aria-label="Tags">
                           {nota.tags.slice(0, 3).map(tag => (
-                            <span key={tag} className="text-[10px] px-1 py-0.5 rounded bg-bg-tertiary text-text-muted">
+                            <Badge key={tag} variant="notas" type="pill">
                               #{tag}
-                            </span>
+                            </Badge>
                           ))}
+                          {nota.tags.length > 3 && (
+                            <Badge variant="gray" type="pill">+{nota.tags.length - 3}</Badge>
+                          )}
                         </div>
                       )}
                     </div>
