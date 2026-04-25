@@ -39,6 +39,7 @@ export function exportarParaHTML(questoes, opcoes = {}) {
   const {
     titulo = 'Banco de Questões',
     estilo = 'prova',
+    incluirJustificativas = true,
   } = opcoes;
   
   const css = `

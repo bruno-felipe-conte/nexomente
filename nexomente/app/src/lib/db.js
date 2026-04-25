@@ -1,6 +1,10 @@
 // Database service using sql.js
 import { config, execSql } from '../sql.js';
 
+// ipcRenderer está disponível no processo renderer do Electron
+// via contextBridge (preload) ou require direto (nodeIntegration: true)
+const { ipcRenderer } = window.require ? window.require('electron') : { ipcRenderer: null };
+
 // Initialize SQL.js database
 export function initDB() {
   try {

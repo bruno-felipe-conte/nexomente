@@ -1,4 +1,4 @@
-import { useUIStore } from '../store/useDBStore'
+import { useUIStore } from '../../store/useUIStore'
 
 const BADGES = [
   { id: 'p50', emoji: '🔥', title: 'Fogo Fátuo', desc: 'Ative mais de 50 Pomodoros', level: 50, earned: false },
@@ -7,8 +7,9 @@ const BADGES = [
 ]
 
 export default function Badges() {
-  const currentLevel = useUIStore.getState().currentLevel
-  const nextLevel = useUIStore.getState().nextLevel
+  const currentLevel = useUIStore.getState().currentLevel || { level: 1 }
+  const nextLevel = useUIStore.getState().nextLevel || { level: 2 }
+  const progressCurrentLevel = ((8 - currentLevel.level) / (nextLevel.level - currentLevel.level)) * 100 || 0
   
   return (
     <div className="space-y-4">
@@ -70,6 +71,3 @@ export default function Badges() {
     </div>
   )
 }
-
-// Calculate progress for current level
-const progressCurrentLevel = ((8 - currentLevel.level) / (nextLevel.level - currentLevel.level)) * 100 || 0

@@ -1,37 +1,17 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useUIStore } from '../store/useUIStore';
-
-const shortcuts = {
-  'g d': () => navigate('/dashboard'),
-  'g n': () => navigate('/notas'),
-  'g s': () => navigate('/study'),
-  'g f': () => navigate('/flashcards'),
-  'g g': () => navigate('/graph'),
-  'g t': () => navigate('/statistics'),
-  'g ,': () => navigate('/settings'),
-  'g q': () => navigate('/gerador'),
-  'mod+shift+n': () => createQuickNota(),
-  'mod+shift+f': () => toggleFocusMode(),
-  'mod+k': () => openCommandPalette(),
-  'mod+/': () => showHelp(),
-  'escape': () => closeModals(),
-};
 
 export function useKeyboardShortcuts() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { setSearchQuery, toggleModoFoco, setModoFoco } = useUIStore();
+  const { toggleModoFoco } = useUIStore();
 
   const createQuickNota = useCallback(() => {
-    if (location.pathname !== '/notas') {
-      navigate('/notas');
-    }
+    if (location.pathname !== '/notas') navigate('/notas');
   }, [navigate, location]);
 
-  const toggleFocusMode = useCallback(() => {
-    toggleModoFoco();
-  }, [toggleModoFoco]);
+  const toggleFocusMode = useCallback(() => toggleModoFoco(), [toggleModoFoco]);
 
   const openCommandPalette = useCallback(() => {
     document.dispatchEvent(new CustomEvent('open-command-palette'));
@@ -44,6 +24,24 @@ export function useKeyboardShortcuts() {
   const closeModals = useCallback(() => {
     document.dispatchEvent(new CustomEvent('close-modals'));
   }, []);
+
+  // Mantém ref atualizada para o efeito não precisar de re-subscribe
+  const shortcutsRef = useRef({});
+  shortcutsRef.current = {
+    'g d': () => navigate('/dashboard'),
+    'g n': () => navigate('/notas'),
+    'g s': () => navigate('/study'),
+    'g f': () => navigate('/flashcards'),
+    'g g': () => navigate('/graph'),
+    'g t': () => navigate('/statistics'),
+    'g ,': () => navigate('/settings'),
+    'g q': () => navigate('/gerador'),
+    'mod+shift+n': createQuickNota,
+    'mod+shift+f': toggleFocusMode,
+    'mod+k': openCommandPalette,
+    'mod+/': showHelp,
+    'escape': closeModals,
+  };
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -62,7 +60,7 @@ export function useKeyboardShortcuts() {
       }
 
       const combo = keys.join('+');
-      const action = shortcuts[combo];
+      const action = shortcutsRef.current[combo];
 
       if (action) {
         e.preventDefault();
