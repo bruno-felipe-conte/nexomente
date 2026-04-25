@@ -2,6 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
   /* ── SUPERFÍCIES ────────────────────────────────────────── */
   --surface-base:    #0B0C13;
   --surface-raised:  #111320;
