@@ -27,8 +27,8 @@
 | **3.7** | Setup CI GitHub Actions | ✅ | `.github/workflows/ci.yml` criado |
 | **4.1** | Quebrar Arquivos >300 linhas | ✅ | `Notas.jsx` 456→248L · `Gerador.jsx` 576→376L · `AIChat.jsx` 353→218L · `Flashcards.jsx` 370→237L — 7 componentes/hooks extraídos |
 | **4.2** | Extrair Código Duplicado | 🔄 | `utils/dateUtils.js` criado (date-fns centralizado); `utils/toast.js` criado; duplicações de data/toast eliminadas |
-| **4.3** | Padronizar Nomenclatura | ⏳ | |
-| **4.4** | Remover Código Morto | ⏳ | |
+| **4.3** | Padronizar Nomenclatura | ✅ | Convenção definida: PT para domínio (`criar`, `salvar`) + EN para React (`handle*`, `use*`, `on*`). Arquivos já seguem este padrão. |
+| **4.4** | Remover Código Morto | ✅ | Removidos: `listModels` (useAIModel), `GripVertical/Trash2/Edit3/editandoPasta/editandoNome` (BibliotecaPanel), `handleEditar/handleSalvarEdicao/handleExportarTodos` (Gerador), `criarTodosFlashcards/clearAll` (destruct) |
 | **4.5** | Extrair Lógica para Hooks | ⏳ | `useUIStore.jsx` já pequeno (874B) — verificar outros |
 | **4.6** | Cobertura 60%+ | ⏳ | Threshold atual: 4% linhas |
 | **4.7** | Testes de Integração | ⏳ | |
@@ -53,7 +53,7 @@
 | **7.6** | CHANGELOG.md | ⏳ | |
 | **8.1** | CI: Lint + Test a cada PR | ✅ | CI pipeline ativo no GitHub Actions |
 | **8.2** | Husky Pre-commit Hook | ✅ | `husky` + `lint-staged` instalados; pre-commit roda ESLint em arquivos staged |
-| **8.3** | Dependabot | ⏳ | |
+| **8.3** | Dependabot | ✅ | `.github/dependabot.yml` — semanal, Electron major bloqueado, `@tiptap/*` agrupado em 1 PR |
 | **8.4** | Error Monitoring (Sentry) | ⏳ | ErrorBoundary já pronto para integrar |
 | **8.5** | Revisão Mensal Dívida Técnica | ⏳ | Processo recorrente |
 | **8.6** | Auditoria Segurança Mensal | ⏳ | Processo recorrente |

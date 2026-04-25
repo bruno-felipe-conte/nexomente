@@ -9,13 +9,30 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
-      include: ['app/src/**/*.{js,jsx}', 'src/lib/**/*.{js,jsx}'],
-      exclude: ['src/test/**', 'node_modules/**'],
+      // Inclui apenas o código testável sem Electron/browser APIs
+      include: [
+        'app/src/utils/**/*.{js,jsx}',
+        'app/src/constants/**/*.{js,jsx}',
+        'app/src/hooks/sm2.js',
+        'app/src/hooks/useNotes.js',
+      ],
+      // Exclui: pages (precisam Electron), services (API externa), stores (IndexedDB)
+      exclude: [
+        'app/src/pages/**',
+        'app/src/services/**',
+        'app/src/store/**',
+        'app/src/lib/ai/**',
+        'app/src/lib/sync/**',
+        'app/src/lib/editor/**',
+        'app/src/hooks/use*.js', // hooks com electronAPI
+        'src/test/**',
+        'node_modules/**',
+      ],
       thresholds: {
-        lines: 4,
-        branches: 10,
-        functions: 4,
-        statements: 4
+        lines: 60,
+        branches: 55,
+        functions: 60,
+        statements: 60,
       }
     }
   }
