@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo, useCallback } from 'react';
 import { useGerador } from '../hooks/useGerador';
 import { useMaterias } from '../hooks/useMaterias';
 import {
@@ -27,19 +27,20 @@ export default function GeradorPage() {
   const [showCriar, setShowCriar] = useState(false);
   const fileInputRef = useRef(null);
   
-  const stats = getEstatisticas();
-  const questoesFiltradas = getQuestoesFiltradas({
-    materia: filtroMateria,
-    banca: filtroBanca,
-  });
-  
-  const questoesExibir = busca
-    ? questoesFiltradas.filter(q => 
-        q.pergunta.toLowerCase().includes(busca.toLowerCase()) ||
-        q.materia.toLowerCase().includes(busca.toLowerCase()) ||
-        q.topico.toLowerCase().includes(busca.toLowerCase())
-      )
-    : questoesFiltradas;
+  const stats = useMemo(() => getEstatisticas(), [questoes]);
+  const questoesFiltradas = useMemo(
+    () => getQuestoesFiltradas({ materia: filtroMateria, banca: filtroBanca }),
+    [questoes, filtroMateria, filtroBanca]
+  );
+  const questoesExibir = useMemo(() => {
+    if (!busca) return questoesFiltradas;
+    const b = busca.toLowerCase();
+    return questoesFiltradas.filter(q =>
+      q.pergunta.toLowerCase().includes(b) ||
+      q.materia.toLowerCase().includes(b) ||
+      (q.topico || '').toLowerCase().includes(b)
+    );
+  }, [questoesFiltradas, busca]);
   
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0];

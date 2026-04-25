@@ -18,7 +18,9 @@ const navItems = [
 
 export default function Sidebar({ isOpen, onToggle, currentPage, onNavigate }) {
   return (
-    <aside 
+    <aside
+      role="complementary"
+      aria-label="Navegação principal"
       className={`
         flex flex-col bg-bg-secondary border-r border-border-subtle
         transition-all duration-200 ease-in-out
@@ -33,7 +35,7 @@ export default function Sidebar({ isOpen, onToggle, currentPage, onNavigate }) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-2 space-y-1">
+      <nav role="navigation" aria-label="Menu principal" className="flex-1 p-2 space-y-1">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentPage === item.id;
@@ -41,7 +43,11 @@ export default function Sidebar({ isOpen, onToggle, currentPage, onNavigate }) {
           return (
             <button
               key={item.id}
+              id={`nav-${item.id}`}
               onClick={() => onNavigate(item.id)}
+              aria-label={item.label}
+              aria-current={isActive ? 'page' : undefined}
+              title={!isOpen ? item.label : undefined}
               className={`
                 w-full flex items-center gap-3 px-3 py-2 rounded-lg
                 transition-all duration-150
@@ -51,7 +57,7 @@ export default function Sidebar({ isOpen, onToggle, currentPage, onNavigate }) {
                 }
               `}
             >
-              <Icon size={20} />
+              <Icon size={20} aria-hidden="true" />
               {isOpen && <span className="text-sm font-medium">{item.label}</span>}
             </button>
           );
@@ -72,7 +78,11 @@ export default function Sidebar({ isOpen, onToggle, currentPage, onNavigate }) {
       {/* Settings */}
       <div className="p-2 border-t border-border-subtle">
         <button
+          id="nav-settings"
           onClick={() => onNavigate('settings')}
+          aria-label="Configurações"
+          aria-current={currentPage === 'settings' ? 'page' : undefined}
+          title={!isOpen ? 'Configurações' : undefined}
           className={`
             w-full flex items-center gap-3 px-3 py-2 rounded-lg
             transition-all duration-150
@@ -82,7 +92,7 @@ export default function Sidebar({ isOpen, onToggle, currentPage, onNavigate }) {
             }
           `}
         >
-          <Settings size={20} />
+          <Settings size={20} aria-hidden="true" />
           {isOpen && <span className="text-sm font-medium">Configurações</span>}
         </button>
       </div>

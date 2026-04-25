@@ -1,11 +1,13 @@
 /**
  * ChatMessage — bubble individual de mensagem no chat IA.
  * Extraído de AIChat.jsx (Tarefa 4.1).
+ * Memoizado (Tarefa 5.4+5.5): evita re-render de mensagens antigas quando nova chega.
  */
+import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { Copy, Plus } from 'lucide-react';
 
-export default function ChatMessage({ msg, idx, copiadoIdx, onCopiar, onInserir }) {
+const ChatMessage = memo(function ChatMessage({ msg, idx, copiadoIdx, onCopiar, onInserir }) {
   const isUser = msg.role === 'user';
   return (
     <motion.div
@@ -39,4 +41,6 @@ export default function ChatMessage({ msg, idx, copiadoIdx, onCopiar, onInserir 
       </div>
     </motion.div>
   );
-}
+});
+
+export default ChatMessage;

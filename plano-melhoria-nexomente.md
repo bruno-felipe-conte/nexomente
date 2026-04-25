@@ -31,9 +31,9 @@
 | **4.4** | Remover Código Morto | ✅ | Removidos: `listModels` (useAIModel), `GripVertical/Trash2/Edit3/editandoPasta/editandoNome` (BibliotecaPanel), `handleEditar/handleSalvarEdicao/handleExportarTodos` (Gerador), `criarTodosFlashcards/clearAll` (destruct) |
 | **4.5** | Extrair Lógica para Hooks | ✅ | Auditado: todas as páginas já delegam para hooks (`useFlashcards`, `useGerador`, `useMaterias`, `useAIModel`, `useNotes`). `useNotaEditor` extraído nesta sessão. |
 | **4.6** | Cobertura 60%+ | ✅ | **100% linhas** no escopo testável (sm2, errorMessages, dateUtils, toast). 69 testes passando em 7 suites. Coverage threshold: 60% lines configurado. |
-| **4.7** | Testes de Integração | ⏳ | |
+| **4.7** | Testes de Integração | ✅ | `integration.test.js` — 15 casos cross-module: SM-2 end-to-end, pipeline erro→toast, formatação de datas, sistema de feedback |
 | **5.1** | Code Splitting com Vite | ✅ | `React.lazy()` + `Suspense` em todas as 10 rotas — `index.js` caiu para 171KB; cada página virou chunk separado |
-| **5.2** | Lazy Load Imagens | ⏳ | |
+| **5.2** | Lazy Load Imagens | ✅ | N/A — app usa exclusivamente ícones SVG via Lucide. Zero tags `<img>` raster no código-fonte. |
 | **5.3** | Substituir Dependências Pesadas | ✅ | `date-fns` já usado (não moment.js); `lucide-react` já usado; `react-hot-toast` já instalado |
 | **5.4** | Corrigir Re-renders | ⏳ | |
 | **5.5** | Memoização Seletiva | ⏳ | |
@@ -50,7 +50,7 @@
 | **7.3** | JSDoc nas Funções Públicas | ⏳ | |
 | **7.4** | .env.example Completo | ✅ | `.env.example` com todas variáveis documentadas |
 | **7.5** | ADRs das Decisões | ⏳ | |
-| **7.6** | CHANGELOG.md | ⏳ | |
+| **7.6** | CHANGELOG.md | ✅ | `CHANGELOG.md` na raiz — sprint de profissionalização completa com métricas, todos os commits atômicos documentados |
 | **8.1** | CI: Lint + Test a cada PR | ✅ | CI pipeline ativo no GitHub Actions |
 | **8.2** | Husky Pre-commit Hook | ✅ | `husky` + `lint-staged` instalados; pre-commit roda ESLint em arquivos staged |
 | **8.3** | Dependabot | ✅ | `.github/dependabot.yml` — semanal, Electron major bloqueado, `@tiptap/*` agrupado em 1 PR |

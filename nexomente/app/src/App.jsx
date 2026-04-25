@@ -48,6 +48,33 @@ function App() {
     return () => window.removeEventListener('navigate', handleNavigate);
   }, []);
 
+  // ── Atalhos de teclado globais (Tarefa 6.1) ──────────────────────────────
+  useEffect(() => {
+    const ATALHOS = {
+      '1': 'dashboard', '2': 'notes',      '3': 'study',
+      '4': 'flashcards','5': 'gerador',    '6': 'ai',
+      '7': 'graph',     '8': 'statistics', '9': 'settings',
+    };
+    const handler = (e) => {
+      // Ignora quando foco está em input/textarea/contenteditable
+      const tag = document.activeElement?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.isContentEditable) return;
+
+      if ((e.ctrlKey || e.metaKey) && ATALHOS[e.key]) {
+        e.preventDefault();
+        setCurrentPage(ATALHOS[e.key]);
+      }
+      // Ctrl+B → toggle sidebar
+      if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+        e.preventDefault();
+        toggleSidebar();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [toggleSidebar]);
+
+
   if (loading) {
     return (
       <div className="flex h-full w-full bg-bg-primary items-center justify-center">

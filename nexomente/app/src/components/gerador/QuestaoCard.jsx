@@ -1,15 +1,16 @@
 /**
  * QuestaoCard — card individual de questão no banco do Gerador.
  * Extraído de Gerador.jsx (Tarefa 4.1).
+ * Memoizado (Tarefa 5.4+5.5): evita re-render quando filtros mudam mas a questão não.
  *
  * @param {{ questao, onEditar, onCriarFlashcard, onDeletar }} props
  */
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { motion } from 'framer-motion';
 import { Edit3, BookOpen, Trash2, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-export default function QuestaoCard({ questao: q, onEditar, onCriarFlashcard, onDeletar }) {
+const QuestaoCard = memo(function QuestaoCard({ questao: q, onEditar, onCriarFlashcard, onDeletar }) {
   const [editando, setEditando] = useState(false);
   const [editData, setEditData] = useState(null);
 
@@ -101,4 +102,6 @@ export default function QuestaoCard({ questao: q, onEditar, onCriarFlashcard, on
       )}
     </motion.div>
   );
-}
+});
+
+export default QuestaoCard;
