@@ -88,6 +88,14 @@ function App() {
 
   return (
     <div className="flex h-full w-full bg-bg-primary">
+      {/* Skip to main content link para navegação por teclado (Tarefa 6.7) */}
+      <a 
+        href="#main-content" 
+        className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-bg-secondary focus:text-accent-main focus:rounded-br-lg"
+      >
+        Pular para o conteúdo principal
+      </a>
+
       {/* Toast global — cobre toda a app (Tarefa 6.2) */}
       <Toaster
         position="bottom-right"
@@ -116,7 +124,7 @@ function App() {
           onToggleSidebar={toggleSidebar}
         />
 
-        <main className="flex-1 overflow-auto">
+        <main id="main-content" className="flex-1 overflow-auto focus:outline-none" tabIndex="-1">
           {/* ErrorBoundary por página + Suspense para lazy loading */}
           <ErrorBoundary context={currentPage}>
             <Suspense fallback={<PageLoader />}>

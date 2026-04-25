@@ -1,22 +1,46 @@
+import { useCallback, useRef } from 'react';
 import { 
   Home, FileText, BookOpen, Layers, 
   GitBranch, BarChart3, Settings,
-  Sparkles, Folder, Cloud, Book, MessageSquare, ClipboardList
+  Sparkles, Cloud, Book, MessageSquare, ClipboardList
 } from 'lucide-react';
 
-const navItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: Home },
-  { id: 'notes', label: 'Notas', icon: FileText },
-  { id: 'study', label: 'Estudo', icon: BookOpen },
-  { id: 'flashcards', label: 'Flashcards', icon: Layers },
-  { id: 'poemas', label: 'Poemas', icon: Book },
-  { id: 'gerador', label: 'Gerador', icon: ClipboardList },
-  { id: 'ai', label: 'Chat IA', icon: MessageSquare },
-  { id: 'graph', label: 'Grafo', icon: GitBranch },
-  { id: 'statistics', label: 'Estatísticas', icon: BarChart3 },
+const NAV_ITEMS = [
+  { id: 'dashboard', label: 'Dashboard',    icon: Home },
+  { id: 'notes',     label: 'Notas',       icon: FileText },
+  { id: 'study',     label: 'Estudo',      icon: BookOpen },
+  { id: 'flashcards',label: 'Flashcards', icon: Layers },
+  { id: 'poemas',    label: 'Poemas',      icon: Book },
+  { id: 'gerador',  label: 'Gerador',     icon: ClipboardList },
+  { id: 'ai',       label: 'Chat IA',     icon: MessageSquare },
+  { id: 'graph',    label: 'Grafo',       icon: GitBranch },
+  { id: 'statistics',label: 'Estatísticas',icon: BarChart3 },
 ];
 
-export default function Sidebar({ isOpen, onToggle, currentPage, onNavigate }) {
+export default function Sidebar({ isOpen, currentPage, onNavigate }) {
+  const navRef = useRef(null);
+
+  const focusNavItem = useCallback((direction) => {
+    const nav = navRef.current;
+    if (!nav) return;
+    const btns = Array.from(nav.querySelectorAll('button[id^="nav-"]'));
+    const idx = btns.findIndex(b => b.id === `nav-${currentPage}`);
+    let next = idx + direction;
+    if (next < 0) next = btns.length - 1;
+    if (next >= btns.length) next = 0;
+    btns[next]?.focus();
+  }, [currentPage]);
+
+  const handleKeyDown = useCallback((e) => {
+    if (['ArrowUp', 'ArrowLeft'].includes(e.key)) {
+      e.preventDefault();
+      focusNavItem(-1);
+    } else if (['ArrowDown', 'ArrowRight'].includes(e.key)) {
+      e.preventDefault();
+      focusNavItem(1);
+    }
+  }, [focusNavItem]);
+
   return (
     <aside
       role="complementary"
@@ -26,20 +50,23 @@ export default function Sidebar({ isOpen, onToggle, currentPage, onNavigate }) {
         transition-all duration-200 ease-in-out
         ${isOpen ? 'w-64' : 'w-16'}
       `}
+      onKeyDown={handleKeyDown}
     >
-      {/* Logo */}
       <div className="flex items-center justify-between p-4 border-b border-border-subtle">
         {isOpen && (
           <span className="text-xl font-bold text-accent-main">NexoMente</span>
         )}
       </div>
 
-      {/* Navigation */}
-      <nav role="navigation" aria-label="Menu principal" className="flex-1 p-2 space-y-1">
-        {navItems.map((item) => {
+      <nav
+        ref={navRef}
+        role="navigation"
+        aria-label="Menu principal"
+        className="flex-1 p-2 space-y-1"
+      >
+        {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive = currentPage === item.id;
-          
           return (
             <button
               key={item.id}
@@ -64,18 +91,16 @@ export default function Sidebar({ isOpen, onToggle, currentPage, onNavigate }) {
         })}
       </nav>
 
-      {/* AI Status */}
       {isOpen && (
         <div className="p-4 border-t border-border-subtle">
           <div className="flex items-center gap-2 text-sm text-text-secondary">
             <Sparkles size={16} className="text-accent-light" />
             <span>IA Online</span>
-            <span className="w-2 h-2 rounded-full bg-success ml-auto"></span>
+            <span className="w-2 h-2 rounded-full bg-success ml-auto" />
           </div>
         </div>
       )}
 
-      {/* Settings */}
       <div className="p-2 border-t border-border-subtle">
         <button
           id="nav-settings"
@@ -97,7 +122,6 @@ export default function Sidebar({ isOpen, onToggle, currentPage, onNavigate }) {
         </button>
       </div>
 
-      {/* Sync Status */}
       {isOpen && (
         <div className="p-4 border-t border-border-subtle">
           <div className="flex items-center gap-2 text-xs text-text-muted">

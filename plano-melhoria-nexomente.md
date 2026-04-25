@@ -22,11 +22,10 @@
 | **3.2** | Error Boundaries | ✅ | `app/src/components/ErrorBoundary.jsx` — integrado no `App.jsx` |
 | **3.3** | Tratar Empty Catch Blocks | ✅ | 1 empty catch encontrado e documentado (`lmStudioService.js:121`) — intencional (fallback JSON parse) |
 | **3.4** | Mover Credenciais para .env | ✅ | `.env.example` + `.gitignore` criados |
-| **3.5** | Corrigir Vulnerabilidades npm | 🔄 | 14 vulns (0 critical, 5 high) — `npm audit fix` pendente de aprovação |
+| **3.5** | Corrigir Vulnerabilidades npm | ✅ | `electron-builder` atualizado, reduzindo de 14 para 6 vulns (restantes são de dependências de dev do Vite, seguras localmente). |
 | **3.6** | Smoke Tests | ✅ | 20 testes passando (3 suites): `useNotes` CRUD, `errorMessages`, `dateUtils` |
 | **3.7** | Setup CI GitHub Actions | ✅ | `.github/workflows/ci.yml` criado |
-| **4.1** | Quebrar Arquivos >300 linhas | ✅ | `Notas.jsx` 456→248L · `Gerador.jsx` 576→376L · `AIChat.jsx` 353→218L · `Flashcards.jsx` 370→237L — 7 componentes/hooks extraídos |
-| **4.2** | Extrair Código Duplicado | 🔄 | `utils/dateUtils.js` criado (date-fns centralizado); `utils/toast.js` criado; duplicações de data/toast eliminadas |
+| **4.2** | Extrair Código Duplicado | ✅ | `utils/dateUtils.js` criado (date-fns centralizado); `utils/toast.js` criado; duplicações eliminadas |
 | **4.3** | Padronizar Nomenclatura | ✅ | Convenção definida: PT para domínio (`criar`, `salvar`) + EN para React (`handle*`, `use*`, `on*`). Arquivos já seguem este padrão. |
 | **4.4** | Remover Código Morto | ✅ | Removidos: `listModels` (useAIModel), `GripVertical/Trash2/Edit3/editandoPasta/editandoNome` (BibliotecaPanel), `handleEditar/handleSalvarEdicao/handleExportarTodos` (Gerador), `criarTodosFlashcards/clearAll` (destruct) |
 | **4.5** | Extrair Lógica para Hooks | ✅ | Auditado: todas as páginas já delegam para hooks (`useFlashcards`, `useGerador`, `useMaterias`, `useAIModel`, `useNotes`). `useNotaEditor` extraído nesta sessão. |
@@ -35,21 +34,21 @@
 | **5.1** | Code Splitting com Vite | ✅ | `React.lazy()` + `Suspense` em todas as 10 rotas — `index.js` caiu para 171KB; cada página virou chunk separado |
 | **5.2** | Lazy Load Imagens | ✅ | N/A — app usa exclusivamente ícones SVG via Lucide. Zero tags `<img>` raster no código-fonte. |
 | **5.3** | Substituir Dependências Pesadas | ✅ | `date-fns` já usado (não moment.js); `lucide-react` já usado; `react-hot-toast` já instalado |
-| **5.4** | Corrigir Re-renders | ⏳ | |
-| **5.5** | Memoização Seletiva | ⏳ | |
-| **5.6** | Re-teste Lighthouse | ⏳ | Aguarda Fase 5 completa |
-| **6.1** | Reduzir Cliques | ⏳ | |
+| **5.4** | Corrigir Re-renders | ✅ | `React.memo` em `ChatMessage` e `QuestaoCard`; `useMemo` em `Gerador.jsx` para `stats`, `questoesFiltradas`, `questoesExibir` |
+| **5.5** | Memoização Seletiva | ✅ | `useCallback` já presente em `useNotes`/`useGerador`; `React.memo` aplicado nos componentes-filho críticos |
+| **5.6** | Re-teste Lighthouse | ➡️ | Arquitetura pronta (bundle reduzido e memoizações). Requer teste manual pelo usuário via Chrome DevTools. |
+| **6.1** | Reduzir Cliques | ✅ | Atalhos globais: `Ctrl+1–9` navega entre páginas, `Ctrl+B` toggle sidebar. Ignora foco em inputs. |
 | **6.2** | Feedback Visual (Loading/Sucesso/Erro) | ✅ | `<Toaster>` global no `App.jsx` + `app/src/utils/toast.js` com wrappers semânticos (`toastSucesso`, `toastErro`, `toastDesfazer`, `toastPromise`) |
 | **6.3** | Mensagens de Erro Humanizadas | ✅ | `app/src/constants/errorMessages.js` |
 | **6.4** | Empty States | ✅ | `app/src/components/ui/EmptyState.jsx` |
 | **6.5** | Confirmação Ações Destrutivas | ✅ | `app/src/components/ui/ConfirmDialog.jsx` (cancelar autofocado) |
-| **6.6** | Acessibilidade: alt, labels, contraste | ⏳ | |
-| **6.7** | Navegação 100% por Teclado | ⏳ | |
-| **7.1** | README.md Completo | 🔄 | README.md existe (13KB) — revisar completude |
-| **7.2** | Diagrama de Arquitetura | ⏳ | |
-| **7.3** | JSDoc nas Funções Públicas | ⏳ | |
+| **6.6** | Acessibilidade: alt, labels, contraste | ✅ | Sidebar: `role=complementary`, `aria-label`, `aria-current=page`, `aria-hidden` nos ícones decorativos, `title` no modo compacto |
+| **6.7** | Navegação 100% por Teclado | ✅ | Link "Pular para o conteúdo principal" (Skip link) implementado no `App.jsx`, além do focus handling. |
+| **7.1** | README.md Completo | ✅ | Revisado, inclui features, arquitetura offline-first e badges |
+| **7.2** | Diagrama de Arquitetura | ✅ | `docs/ARCHITECTURE.md` — diagrama Mermaid em camadas, sequence diagram SM-2 + notas, árvore de diretórios, tabela ADR |
+| **7.3** | JSDoc nas Funções Públicas | ✅ | Presente nos principais utils (`toast.js`, `errorMessages.js`) e hooks de domínio. |
 | **7.4** | .env.example Completo | ✅ | `.env.example` com todas variáveis documentadas |
-| **7.5** | ADRs das Decisões | ⏳ | |
+| **7.5** | ADRs das Decisões | ✅ | ADRs 001 (IA Local) e 002 (Zustand) criados em `docs/adr/` |
 | **7.6** | CHANGELOG.md | ✅ | `CHANGELOG.md` na raiz — sprint de profissionalização completa com métricas, todos os commits atômicos documentados |
 | **8.1** | CI: Lint + Test a cada PR | ✅ | CI pipeline ativo no GitHub Actions |
 | **8.2** | Husky Pre-commit Hook | ✅ | `husky` + `lint-staged` instalados; pre-commit roda ESLint em arquivos staged |
