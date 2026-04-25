@@ -85,19 +85,19 @@ export default function Dashboard() {
       
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
-        <Card className="flex flex-col items-center justify-center text-center p-6">
+        <Card interactive className="flex flex-col items-center justify-center text-center p-6">
           <FileText className="text-color-notas mb-3" size={28} />
           <p className="text-3xl font-display font-bold text-text-hi">{notas.length}</p>
           <p className="text-sm font-medium text-text-mid mt-1 uppercase tracking-wider">Notas</p>
         </Card>
         
-        <Card className="flex flex-col items-center justify-center text-center p-6">
+        <Card interactive className="flex flex-col items-center justify-center text-center p-6">
           <Clock className="text-color-estudo mb-3" size={28} />
           <p className="text-3xl font-display font-bold text-text-hi">{minutosHoje}m</p>
           <p className="text-sm font-medium text-text-mid mt-1 uppercase tracking-wider">Estudado Hoje</p>
         </Card>
         
-        <Card className="flex flex-col items-center justify-center text-center p-6 relative overflow-hidden">
+        <Card interactive className="flex flex-col items-center justify-center text-center p-6 relative overflow-hidden">
           {cardsParaRevisao.length > 0 && (
             <div className="absolute top-0 right-0 w-16 h-16 bg-color-warning/10 rounded-bl-full -z-0" />
           )}
@@ -106,7 +106,7 @@ export default function Dashboard() {
           <p className="text-sm font-medium text-text-mid mt-1 uppercase tracking-wider z-10">Para Revisar</p>
         </Card>
         
-        <Card className="flex flex-col items-center justify-center text-center p-6">
+        <Card interactive className="flex flex-col items-center justify-center text-center p-6">
           <BookOpen className="text-color-flashcards mb-3" size={28} />
           <p className="text-3xl font-display font-bold text-text-hi">{flashcards.length}</p>
           <p className="text-sm font-medium text-text-mid mt-1 uppercase tracking-wider">Flashcards</p>
