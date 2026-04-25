@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useUIStore } from '../store/useUIStore';
+import { useTamagotchiStore } from '../store/useTamagotchiStore';
 import { useMaterias } from '../hooks/useMaterias';
 import { Play, Pause, RotateCcw, Clock, BookOpen, Plus, Check, Trash2 } from 'lucide-react';
 
@@ -43,6 +44,11 @@ export default function Study() {
       if (sessaoId) {
         Sessoes.completar(sessaoId);
         XP.add(10, 'Sessão de estudo concluída', 'sessao', sessaoId);
+        
+        // Gamificação E10: Tamagotchi de Estudos
+        const m = MODOS.find(x => x.id === modo) || MODOS[0];
+        useTamagotchiStore.getState().registerStudySession(m.minutos);
+        
         setSessoesList(Sessoes.getAll());
       }
     }

@@ -12,6 +12,7 @@ import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
 import { useUIStore } from './store/useUIStore';
 import ErrorBoundary from './components/ErrorBoundary';
+import LevelUpOverlay from './components/gamification/LevelUpOverlay';
 
 // ─── Code Splitting — cada página carrega só quando necessária (Tarefa 5.1) ───
 const Dashboard    = lazy(() => import('./pages/Dashboard'));
@@ -107,6 +108,7 @@ function App() {
 
   return (
     <div className="flex h-full w-full bg-bg-primary">
+      <LevelUpOverlay />
       {/* Skip to main content link para navegação por teclado (Tarefa 6.7) */}
       <a 
         href="#main-content" 

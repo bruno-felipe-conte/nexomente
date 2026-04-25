@@ -8,6 +8,7 @@ import { useUIStore } from '../store/useUIStore';
 import { BookOpen, FileText, Brain, Clock, Zap, Target, ArrowRight } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
+import TamagotchiWidget from '../components/gamification/TamagotchiWidget';
 
 /**
  * Componente principal do Dashboard.
@@ -58,30 +59,31 @@ export default function Dashboard() {
         </div>
       </div>
       
-      {/* Hero Card: Nível e XP */}
-      <Card className="relative overflow-hidden border-accent-main/30 bg-gradient-to-br from-bg-tertiary to-bg-secondary">
-        <div className="absolute top-0 left-0 w-full h-1 bg-surface-border">
-          <div 
-            className="h-full bg-accent-main transition-all duration-1000 ease-out shadow-glow-violet"
-            style={{ width: `${progress}%` }}
-          />
+      {/* Hero Section: Tamagotchi */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div className="lg:col-span-1">
+          <TamagotchiWidget />
         </div>
-        <div className="flex items-center gap-6">
-          <div className="w-16 h-16 rounded-2xl bg-accent-main/10 border border-accent-main/20 flex items-center justify-center shadow-glow-violet">
-            <Zap className="text-accent-main" size={32} />
-          </div>
-          <div className="flex-1">
-            <div className="flex items-baseline gap-3 mb-1">
-              <h2 className="text-2xl font-display font-bold text-text-hi">Nível {level}</h2>
-              <Badge variant="brand" type="pill">Estudante Dedicado</Badge>
+        
+        <div className="lg:col-span-2 flex flex-col gap-5">
+          <Card className="flex-1 relative overflow-hidden border-accent-main/30 bg-gradient-to-br from-bg-tertiary to-bg-secondary flex flex-col justify-center p-8">
+            <div className="flex items-center gap-6">
+              <div className="w-16 h-16 rounded-2xl bg-accent-main/10 border border-accent-main/20 flex items-center justify-center shadow-glow-violet">
+                <Zap className="text-accent-main" size={32} />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-baseline gap-3 mb-1">
+                  <h2 className="text-2xl font-display font-bold text-text-hi">Bem-vindo de volta!</h2>
+                  <Badge variant="brand" type="pill">Ofensiva Ativa</Badge>
+                </div>
+                <p className="text-text-mid mt-2">
+                  Cuide do seu mascote concluindo sessões de estudo. Quanto mais você estuda, mais ele evolui. Não deixe a saúde dele cair!
+                </p>
+              </div>
             </div>
-            <div className="flex items-center justify-between text-sm mt-2">
-              <span className="text-text-mid font-medium">{xpCurrentLevel} XP ganhos</span>
-              <span className="text-text-lo">Faltam {XP_POR_NIVEL - xpCurrentLevel} XP para o nível {level + 1}</span>
-            </div>
-          </div>
+          </Card>
         </div>
-      </Card>
+      </div>
       
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
