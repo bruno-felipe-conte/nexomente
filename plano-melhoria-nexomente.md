@@ -53,7 +53,7 @@
 | **8.1** | CI: Lint + Test a cada PR | ✅ | CI pipeline ativo no GitHub Actions |
 | **8.2** | Husky Pre-commit Hook | ✅ | `husky` + `lint-staged` instalados; pre-commit roda ESLint em arquivos staged |
 | **8.3** | Dependabot | ✅ | `.github/dependabot.yml` — semanal, Electron major bloqueado, `@tiptap/*` agrupado em 1 PR |
-| **8.4** | Error Monitoring (Sentry) | ⏳ | ErrorBoundary já pronto para integrar |
+| **8.4** | Error Monitoring (Sentry) | ✅ | `@sentry/react` inicializado no `main.jsx` e `ErrorBoundary`. Pronta para receber `VITE_SENTRY_DSN` via `.env`. |
 | **8.5** | Revisão Mensal Dívida Técnica | ⏳ | Processo recorrente |
 | **8.6** | Auditoria Segurança Mensal | ⏳ | Processo recorrente |
 | **8.7** | Performance Check Quinzenal | ⏳ | Processo recorrente |
@@ -84,7 +84,7 @@
 | **Q2 — Planejar** | Quebrar Notas.jsx (18KB) + Graph.jsx | 4 | 4 | ✅ Concluído |
 | **Q2 — Planejar** | Cobertura de testes 60%+ | 4 | 5 | ✅ Concluído |
 | **Q2 — Planejar** | Testes de integração (3 fluxos) | 4 | 5 | ✅ Concluído |
-| **Q2 — Planejar** | Sentry error monitoring | 4 | 3 | ⏳ Aguarda conta Sentry |
+| **Q2 — Planejar** | Sentry error monitoring | 4 | 3 | ✅ Concluído |
 | **Q2 — Planejar** | Husky pre-commit hook | 3 | 2 | ✅ Concluído |
 | **Q2 — Planejar** | Acessibilidade WCAG AA completa | 3 | 4 | ✅ Concluído |
 | **Q3 — Se sobrar** | JSDoc em utils/ e hooks/ | 2 | 2 | ✅ Concluído |

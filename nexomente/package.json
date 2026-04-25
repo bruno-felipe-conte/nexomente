@@ -24,6 +24,7 @@
   "author": "Bruno",
   "license": "MIT",
   "dependencies": {
+    "@sentry/react": "^10.50.0",
     "@tiptap/extension-blockquote": "^2.2.0",
     "@tiptap/extension-code-block": "^2.2.0",
     "@tiptap/extension-highlight": "^2.2.0",

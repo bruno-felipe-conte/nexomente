@@ -1,4 +1,5 @@
 import { Component } from 'react';
+import * as Sentry from '@sentry/react';
 
 /**
  * Componente ErrorBoundary para capturar erros de renderização React.
@@ -20,8 +21,16 @@ class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    // Log estruturado — pronto para integrar com Sentry na Fase 8
+    // Log estruturado — integrado com Sentry na Fase 8
     console.error(`[ErrorBoundary:${this.props.context || 'App'}]`, error, errorInfo);
+    
+    if (import.meta.env.VITE_SENTRY_DSN) {
+      Sentry.captureException(error, {
+        tags: { context: this.props.context || 'App' },
+        extra: { componentStack: errorInfo.componentStack }
+      });
+    }
+    
     this.setState({ errorInfo });
   }
 
