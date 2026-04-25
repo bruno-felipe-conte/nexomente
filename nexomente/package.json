@@ -12,7 +12,14 @@
     "build:win": "vite build && electron-builder --win",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "prepare": "husky",
+    "lint": "eslint app/src/ --max-warnings 999"
+  },
+  "lint-staged": {
+    "app/src/**/*.{js,jsx}": [
+      "eslint --fix --max-warnings 999"
+    ]
   },
   "author": "Bruno",
   "license": "MIT",
@@ -59,7 +66,9 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.5.0",
+    "husky": "^9.1.7",
     "jsdom": "^24.1.0",
+    "lint-staged": "^16.4.0",
     "postcss": "^8.4.0",
     "rollup-plugin-visualizer": "^7.0.1",
     "tailwindcss": "^3.4.0",
