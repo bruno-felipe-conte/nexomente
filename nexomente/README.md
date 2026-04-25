@@ -167,6 +167,149 @@ npm run test:coverage # Testes com cobertura
 
 ---
 
+## 🤖 Configuração de IA Local
+
+O NexoMente é **100% offline**, mas os recursos de IA dependem de um LLM rodando localmente na sua máquina. O app suporta **duas opções** que podem ser configuradas durante o onboarding ou nas Configurações.
+
+### Como funciona
+
+```
+Seu Computador
+┌─────────────────────────────────────────────┐
+│  NexoMente (App)                            │
+│       │                                      │
+│       ▼                                      │
+│  ┌─────────┐    ┌──────────────┐            │
+│  │ Ollama  │ OR │  LM Studio   │            │
+│  │ :11434  │    │  :1234       │            │
+│  └────┬────┘    └──────┬───────┘            │
+│       │                 │                     │
+│       ▼                 ▼                     │
+│  ┌─────────────────────────────────────┐    │
+│  │  LLM rodando localmente             │    │
+│  │  (todos os dados ficam no seu PC)   │    │
+│  └─────────────────────────────────────┘    │
+└─────────────────────────────────────────────┘
+```
+
+### Opção 1 — Ollama (Recomendado)
+
+O Ollama é a forma mais simples de rodar LLMs localmente. Baixe em [ollama.com](https://ollama.com) e siga:
+
+```bash
+# 1. Instale o Ollama
+# Baixe em: https://ollama.com/download
+
+# 2. Após instalar, abra um terminal e baixe um modelo:
+ollama pull llama3.2:3b        # ~2GB — rápido, bom custo-benefício
+ollama pull llama3.1:8b        # ~4.8GB — mais capaz
+ollama pull phi3:14b           # ~2.2GB — da Microsoft, bom para texto
+ollama pull mistral:7b         # ~4.1GB — versátil
+
+# 3. Verifique se está rodando
+ollama list
+
+# 4. O Ollama inicia automaticamente em segundo plano
+# A porta 11434 fica disponível automaticamente
+```
+
+**Para iniciar manualmente (se necessário):**
+```bash
+ollama serve
+```
+
+**No app:** vá em **Configurações → IA** e selecione **Ollama** com o modelo que você baixou.
+
+### Opção 2 — LM Studio (Mais poder + UI)
+
+O LM Studio oferece uma interface visual e suporte a mais modelos (incluindo quantized). Baixe em [lmstudio.ai](https://lmstudio.ai):
+
+```bash
+# 1. Baixe o LM Studio
+# https://lmstudio.ai/download
+
+# 2. Instale e abra o app
+
+# 3. No LM Studio:
+#    a) vá em Search → procure um modelo (ex: "llama 3.2")
+#    b) baixe o modelo (Download)
+#    c) vá em "Local Server" (ícone de chat à esquerda)
+#    d) clique em "Start Server"
+#    e) A API estará disponível em http://localhost:1234/v1
+
+# 4. Selecione o modelo desejado e temperatura
+```
+
+**Para modelos recomendados:**
+| Modelo | Tamanho | Uso | Onde buscar no LM Studio |
+|--------|---------|-----|--------------------------|
+| Llama 3.2 3B | ~2GB | Uso geral, rápido | `llama3.2-3b` |
+| Llama 3.1 8B | ~5GB | Melhor qualidade | `llama-3.1-8b` |
+| Phi-3 Medium | ~4GB | Microsoft, eficiente | `phi-3-medium` |
+| Mistral 7B | ~4GB | Equilibrado | `mistral-7b` |
+| Qwen 2.5 7B | ~4.5GB | Excelente em PT-BR | `qwen2.5-7b` |
+| Gemma 2 9B | ~5GB | Google, versátil | `gemma-2-9b` |
+
+**No app:** vá em **Configurações → IA** e selecione **LM Studio**. A URL já vem pré-preenchida (`http://localhost:1234/v1`).
+
+### Opção 3 — Jan (Alternativa open-source)
+
+O Jan é uma alternativa ao LM Studio, 100% open-source: [jan.ai](https://jan.ai)
+
+```bash
+# 1. Baixe em: https://jan.ai/download
+
+# 2. Abra o Jan, baixe um modelo pela interface
+
+# 3. Vá em "Local API Server" e clique em Start
+#    (a API funciona na porta 1337 por padrão)
+
+# 4. No NexoMente, use a URL: http://localhost:1337/v1
+```
+
+### Opção 4 — Servidor API customizado
+
+Se você já tem um servidor LLM rodando (ex: Text Generation Webui, vLLM, etc.):
+
+```bash
+# Qualquer servidor com API OpenAI-compatible funciona
+# Exemplo com текст generation webui:
+# http://localhost:5000/v1
+
+# Configure no NexoMente em Configurações → IA
+# URL: http://localhost:SUA_PORTA/v1
+# Provider: Custom
+```
+
+### Modelos recomendados por tarefa
+
+| Tarefa | Melhor modelo | Por quê |
+|--------|--------------|---------|
+| Flashcards e resumos | `llama3.2:3b` | Rápido, bom em formatação |
+| Questões de concurso | `llama3.1:8b` | Melhor raciocínio multi-step |
+| Chat conversacional | `mistral:7b` ou `qwen2.5:7b` | Natural, bom em PT-BR |
+| Tags e conexões | `phi3:14b` | Eficiente, bom em análise |
+| POemas e textos criativos | `gemma-2-9b` | Criativo e bem formatado |
+
+### Solução de problemas
+
+**O app não conecta na IA?**
+1. Verifique se Ollama/LM Studio está aberto e rodando
+2. Clique em "Testar conexão" em Configurações → IA
+3. Verifique se o modelo foi baixado corretamente (`ollama list` ou LM Studio)
+4. Tente reiniciar o servidor (fechar e abrir de novo)
+
+**A IA está lenta?**
+- Modelos menores = mais rápido (3B > 8B > 70B)
+- Quantized (Q4_K_M) = mais rápido que FP16
+- Mais RAM livre = melhor cache de contexto
+- GPU dedicada = muito mais rápido (Nvidia CUDA)
+
+**Sem GPU dedicada?**
+Use modelos até 3B-7B — rodam bem em CPU. Llama 3.2 3B é o melhor custo-benefício para CPU-only.
+
+---
+
 ## 🎮 Keyboard Shortcuts
 
 | Atalho | Ação |
