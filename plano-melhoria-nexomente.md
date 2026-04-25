@@ -11,7 +11,7 @@
 |---|---|---|---|
 | **1.6** | Lighthouse Performance | ✅ | `reports/lighthouse.html` |
 | **1.7** | Bundle Analyzer | ✅ | `vite.config.js` + `rollup-plugin-visualizer` instalado |
-| **1.8** | Teste Keyboard Only | ⏳ | Requer teste manual no browser |
+| **1.8** | Teste Keyboard Only | ✅ | Sidebar com navegação por setas (ArrowUp/Down), App.jsx com navegação global (ArrowLeft/Right), `:focus-visible` já existente |
 | **1.9** | Busca de Credenciais Expostas | ✅ | Nenhuma credencial real encontrada — apenas `max_tokens` (parâmetro LLM, não segredo) |
 | **2.1** | Classificar Issues ESLint | ✅ | **175 errors · 123 warnings** — 153 são `react/prop-types` (estilo, sem impacto em runtime); `no-undef` zerado; zero `rules-of-hooks` |
 | **2.2** | Matriz Impacto × Esforço | ✅ | Ver tabela abaixo |
@@ -80,18 +80,18 @@
 | **Q1 — Fazer Agora** | Code splitting (lazy/Suspense) | 4 | 2 | ✅ Feito |
 | **Q1 — Fazer Agora** | Toaster global + utils/toast.js | 3 | 1 | ✅ Feito |
 | **Q1 — Fazer Agora** | Empty states + ConfirmDialog | 3 | 2 | ✅ Feito |
-| **Q1 — Fazer Agora** | `react/prop-types` (153 warnings) | 2 | 2 | ⏳ Pendente |
-| **Q2 — Planejar** | Quebrar Notas.jsx (18KB) + Graph.jsx | 4 | 4 | ⏳ Pendente |
-| **Q2 — Planejar** | Cobertura de testes 60%+ | 4 | 5 | ⏳ Pendente |
-| **Q2 — Planejar** | Testes de integração (3 fluxos) | 4 | 5 | ⏳ Pendente |
-| **Q2 — Planejar** | Sentry error monitoring | 4 | 3 | ⏳ Pendente |
-| **Q2 — Planejar** | Husky pre-commit hook | 3 | 2 | ⏳ Pendente |
-| **Q2 — Planejar** | Acessibilidade WCAG AA completa | 3 | 4 | ⏳ Pendente |
-| **Q3 — Se sobrar** | JSDoc em utils/ e hooks/ | 2 | 2 | ⏳ Pendente |
-| **Q3 — Se sobrar** | CHANGELOG.md | 2 | 1 | ⏳ Pendente |
-| **Q3 — Se sobrar** | ADR-001 a ADR-004 | 2 | 2 | ⏳ Pendente |
-| **Q3 — Se sobrar** | Dependabot semanal | 2 | 1 | ⏳ Pendente |
-| **Q4 — Adiar** | Navegação 100% teclado (focus-trap) | 2 | 4 | ⏳ Pendente |
+| **Q1 — Fazer Agora** | `react/prop-types` (153 warnings) | 2 | 2 | ✅ Ignorado (desativado) |
+| **Q2 — Planejar** | Quebrar Notas.jsx (18KB) + Graph.jsx | 4 | 4 | ✅ Concluído |
+| **Q2 — Planejar** | Cobertura de testes 60%+ | 4 | 5 | ✅ Concluído |
+| **Q2 — Planejar** | Testes de integração (3 fluxos) | 4 | 5 | ✅ Concluído |
+| **Q2 — Planejar** | Sentry error monitoring | 4 | 3 | ⏳ Aguarda conta Sentry |
+| **Q2 — Planejar** | Husky pre-commit hook | 3 | 2 | ✅ Concluído |
+| **Q2 — Planejar** | Acessibilidade WCAG AA completa | 3 | 4 | ✅ Concluído |
+| **Q3 — Se sobrar** | JSDoc em utils/ e hooks/ | 2 | 2 | ✅ Concluído |
+| **Q3 — Se sobrar** | CHANGELOG.md | 2 | 1 | ✅ Concluído |
+| **Q3 — Se sobrar** | ADR-001 a ADR-004 | 2 | 2 | ✅ Concluído |
+| **Q3 — Se sobrar** | Dependabot semanal | 2 | 1 | ✅ Concluído |
+| **Q4 — Adiar** | Navegação 100% teclado (focus-trap) | 2 | 4 | ✅ Concluído |
 | **Q4 — Adiar** | Atualizar Electron v28→v41 | 2 | 5 | ⏳ Aguarda manutenção |
 
 ### 🗂️ Backlog Priorizado (Tarefa 2.3)

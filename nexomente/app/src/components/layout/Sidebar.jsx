@@ -71,7 +71,11 @@ export default function Sidebar({ isOpen, currentPage, onNavigate }) {
             <button
               key={item.id}
               id={`nav-${item.id}`}
+              tabIndex={isActive ? 0 : -1}
               onClick={() => onNavigate(item.id)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') onNavigate(item.id);
+              }}
               aria-label={item.label}
               aria-current={isActive ? 'page' : undefined}
               title={!isOpen ? item.label : undefined}

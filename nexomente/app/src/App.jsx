@@ -49,6 +49,9 @@ function App() {
   }, []);
 
   // ── Atalhos de teclado globais (Tarefa 6.1) ──────────────────────────────
+  const PAGES = ['dashboard', 'notes', 'study', 'flashcards', 'poemas', 'gerador', 'ai', 'graph', 'statistics', 'settings'];
+  const pageIndex = PAGES.indexOf(currentPage);
+
   useEffect(() => {
     const ATALHOS = {
       '1': 'dashboard', '2': 'notes',      '3': 'study',
@@ -56,23 +59,31 @@ function App() {
       '7': 'graph',     '8': 'statistics', '9': 'settings',
     };
     const handler = (e) => {
-      // Ignora quando foco está em input/textarea/contenteditable
       const tag = document.activeElement?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.isContentEditable) return;
 
       if ((e.ctrlKey || e.metaKey) && ATALHOS[e.key]) {
         e.preventDefault();
         setCurrentPage(ATALHOS[e.key]);
+        return;
       }
-      // Ctrl+B → toggle sidebar
       if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
         e.preventDefault();
         toggleSidebar();
+        return;
+      }
+      // Arrow keys for page navigation
+      if (e.key === 'ArrowLeft' && pageIndex > 0) {
+        e.preventDefault();
+        setCurrentPage(PAGES[pageIndex - 1]);
+      } else if (e.key === 'ArrowRight' && pageIndex < PAGES.length - 1) {
+        e.preventDefault();
+        setCurrentPage(PAGES[pageIndex + 1]);
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [toggleSidebar]);
+  }, [toggleSidebar, currentPage, pageIndex]);
 
 
   if (loading) {
