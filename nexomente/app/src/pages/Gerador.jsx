@@ -11,21 +11,9 @@ import GerarIAModal from '../components/gerador/GerarIAModal';
 import QuestaoCard from '../components/gerador/QuestaoCard';
 
 export default function GeradorPage() {
-  const {
-    questoes,
-    carregando,
-    progresso,
-    erro,
-    bancas,
-    processarTexto,
-    gerarComIA,
-    atualizarQuestao,
-    deletarQuestao,
-    criarFlashcards,
-    criarTodosFlashcards,
-    getEstatisticas,
-    getQuestoesFiltradas,
-    clearAll,
+  const { questoes, carregando, progresso, erro, bancas,
+    processarTexto, gerarComIA, atualizarQuestao, deletarQuestao,
+    criarFlashcards, getEstatisticas, getQuestoesFiltradas,
   } = useGerador();
   
   const { materias } = useMaterias();
@@ -98,30 +86,16 @@ export default function GeradorPage() {
       toast.error(resultado.erro);
     }
   };
-  
-  const handleEditar = (questao) => {
-    setEditandoId(questao.id);
-    setEditQuestao({ ...questao });
-  };
-  
-  const handleSalvarEdicao = () => {
-    if (!editQuestao) return;
-    atualizarQuestao(editandoId, editQuestao);
-    setEditandoId(null);
-    setEditQuestao(null);
-    toast.success('Questão atualizada!');
-  };
-  
+
   const handleCriarFlashcard = (questaoId) => {
     const cardId = criarFlashcards(questaoId);
     if (cardId) toast.success('Flashcard criado!');
   };
-  
+
   const handleExportar = (tipo) => {
-    const questoesParaExportar = filtroMateria 
+    const questoesParaExportar = filtroMateria
       ? getQuestoesFiltradas({ materia: filtroMateria })
       : questoes;
-    
     if (tipo === 'doc') {
       exportarDOC(questoesParaExportar, { titulo: 'Banco de Questões' });
       toast.success('DOC exportado!');
@@ -147,17 +121,7 @@ export default function GeradorPage() {
       toast.success('JSON exportado!');
     }
   };
-  
-  const handleExportarTodos = () => {
-    if (!questoes.length) {
-      toast.error('Nenhuma questão para exportar');
-      return;
-    }
-    
-    exportarDOC(questoes, { titulo: `Banco de Questões - ${questoes.length} questões` });
-    toast.success('Banco completo exportado!');
-  };
-  
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">

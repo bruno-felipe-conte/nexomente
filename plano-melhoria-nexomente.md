@@ -25,7 +25,7 @@
 | **3.5** | Corrigir Vulnerabilidades npm | 🔄 | 14 vulns (0 critical, 5 high) — `npm audit fix` pendente de aprovação |
 | **3.6** | Smoke Tests | ✅ | 20 testes passando (3 suites): `useNotes` CRUD, `errorMessages`, `dateUtils` |
 | **3.7** | Setup CI GitHub Actions | ✅ | `.github/workflows/ci.yml` criado |
-| **4.1** | Quebrar Arquivos >300 linhas | 🔄 | `NotaLista.jsx` extraído de `Notas.jsx` (456 linhas → etapa 1); `Notas.jsx` ainda pendente de mais extrações |
+| **4.1** | Quebrar Arquivos >300 linhas | ✅ | `Notas.jsx` 456→248L · `Gerador.jsx` 576→376L · `AIChat.jsx` 353→218L · `Flashcards.jsx` 370→237L — 7 componentes/hooks extraídos |
 | **4.2** | Extrair Código Duplicado | 🔄 | `utils/dateUtils.js` criado (date-fns centralizado); `utils/toast.js` criado; duplicações de data/toast eliminadas |
 | **4.3** | Padronizar Nomenclatura | ⏳ | |
 | **4.4** | Remover Código Morto | ⏳ | |

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   FolderOpen, Plus, Folder, FileText, BookOpen, Lightbulb,
-  Calendar, Bookmark, BookMarked, ChevronRight, GripVertical, Trash2, Edit3
+  Calendar, Bookmark, BookMarked, ChevronRight
 } from 'lucide-react';
 
 const tipoIcones = {
@@ -29,8 +29,6 @@ const tipoCores = {
 export default function BibliotecaPanel({ pastas, notas, notaSelecionada, onMoverNota, onCriarPasta }) {
   const [categoriaExpandida, setCategoriaExpandida] = useState('pasta_raiz');
   const [novaPasta, setNovaPasta] = useState('');
-  const [editandoPasta, setEditandoPasta] = useState(null);
-  const [editandoNome, setEditandoNome] = useState('');
 
   const categorias = [
     { id: 'pasta_raiz', nome: 'Todas', tipo: 'pasta_raiz' },

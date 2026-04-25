@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { listModels, setModel as svcSetModel, setTemperature as svcSetTemp, getTemperature, getModel, checkLMStudioStatus } from '../lib/ai/lmStudioService';
+import { setModel as svcSetModel, setTemperature as svcSetTemp, getTemperature, getModel, checkLMStudioStatus } from '../lib/ai/lmStudioService';
 
 export function useAIModel() {
   const [status, setStatus] = useState('checking');

@@ -19,7 +19,7 @@ export default function FlashcardsPage() {
   const [showCriar, setShowCriar] = useState(false);
   const [novaFrente, setNovaFrente] = useState('');
   const [novoVerso, setNovoVerso] = useState('');
-  const [novoMateria, setNovoMateria] = useState('geral');
+  const [novoMateria, _setNovoMateria] = useState('geral'); // setNovoMateria reservado para seletor futuro
 
   const [editandoId, setEditandoId] = useState(null);
   const [editFrente, setEditFrente] = useState('');

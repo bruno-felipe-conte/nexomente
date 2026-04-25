@@ -1,0 +1,28 @@
+version: 2
+updates:
+  # Dependências npm do Electron app
+  - package-ecosystem: "npm"
+    directory: "/nexomente"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+    ignore:
+      # Electron: breaking changes requerem migração manual
+      - dependency-name: "electron"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "electron-builder"
+        update-types: ["version-update:semver-major"]
+    groups:
+      # Agrupa todos os pacotes @tiptap/* em um único PR
+      tiptap:
+        patterns:
+          - "@tiptap/*"
+      # Agrupa plugins ESLint
+      eslint-plugins:
+        patterns:
+          - "eslint-plugin-*"
+          - "@eslint/*"
