@@ -1,14 +1,14 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { useGerador } from '../hooks/useGerador';
 import { useMaterias } from '../hooks/useMaterias';
 import {
-  FileText, Upload, Clipboard, Plus, Trash2, Download, Edit3, Save, X,
-  BookOpen, Clock, Filter, Search, Wand2, Loader2, Check, Copy,
-  ChevronDown, ChevronRight, File, Image, FileDown
+  FileText, Upload, Search, Wand2, Loader2, FileDown
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { exportarParaTexto, exportarDOC, exportarParaJSON } from '../services/exportService';
+import GerarIAModal from '../components/gerador/GerarIAModal';
+import QuestaoCard from '../components/gerador/QuestaoCard';
 
 export default function GeradorPage() {
   const {
@@ -36,8 +36,6 @@ export default function GeradorPage() {
   const [filtroMateria, setFiltroMateria] = useState('');
   const [filtroBanca, setFiltroBanca] = useState('');
   const [busca, setBusca] = useState('');
-  const [editandoId, setEditandoId] = useState(null);
-  const [editQuestao, setEditQuestao] = useState(null);
   const [showCriar, setShowCriar] = useState(false);
   const fileInputRef = useRef(null);
   
@@ -116,9 +114,7 @@ export default function GeradorPage() {
   
   const handleCriarFlashcard = (questaoId) => {
     const cardId = criarFlashcards(questaoId);
-    if (cardId) {
-      toast.success('Flashcard criado!');
-    }
+    if (cardId) toast.success('Flashcard criado!');
   };
   
   const handleExportar = (tipo) => {
@@ -311,106 +307,17 @@ export default function GeradorPage() {
           </div>
           
           <div className="space-y-3">
-            {questoesExibir.map((q, idx) => (
-              <motion.div
+            {questoesExibir.map((q) => (
+              <QuestaoCard
                 key={q.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="p-4 bg-bg-secondary border border-border-subtle rounded-xl"
-              >
-                {editandoId === q.id ? (
-                  <div className="space-y-3">
-                    <input
-                      value={editQuestao?.pergunta || ''}
-                      onChange={(e) => setEditQuestao({ ...editQuestao, pergunta: e.target.value })}
-                      className="w-full p-2 bg-bg-tertiary border border-border-subtle rounded-lg"
-                    />
-                    <div className="flex gap-2">
-                      {editQuestao?.opcoes.map((o, i) => (
-                        <div key={o.letra} className="flex-1 flex gap-2">
-                          <span className="py-2">{o.letra})</span>
-                          <input
-                            value={o.texto}
-                            onChange={(e) => {
-                              const novascOpcoes = [...editQuestao.opcoes];
-                              novascOpcoes[i] = { ...novascOpcoes[i], texto: e.target.value };
-                              setEditQuestao({ ...editQuestao, opcoes: novascOpcoes });
-                            }}
-                            className="flex-1 p-2 bg-bg-tertiary border border-border-subtle rounded-lg"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={handleSalvarEdicao}
-                        className="px-4 py-2 bg-success rounded-lg flex items-center gap-2"
-                      >
-                        <Save size={16} /> Salvar
-                      </button>
-                      <button
-                        onClick={() => setEditandoId(null)}
-                        className="px-4 py-2 bg-bg-tertiary rounded-lg"
-                      >
-                        Cancelar
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div>
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-xs text-text-muted">{q.materia}</span>
-                          <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">{q.banca}</span>
-                          <span className="text-xs text-text-muted">{q.ano}</span>
-                        </div>
-                        <p className="font-medium">{q.pergunta}</p>
-                        <div className="mt-2 text-sm">
-                          {q.opcoes.map(o => (
-                            <span 
-                              key={o.letra} 
-                              className={`mr-3 ${o.correta ? 'text-success font-medium' : 'text-text-muted'}`}
-                            >
-                              {o.letra}) {o.texto.substring(0, 30)}...
-                            </span>
-                          ))}
-                        </div>
-                        <div className="mt-2 text-sm text-success">
-                          Gabarito: {q.resposta_correta}
-                        </div>
-                      </div>
-                      <div className="flex gap-1">
-                        <button
-                          onClick={() => handleEditar(q)}
-                          className="p-2 hover:bg-bg-tertiary rounded-lg"
-                        >
-                          <Edit3 size={16} />
-                        </button>
-                        <button
-                          onClick={() => handleCriarFlashcard(q.id)}
-                          className="p-2 hover:bg-bg-tertiary rounded-lg"
-                          title="Criar flashcard"
-                        >
-                          <BookOpen size={16} />
-                        </button>
-                        <button
-                          onClick={() => deletarQuestao(q.id)}
-                          className="p-2 hover:bg-error/10 text-error rounded-lg"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </motion.div>
+                questao={q}
+                onEditar={atualizarQuestao}
+                onCriarFlashcard={handleCriarFlashcard}
+                onDeletar={deletarQuestao}
+              />
             ))}
-            
             {questoesExibir.length === 0 && (
-              <div className="text-center py-12 text-text-muted">
-                Nenhuma questão encontrada
-              </div>
+              <div className="text-center py-12 text-text-muted">Nenhuma questão encontrada</div>
             )}
           </div>
         </div>
@@ -465,112 +372,5 @@ export default function GeradorPage() {
         )}
       </AnimatePresence>
     </div>
-  );
-}
-
-function GerarIAModal({ materias, bancas, onClose, onGerar }) {
-  const [ texto, setTexto ] = useState('');
-  const [ config, setConfig ] = useState({
-    materia: '',
-    topico: '',
-    banca: 'FCC',
-    quantidade: 5,
-    nivel: 'medio',
-  });
-  
-  const handleGerar = () => {
-    onGerar(config);
-    onClose();
-  };
-  
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ scale: 0.9 }}
-        animate={{ scale: 1 }}
-        exit={{ scale: 0.9 }}
-        className="bg-bg-primary p-6 rounded-xl w-full max-w-lg"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">Gerar com IA</h2>
-          <button onClick={onClose}><X size={20} /></button>
-        </div>
-        
-        <textarea
-          value={texto}
-          onChange={(e) => setTexto(e.target.value)}
-          placeholder="Cole o conteúdo para gerar questões..."
-          className="w-full h-40 p-4 bg-bg-secondary border border-border-subtle rounded-lg resize-none mb-4"
-        />
-        
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div>
-            <label className="block text-sm text-text-muted mb-1">Matéria</label>
-            <select
-              value={config.materia}
-              onChange={(e) => setConfig({ ...config, materia: e.target.value })}
-              className="w-full p-2 bg-bg-secondary border border-border-subtle rounded-lg"
-            >
-              <option value="">Selecione...</option>
-              {materias.map(m => (
-                <option key={m.id} value={m.nome}>{m.nome}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm text-text-muted mb-1">Banca</label>
-            <select
-              value={config.banca}
-              onChange={(e) => setConfig({ ...config, banca: e.target.value })}
-              className="w-full p-2 bg-bg-secondary border border-border-subtle rounded-lg"
-            >
-              {bancas.map(b => (
-                <option key={b.key} value={b.nome}>{b.nome}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm text-text-muted mb-1">Quantidade</label>
-            <input
-              type="number"
-              value={config.quantidade}
-              onChange={(e) => setConfig({ ...config, quantidade: parseInt(e.target.value) || 5 })}
-              min={1}
-              max={20}
-              className="w-full p-2 bg-bg-secondary border border-border-subtle rounded-lg"
-            />
-          </div>
-          <div>
-            <label className="block text-sm text-text-muted mb-1">Nível</label>
-            <select
-              value={config.nivel}
-              onChange={(e) => setConfig({ ...config, nivel: e.target.value })}
-              className="w-full p-2 bg-bg-secondary border border-border-subtle rounded-lg"
-            >
-              <option value="facil">Fácil</option>
-              <option value="medio">Médio</option>
-              <option value="duas">Difícil</option>
-            </select>
-          </div>
-        </div>
-        
-        <div className="flex gap-2">
-          <button
-            onClick={handleGerar}
-            disabled={!texto.trim()}
-            className="flex-1 px-4 py-3 bg-primary rounded-xl font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            <Wand2 size={20} /> Gerar Questões
-          </button>
-        </div>
-      </motion.div>
-    </motion.div>
   );
 }
