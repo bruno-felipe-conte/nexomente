@@ -1,4 +1,4 @@
-const LMSTUDIO_HOST = 'http://127.0.0.1:1234';
+const LMSTUDIO_HOST = import.meta.env.DEV ? '' : 'http://127.0.0.1:1234';
 const DEFAULT_MODEL = 'qwen/qwen3.5-9b';
 const DEFAULT_TEMP = 0.4;
 
