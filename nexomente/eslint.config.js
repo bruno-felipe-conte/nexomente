@@ -34,7 +34,9 @@ export default [
     },
     settings: {
       react: {
-        version: 'detect',
+        // 'detect' chama getFilename() que foi removido no ESLint v10.
+        // Fixar '18' resolve o crash sem perda de funcionalidade.
+        version: '18',
       },
     },
   },

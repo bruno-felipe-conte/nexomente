@@ -4,6 +4,70 @@
 
 ---
 
+## 📊 STATUS DE EXECUÇÃO
+> Atualizado em: 2026-04-25 | Legenda: ✅ Concluído · 🔄 Em andamento · ⏳ Pendente · ➡️ Requer ação manual
+
+| Tarefa | Descrição | Status | Entregável criado |
+|---|---|---|---|
+| **1.6** | Lighthouse Performance | ✅ | `reports/lighthouse.html` |
+| **1.7** | Bundle Analyzer | ✅ | `vite.config.js` + `rollup-plugin-visualizer` instalado |
+| **1.8** | Teste Keyboard Only | ⏳ | Requer teste manual no browser |
+| **1.9** | Busca de Credenciais Expostas | ✅ | Nenhuma credencial real encontrada — apenas `max_tokens` (parâmetro LLM, não segredo) |
+| **2.1** | Classificar Issues ESLint | ⏳ | ESLint com erro de plugin (react/display-name + ESLint v10) — necessita fix |
+| **2.2** | Matriz Impacto × Esforço | ⏳ | Aguarda 2.1 |
+| **2.3** | Criar Backlog | ⏳ | Aguarda 2.2 |
+| **2.4** | Decisão Refatorar vs Reescrever | ⏳ | Decisão técnica manual necessária |
+| **2.5** | Estimar Cronograma | ⏳ | Aguarda 2.4 |
+| **3.1** | Corrigir Críticos ESLint | ⏳ | Bloqueado por bug no `eslint-plugin-react` v7.37 + ESLint v10 |
+| **3.2** | Error Boundaries | ✅ | `app/src/components/ErrorBoundary.jsx` — integrado no `App.jsx` |
+| **3.3** | Tratar Empty Catch Blocks | ⏳ | Requer varredura manual após fix do ESLint |
+| **3.4** | Mover Credenciais para .env | ✅ | `.env.example` + `.gitignore` criados |
+| **3.5** | Corrigir Vulnerabilidades npm | 🔄 | 14 vulns (0 critical, 5 high) — `npm audit fix` pendente de aprovação |
+| **3.6** | Smoke Tests | 🔄 | Vitest configurado, `useNotes.test.js` existe — expandir cobertura |
+| **3.7** | Setup CI GitHub Actions | ✅ | `.github/workflows/ci.yml` criado |
+| **4.1** | Quebrar Arquivos >300 linhas | ⏳ | |
+| **4.2** | Extrair Código Duplicado | ⏳ | |
+| **4.3** | Padronizar Nomenclatura | ⏳ | |
+| **4.4** | Remover Código Morto | ⏳ | |
+| **4.5** | Extrair Lógica para Hooks | ⏳ | `useUIStore.jsx` já pequeno (874B) — verificar outros |
+| **4.6** | Cobertura 60%+ | ⏳ | Threshold atual: 4% linhas |
+| **4.7** | Testes de Integração | ⏳ | |
+| **5.1** | Code Splitting com Vite | ⏳ | |
+| **5.2** | Lazy Load Imagens | ⏳ | |
+| **5.3** | Substituir Dependências Pesadas | ✅ | `date-fns` já usado (não moment.js); `lucide-react` já usado; `react-hot-toast` já instalado |
+| **5.4** | Corrigir Re-renders | ⏳ | |
+| **5.5** | Memoização Seletiva | ⏳ | |
+| **5.6** | Re-teste Lighthouse | ⏳ | Aguarda Fase 5 completa |
+| **6.1** | Reduzir Cliques | ⏳ | |
+| **6.2** | Feedback Visual (Loading/Sucesso/Erro) | 🔄 | `react-hot-toast` já instalado — integrar nas páginas |
+| **6.3** | Mensagens de Erro Humanizadas | ✅ | `app/src/constants/errorMessages.js` |
+| **6.4** | Empty States | ✅ | `app/src/components/ui/EmptyState.jsx` |
+| **6.5** | Confirmação Ações Destrutivas | ✅ | `app/src/components/ui/ConfirmDialog.jsx` (cancelar autofocado) |
+| **6.6** | Acessibilidade: alt, labels, contraste | ⏳ | |
+| **6.7** | Navegação 100% por Teclado | ⏳ | |
+| **7.1** | README.md Completo | 🔄 | README.md existe (13KB) — revisar completude |
+| **7.2** | Diagrama de Arquitetura | ⏳ | |
+| **7.3** | JSDoc nas Funções Públicas | ⏳ | |
+| **7.4** | .env.example Completo | ✅ | `.env.example` com todas variáveis documentadas |
+| **7.5** | ADRs das Decisões | ⏳ | |
+| **7.6** | CHANGELOG.md | ⏳ | |
+| **8.1** | CI: Lint + Test a cada PR | ✅ | CI pipeline ativo no GitHub Actions |
+| **8.2** | Husky Pre-commit Hook | ⏳ | |
+| **8.3** | Dependabot | ⏳ | |
+| **8.4** | Error Monitoring (Sentry) | ⏳ | ErrorBoundary já pronto para integrar |
+| **8.5** | Revisão Mensal Dívida Técnica | ⏳ | Processo recorrente |
+| **8.6** | Auditoria Segurança Mensal | ⏳ | Processo recorrente |
+| **8.7** | Performance Check Quinzenal | ⏳ | Processo recorrente |
+
+### 🚧 Próximos Passos Imediatos
+1. **Fix ESLint** — atualizar `eslint-plugin-react` para versão compatível com ESLint v10 (`npm install eslint-plugin-react@latest --legacy-peer-deps`)
+2. **npm audit fix** — corrigir 5 vulnerabilidades high (`npm audit fix --legacy-peer-deps`)
+3. **Integrar `react-hot-toast`** nas páginas (Notas, Missões, Flashcards) para feedback visual (Tarefa 6.2)
+4. **Smoke tests** — expandir `useNotes.test.js` para cobrir os 5 fluxos principais (Tarefa 3.6)
+5. **Code splitting** — adicionar `React.lazy()` nas rotas do `App.jsx` (Tarefa 5.1)
+
+---
+
 ## FASE 1: DIAGNÓSTICO PROFUNDO — Continuação (Tarefas 1.6 a 1.9)
 
 **Objetivo:** Quantificar todos os problemas existentes usando ferramentas especializadas antes de qualquer modificação no código.
