@@ -31,7 +31,8 @@ export async function checkLMStudioStatus() {
     });
     if (response.ok) {
       const data = await response.json();
-      return { status: 'online', models: data.data || [] };
+      const chatModels = (data.data || []).filter(m => isChatModel(m.id || m.name || m));
+      return { status: 'online', models: chatModels };
     }
     return { status: 'offline', models: [] };
   } catch {
@@ -39,12 +40,20 @@ export async function checkLMStudioStatus() {
   }
 }
 
+const EXCLUDE_TAGS = ['embedding', 'embed', 'nomic-embed'];
+
+function isChatModel(modelName) {
+  const lower = (modelName || '').toLowerCase();
+  return !EXCLUDE_TAGS.some(tag => lower.includes(tag));
+}
+
 export async function listModels() {
   const res = await checkLMStudioStatus();
   if (res.status === 'online' && res.models.length > 0) {
-    return res.models.map(m => m.id || m.name || m);
+    const chatModels = res.models.map(m => m.id || m.name || m).filter(isChatModel);
+    return chatModels.length > 0 ? chatModels : ['qwen/qwen3.5-9b'];
   }
-  return [currentModel];
+  return ['qwen/qwen3.5-9b'];
 }
 
 export async function generate(prompt, options = {}) {
