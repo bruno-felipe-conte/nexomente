@@ -13,12 +13,12 @@
 | **1.7** | Bundle Analyzer | ✅ | `vite.config.js` + `rollup-plugin-visualizer` instalado |
 | **1.8** | Teste Keyboard Only | ⏳ | Requer teste manual no browser |
 | **1.9** | Busca de Credenciais Expostas | ✅ | Nenhuma credencial real encontrada — apenas `max_tokens` (parâmetro LLM, não segredo) |
-| **2.1** | Classificar Issues ESLint | 🔄 | **209 errors · 130 warnings** — erros são todos `react/prop-types` (sem PropTypes); warnings incluem `no-unused-vars` e `no-console` |
+| **2.1** | Classificar Issues ESLint | ✅ | **175 errors · 123 warnings** — 153 são `react/prop-types` (estilo, sem impacto em runtime); `no-undef` zerado; zero `rules-of-hooks` |
 | **2.2** | Matriz Impacto × Esforço | ⏳ | Aguarda 2.1 |
 | **2.3** | Criar Backlog | ⏳ | Aguarda 2.2 |
 | **2.4** | Decisão Refatorar vs Reescrever | ⏳ | Decisão técnica manual necessária |
 | **2.5** | Estimar Cronograma | ⏳ | Aguarda 2.4 |
-| **3.1** | Corrigir Críticos ESLint | 🔄 | ESLint funcionando. Categoria dominante: `react/prop-types` (estilo). Zero `no-undef`, zero `rules-of-hooks`. `--fix` automático possível para `no-unused-vars` |
+| **3.1** | Corrigir Críticos ESLint | ✅ | `no-undef` zerado (4 bugs reais corrigidos: `exportService`, `useKeyboardShortcuts`, `Badges`, `db.js`). Restam 153 `react/prop-types` (prioridade baixa) |
 | **3.2** | Error Boundaries | ✅ | `app/src/components/ErrorBoundary.jsx` — integrado no `App.jsx` |
 | **3.3** | Tratar Empty Catch Blocks | ⏳ | Requer varredura manual após fix do ESLint |
 | **3.4** | Mover Credenciais para .env | ✅ | `.env.example` + `.gitignore` criados |

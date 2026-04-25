@@ -118,7 +118,7 @@ Conteúdo: ${(nota.conteudo || '').replace(/<[^>]*>/g, '').substring(0, 1500)}`;
     if (match) {
       try {
         return JSON.parse(match[0]).slice(0, maxTags);
-      } catch {}
+      } catch (_ignored) { /* fallback: parse falhou, tenta regex abaixo */ }
     }
     const quotes = [...result.response.matchAll(/"([^"]+)"/g)].map(m => m[1]);
     if (quotes.length > 0) return quotes.slice(0, maxTags);
