@@ -59,11 +59,11 @@
 | **8.7** | Performance Check Quinzenal | ⏳ | Processo recorrente |
 
 ### 🚧 Próximos Passos Imediatos _(atualizado)_
-1. `react/prop-types` — adicionar PropTypes nos componentes (153 warnings)
-2. Smoke tests — expandir `useNotes.test.js` para 5 fluxos principais (Tarefa 3.6)
-3. Quebrar `Notas.jsx` (18KB) em componentes menores (Tarefa 4.1)
-4. Sentry integration com ErrorBoundary já pronto (Tarefa 8.4)
-5. Husky pre-commit hook (Tarefa 8.2)
+1. `react/prop-types` — ✅ Resolvido (adicionado em 22 componentes)
+2. Smoke tests — ✅ Resolvido (cobertura App, Pomodoro, CRUD)
+3. Quebrar `Notas.jsx` (18KB) em componentes menores — ✅ Resolvido
+4. Sentry integration com ErrorBoundary já pronto — ✅ Resolvido
+5. Husky pre-commit hook — ✅ Resolvido
 
 ---
 
@@ -97,23 +97,23 @@
 ### 🗂️ Backlog Priorizado (Tarefa 2.3)
 
 **Sprint atual — Q1 restante:**
-1. `[REF]` Adicionar PropTypes nos componentes (153 warnings ESLint)
+1. `[REF]` Adicionar PropTypes nos componentes (153 warnings ESLint) — ✅ Feito
 2. `[PERF]` Lazy load em imagens (`loading="lazy"` + WebP)
-3. `[UX]` Autofocus no primeiro campo de formulários
-4. `[UX]` Atalhos de teclado `Ctrl+N`, `Ctrl+Enter`, `Esc`
+3. `[UX]` Autofocus no primeiro campo de formulários — ✅ Feito
+4. `[UX]` Atalhos de teclado `Ctrl+N`, `Ctrl+Enter`, `Esc` — ✅ Feito
 
 **Próximo sprint — Q2:**
-5. `[REF]` Quebrar `Notas.jsx` → `NotaEditor`, `NotaLista`, `useNota`
-6. `[TEST]` Smoke tests: App renderiza, navegação, CRUD de nota, Pomodoro inicia
-7. `[TEST]` Testes de integração com MSW para os 3 fluxos principais
-8. `[SEC]` Sentry + ErrorBoundary integrado (`VITE_SENTRY_DSN`)
-9. `[CI]` Husky + lint-staged no pre-commit
+5. `[REF]` Quebrar `Notas.jsx` → `NotaEditor`, `NotaLista`, `useNota` — ✅ Feito
+6. `[TEST]` Smoke tests: App renderiza, navegação, CRUD de nota, Pomodoro inicia — ✅ Feito
+7. `[TEST]` Testes de integração com MSW para os 3 fluxos principais — ✅ Feito
+8. `[SEC]` Sentry + ErrorBoundary integrado (`VITE_SENTRY_DSN`) — ✅ Feito
+9. `[CI]` Husky + lint-staged no pre-commit — ✅ Feito
 
 **Backlog:**
-10. `[DOC]` JSDoc em `utils/`, `hooks/`
-11. `[DOC]` CHANGELOG.md retroativo
-12. `[DOC]` ADR-001 a ADR-004
-13. `[CI]` Dependabot semanal
+10. `[DOC]` JSDoc em `utils/`, `hooks/` — ✅ Feito
+11. `[DOC]` CHANGELOG.md retroativo — ✅ Feito
+12. `[DOC]` ADR-001 a ADR-004 — ✅ Feito
+13. `[CI]` Dependabot semanal — ✅ Feito
 14. `[A11Y]` WCAG AA: alt em imagens, labels, contraste 4.5:1
 
 ---

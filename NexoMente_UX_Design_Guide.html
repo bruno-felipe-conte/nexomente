@@ -1,0 +1,1452 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexoMente — Guia Mestre de UX Design</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink:        #0D0E14;
+    --ink-mid:    #13141D;
+    --ink-raised: #1A1C28;
+    --ink-card:   #1F2133;
+    --ink-border: #2A2D45;
+    --text-hi:    #F0F1FF;
+    --text-mid:   #9B9EC8;
+    --text-lo:    #555880;
+    --neon-violet:#7C6DFA;
+    --neon-blue:  #4D9EFF;
+    --neon-teal:  #2DD4BF;
+    --neon-amber: #F5A623;
+    --neon-rose:  #FF6B9D;
+    --neon-lime:  #84E26E;
+    --accent-glow: 0 0 20px rgba(124,109,250,0.35);
+    --shadow-card: 0 4px 24px rgba(0,0,0,0.5);
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+    --font-display: 'Syne', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--ink);
+    color: var(--text-hi);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  /* ── LAYOUT ── */
+  .toc-rail {
+    position: fixed;
+    left: 0; top: 0; bottom: 0;
+    width: 220px;
+    background: var(--ink-mid);
+    border-right: 1px solid var(--ink-border);
+    padding: 32px 0;
+    overflow-y: auto;
+    z-index: 100;
+  }
+
+  .toc-rail::-webkit-scrollbar { width: 4px; }
+  .toc-rail::-webkit-scrollbar-thumb { background: var(--ink-border); border-radius: 2px; }
+
+  .toc-logo {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--neon-violet);
+    padding: 0 20px 24px;
+    border-bottom: 1px solid var(--ink-border);
+    margin-bottom: 16px;
+    letter-spacing: -0.3px;
+  }
+  .toc-logo span { color: var(--text-mid); font-weight: 400; font-size: 11px; display: block; margin-top: 2px; letter-spacing: 0.5px; text-transform: uppercase; }
+
+  .toc-section { padding: 4px 0; }
+  .toc-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-lo);
+    padding: 8px 20px 4px;
+  }
+  .toc-link {
+    display: block;
+    padding: 7px 20px;
+    color: var(--text-mid);
+    text-decoration: none;
+    font-size: 13px;
+    transition: all 0.15s;
+    border-left: 2px solid transparent;
+  }
+  .toc-link:hover { color: var(--text-hi); background: var(--ink-raised); border-left-color: var(--neon-violet); }
+  .toc-link.active { color: var(--neon-violet); border-left-color: var(--neon-violet); }
+
+  .main {
+    margin-left: 220px;
+    padding: 0 48px 120px;
+    max-width: 1100px;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    padding: 80px 0 60px;
+    border-bottom: 1px solid var(--ink-border);
+    margin-bottom: 64px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -80px; right: -100px;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(124,109,250,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(124,109,250,0.12);
+    border: 1px solid rgba(124,109,250,0.3);
+    border-radius: 100px;
+    padding: 4px 14px;
+    font-size: 12px;
+    color: var(--neon-violet);
+    font-weight: 500;
+    margin-bottom: 20px;
+    letter-spacing: 0.3px;
+  }
+  .hero-badge::before { content: '●'; font-size: 8px; }
+  .hero h1 {
+    font-family: var(--font-display);
+    font-size: clamp(36px, 4vw, 54px);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -1.5px;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, #F0F1FF 0%, var(--neon-violet) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero p {
+    color: var(--text-mid);
+    font-size: 17px;
+    max-width: 540px;
+    font-weight: 300;
+  }
+
+  .meta-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-top: 40px;
+  }
+  .meta-card {
+    background: var(--ink-card);
+    border: 1px solid var(--ink-border);
+    border-radius: var(--radius-md);
+    padding: 16px;
+  }
+  .meta-card .num { font-family: var(--font-display); font-size: 28px; font-weight: 700; color: var(--neon-violet); }
+  .meta-card .lbl { font-size: 12px; color: var(--text-mid); margin-top: 2px; }
+
+  /* ── SECTIONS ── */
+  section { margin-bottom: 80px; }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--ink-border);
+  }
+  .section-num {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--neon-violet);
+    background: rgba(124,109,250,0.1);
+    border: 1px solid rgba(124,109,250,0.2);
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+  .section-header h2 {
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--ink-card);
+    border: 1px solid var(--ink-border);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-card);
+  }
+  .card-title {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title .icon {
+    width: 28px; height: 28px;
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+  .pill-violet { background: rgba(124,109,250,0.15); color: var(--neon-violet); border: 1px solid rgba(124,109,250,0.25); }
+  .pill-blue   { background: rgba(77,158,255,0.15);  color: var(--neon-blue);   border: 1px solid rgba(77,158,255,0.25); }
+  .pill-teal   { background: rgba(45,212,191,0.15);  color: var(--neon-teal);   border: 1px solid rgba(45,212,191,0.25); }
+  .pill-amber  { background: rgba(245,166,35,0.15);  color: var(--neon-amber);  border: 1px solid rgba(245,166,35,0.25); }
+  .pill-rose   { background: rgba(255,107,157,0.15); color: var(--neon-rose);   border: 1px solid rgba(255,107,157,0.25); }
+  .pill-lime   { background: rgba(132,226,110,0.15); color: var(--neon-lime);   border: 1px solid rgba(132,226,110,0.25); }
+
+  /* ── COMPARISON ── */
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .compare-box {
+    background: var(--ink-raised);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    border: 1px solid var(--ink-border);
+  }
+  .compare-box.bad  { border-top: 3px solid var(--neon-rose); }
+  .compare-box.good { border-top: 3px solid var(--neon-teal); }
+  .compare-box h4 {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .compare-box.bad  h4 { color: var(--neon-rose); }
+  .compare-box.good h4 { color: var(--neon-teal); }
+  .compare-box ul { list-style: none; }
+  .compare-box ul li {
+    font-size: 13.5px;
+    color: var(--text-mid);
+    padding: 5px 0;
+    border-bottom: 1px solid var(--ink-border);
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+  .compare-box ul li:last-child { border-bottom: none; }
+  .compare-box.bad  ul li::before { content: '✗'; color: var(--neon-rose); flex-shrink: 0; }
+  .compare-box.good ul li::before { content: '✓'; color: var(--neon-teal); flex-shrink: 0; }
+
+  /* ── COLOR SYSTEM ── */
+  .color-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 16px 0;
+  }
+  .color-chip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .color-swatch {
+    width: 56px; height: 56px;
+    border-radius: 12px;
+    border: 1px solid var(--ink-border);
+  }
+  .color-chip span { font-family: var(--font-mono); font-size: 10px; color: var(--text-lo); }
+
+  /* ── SPEC TABLE ── */
+  .spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+    margin: 16px 0;
+  }
+  .spec-table th {
+    background: var(--ink-raised);
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-lo);
+    border-bottom: 1px solid var(--ink-border);
+  }
+  .spec-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ink-border);
+    color: var(--text-mid);
+    vertical-align: top;
+  }
+  .spec-table td:first-child { color: var(--text-hi); font-weight: 500; }
+  .spec-table tr:last-child td { border-bottom: none; }
+  .code { font-family: var(--font-mono); font-size: 12px; color: var(--neon-teal); }
+
+  /* ── FLOW STEPS ── */
+  .flow {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 16px 0;
+  }
+  .flow-step {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--ink-border);
+  }
+  .flow-step:last-child { border-bottom: none; }
+  .flow-num {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: rgba(124,109,250,0.15);
+    border: 1px solid rgba(124,109,250,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--neon-violet);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .flow-content strong { display: block; color: var(--text-hi); margin-bottom: 4px; font-size: 14px; }
+  .flow-content p { color: var(--text-mid); font-size: 13px; }
+
+  /* ── ANATOMY ── */
+  .anatomy {
+    background: var(--ink-raised);
+    border: 1px solid var(--ink-border);
+    border-radius: var(--radius-md);
+    padding: 24px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-mid);
+    line-height: 2;
+    overflow-x: auto;
+    margin: 16px 0;
+  }
+  .anatomy .hi { color: var(--neon-violet); }
+  .anatomy .blue { color: var(--neon-blue); }
+  .anatomy .teal { color: var(--neon-teal); }
+  .anatomy .amber { color: var(--neon-amber); }
+  .anatomy .rose { color: var(--neon-rose); }
+  .anatomy .comment { color: var(--text-lo); font-style: italic; }
+
+  /* ── MOTION ── */
+  .motion-demo {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 16px 0;
+  }
+  .motion-item {
+    background: var(--ink-raised);
+    border: 1px solid var(--ink-border);
+    border-radius: var(--radius-md);
+    padding: 16px 20px;
+    font-size: 13px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 160px;
+  }
+  .motion-item .name { color: var(--neon-violet); font-weight: 600; font-size: 12px; }
+  .motion-item .val  { color: var(--text-mid); font-family: var(--font-mono); font-size: 11px; }
+
+  /* ── TAG SYSTEM ── */
+  .tag-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin: 16px 0;
+  }
+  .tag-item {
+    background: var(--ink-raised);
+    border: 1px solid var(--ink-border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+  }
+  .tag-item .tag-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-lo); margin-bottom: 4px; }
+  .tag-item .tag-val { font-size: 13px; color: var(--text-hi); font-weight: 500; }
+
+  /* ── SIDEBAR WIREFRAME ── */
+  .wireframe {
+    background: var(--ink-raised);
+    border: 1px solid var(--ink-border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin: 16px 0;
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    min-height: 380px;
+  }
+  .wf-sidebar {
+    background: var(--ink-mid);
+    border-right: 1px solid var(--ink-border);
+    padding: 20px 0;
+  }
+  .wf-logo {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--neon-violet);
+    padding: 0 16px 16px;
+    border-bottom: 1px solid var(--ink-border);
+    margin-bottom: 12px;
+  }
+  .wf-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 16px;
+    font-size: 13px;
+    color: var(--text-mid);
+    border-left: 3px solid transparent;
+    transition: all 0.15s;
+    cursor: pointer;
+  }
+  .wf-nav-item:hover { color: var(--text-hi); background: var(--ink-raised); }
+  .wf-nav-item.active { color: var(--neon-violet); border-left-color: var(--neon-violet); background: rgba(124,109,250,0.06); }
+  .wf-nav-item .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .wf-content { padding: 24px; }
+  .wf-content h3 { font-family: var(--font-display); font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+  .wf-content p { font-size: 12px; color: var(--text-mid); }
+  .wf-divider { height: 1px; background: var(--ink-border); margin: 10px 0; }
+  .wf-group-label { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-lo); padding: 6px 16px 2px; }
+  .wf-bottom {
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 1px solid var(--ink-border);
+    margin-left: 0;
+  }
+  .wf-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    font-size: 12px;
+    color: var(--text-mid);
+  }
+  .wf-status::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--neon-teal); flex-shrink: 0; }
+
+  /* highlight box */
+  .highlight {
+    background: rgba(124,109,250,0.07);
+    border: 1px solid rgba(124,109,250,0.2);
+    border-left: 4px solid var(--neon-violet);
+    border-radius: var(--radius-sm);
+    padding: 16px 20px;
+    margin: 16px 0;
+    font-size: 14px;
+    color: var(--text-mid);
+  }
+  .highlight strong { color: var(--text-hi); }
+
+  .warning {
+    background: rgba(245,166,35,0.07);
+    border: 1px solid rgba(245,166,35,0.2);
+    border-left: 4px solid var(--neon-amber);
+    border-radius: var(--radius-sm);
+    padding: 14px 18px;
+    margin: 12px 0;
+    font-size: 13.5px;
+    color: var(--text-mid);
+  }
+
+  h3.sub {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-hi);
+    margin: 28px 0 12px;
+  }
+
+  p { color: var(--text-mid); margin-bottom: 12px; }
+  p:last-child { margin-bottom: 0; }
+
+  ul.guide {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 12px 0;
+  }
+  ul.guide li {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    font-size: 14px;
+    color: var(--text-mid);
+    padding: 10px 14px;
+    background: var(--ink-raised);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--ink-border);
+  }
+  ul.guide li::before {
+    content: '→';
+    color: var(--neon-violet);
+    flex-shrink: 0;
+    font-weight: 700;
+  }
+
+  @media (max-width: 900px) {
+    .toc-rail { display: none; }
+    .main { margin-left: 0; padding: 0 20px 80px; }
+    .compare-grid { grid-template-columns: 1fr; }
+    .meta-grid { grid-template-columns: repeat(2, 1fr); }
+    .tag-grid { grid-template-columns: 1fr 1fr; }
+    .wireframe { grid-template-columns: 1fr; }
+    .wf-sidebar { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR NAV -->
+<nav class="toc-rail">
+  <div class="toc-logo">NexoMente<span>UX Design Guide v1.0</span></div>
+
+  <div class="toc-section">
+    <div class="toc-label">Fundação</div>
+    <a href="#tokens" class="toc-link">01 · Design Tokens</a>
+    <a href="#tipografia" class="toc-link">02 · Tipografia</a>
+    <a href="#cores" class="toc-link">03 · Sistema de Cores</a>
+    <a href="#espacamento" class="toc-link">04 · Espaçamento</a>
+    <a href="#motion" class="toc-link">05 · Motion & Animação</a>
+  </div>
+
+  <div class="toc-section">
+    <div class="toc-label">Componentes</div>
+    <a href="#navegacao" class="toc-link">06 · Navegação Global</a>
+    <a href="#inputs" class="toc-link">07 · Inputs & Forms</a>
+    <a href="#botoes" class="toc-link">08 · Botões</a>
+    <a href="#cards" class="toc-link">09 · Cards & Containers</a>
+    <a href="#feedback" class="toc-link">10 · Feedback & Status</a>
+  </div>
+
+  <div class="toc-section">
+    <div class="toc-label">Telas</div>
+    <a href="#notas" class="toc-link">11 · Notas</a>
+    <a href="#estudo" class="toc-link">12 · Estudo</a>
+    <a href="#flashcards" class="toc-link">13 · Flashcards</a>
+    <a href="#gerador" class="toc-link">14 · Gerador IA</a>
+    <a href="#chat" class="toc-link">15 · Chat IA</a>
+    <a href="#grafo" class="toc-link">16 · Grafo</a>
+    <a href="#stats" class="toc-link">17 · Estatísticas</a>
+  </div>
+
+  <div class="toc-section">
+    <div class="toc-label">Excelência</div>
+    <a href="#acessibilidade" class="toc-link">18 · Acessibilidade</a>
+    <a href="#responsivo" class="toc-link">19 · Responsividade</a>
+    <a href="#principios" class="toc-link">20 · Princípios Gerais</a>
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main class="main">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-badge">Documento Vivo — Versão 1.0</div>
+    <h1>Guia Mestre de<br>UX & Design System</h1>
+    <p>Especificações completas de interface, ergonomia, linguagem visual e comportamento para o aplicativo NexoMente — do átomo ao fluxo completo.</p>
+    <div class="meta-grid">
+      <div class="meta-card"><div class="num">7</div><div class="lbl">Telas mapeadas</div></div>
+      <div class="meta-card"><div class="num">20</div><div class="lbl">Seções de guideline</div></div>
+      <div class="meta-card"><div class="num">60+</div><div class="lbl">Melhorias propostas</div></div>
+      <div class="meta-card"><div class="num">∞</div><div class="lbl">Alma investida</div></div>
+    </div>
+  </div>
+
+  <!-- ── SECTION 01: TOKENS ── -->
+  <section id="tokens">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <h2>Design Tokens — A Linguagem Atômica</h2>
+    </div>
+
+    <p>Todo sistema de design robusto começa com tokens: variáveis centralizadas que carregam significado semântico antes mesmo de carregar valor visual. Ao modificar um token, o sistema inteiro responde com coerência.</p>
+
+    <div class="card">
+      <div class="card-title"><span class="icon" style="background:rgba(124,109,250,0.15);">🧬</span> Tokens de Superfície (Camadas de Profundidade)</div>
+      <p>O NexoMente usa um tema dark. A hierarquia de profundidade deve ser explícita: superfícies mais escuras = mais "fundas", mais claras = mais próximas do usuário.</p>
+      <div class="anatomy">
+<span class="comment">/* Base → Raised → Card → Elevated → Overlay */</span>
+<span class="hi">--surface-base</span>:    <span class="teal">#0D0E14</span>; <span class="comment">/* fundo absoluto da página */</span>
+<span class="hi">--surface-raised</span>:  <span class="teal">#13141D</span>; <span class="comment">/* sidebar, painéis secundários */</span>
+<span class="hi">--surface-card</span>:    <span class="teal">#1A1C28</span>; <span class="comment">/* cards e containers */</span>
+<span class="hi">--surface-elevated</span>:<span class="teal">#1F2133</span>; <span class="comment">/* inputs, botões inativos */</span>
+<span class="hi">--surface-overlay</span>: <span class="teal">#262940</span>; <span class="comment">/* tooltips, dropdowns, modais */</span>
+<span class="hi">--surface-border</span>:  <span class="teal">#2A2D45</span>; <span class="comment">/* bordas sutis e divisores */</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon" style="background:rgba(77,158,255,0.15);">📐</span> Tokens de Raio de Borda</div>
+      <div class="anatomy">
+<span class="hi">--radius-xs</span>: <span class="amber">4px</span>;  <span class="comment">/* badges, chips pequenos */</span>
+<span class="hi">--radius-sm</span>: <span class="amber">8px</span>;  <span class="comment">/* botões inline, tags */</span>
+<span class="hi">--radius-md</span>: <span class="amber">12px</span>; <span class="comment">/* cards secundários, inputs */</span>
+<span class="hi">--radius-lg</span>: <span class="amber">18px</span>; <span class="comment">/* cards principais, painéis */</span>
+<span class="hi">--radius-xl</span>: <span class="amber">24px</span>; <span class="comment">/* modais, drawers */</span>
+<span class="hi">--radius-full</span>:<span class="amber">9999px</span>; <span class="comment">/* pills, avatares, toggles */</span>
+      </div>
+      <div class="warning">⚠️ Regra de ouro: <strong>raios maiores = mais amigável e jovem</strong>. O NexoMente atende estudantes, então prefira --radius-lg e --radius-xl para elementos primários. Reserve bordas mais afiadas para elementos de dado denso.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon" style="background:rgba(45,212,191,0.15);">🌫️</span> Tokens de Sombra</div>
+      <div class="anatomy">
+<span class="hi">--shadow-sm</span>:   <span class="rose">0 1px 4px rgba(0,0,0,0.4)</span>;
+<span class="hi">--shadow-md</span>:   <span class="rose">0 4px 16px rgba(0,0,0,0.45)</span>;
+<span class="hi">--shadow-lg</span>:   <span class="rose">0 8px 32px rgba(0,0,0,0.55)</span>;
+<span class="hi">--shadow-glow-violet</span>: <span class="rose">0 0 20px rgba(124,109,250,0.3)</span>;
+<span class="hi">--shadow-glow-blue</span>:   <span class="rose">0 0 16px rgba(77,158,255,0.25)</span>;
+<span class="hi">--shadow-glow-teal</span>:   <span class="rose">0 0 16px rgba(45,212,191,0.2)</span>;
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SECTION 02: TIPOGRAFIA ── -->
+  <section id="tipografia">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <h2>Tipografia — A Voz do Sistema</h2>
+    </div>
+
+    <p>A tipografia atual do NexoMente usa fontes do sistema (Inter/system-ui), que são funcionais mas não criam identidade. Para um produto voltado ao aprendizado, a tipografia deve ser <strong>legível, hierarquicamente clara e memorável</strong>.</p>
+
+    <div class="compare-grid">
+      <div class="compare-box bad">
+        <h4>Atual — Problemático</h4>
+        <ul>
+          <li>Inter/system-ui em todos os níveis — nenhuma identidade</li>
+          <li>Peso uniforme, dificulta hierarquia visual rápida</li>
+          <li>Tamanho único em muitos painéis (13-14px, cansativo)</li>
+          <li>Espaçamento entre letras neutro, monótono</li>
+        </ul>
+      </div>
+      <div class="compare-box good">
+        <h4>Proposto — Sistema de 3 Fontes</h4>
+        <ul>
+          <li><strong>Syne</strong>: Display e títulos — personalidade forte, geométrica</li>
+          <li><strong>DM Sans</strong>: Corpo e UI — legibilidade máxima em tamanho pequeno</li>
+          <li><strong>JetBrains Mono</strong>: Dados, código, valores numéricos</li>
+          <li>Hierarquia clara com 7 tamanhos definidos</li>
+        </ul>
+      </div>
+    </div>
+
+    <table class="spec-table">
+      <thead>
+        <tr><th>Token</th><th>Fonte</th><th>Size</th><th>Weight</th><th>Uso</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><span class="code">--type-display-xl</span></td><td>Syne</td><td>40–54px</td><td>800</td><td>Nome do app, landing, headlines de seção hero</td></tr>
+        <tr><td><span class="code">--type-display-lg</span></td><td>Syne</td><td>28–36px</td><td>700</td><td>Títulos de página (ex: "Notas", "Flashcards")</td></tr>
+        <tr><td><span class="code">--type-display-md</span></td><td>Syne</td><td>20–24px</td><td>700</td><td>Títulos de cards, seções</td></tr>
+        <tr><td><span class="code">--type-body-lg</span></td><td>DM Sans</td><td>16–17px</td><td>400</td><td>Texto de conteúdo principal, notas</td></tr>
+        <tr><td><span class="code">--type-body-md</span></td><td>DM Sans</td><td>14–15px</td><td>400</td><td>UI geral, labels, descrições</td></tr>
+        <tr><td><span class="code">--type-body-sm</span></td><td>DM Sans</td><td>12–13px</td><td>400</td><td>Metadados, timestamps, labels secundários</td></tr>
+        <tr><td><span class="code">--type-label</span></td><td>DM Sans</td><td>10–11px</td><td>600</td><td>CAPS labels, seções de nav, cabeçalhos de tabela</td></tr>
+        <tr><td><span class="code">--type-mono</span></td><td>JetBrains Mono</td><td>12–13px</td><td>400–500</td><td>XP, contadores, código, hashes</td></tr>
+      </tbody>
+    </table>
+
+    <div class="highlight">
+      <strong>Regra crítica de legibilidade:</strong> Nunca use texto menor que 12px para qualquer informação que o usuário precise ler. Labels de navegação devem ter no mínimo 13px. O tamanho mínimo de target de toque para texto interativo é <strong>44px de altura</strong> de área clicável (independente do tamanho da fonte).
+    </div>
+  </section>
+
+  <!-- ── SECTION 03: CORES ── -->
+  <section id="cores">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <h2>Sistema de Cores — Semântica Visual</h2>
+    </div>
+
+    <p>O sistema atual usa roxo/indigo como única cor de acento. Isso funciona mas perde a oportunidade de usar cor como <strong>semântica funcional</strong>: cada módulo do app poderia ter uma cor-âncora que orienta o usuário instantaneamente.</p>
+
+    <h3 class="sub">Paleta Base</h3>
+    <div class="color-row">
+      <div class="color-chip"><div class="color-swatch" style="background:#0D0E14;"></div><span>#0D0E14</span></div>
+      <div class="color-chip"><div class="color-swatch" style="background:#13141D;"></div><span>#13141D</span></div>
+      <div class="color-chip"><div class="color-swatch" style="background:#1A1C28;"></div><span>#1A1C28</span></div>
+      <div class="color-chip"><div class="color-swatch" style="background:#1F2133;"></div><span>#1F2133</span></div>
+      <div class="color-chip"><div class="color-swatch" style="background:#2A2D45;"></div><span>#2A2D45</span></div>
+      <div class="color-chip"><div class="color-swatch" style="background:#555880;"></div><span>#555880</span></div>
+      <div class="color-chip"><div class="color-swatch" style="background:#9B9EC8;"></div><span>#9B9EC8</span></div>
+      <div class="color-chip"><div class="color-swatch" style="background:#F0F1FF;"></div><span>#F0F1FF</span></div>
+    </div>
+
+    <h3 class="sub">Cores Funcionais por Módulo</h3>
+    <div class="card">
+      <table class="spec-table">
+        <thead>
+          <tr><th>Módulo</th><th>Cor Principal</th><th>Hex</th><th>Uso</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>🌐 Global / Brand</td><td><span style="color:#7C6DFA">■ Violeta</span></td><td><span class="code">#7C6DFA</span></td><td>Logo, CTA primário, foco de formulário, XP geral</td></tr>
+          <tr><td>📒 Notas</td><td><span style="color:#4D9EFF">■ Azul</span></td><td><span class="code">#4D9EFF</span></td><td>Ícone de nota, botão "Nova Nota", links internos</td></tr>
+          <tr><td>⏱ Estudo</td><td><span style="color:#2DD4BF">■ Teal</span></td><td><span class="code">#2DD4BF</span></td><td>Timer, sessão ativa, progresso por matéria</td></tr>
+          <tr><td>🃏 Flashcards</td><td><span style="color:#A78BFA">■ Lilás</span></td><td><span class="code">#A78BFA</span></td><td>Cards, modo revisão, estado "dominado"</td></tr>
+          <tr><td>✨ Gerador IA</td><td><span style="color:#F59E0B">■ Âmbar</span></td><td><span class="code">#F59E0B</span></td><td>Botão "Gerar com IA", questões geradas, banco</td></tr>
+          <tr><td>💬 Chat IA</td><td><span style="color:#818CF8">■ Índigo</span></td><td><span class="code">#818CF8</span></td><td>Balões do assistente, indicador de streaming</td></tr>
+          <tr><td>🕸 Grafo</td><td><span style="color:#34D399">■ Verde</span></td><td><span class="code">#34D399</span></td><td>Nós conectados, arestas, clusters</td></tr>
+          <tr><td>📊 Estatísticas</td><td><span style="color:#F5A623">■ Laranja</span></td><td><span class="code">#F5A623</span></td><td>XP total, gráficos de progresso, streaks</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="sub">Cores de Estado</h3>
+    <div class="color-row">
+      <div class="color-chip"><div class="color-swatch" style="background:#22C55E;"></div><span>Sucesso</span></div>
+      <div class="color-chip"><div class="color-swatch" style="background:#F5A623;"></div><span>Aviso</span></div>
+      <div class="color-chip"><div class="color-swatch" style="background:#EF4444;"></div><span>Erro</span></div>
+      <div class="color-chip"><div class="color-swatch" style="background:#4D9EFF;"></div><span>Info</span></div>
+      <div class="color-chip"><div class="color-swatch" style="background:#555880;"></div><span>Neutro</span></div>
+    </div>
+
+    <div class="highlight">
+      <strong>Regra de contraste WCAG AA:</strong> Todo texto sobre fundo escuro deve ter razão de contraste ≥ 4.5:1 (texto normal) ou ≥ 3:1 (texto grande/bold). Nunca use as cores de acento puras como cor de texto sobre fundos escuros sem verificar o contraste — #7C6DFA sobre #0D0E14 passa, mas cores como amarelo puro (#FFD700) podem ser difíceis de verificar.
+    </div>
+  </section>
+
+  <!-- ── SECTION 04: ESPAÇAMENTO ── -->
+  <section id="espacamento">
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <h2>Espaçamento — Grade e Ritmo</h2>
+    </div>
+
+    <p>O app atual tem espaçamento inconsistente entre seções. Algumas áreas são apertadas, outras têm ar demais. Uma grade de espaçamento baseada em <strong>múltiplos de 4px</strong> resolve isso sistemicamente.</p>
+
+    <div class="card">
+      <div class="card-title"><span class="icon" style="background:rgba(45,212,191,0.15);">📏</span> Escala de Espaçamento (base 4px)</div>
+      <table class="spec-table">
+        <thead><tr><th>Token</th><th>Valor</th><th>Uso típico</th></tr></thead>
+        <tbody>
+          <tr><td><span class="code">--space-1</span></td><td>4px</td><td>Micro-gaps, separadores finos</td></tr>
+          <tr><td><span class="code">--space-2</span></td><td>8px</td><td>Gap entre ícone e label, padding de badges</td></tr>
+          <tr><td><span class="code">--space-3</span></td><td>12px</td><td>Padding interno de botões, gap de row items</td></tr>
+          <tr><td><span class="code">--space-4</span></td><td>16px</td><td>Padding de nav items, gap de formulários</td></tr>
+          <tr><td><span class="code">--space-5</span></td><td>20px</td><td>Padding de cards pequenos</td></tr>
+          <tr><td><span class="code">--space-6</span></td><td>24px</td><td>Padding de cards médios, gap entre seções</td></tr>
+          <tr><td><span class="code">--space-8</span></td><td>32px</td><td>Separação entre blocos de conteúdo</td></tr>
+          <tr><td><span class="code">--space-10</span></td><td>40px</td><td>Padding de painéis principais</td></tr>
+          <tr><td><span class="code">--space-12</span></td><td>48px</td><td>Margem de tela/página</td></tr>
+          <tr><td><span class="code">--space-16</span></td><td>64px</td><td>Separação entre seções maiores</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon" style="background:rgba(77,158,255,0.15);">🗂️</span> Layout de Página — Regras Gerais</div>
+      <ul class="guide">
+        <li>Sidebar: largura fixa de <strong>240px</strong> (atual tem 220px, muito estreita para labels longas)</li>
+        <li>Conteúdo principal: padding horizontal de <strong>40–48px</strong></li>
+        <li>Máximo de largura de conteúdo: <strong>960–1100px</strong> (previne linhas longas demais)</li>
+        <li>Cabeçalho de página: título + subtítulo com <strong>margin-bottom: 32px</strong> antes do primeiro elemento de conteúdo</li>
+        <li>Separação entre cards/blocos principais: <strong>20–24px</strong></li>
+        <li>Gap de grid de 2 colunas: <strong>20px</strong></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ── SECTION 05: MOTION ── -->
+  <section id="motion">
+    <div class="section-header">
+      <span class="section-num">05</span>
+      <h2>Motion & Animação — Ritmo e Intenção</h2>
+    </div>
+
+    <p>Animações bem calibradas fazem o app sentir <em>vivo</em>. O segredo é proporcionalidade: micro-interações em 80–150ms, transições de layout em 200–300ms, entradas de página em 300–500ms com stagger.</p>
+
+    <div class="motion-demo">
+      <div class="motion-item"><div class="name">Micro</div><div class="val">duration: 80ms</div><div class="val">ease: ease-out</div><div style="font-size:12px;color:#555880;margin-top:4px;">hover states, focus rings</div></div>
+      <div class="motion-item"><div class="name">Fast</div><div class="val">duration: 150ms</div><div class="val">ease: ease-out</div><div style="font-size:12px;color:#555880;margin-top:4px;">botões, toggles, badges</div></div>
+      <div class="motion-item"><div class="name">Normal</div><div class="val">duration: 220ms</div><div class="val">ease: cubic-bezier(.4,0,.2,1)</div><div style="font-size:12px;color:#555880;margin-top:4px;">cards, dropdowns, modais</div></div>
+      <div class="motion-item"><div class="name">Slow</div><div class="val">duration: 350ms</div><div class="val">ease: cubic-bezier(.4,0,.2,1)</div><div style="font-size:12px;color:#555880;margin-top:4px;">entradas de página, layouts</div></div>
+      <div class="motion-item"><div class="name">Spring</div><div class="val">duration: 500ms</div><div class="val">ease: cubic-bezier(.34,1.56,.64,1)</div><div style="font-size:12px;color:#555880;margin-top:4px;">XP gain, achievements</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon" style="background:rgba(124,109,250,0.15);">✨</span> Animações por Contexto</div>
+      <ul class="guide">
+        <li><strong>Entrada de página:</strong> fade-in + translateY(8px) → translateY(0), stagger de 60ms entre elementos, total 300ms</li>
+        <li><strong>Nav item hover:</strong> background slide-in da esquerda + color transition, 120ms ease-out</li>
+        <li><strong>Botão primário hover:</strong> box-shadow glow cresce + leve scale(1.015), 150ms</li>
+        <li><strong>Card hover:</strong> translateY(-2px) + shadow aumenta, border-color ilumina, 180ms</li>
+        <li><strong>XP ganho:</strong> número count-up + partículas pequenas voando para cima, spring 500ms</li>
+        <li><strong>Flashcard virar:</strong> rotateY(180deg) 3D flip, 400ms ease-in-out, backface-visibility hidden</li>
+        <li><strong>Timer do Pomodoro:</strong> pulso sutil de 2s quando ativo (opacity 1 → 0.7 → 1)</li>
+        <li><strong>Streaming de IA:</strong> cursor piscante estilo terminal durante geração</li>
+        <li><strong>Nós do Grafo:</strong> fade-in com scale(0) → scale(1), stagger por distância do centro</li>
+        <li><strong>Notificações/Toast:</strong> slide-in do canto inferior direito, 280ms spring; auto-dismiss com shrink-height 300ms</li>
+      </ul>
+    </div>
+
+    <div class="warning">⚠️ Respeite <code>prefers-reduced-motion</code>: todas as animações devem ser desativadas ou substituídas por crossfades instantâneos quando o usuário configurar redução de movimento no SO. Isso é ergonomia e acessibilidade.</div>
+  </section>
+
+  <!-- ── SECTION 06: NAVEGAÇÃO ── -->
+  <section id="navegacao">
+    <div class="section-header">
+      <span class="section-num">06</span>
+      <h2>Navegação Global — Sidebar Redesenhada</h2>
+    </div>
+
+    <p>A sidebar atual é funcional mas sem alma. Não comunica qual módulo o usuário está, não agrupa por categoria, e o indicador de ativo é apenas uma mudança de cor. Podemos fazer muito melhor.</p>
+
+    <div class="compare-grid">
+      <div class="compare-box bad">
+        <h4>Problemas Atuais</h4>
+        <ul>
+          <li>Todos os itens de nav têm o mesmo peso visual</li>
+          <li>Sem agrupamento lógico (ferramentas vs. conteúdo)</li>
+          <li>Logo "NexoMente" sem hierarquia — parece um item de menu</li>
+          <li>Status "IA Online" escondido no rodapé sem destaque</li>
+          <li>"Drive: Sincronizado" aparece/desaparece, inconsistente</li>
+          <li>Sem atalhos de teclado visíveis</li>
+        </ul>
+      </div>
+      <div class="compare-box good">
+        <h4>Sidebar Proposta</h4>
+        <ul>
+          <li>Logo com tagline e versão — ancora identidade do app</li>
+          <li>Grupos: <em>Aprender</em> (Notas, Estudo, Flashcards) + <em>Criar</em> (Gerador, Poemas) + <em>Explorar</em> (Chat IA, Grafo, Stats)</li>
+          <li>Item ativo: fundo destacado + barra lateral esquerda colorida + ícone colorido</li>
+          <li>Ícones com cor única por módulo (conforme tabela de cores)</li>
+          <li>Status de IA como "pílula" de status permanente e animada</li>
+          <li>Atalhos Ctrl+número visíveis no hover de cada item</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3 class="sub">Wireframe da Nova Sidebar</h3>
+    <div class="wireframe">
+      <div class="wf-sidebar" style="display:flex;flex-direction:column;">
+        <div class="wf-logo">NexoMente</div>
+        <div class="wf-group-label">Aprender</div>
+        <div class="wf-nav-item active"><div class="dot" style="background:#4D9EFF;"></div> Notas</div>
+        <div class="wf-nav-item"><div class="dot" style="background:#2DD4BF;"></div> Estudo</div>
+        <div class="wf-nav-item"><div class="dot" style="background:#A78BFA;"></div> Flashcards</div>
+        <div class="wf-divider"></div>
+        <div class="wf-group-label">Criar</div>
+        <div class="wf-nav-item"><div class="dot" style="background:#F59E0B;"></div> Gerador</div>
+        <div class="wf-nav-item"><div class="dot" style="background:#F472B6;"></div> Poemas</div>
+        <div class="wf-divider"></div>
+        <div class="wf-group-label">Explorar</div>
+        <div class="wf-nav-item"><div class="dot" style="background:#818CF8;"></div> Chat IA</div>
+        <div class="wf-nav-item"><div class="dot" style="background:#34D399;"></div> Grafo</div>
+        <div class="wf-nav-item"><div class="dot" style="background:#F5A623;"></div> Estatísticas</div>
+        <div style="flex:1;"></div>
+        <div class="wf-bottom">
+          <div class="wf-status">IA Online · qwen3.5-9b</div>
+          <div class="wf-nav-item"><div class="dot" style="background:#555880;"></div> Configurações</div>
+        </div>
+      </div>
+      <div class="wf-content">
+        <div style="display:inline-flex;align-items:center;gap:8px;padding:3px 10px;border-radius:100px;background:rgba(77,158,255,0.12);border:1px solid rgba(77,158,255,0.25);color:#4D9EFF;font-size:11px;font-weight:600;margin-bottom:16px;">📒 Notas</div>
+        <h3>Notas</h3>
+        <p style="margin-bottom:16px;font-size:12px;color:#555880;">1 nota · Inbox · Livros · Projetos…</p>
+        <div style="background:#1A1C28;border-radius:8px;padding:12px;font-size:12px;color:#555880;">
+          <div style="margin-bottom:6px;color:#9B9EC8;">💡 Dica: A sidebar colapsa para ícones com Ctrl+B, liberando mais espaço para o conteúdo.</div>
+          <div>→ Itens de nav têm altura mínima de 40px para targets de toque confortáveis</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon" style="background:rgba(124,109,250,0.15);">⌨️</span> Atalhos de Teclado Essenciais</div>
+      <table class="spec-table">
+        <thead><tr><th>Atalho</th><th>Ação</th></tr></thead>
+        <tbody>
+          <tr><td><span class="code">Ctrl+K</span></td><td>Abre busca global (já existe — manter e melhorar)</td></tr>
+          <tr><td><span class="code">Ctrl+B</span></td><td>Colapsa/expande sidebar</td></tr>
+          <tr><td><span class="code">Ctrl+1–9</span></td><td>Navega diretamente para cada módulo</td></tr>
+          <tr><td><span class="code">Ctrl+N</span></td><td>Nova nota (de qualquer tela)</td></tr>
+          <tr><td><span class="code">Ctrl+Shift+F</span></td><td>Iniciar sessão de revisão de flashcards</td></tr>
+          <tr><td><span class="code">Espaço</span></td><td>Virar flashcard (na tela de revisão)</td></tr>
+          <tr><td><span class="code">1/2/3/4/5</span></td><td>Avaliar dificuldade do flashcard (1=difícil, 5=fácil)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── SECTION 07: INPUTS ── -->
+  <section id="inputs">
+    <div class="section-header">
+      <span class="section-num">07</span>
+      <h2>Inputs & Formulários — Ergonomia de Entrada</h2>
+    </div>
+
+    <ul class="guide">
+      <li><strong>Altura mínima de input: 44px</strong> — lei de Fitts aplicada ao teclado e mouse</li>
+      <li>Border padrão: <code>1px solid var(--surface-border)</code> · Focus: <code>2px solid var(--neon-violet)</code> + box-shadow glow sutil</li>
+      <li>Placeholder deve ter contraste ≥ 3:1 mas nunca igual ao texto preenchido — use <span style="color:#555880">--text-lo</span></li>
+      <li>Labels SEMPRE visíveis acima do input (não apenas placeholder) — floating labels são aceitáveis mas complexos para implementar com acessibilidade correta</li>
+      <li>Campos de busca: ícone de lupa à esquerda, botão "×" para limpar aparece apenas quando há conteúdo</li>
+      <li>Área de texto (textarea) deve ter resize vertical habilitado com altura mínima de 120px</li>
+      <li>Inputs de número devem usar font-mono para evitar que dígitos saltem</li>
+    </ul>
+  </section>
+
+  <!-- ── SECTION 08: BOTÕES ── -->
+  <section id="botoes">
+    <div class="section-header">
+      <span class="section-num">08</span>
+      <h2>Botões — Hierarquia de Ação</h2>
+    </div>
+
+    <p>Um bom sistema de botões comunica hierarquia instantaneamente. O NexoMente deve ter no máximo <strong>5 variantes</strong>, cada uma com papel claro.</p>
+
+    <div class="card">
+      <table class="spec-table">
+        <thead><tr><th>Variante</th><th>Visual</th><th>Uso</th><th>Regra</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Primary</td>
+            <td><span style="background:#7C6DFA;color:white;padding:6px 14px;border-radius:8px;font-size:13px;font-weight:600;">Ação Principal</span></td>
+            <td>Ação mais importante da tela</td>
+            <td>Máx. 1 por tela/seção</td>
+          </tr>
+          <tr>
+            <td>Secondary</td>
+            <td><span style="background:rgba(124,109,250,0.12);color:#7C6DFA;border:1px solid rgba(124,109,250,0.3);padding:6px 14px;border-radius:8px;font-size:13px;font-weight:600;">Ação Secundária</span></td>
+            <td>Ações de suporte, alternativas</td>
+            <td>Usado junto ao Primary</td>
+          </tr>
+          <tr>
+            <td>Ghost</td>
+            <td><span style="color:#9B9EC8;border:1px solid #2A2D45;padding:6px 14px;border-radius:8px;font-size:13px;font-weight:500;">Cancelar</span></td>
+            <td>Ações destrutivas suaves, cancelamento</td>
+            <td>Nunca destrutivo irreversível</td>
+          </tr>
+          <tr>
+            <td>Danger</td>
+            <td><span style="background:rgba(239,68,68,0.12);color:#EF4444;border:1px solid rgba(239,68,68,0.3);padding:6px 14px;border-radius:8px;font-size:13px;font-weight:600;">Excluir</span></td>
+            <td>Ações destrutivas irreversíveis</td>
+            <td>Sempre com confirmação modal</td>
+          </tr>
+          <tr>
+            <td>Icon Only</td>
+            <td><span style="background:#1F2133;color:#9B9EC8;border:1px solid #2A2D45;padding:8px;border-radius:8px;font-size:14px;">⋯</span></td>
+            <td>Ações secundárias em contexto de card/row</td>
+            <td>Sempre com tooltip (title attribute)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="highlight">
+      <strong>Regra de loading:</strong> Todo botão que dispara operação assíncrona (API, save, generate) deve mostrar estado de loading com spinner + texto "Carregando…" e ficar desabilitado durante a operação. Nunca deixe o usuário clicando no vazio sem feedback.
+    </div>
+  </section>
+
+  <!-- ── SECTION 09: CARDS ── -->
+  <section id="cards">
+    <div class="section-header">
+      <span class="section-num">09</span>
+      <h2>Cards & Containers — Anatomia e Hierarquia</h2>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon" style="background:rgba(77,158,255,0.15);">🃏</span> Anatomia de um Card Padrão</div>
+      <div class="anatomy">
+<span class="comment">┌─────────────────────────────────────────────┐</span>
+<span class="comment">│</span> <span class="hi">[Ícone cor]</span> <span class="blue">Título do Card</span>         <span class="amber">[badge/pill]</span> <span class="comment">│</span> ← Header
+<span class="comment">│</span> <span class="comment">Subtítulo ou metadado em --text-mid</span>             <span class="comment">│</span>
+<span class="comment">├─────────────────────────────────────────────┤</span>
+<span class="comment">│</span>                                               <span class="comment">│</span>
+<span class="comment">│</span>  <span class="teal">Conteúdo principal</span> — texto, dados, UI       <span class="comment">│</span> ← Body
+<span class="comment">│</span>                                               <span class="comment">│</span>
+<span class="comment">├─────────────────────────────────────────────┤</span>
+<span class="comment">│</span> <span class="rose">[Ação Secundária]</span>    <span class="hi">[Ação Primária]</span>       <span class="comment">│</span> ← Footer (opcional)
+<span class="comment">└─────────────────────────────────────────────┘</span>
+      </div>
+      <ul class="guide">
+        <li>Padding interno padrão: <strong>24px</strong> (não menos que 16px em cards pequenos)</li>
+        <li>Header e Footer separados por divisor <code>1px solid var(--surface-border)</code></li>
+        <li>Cards interativos (clicáveis) devem ter cursor:pointer + hover elevado (translateY -2px + shadow)</li>
+        <li>Cards de conteúdo longo devem ter overflow:hidden com "ver mais" gradiente fade na borda inferior</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ── SECTION 10: FEEDBACK ── -->
+  <section id="feedback">
+    <div class="section-header">
+      <span class="section-num">10</span>
+      <h2>Feedback & Status — O App Que Responde</h2>
+    </div>
+
+    <ul class="guide">
+      <li><strong>Toast notifications:</strong> canto inferior direito, máx. 3 simultâneas, auto-dismiss em 4s. Verde=sucesso, âmbar=aviso, vermelho=erro, azul=info</li>
+      <li><strong>Estados vazios:</strong> Nunca "Nenhum card encontrado" puro. Sempre: ícone grande + título motivador + botão de ação. Ex: "Sem flashcards ainda — Criar meu primeiro card →"</li>
+      <li><strong>Loading states:</strong> Skeleton screens para listas e cards (retângulos com shimmer) — nunca apenas spinner centralizado</li>
+      <li><strong>Erros de formulário:</strong> Inline, abaixo do campo, em vermelho com ícone, animados com shake sutil</li>
+      <li><strong>Progresso de operação longa:</strong> Barra de progresso com porcentagem ou etapas nomeadas — nunca spinner infinito sem contexto</li>
+      <li><strong>Confirmações destrutivas:</strong> Modal com título claro, descrição das consequências, botão cancelar à esquerda e confirmar à direita (vermelho)</li>
+    </ul>
+  </section>
+
+  <!-- ── SECTION 11: NOTAS ── -->
+  <section id="notas">
+    <div class="section-header">
+      <span class="section-num">11</span>
+      <h2>Tela de Notas — O Coração do App</h2>
+    </div>
+
+    <div class="compare-grid">
+      <div class="compare-box bad">
+        <h4>Problemas Atuais</h4>
+        <ul>
+          <li>Layout de 3 painéis (sidebar, lista, editor) em uma só tela — confuso em resolução menor</li>
+          <li>Bibliotecas como lista plana, sem context visual de quantidade/tipo</li>
+          <li>Toolbar do editor com 15+ ícones sem agrupamento lógico</li>
+          <li>Botões IA, Info, Tags, Editar no header — muito congestionado</li>
+          <li>Estado "IA offline" escondido no canto, sem destaque</li>
+        </ul>
+      </div>
+      <div class="compare-box good">
+        <h4>Redesign Proposto</h4>
+        <ul>
+          <li>Layout 3 painéis responsivo: painéis colapsam em tablets, modal em mobile</li>
+          <li>Bibliotecas com cards visuais mostrando preview de cor e contagem de notas</li>
+          <li>Toolbar do editor agrupada: Formatação | Estrutura | Mídia | IA | Ações</li>
+          <li>Ações IA como floating button dentro do editor (não no header)</li>
+          <li>Status de IA como banner sutil no topo do painel quando offline</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon" style="background:rgba(77,158,255,0.15);">📒</span> Especificações do Editor de Notas</div>
+      <ul class="guide">
+        <li><strong>Modo de foco:</strong> botão "Tela cheia" expande o editor para 100% da viewport, esconde sidebar e painel lateral. Atalho: F11 ou Ctrl+Shift+Enter</li>
+        <li><strong>Autosave:</strong> indicador sutil no footer do editor "Salvo há 2s" — nunca botão "Salvar" explícito para conteúdo de nota</li>
+        <li><strong>Toolbar flutuante:</strong> ao selecionar texto, uma mini-toolbar contextual aparece próximo à seleção com: Bold, Italic, Link, Highlight, Ask AI — elimina necessidade de ir até a toolbar principal</li>
+        <li><strong>Slash commands:</strong> digitar "/" no início de uma linha exibe menu de inserção (heading, lista, tabela, imagem, flashcard, etc.) — extremamente eficiente</li>
+        <li><strong>Tags visuais:</strong> tags da nota aparecem como pills coloridas abaixo do título, não escondidas atrás de um botão</li>
+        <li><strong>Breadcrumb:</strong> "NexoMente / Notas / Inbox / Nome da Nota" — sempre visível, clicável</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ── SECTION 12: ESTUDO ── -->
+  <section id="estudo">
+    <div class="section-header">
+      <span class="section-num">12</span>
+      <h2>Tela de Estudo — Timer & Sessões</h2>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon" style="background:rgba(45,212,191,0.15);">⏱</span> Redesign do Timer Pomodoro</div>
+      <ul class="guide">
+        <li><strong>Timer visual:</strong> círculo SVG com progresso animado (stroke-dashoffset), não apenas números. Cores: Teal para estudo, Âmbar para pausa</li>
+        <li><strong>Matéria selecionada:</strong> campo de seleção de matéria ANTES do iniciar — o timer não deve começar sem contexto de matéria. Prevenção de frustração</li>
+        <li><strong>Ciclos visíveis:</strong> indicador dos ciclos Pomodoro como dots: ●●●○ (3 de 4 concluídos)</li>
+        <li><strong>Notificação sonora:</strong> toggle de som no header do timer. Som suave de sino ao término</li>
+        <li><strong>Tarefa atual:</strong> campo de texto "O que estou estudando agora?" abaixo do timer — ancora o foco</li>
+        <li><strong>Progresso por matéria:</strong> barras de progresso com cores únicas, mostrando % do tempo-meta semanal atingido</li>
+        <li><strong>Histórico da sessão:</strong> lista de sessões do dia com duração, matéria e horário — visível ao lado do timer em desktop</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ── SECTION 13: FLASHCARDS ── -->
+  <section id="flashcards">
+    <div class="section-header">
+      <span class="section-num">13</span>
+      <h2>Flashcards — Revisão Espaçada Reimaginada</h2>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon" style="background:rgba(167,139,250,0.15);">🃏</span> Gerenciamento de Cards</div>
+      <ul class="guide">
+        <li><strong>Cards como "deck" visual:</strong> ao invés de lista plana, mostrar cards empilhados em grupos/baralhos — a metáfora física ancora a memória</li>
+        <li><strong>Filtros visíveis:</strong> "Todos | Hoje | Novos | Revisão | Dominados" como tabs com contagem por badge</li>
+        <li><strong>Criação rápida:</strong> botão "+ Card" abre modal com 2 campos: Frente / Verso + campo de matéria/tag. Modal pequeno e focado, não nova página</li>
+        <li><strong>Geração por IA:</strong> botão "Gerar da nota" no contexto de uma nota — cria flashcards automaticamente do conteúdo</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon" style="background:rgba(167,139,250,0.15);">🔄</span> Modo Revisão</div>
+      <ul class="guide">
+        <li><strong>Card grande, centralizado:</strong> ocupa 70% da viewport. Lado A em branco, virar com clique ou Espaço</li>
+        <li><strong>Flip animation 3D:</strong> rotateY(180deg) com perspective, backface-visibility:hidden. Sensação física de virar um card</li>
+        <li><strong>Avaliação visual:</strong> após ver o verso, 4 botões coloridos: 🔴 Errei (1) · 🟠 Difícil (2) · 🟢 Bom (3) · 💜 Fácil (4). Cores fixas para criar memória muscular</li>
+        <li><strong>Progresso da sessão:</strong> barra no topo com X/total cards revisados, não apenas números</li>
+        <li><strong>Celebração ao final:</strong> animação de confetti ou XP gain quando sessão completa. Motivação intrínseca</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ── SECTION 14: GERADOR ── -->
+  <section id="gerador">
+    <div class="section-header">
+      <span class="section-num">14</span>
+      <h2>Gerador IA — Da Matéria-Prima ao Banco</h2>
+    </div>
+
+    <div class="compare-grid">
+      <div class="compare-box bad">
+        <h4>Problemas Atuais</h4>
+        <ul>
+          <li>Dois blocos de upload lado a lado sem hierarquia clara</li>
+          <li>Área de texto sem indicador de tamanho/limite</li>
+          <li>"Processar Texto" como link visual — sem peso de CTA</li>
+          <li>Sem preview do que será gerado</li>
+          <li>Banco (0) como tab vazia sem estado de incentivo</li>
+        </ul>
+      </div>
+      <div class="compare-box good">
+        <h4>Redesign Proposto</h4>
+        <ul>
+          <li>Flow em etapas numeradas: 1 Entrada → 2 Configurar → 3 Gerar → 4 Revisar</li>
+          <li>Upload com drag-and-drop visual animado (borda pulsante ao arrastar)</li>
+          <li>Configuração: nº de questões (slider), tipo (múltipla escolha/dissertativa/V/F), dificuldade</li>
+          <li>Preview das questões antes de salvar no banco, com opção de editar ou rejeitar</li>
+          <li>Banco com cards de questões filtráveis por matéria e tipo</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon" style="background:rgba(245,158,11,0.15);">⚙️</span> Flow de Geração em Etapas</div>
+      <div class="flow">
+        <div class="flow-step">
+          <div class="flow-num">1</div>
+          <div class="flow-content">
+            <strong>Entrada de Conteúdo</strong>
+            <p>Upload de arquivo (.txt, .md, .pdf) com drag-and-drop animado OU textarea com contador de caracteres. Detectar idioma automaticamente. Mostrar preview do texto extraído.</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num">2</div>
+          <div class="flow-content">
+            <strong>Configurar Geração</strong>
+            <p>Quantidade (5/10/20 ou custom via slider), tipo de questão, dificuldade, matéria de destino. Estimativa de tempo de geração visível.</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num">3</div>
+          <div class="flow-content">
+            <strong>Gerar com IA</strong>
+            <p>Botão CTA primário com âmbar. Durante geração: skeleton de questões aparecendo em tempo real (streaming), não aguardar tudo de uma vez.</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num">4</div>
+          <div class="flow-content">
+            <strong>Revisar e Salvar</strong>
+            <p>Cada questão gerada aparece como card editável. Checkboxes para selecionar quais salvar. "Salvar Selecionadas no Banco" como ação final.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SECTION 15: CHAT IA ── -->
+  <section id="chat">
+    <div class="section-header">
+      <span class="section-num">15</span>
+      <h2>Chat IA — Assistente de Aprendizado</h2>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon" style="background:rgba(129,140,248,0.15);">💬</span> Redesign da Interface de Chat</div>
+      <ul class="guide">
+        <li><strong>Contexto de nota visível:</strong> quando uma nota está selecionada, aparecer chip/pill compacto no topo do chat com o título da nota e botão de remover contexto</li>
+        <li><strong>Modelo selecionado:</strong> dropdown de modelo mais visível, com nome descritivo do modelo e indicador de capacidade (velocidade vs. qualidade)</li>
+        <li><strong>Prompt suggestions:</strong> estado vazio do chat deve ter 4–6 botões de sugestão de ação rápida: "Resumir minha nota", "Criar flashcards", "Explicar o conceito", "Fazer perguntas sobre o conteúdo"</li>
+        <li><strong>Balões de mensagem:</strong> usuário à direita (roxo sutil), assistente à esquerda (card com borda sutil). Timestamps no hover</li>
+        <li><strong>Ações em mensagens:</strong> hover em qualquer mensagem revela: Copiar | Regenerar | Criar Nota | Criar Flashcard</li>
+        <li><strong>Streaming visual:</strong> cursor piscante + texto aparecendo palavra por palavra. Loading dots enquanto processa antes do streaming</li>
+        <li><strong>Input multi-linha:</strong> textarea que expande automaticamente até 5 linhas, Shift+Enter para nova linha, Enter para enviar</li>
+        <li><strong>Histórico de conversas:</strong> painel colapsável lateral com histórico de sessões anteriores com IA</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ── SECTION 16: GRAFO ── -->
+  <section id="grafo">
+    <div class="section-header">
+      <span class="section-num">16</span>
+      <h2>Grafo de Conexões — Mapa do Conhecimento</h2>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon" style="background:rgba(52,211,153,0.15);">🕸️</span> Experiência do Grafo</div>
+      <ul class="guide">
+        <li><strong>Estado vazio motivador:</strong> mostrar grafo de exemplo animado em ghost/transparência + call-to-action "Crie sua primeira nota para começar a mapear"</li>
+        <li><strong>Nós coloridos por tipo:</strong> cada tipo de nota tem cor própria (Nota=azul, Livro=verde, Ideia=amarelo, etc.) — consistente com os chips de filtro já existentes</li>
+        <li><strong>Hover em nó:</strong> card tooltip aparece com título, tipo, data e contagem de conexões</li>
+        <li><strong>Click em nó:</strong> painel lateral desliza da direita com preview da nota + botão "Abrir nota"</li>
+        <li><strong>Layout algorithm select:</strong> manter COSE mas adicionar opções Force-directed e Radial com preview instantâneo</li>
+        <li><strong>Zoom controls:</strong> botões +/− e "Ajustar à tela" mais acessíveis — considerar scroll do mouse para zoom e arrastar para pan (já intuitivo mas precisa de onboarding visual)</li>
+        <li><strong>Busca no grafo:</strong> campo de busca que filtra visualmente — nós não correspondentes ficam esmaecidos</li>
+        <li><strong>Minimap:</strong> em grafos grandes, miniatura no canto inferior direito para navegação</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ── SECTION 17: ESTATÍSTICAS ── -->
+  <section id="stats">
+    <div class="section-header">
+      <span class="section-num">17</span>
+      <h2>Estatísticas — Gamificação com Substância</h2>
+    </div>
+
+    <div class="compare-grid">
+      <div class="compare-box bad">
+        <h4>Problemas Atuais</h4>
+        <ul>
+          <li>XP Total como único número grande — sem contexto de nível</li>
+          <li>Todos os zeros não motivam — estado inicial desmotivador</li>
+          <li>"Notas por Tipo" e "Esse Mês" como seções vazias</li>
+          <li>Sem streak visual (sequência de dias)</li>
+          <li>Sem progressão de nível visível</li>
+        </ul>
+      </div>
+      <div class="compare-box good">
+        <h4>Redesign Proposto</h4>
+        <ul>
+          <li>Card de nível com avatar/ícone, nome do nível, barra de XP até próximo nível</li>
+          <li>Estado inicial com metas sugeridas: "Complete sua primeira sessão de estudo"</li>
+          <li>Heatmap de calendário (estilo GitHub) para streak de dias</li>
+          <li>Gráfico de linha do tempo de XP ganho (sparkline)</li>
+          <li>Achievements/conquistas desbloqueáveis com ícones e descrições</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon" style="background:rgba(245,166,35,0.15);">⚡</span> Anatomia do Dashboard de Stats</div>
+      <div class="anatomy">
+<span class="comment">┌────────────────────────────────────────────────────────────┐</span>
+<span class="comment">│</span>  <span class="amber">NÍVEL 3 — Aprendiz Dedicado</span>  <span class="hi">[===═══] 340/500 XP</span>          <span class="comment">│</span>
+<span class="comment">├──────────┬──────────┬──────────┬──────────────────────────┤</span>
+<span class="comment">│</span> <span class="teal">⬆ Streak </span> <span class="comment">│</span> <span class="blue">⏱ Este Mês</span><span class="comment">│</span><span class="hi">📒 Notas  </span><span class="comment">│</span><span class="hi">🃏 Flashcards  </span><span class="comment">│</span>
+<span class="comment">│</span>   <span class="teal">7 dias</span>  <span class="comment">│</span>  <span class="blue">4h 30m   </span><span class="comment">│</span>   <span class="hi">12      </span><span class="comment">│</span>      <span class="hi">48         </span><span class="comment">│</span>
+<span class="comment">├──────────┴──────────┴──────────┴──────────────────────────┤</span>
+<span class="comment">│</span>  <span class="hi">Atividade</span> — Heatmap de 52 semanas (estilo GitHub)          <span class="comment">│</span>
+<span class="comment">│  ░░▒▒▓█░▒░░▒▓███▒░░░░▒░▓██▒░░  (dias de estudo)           │</span>
+<span class="comment">├────────────────────────────────────────────────────────────┤</span>
+<span class="comment">│</span>  <span class="rose">Progresso por Matéria</span> — Barras horizontais com meta         <span class="comment">│</span>
+<span class="comment">│  Português ████████░░░░  80% (480/600m)                    │</span>
+<span class="comment">├────────────────────────────────────────────────────────────┤</span>
+<span class="comment">│</span>  <span class="amber">Conquistas</span> — Grid de badges: 🏆 desbloqueadas / 🔒 locked  <span class="comment">│</span>
+<span class="comment">└────────────────────────────────────────────────────────────┘</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SECTION 18: ACESSIBILIDADE ── -->
+  <section id="acessibilidade">
+    <div class="section-header">
+      <span class="section-num">18</span>
+      <h2>Acessibilidade — Design Inclusivo</h2>
+    </div>
+
+    <ul class="guide">
+      <li><strong>WCAG AA mínimo:</strong> contraste ≥ 4.5:1 para texto normal, 3:1 para texto grande. Verificar com ferramentas como Color Contrast Analyzer</li>
+      <li><strong>Focus rings:</strong> visíveis e distintos — <code>outline: 2px solid var(--neon-violet); outline-offset: 2px</code>. Nunca <code>outline: none</code> sem substituto visível</li>
+      <li><strong>Navegação por teclado:</strong> todo fluxo deve ser completável sem mouse. Ordem de tab lógica (esquerda → direita, cima → baixo)</li>
+      <li><strong>ARIA labels:</strong> ícones sem texto devem ter <code>aria-label</code>. Botões com estados devem usar <code>aria-pressed</code>, <code>aria-expanded</code></li>
+      <li><strong>Alt text em imagens:</strong> toda imagem funcional precisa de alt descritivo. Imagens decorativas: <code>alt=""</code></li>
+      <li><strong>Tamanho de target:</strong> mínimo 44×44px para qualquer elemento interativo (WCAG 2.5.5)</li>
+      <li><strong>Modo de alto contraste:</strong> usar CSS media <code>@media (forced-colors: active)</code> para ajustes</li>
+      <li><strong>Não depender só de cor:</strong> estados de erro, sucesso, etc. devem ter ícone + texto além da cor</li>
+    </ul>
+  </section>
+
+  <!-- ── SECTION 19: RESPONSIVO ── -->
+  <section id="responsivo">
+    <div class="section-header">
+      <span class="section-num">19</span>
+      <h2>Responsividade — Do Desktop ao Mobile</h2>
+    </div>
+
+    <div class="tag-grid">
+      <div class="tag-item"><div class="tag-label">Desktop Large</div><div class="tag-val">≥ 1280px — Layout completo 3 painéis</div></div>
+      <div class="tag-item"><div class="tag-label">Desktop</div><div class="tag-val">1024–1279px — Sidebar reduzida</div></div>
+      <div class="tag-item"><div class="tag-label">Tablet</div><div class="tag-val">768–1023px — Sidebar colapsada em ícones</div></div>
+      <div class="tag-item"><div class="tag-label">Mobile Large</div><div class="tag-val">480–767px — Sidebar em drawer</div></div>
+      <div class="tag-item"><div class="tag-label">Mobile</div><div class="tag-val">320–479px — Bottom navigation bar</div></div>
+      <div class="tag-item"><div class="tag-label">Sidebar colapsada</div><div class="tag-val">60px — apenas ícones + tooltips</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon" style="background:rgba(124,109,250,0.15);">📱</span> Adaptações Mobile</div>
+      <ul class="guide">
+        <li>Sidebar vira <strong>bottom tab bar</strong> com 5 ícones principais (Notas, Estudo, Flashcards, Chat IA, +Mais)</li>
+        <li>Gestos: swipe horizontal entre conteúdo e painel de bibliotecas no módulo de Notas</li>
+        <li>Timer de Estudo como tela dedicada em fullscreen — ocupa toda a atenção</li>
+        <li>Flashcard flip com swipe: deslize para esquerda = difícil, direita = fácil (além dos botões)</li>
+        <li>Modal de criação de nota/card: bottom sheet animado de baixo para cima</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ── SECTION 20: PRINCÍPIOS ── -->
+  <section id="principios">
+    <div class="section-header">
+      <span class="section-num">20</span>
+      <h2>Princípios Gerais — A Filosofia do NexoMente</h2>
+    </div>
+
+    <div class="highlight">
+      <strong>Missão do Design:</strong> O NexoMente deve ser o app de estudo que <em>sente</em> que está do lado do usuário. Cada interação deve reduzir fricção cognitiva, não adicionar. O app deve desaparecer — o que deve brilhar é o aprendizado.
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon" style="background:rgba(124,109,250,0.15);">🧭</span> Os 7 Princípios Inegociáveis</div>
+      <div class="flow">
+        <div class="flow-step">
+          <div class="flow-num">1</div>
+          <div class="flow-content">
+            <strong>Clareza sobre inteligência</strong>
+            <p>Nunca sacrifique clareza por sofisticação. Se o usuário precisa pensar sobre como usar a UI, a UI falhou. Cada tela deve ter uma pergunta clara: "O que quero que o usuário faça aqui?"</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num">2</div>
+          <div class="flow-content">
+            <strong>Contexto sempre visível</strong>
+            <p>O usuário nunca deve se perguntar "onde estou?" ou "o que estou fazendo?". Breadcrumbs, títulos de seção, indicadores de módulo e status de sessão devem estar sempre presentes.</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num">3</div>
+          <div class="flow-content">
+            <strong>Zero estados vazios desmotivadores</strong>
+            <p>Cada tela vazia é uma oportunidade de engajamento. "Nenhum flashcard" → "Que tal criar seu primeiro card? A revisão espaçada muda tudo." Estados vazios são marketing interno.</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num">4</div>
+          <div class="flow-content">
+            <strong>Feedback imediato</strong>
+            <p>Toda ação deve ter uma resposta visual em menos de 100ms. Se a operação demora, mostrar progresso. Nunca deixar o usuário sem saber se o app recebeu o comando.</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num">5</div>
+          <div class="flow-content">
+            <strong>Progressividade da complexidade</strong>
+            <p>O app deve ser simples para começar, poderoso para crescer. Funcionalidades avançadas (como slash commands, atalhos de teclado, configurações de SM-2) devem existir mas não intimidar novos usuários.</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num">6</div>
+          <div class="flow-content">
+            <strong>Consistência sistêmica</strong>
+            <p>Um botão roxo = ação primária, sempre. Uma cor teal = módulo de Estudo, sempre. Uma vez que o usuário aprende a linguagem visual do app, ela deve nunca mudar arbitrariamente. Tokens de design aplicados rigorosamente.</p>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num">7</div>
+          <div class="flow-content">
+            <strong>Leveza como respeito ao usuário</strong>
+            <p>Não sobrecarregue com notificações, tooltips desnecessários, modais de confirmação para ações reversíveis, ou popups de marketing. O usuário veio estudar. Respeite isso.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="border-color:rgba(124,109,250,0.4);background:rgba(124,109,250,0.05);">
+      <div class="card-title" style="color:var(--neon-violet);">🚀 Próximos Passos — Prioridade de Implementação</div>
+      <table class="spec-table">
+        <thead><tr><th>Prioridade</th><th>Item</th><th>Impacto</th><th>Esforço</th></tr></thead>
+        <tbody>
+          <tr><td><span class="pill pill-rose">P0 · Crítico</span></td><td>Tokens CSS centralizados (cores, espaçamento, raios)</td><td>Todo o app</td><td>Médio</td></tr>
+          <tr><td><span class="pill pill-rose">P0 · Crítico</span></td><td>Estados vazios motivadores em todas as telas</td><td>Retenção</td><td>Baixo</td></tr>
+          <tr><td><span class="pill pill-amber">P1 · Alto</span></td><td>Sidebar reagrupada + cores por módulo</td><td>Navegação</td><td>Baixo</td></tr>
+          <tr><td><span class="pill pill-amber">P1 · Alto</span></td><td>Toolbar do editor reagrupada + floating toolbar</td><td>Notas</td><td>Médio</td></tr>
+          <tr><td><span class="pill pill-amber">P1 · Alto</span></td><td>Timer visual SVG + matéria obrigatória</td><td>Estudo</td><td>Médio</td></tr>
+          <tr><td><span class="pill pill-blue">P2 · Médio</span></td><td>Card de nível + barra XP em Estatísticas</td><td>Gamificação</td><td>Baixo</td></tr>
+          <tr><td><span class="pill pill-blue">P2 · Médio</span></td><td>Flip 3D + avaliação colorida nos Flashcards</td><td>Revisão</td><td>Médio</td></tr>
+          <tr><td><span class="pill pill-blue">P2 · Médio</span></td><td>Gerador em steps com preview</td><td>Gerador IA</td><td>Alto</td></tr>
+          <tr><td><span class="pill pill-teal">P3 · Baixo</span></td><td>Slash commands no editor</td><td>Power users</td><td>Alto</td></tr>
+          <tr><td><span class="pill pill-teal">P3 · Baixo</span></td><td>Heatmap de atividade em Estatísticas</td><td>Visual</td><td>Médio</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="text-align:center;padding:48px 0 32px;border-top:1px solid var(--ink-border);margin-top:48px;">
+      <div style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--text-hi);margin-bottom:8px;">NexoMente Design System</div>
+      <div style="color:var(--text-lo);font-size:13px;">Guia Mestre UX v1.0 · Gerado em Abril 2026 · Documento vivo — revisar a cada sprint</div>
+      <div style="display:inline-flex;gap:8px;margin-top:16px;flex-wrap:wrap;justify-content:center;">
+        <span class="pill pill-violet">Design System</span>
+        <span class="pill pill-blue">UX Research</span>
+        <span class="pill pill-teal">Ergonomia</span>
+        <span class="pill pill-amber">Gamificação</span>
+        <span class="pill pill-rose">Acessibilidade</span>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+  // Highlight active TOC link on scroll
+  const links = document.querySelectorAll('.toc-link');
+  const sections = document.querySelectorAll('section[id]');
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const active = document.querySelector(`.toc-link[href="#${entry.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+
+  sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>

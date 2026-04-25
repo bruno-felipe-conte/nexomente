@@ -2,23 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  /* Surfaces - Aclarado para melhor visibilidade em qualquer monitor */
-  --surface-base:    #181B28; /* Fundo mais cinza-azulado */
-  --surface-raised:  #1F2335; /* Sidebar */
-  --surface-card:    #2A2F45; /* Cards bem destacados */
-  --surface-elevated:#363C57; /* Hover / Inputs */
-  --surface-overlay: #424A69; /* Modais */
-  --surface-border:  #50597D; /* Bordas bem visíveis */
+  /* ── SUPERFÍCIES ────────────────────────────────────────── */
+  --surface-base:    #0B0C13;
+  --surface-raised:  #111320;
+  --surface-card:    #181B2E;
+  --surface-elevated:#1E2238;
+  --surface-overlay: #252840;
+  --surface-border:  #2E3255;
 
-  /* Text - Máximo Contraste */
-  --text-hi:   #FFFFFF;
-  --text-mid:  #D4D8E8;
-  --text-lo:   #949AB0;
+  /* ── TEXTO ──────────────────────────────────────────────── */
+  --text-hi:   #EEEFFE;
+  --text-mid:  #A8ABCC;
+  --text-lo:   #646788;
 
-  /* Cards Extras */
-  --card-border: 1px solid #50597D;
-  --card-bg:     #2A2F45;
+  /* ── CARDS ──────────────────────────────────────────────── */
+  --card-border: 1px solid #2E3255;
+  --card-bg:     #181B2E;
 
   /* Brand / Modules */
   --color-brand:      #7C6DFA;
@@ -95,7 +94,7 @@ body { font-family: 'DM Sans', system-ui, sans-serif; background-color: var(--su
 .nav-group-label,
 [class*="group-label"],
 [class*="nav-label"] {
-  color: #949AB0 !important;
+  color: #646788 !important;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 1.5px;
@@ -106,13 +105,13 @@ body { font-family: 'DM Sans', system-ui, sans-serif; background-color: var(--su
 .nav-item,
 [class*="nav-item"],
 [class*="sidebar-item"] {
-  color: #D4D8E8 !important;
+  color: #A8ABCC !important;
 }
 
 .nav-item:hover,
 [class*="nav-item"]:hover {
-  color: #FFFFFF !important;
-  background: rgba(255,255,255,0.08) !important;
+  color: #EEEFFE !important;
+  background: rgba(255,255,255,0.05) !important;
 }
 
 .nav-item.active,
@@ -120,29 +119,31 @@ body { font-family: 'DM Sans', system-ui, sans-serif; background-color: var(--su
   color: #7C6DFA !important;
 }
 
-/* Cards de Estatística */
+/* Cards de Estatística (Notas, Estudado, Para Revisar, Flashcards) */
 .stat-card,
 [class*="stat-card"],
 [class*="stats-card"],
 [class*="metric-card"] {
-  background: #2A2F45 !important;
-  border: 1px solid #50597D !important;
+  background: #181B2E !important;
+  border: 1px solid #2E3255 !important;
   border-radius: 14px !important;
 }
 
+/* Número grande dos cards de stat */
 .stat-card .value,
 [class*="stat-card"] .value,
 [class*="stat-value"],
 [class*="metric-value"] {
-  color: #FFFFFF !important;
+  color: #EEEFFE !important;
   font-size: 28px !important;
   font-weight: 700 !important;
 }
 
+/* Label abaixo do número (NOTAS, ESTUDADO HOJE, etc.) */
 .stat-card .label,
 [class*="stat-label"],
 [class*="metric-label"] {
-  color: #D4D8E8 !important;
+  color: #A8ABCC !important;
   font-size: 11px !important;
   letter-spacing: 1px !important;
   text-transform: uppercase !important;
@@ -151,40 +152,48 @@ body { font-family: 'DM Sans', system-ui, sans-serif; background-color: var(--su
 /* Card de Nível (XP) */
 [class*="level-card"],
 [class*="xp-card"] {
-  background: linear-gradient(135deg, #2A2F45 0%, #363C57 100%) !important;
-  border: 1px solid rgba(124, 109, 250, 0.4) !important;
+  background: linear-gradient(
+    135deg,
+    #181B2E 0%,
+    #1E2238 100%
+  ) !important;
+  border: 1px solid rgba(124, 109, 250, 0.3) !important;
 }
 
 [class*="level-title"],
 [class*="xp-title"] {
-  color: #FFFFFF !important;
+  color: #EEEFFE !important;
   font-size: 22px !important;
   font-weight: 700 !important;
 }
 
 [class*="xp-value"],
-[class*="xp-amount"] { color: #D4D8E8 !important; }
+[class*="xp-amount"] {
+  color: #A8ABCC !important;
+}
 
 [class*="xp-remaining"],
-[class*="level-subtitle"] { color: #949AB0 !important; }
+[class*="level-subtitle"] {
+  color: #646788 !important;
+}
 
 /* Cards de Ação Rápida */
 [class*="quick-action"],
 [class*="action-card"] {
-  background: #2A2F45 !important;
-  border: 1px solid #50597D !important;
+  background: #181B2E !important;
+  border: 1px solid #2E3255 !important;
 }
 
 [class*="quick-action"]:hover,
 [class*="action-card"]:hover {
-  border-color: rgba(124, 109, 250, 0.6) !important;
-  background: #363C57 !important;
+  border-color: rgba(124, 109, 250, 0.4) !important;
+  background: #1E2238 !important;
 }
 
 [class*="action-title"],
 [class*="quick-action"] h3,
 [class*="action-card"] h3 {
-  color: #FFFFFF !important;
+  color: #EEEFFE !important;
   font-size: 16px !important;
   font-weight: 600 !important;
 }
@@ -192,29 +201,33 @@ body { font-family: 'DM Sans', system-ui, sans-serif; background-color: var(--su
 [class*="action-desc"],
 [class*="quick-action"] p,
 [class*="action-card"] p {
-  color: #D4D8E8 !important;
+  color: #A8ABCC !important;
   font-size: 13px !important;
 }
 
-/* Títulos */
-h1, [class*="page-title"] {
-  color: #FFFFFF !important;
+/* Título de Página (Dashboard, Notas, etc.) */
+h1,
+[class*="page-title"] {
+  color: #EEEFFE !important;
   font-size: 32px !important;
   font-weight: 700 !important;
 }
 
+/* Subtítulo de página */
 [class*="page-subtitle"],
 [class*="page-description"] {
-  color: #D4D8E8 !important;
+  color: #A8ABCC !important;
   font-size: 14px !important;
 }
 
-/* Busca */
+/* Barra de busca */
 [class*="search"],
 input[placeholder*="Buscar"] {
-  background: #2A2F45 !important;
-  border: 1px solid #50597D !important;
-  color: #FFFFFF !important;
+  background: #181B2E !important;
+  border: 1px solid #2E3255 !important;
+  color: #EEEFFE !important;
 }
 
-input::placeholder { color: #949AB0 !important; }
+input::placeholder {
+  color: #646788 !important;
+}
