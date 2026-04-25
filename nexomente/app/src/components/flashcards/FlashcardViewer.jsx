@@ -1,7 +1,9 @@
 /**
  * FlashcardViewer — área de revisão espaçada SM-2 do card atual.
  * Extraído de Flashcards.jsx (Tarefa 4.1).
+ * Suporta navegação por teclado: Espaço (flip), 1/3/5 (review), Setas (navegar).
  */
+import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Brain, RotateCcw, Check, X, ChevronLeft, ChevronRight, Edit } from 'lucide-react';
 
@@ -15,6 +17,22 @@ export default function FlashcardViewer({
   cardAtual, paraRevisao, idxRevisao, mostrandoFrente,
   onViraCard, onRevisar, onAnterior, onProximo, onEditar, onCriar,
 }) {
+  useEffect(() => {
+    if (!cardAtual) return;
+    const handleKey = (e) => {
+      if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+      if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); onViraCard(); }
+      else if (e.key === '1') { e.preventDefault(); onRevisar(1); }
+      else if (e.key === '2' || e.key === '3') { e.preventDefault(); onRevisar(3); }
+      else if (e.key === '5') { e.preventDefault(); onRevisar(5); }
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); onAnterior(); }
+      else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); onProximo(); }
+      else if (e.key === 'e' || e.key === 'E') { e.preventDefault(); onEditar(cardAtual); }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [cardAtual, onViraCard, onRevisar, onAnterior, onProximo, onEditar]);
+
   if (!cardAtual) {
     return (
       <div className="bg-bg-secondary rounded-xl p-12 border border-border-subtle text-center">

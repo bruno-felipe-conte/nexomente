@@ -71,7 +71,8 @@ export default function Dashboard() {
       
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <button 
+        <button
+          type="button"
           onClick={() => window.dispatchEvent(new CustomEvent('navigate', { detail: 'notes' }))}
           className="p-4 bg-bg-secondary rounded-xl border border-border-subtle hover:border-accent-main transition-colors text-left"
         >
@@ -80,7 +81,8 @@ export default function Dashboard() {
           <p className="text-sm text-text-muted">Capture uma ideia</p>
         </button>
         
-        <button 
+        <button
+          type="button"
           onClick={() => window.dispatchEvent(new CustomEvent('navigate', { detail: 'study' }))}
           className="p-4 bg-bg-secondary rounded-xl border border-border-subtle hover:border-accent-main transition-colors text-left"
         >
@@ -89,7 +91,8 @@ export default function Dashboard() {
           <p className="text-sm text-text-muted">Estude com Pomodoro</p>
         </button>
         
-        <button 
+        <button
+          type="button"
           onClick={() => window.dispatchEvent(new CustomEvent('navigate', { detail: 'flashcards' }))}
           className="p-4 bg-bg-secondary rounded-xl border border-border-subtle hover:border-accent-main transition-colors text-left"
         >

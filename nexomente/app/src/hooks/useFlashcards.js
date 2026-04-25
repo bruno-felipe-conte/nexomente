@@ -1,27 +1,28 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import sm2, { isParaRevisao, isDominado, SM2_DEFAULTS } from './sm2';
 
-export function useFlashcards() {
-  const [cards, setCards] = useState([]);
-  const [loading, setLoading] = useState(true);
+const FLASHCARDS_KEY = 'nexomente_flashcards';
 
-  useEffect(() => {
-    loadCards();
+export function useFlashcards() {
+  const [cards, setCards] = useState(() => {
+    const stored = localStorage.getItem(FLASHCARDS_KEY);
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  });
+  const [loading, setLoading] = useState(false);
+
+  const persist = useCallback((lista) => {
+    localStorage.setItem(FLASHCARDS_KEY, JSON.stringify(lista));
+    setCards(lista);
   }, []);
 
-  const loadCards = async () => {
-    try {
-      const all = await window.electronAPI.dbFlashcardsGetAll();
-      setCards(all || []);
-    } catch (e) {
-      console.error('Erro ao carregar flashcards:', e);
-      setCards([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const create = async (cardData) => {
+  const create = useCallback((cardData) => {
     const novoCard = {
       id: `card_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       frente: cardData.frente,
@@ -32,53 +33,54 @@ export function useFlashcards() {
       created_at: new Date().toISOString(),
     };
 
-    try {
-      await window.electronAPI.dbFlashcardsCreate(novoCard);
-      setCards(prev => [...prev, novoCard]);
-      return novoCard.id;
-    } catch (e) {
-      console.error('Erro ao criar card:', e);
-      return null;
-    }
-  };
+    setCards(prev => {
+      const updated = [...prev, novoCard];
+      persist(updated);
+      return updated;
+    });
+    return novoCard.id;
+  }, [persist]);
 
-  const update = async (id, updates) => {
-    try {
-      await window.electronAPI.dbFlashcardsUpdate(id, updates);
-      setCards(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
-    } catch (e) {
-      console.error('Erro ao atualizar card:', e);
-    }
-  };
+  const update = useCallback((id, updates) => {
+    setCards(prev => {
+      const updated = prev.map(c => c.id === id ? { ...c, ...updates } : c);
+      persist(updated);
+      return updated;
+    });
+  }, [persist]);
 
-  const remove = async (id) => {
-    try {
-      await window.electronAPI.dbFlashcardsDelete(id);
-      setCards(prev => prev.filter(c => c.id !== id));
-    } catch (e) {
-      console.error('Erro ao deletar card:', e);
-    }
-  };
+  const remove = useCallback((id) => {
+    setCards(prev => {
+      const updated = prev.filter(c => c.id !== id);
+      persist(updated);
+      return updated;
+    });
+  }, [persist]);
 
-  const revisar = async (id, qualidade) => {
-    const card = cards.find(c => c.id === id);
-    if (!card) return;
+  const revisar = useCallback((id, qualidade) => {
+    setCards(prev => {
+      const idx = prev.findIndex(c => c.id === id);
+      if (idx === -1) return prev;
+      
+      const novosDados = sm2(prev[idx], qualidade);
+      const updated = [...prev];
+      updated[idx] = { ...updated[idx], ...novosDados };
+      persist(updated);
+      return updated;
+    });
+  }, [persist]);
 
-    const novosDados = sm2(card, qualidade);
-    await update(id, novosDados);
-  };
-
-  const getParaRevisao = () => {
+  const getParaRevisao = useCallback(() => {
     return cards.filter(isParaRevisao);
-  };
+  }, [cards]);
 
-  const getDominados = () => {
+  const getDominados = useCallback(() => {
     return cards.filter(isDominado);
-  };
+  }, [cards]);
 
-  const getById = (id) => {
+  const getById = useCallback((id) => {
     return cards.find(c => c.id === id);
-  };
+  }, [cards]);
 
   const stats = {
     total: cards.length,
