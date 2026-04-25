@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, session } from 'electron';
 import path, { join, dirname } from 'path';
 import fs, { readFileSync, writeFileSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
@@ -9,6 +9,18 @@ const __dirname = dirname(__filename);
 const isDev = process.env.NODE_ENV === 'development';
 
 let mainWindow;
+
+app.whenReady().then(() => {
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Access-Control-Allow-Origin': ['*'],
+        'Access-Control-Allow-Headers': ['*'],
+      },
+    });
+  });
+});
 
 function createWindow() {
   mainWindow = new BrowserWindow({
