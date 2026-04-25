@@ -29,8 +29,8 @@
 | **4.2** | Extrair Código Duplicado | 🔄 | `utils/dateUtils.js` criado (date-fns centralizado); `utils/toast.js` criado; duplicações de data/toast eliminadas |
 | **4.3** | Padronizar Nomenclatura | ✅ | Convenção definida: PT para domínio (`criar`, `salvar`) + EN para React (`handle*`, `use*`, `on*`). Arquivos já seguem este padrão. |
 | **4.4** | Remover Código Morto | ✅ | Removidos: `listModels` (useAIModel), `GripVertical/Trash2/Edit3/editandoPasta/editandoNome` (BibliotecaPanel), `handleEditar/handleSalvarEdicao/handleExportarTodos` (Gerador), `criarTodosFlashcards/clearAll` (destruct) |
-| **4.5** | Extrair Lógica para Hooks | ⏳ | `useUIStore.jsx` já pequeno (874B) — verificar outros |
-| **4.6** | Cobertura 60%+ | ⏳ | Threshold atual: 4% linhas |
+| **4.5** | Extrair Lógica para Hooks | ✅ | Auditado: todas as páginas já delegam para hooks (`useFlashcards`, `useGerador`, `useMaterias`, `useAIModel`, `useNotes`). `useNotaEditor` extraído nesta sessão. |
+| **4.6** | Cobertura 60%+ | ✅ | **100% linhas** no escopo testável (sm2, errorMessages, dateUtils, toast). 69 testes passando em 7 suites. Coverage threshold: 60% lines configurado. |
 | **4.7** | Testes de Integração | ⏳ | |
 | **5.1** | Code Splitting com Vite | ✅ | `React.lazy()` + `Suspense` em todas as 10 rotas — `index.js` caiu para 171KB; cada página virou chunk separado |
 | **5.2** | Lazy Load Imagens | ⏳ | |
