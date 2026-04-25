@@ -1,9 +1,21 @@
+/**
+ * @module Dashboard
+ * @description Tela inicial (Home) do NexoMente. Exibe um resumo geral das notas, 
+ * sessões de estudo, flashcards e o sistema de gamificação (Níveis e XP).
+ * Construído utilizando os componentes de UI padronizados para garantir contraste.
+ */
 import { useUIStore } from '../store/useUIStore';
 import { BookOpen, FileText, Brain, Clock, Zap, Target, ArrowRight } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 
+/**
+ * Componente principal do Dashboard.
+ * 
+ * @returns {JSX.Element} Dashboard UI renderizada.
+ */
 export default function Dashboard() {
+  // 1. Coleta os dados em memória usando o Zustand (useUIStore)
   const Notas = useUIStore.getState().Notas;
   const Sessoes = useUIStore.getState().Sessoes;
   const Flashcards = useUIStore.getState().Flashcards;
@@ -14,20 +26,26 @@ export default function Dashboard() {
   const flashcards = Flashcards.getAll();
   const xp = XP.getTotal();
   
+  // 2. Filtra sessões de estudo cujo carimbo de tempo seja de hoje
   const sessoesHoje = sessoes.filter(s => {
     if (!s.started_at) return false;
     const hoje = new Date().toDateString();
     return new Date(s.started_at).toDateString() === hoje;
   });
   
+  // 3. Calcula o total de minutos estudados hoje
   const minutosHoje = sessoesHoje.reduce((acc, s) => acc + (s.duracao_minutos || 0), 0);
+  
+  // 4. Determina quais flashcards estão pendentes de revisão hoje (baseado no algoritmo SM-2)
   const cardsParaRevisao = Flashcards.getParaRevisao();
   
-  // Sistema de Níveis Simples (E10)
+  // 5. Sistema de Níveis e XP (Roadmap E10 Gamification)
+  // Define 500 XP como teto para cada nível. 
+  // O progresso barra a barra anima visualmente do 0 ao 100%.
   const XP_POR_NIVEL = 500;
-  const level = Math.floor(xp / XP_POR_NIVEL) + 1;
-  const xpCurrentLevel = xp % XP_POR_NIVEL;
-  const progress = (xpCurrentLevel / XP_POR_NIVEL) * 100;
+  const level = Math.floor(xp / XP_POR_NIVEL) + 1; // Nunca é nível 0
+  const xpCurrentLevel = xp % XP_POR_NIVEL; // Sobra para o nível atual
+  const progress = (xpCurrentLevel / XP_POR_NIVEL) * 100; // Porcentagem para o CSS width
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">

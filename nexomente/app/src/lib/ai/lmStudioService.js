@@ -1,7 +1,12 @@
+// LM Studio Service
+// Handles communication with local LM Studio instance for AI features
+// Supports both development (via Vite proxy) and production (direct) modes
+
 const LMSTUDIO_HOST = import.meta.env.DEV ? '' : 'http://127.0.0.1:1234';
 const DEFAULT_MODEL = 'qwen/qwen3.5-9b';
 const DEFAULT_TEMP = 0.4;
 
+// Stores currently selected model and temperature from localStorage
 let currentModel = localStorage.getItem('nexomente_ai_model') || DEFAULT_MODEL;
 let currentTemp = parseFloat(localStorage.getItem('nexomente_ai_temp')) || DEFAULT_TEMP;
 
@@ -24,6 +29,8 @@ export function getTemperature() {
 }
 
 export async function checkLMStudioStatus() {
+  // Checks if LM Studio is running and returns available chat models
+  // Filters out embedding models which can't generate text
   try {
     const response = await fetch(`${LMSTUDIO_HOST}/v1/models`, {
       method: 'GET',
@@ -31,6 +38,7 @@ export async function checkLMStudioStatus() {
     });
     if (response.ok) {
       const data = await response.json();
+      // Filter to only include chat-capable models (exclude embeddings)
       const chatModels = (data.data || []).filter(m => isChatModel(m.id || m.name || m));
       return { status: 'online', models: chatModels };
     }
@@ -40,14 +48,18 @@ export async function checkLMStudioStatus() {
   }
 }
 
+// Tags to exclude from model list (embedding models don't generate text)
 const EXCLUDE_TAGS = ['embedding', 'embed', 'nomic-embed'];
 
+// Determines if a model is capable of text generation (vs embeddings only)
 function isChatModel(modelName) {
   const lower = (modelName || '').toLowerCase();
   return !EXCLUDE_TAGS.some(tag => lower.includes(tag));
 }
 
 export async function listModels() {
+  // Returns list of available chat models for UI dropdown
+  // Falls back to default model if none available
   const res = await checkLMStudioStatus();
   if (res.status === 'online' && res.models.length > 0) {
     const chatModels = res.models.map(m => m.id || m.name || m).filter(isChatModel);

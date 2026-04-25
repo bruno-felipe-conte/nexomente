@@ -1,3 +1,11 @@
+/**
+ * @module App
+ * @description Ponto de entrada do frontend do NexoMente. 
+ * Responsável por orquestrar o layout principal (Sidebar + Header + Main), 
+ * gerenciar atalhos globais de teclado (ex: navegação de abas), 
+ * e prover Code Splitting nativo através de `React.lazy` e `<Suspense>`.
+ * Todo o roteamento é baseado em estado (`currentPage`) e ouvintes de eventos customizados (`navigate`).
+ */
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { Toaster } from 'react-hot-toast';
 import Sidebar from './components/layout/Sidebar';
