@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: #0F0E17;
+  --bg-secondary: #1A1826;
+  --bg-tertiary: #252338;
+  --accent-main: #6C63FF;
+  --accent-light: #A78BFA;
+  --text-primary: #F2F0FF;
+  --text-secondary: #9CA3AF;
+  --text-muted: #6B7280;
+  --border-subtle: #2D2B45;
+}
+
+.light {
+  --bg-primary: #F2F0FF;
+  --bg-secondary: #FFFFFF;
+  --bg-tertiary: #F9FAFB;
+  --text-primary: #111827;
+  --text-secondary: #4B5563;
+  --border-subtle: #E5E7EB;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body, #root { height: 100%; width: 100%; overflow: hidden; }
+body { font-family: 'Inter', system-ui, sans-serif; background-color: var(--bg-primary); color: var(--text-primary); }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-secondary); }
+::-webkit-scrollbar-thumb { background: var(--border-subtle); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent-main); }
+*:focus-visible { outline: 2px solid var(--accent-main); outline-offset: 2px; }
+
+.ProseMirror { font-family: 'JetBrains Mono', monospace; font-size: 16px; line-height: 1.6; padding: 1rem; }
+.ProseMirror:focus { outline: none; }
+.ProseMirror p { margin-bottom: 0.75em; }
+
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.animate-spin { animation: spin 1s linear infinite; }
