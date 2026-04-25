@@ -23,10 +23,10 @@
 | **3.3** | Tratar Empty Catch Blocks | ✅ | 1 empty catch encontrado e documentado (`lmStudioService.js:121`) — intencional (fallback JSON parse) |
 | **3.4** | Mover Credenciais para .env | ✅ | `.env.example` + `.gitignore` criados |
 | **3.5** | Corrigir Vulnerabilidades npm | 🔄 | 14 vulns (0 critical, 5 high) — `npm audit fix` pendente de aprovação |
-| **3.6** | Smoke Tests | 🔄 | Vitest configurado, `useNotes.test.js` existe — expandir cobertura |
+| **3.6** | Smoke Tests | ✅ | 20 testes passando (3 suites): `useNotes` CRUD, `errorMessages`, `dateUtils` |
 | **3.7** | Setup CI GitHub Actions | ✅ | `.github/workflows/ci.yml` criado |
-| **4.1** | Quebrar Arquivos >300 linhas | ⏳ | |
-| **4.2** | Extrair Código Duplicado | ⏳ | |
+| **4.1** | Quebrar Arquivos >300 linhas | 🔄 | `NotaLista.jsx` extraído de `Notas.jsx` (456 linhas → etapa 1); `Notas.jsx` ainda pendente de mais extrações |
+| **4.2** | Extrair Código Duplicado | 🔄 | `utils/dateUtils.js` criado (date-fns centralizado); `utils/toast.js` criado; duplicações de data/toast eliminadas |
 | **4.3** | Padronizar Nomenclatura | ⏳ | |
 | **4.4** | Remover Código Morto | ⏳ | |
 | **4.5** | Extrair Lógica para Hooks | ⏳ | `useUIStore.jsx` já pequeno (874B) — verificar outros |
@@ -52,7 +52,7 @@
 | **7.5** | ADRs das Decisões | ⏳ | |
 | **7.6** | CHANGELOG.md | ⏳ | |
 | **8.1** | CI: Lint + Test a cada PR | ✅ | CI pipeline ativo no GitHub Actions |
-| **8.2** | Husky Pre-commit Hook | ⏳ | |
+| **8.2** | Husky Pre-commit Hook | ✅ | `husky` + `lint-staged` instalados; pre-commit roda ESLint em arquivos staged |
 | **8.3** | Dependabot | ⏳ | |
 | **8.4** | Error Monitoring (Sentry) | ⏳ | ErrorBoundary já pronto para integrar |
 | **8.5** | Revisão Mensal Dívida Técnica | ⏳ | Processo recorrente |
