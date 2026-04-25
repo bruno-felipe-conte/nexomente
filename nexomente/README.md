@@ -37,13 +37,13 @@ O app utiliza LLMs locais (Ollama ou LM Studio) para gerar flashcards, resumir t
 - Busca full-text no SQLite
 - Interface de card view para navegação rápida
 
-### 🧠 Gamificação
-- Sistema de **XP** com eventos configuráveis
-- **Níveis** e títulos que desbloqueiam conforme o uso
-- **Missões diárias** para criar hábito de estudo
-- **Conquistas** desbloqueáveis (streaks, milestones)
-- Animações: XP Toast, Level Up Modal
-- Dashboard de rastreamento de progresso
+### 🧠 Gamificação: Tamagotchi de Estudos
+- Mascote virtual dinâmico com **30 níveis únicos** (do 🥚 Ovinho até a ✴️ Forma Final Lendária).
+- **Sistema de XP:** Ganhe experiência concluindo sessões de estudo reais.
+- **Sistema de HP (Saúde):** O mascote perde vida se o usuário faltar dias de estudo, podendo hibernar.
+- **Multiplicadores e Streaks (Ofensivas):** Dias consecutivos multiplicam a XP (até 3x).
+- **Habilidades Passivas:** Diferentes formas dão vantagens exclusivas (Ex: a Águia aumenta o ganho em 5%).
+- **Animações Épicas:** Efeitos de Level Up utilizando *Framer Motion* e partículas (confetes, raios, cosmos).
 
 ### 📇 Flashcards com Spaced Repetition
 - Algoritmo **SM-2** (SuperMemo) para revisão adaptativa
@@ -78,11 +78,11 @@ O app utiliza LLMs locais (Ollama ou LM Studio) para gerar flashcards, resumir t
 - Exportação para DOC, HTML, JSON
 - Tags, dispositivo legal e metadata por questão
 
-### 📜 Dashboard de Poemas
-- Recitação ativa de poemas com navegação
-- Tipografia limpa com formatação preservada
-- Contador de dias ativo / recitações
-- Backstage de gestão de poemas (título, autor, ano)
+### 📜 Dashboard & Poema Vigente
+- **Poema Vigente:** O dashboard exibe o último poema atualizado lado a lado com seu mascote virtual, trazendo inspiração imediata ao abrir o app.
+- Tipografia limpa, serifada e com formatação estética (itálicos e espaçamentos no padrão UX premium).
+- Módulo isolado para recitação ativa e leitura sem distrações.
+- Gestão completa de acervo poético (título, autor, versos).
 
 ### 💾 Sincronização e Backup
 - Pasta local espelhada (Google Drive File Stream ready)
@@ -343,19 +343,32 @@ Use modelos até 3B-7B — rodam bem em CPU. Llama 3.2 3B é o melhor custo-bene
 
 ---
 
-## 📊 Gamificação — Sistema de XP
+## 📊 Gamificação — Tamagotchi de Estudos
 
-| Ação | XP |
-|------|-----|
-| Criar nota | +5 XP |
-| Revisar flashcard | +2 XP |
-| Completar Pomodoro | +10 XP |
-| Criar questão (concurso) | +5 XP |
-| Resolver simulado | +10 XP |
-| 10 acertos seguidos | +15 XP |
-| Missão diária completa | +20 XP |
+Seu nível de dedicação define a forma do seu mascote. O **XP** é conquistado sempre que você conclui uma sessão de estudo válida.
 
-**Níveis:** Estudante → Aprendiz → Pesquisador → Mestre do Conhecimento → Sábio Digital
+| Duração | XP Base | Streak 7d (x2) | Streak 30d (x3) |
+|---------|---------|----------------|-----------------|
+| < 15m   | 5 XP    | 10 XP          | 15 XP           |
+| 15-30m  | 15 XP   | 30 XP          | 45 XP           |
+| 30-60m  | 30 XP   | 60 XP          | 90 XP           |
+| 1-2h    | 50 XP   | 100 XP         | 150 XP          |
+| 2-4h    | 80 XP   | 160 XP         | 240 XP          |
+| > 4h    | 120 XP  | 240 XP         | 360 XP          |
+
+**Mecânica de Vida (HP):**
+- **1 dia** sem estudar: -10 HP
+- **2 dias** sem estudar: -30 HP (acumulativo)
+- Se a vida zerar: o mascote entra em estado de **Hibernação** e você perde sua Ofensiva atual.
+
+**Evoluções (30 Níveis):**
+O mascote passa por seis fases evolutivas com animações próprias em tela cheia:
+1. **O Nascimento (1-5):** Ovinho 🥚 a Pato 🦆
+2. **A Descoberta (6-10):** Coelho 🐰 a Raposa 🦊
+3. **A Ascensão (11-15):** Guaxinim 🦝 a Leão 🦁
+4. **O Poder (16-20):** Tigre 🐯 a Dragão Jovem 🐉
+5. **A Transcendência (21-25):** Serpente 🐍 a Dragão Arco-Íris 🐲
+6. **O Absoluto (26-30):** Ser Cósmico 🌌 a Forma Final ✴️
 
 ---
 
