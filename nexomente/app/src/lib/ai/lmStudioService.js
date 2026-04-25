@@ -1,12 +1,16 @@
-// LM Studio Service
-// Handles communication with local LM Studio instance for AI features
-// Supports both development (via Vite proxy) and production (direct) modes
+// ============================================================================
+// NexoMente LM Studio Service - AI Integration Layer
+// ============================================================================
+// Purpose: Abstract local LLM interaction from UI components
+// Architecture: Stateless client with persistent model/temperature preferences
+// Dev Mode: Uses Vite proxy (/v1 → http://localhost:1234/v1)
+// Prod Mode: Direct connection to LM Studio endpoint
 
 const LMSTUDIO_HOST = import.meta.env.DEV ? '' : 'http://127.0.0.1:1234';
-const DEFAULT_MODEL = 'qwen/qwen3.5-9b';
-const DEFAULT_TEMP = 0.4;
+const DEFAULT_MODEL = 'qwen/qwen3.5-9b'; // Optimized for Portuguese/English chat
+const DEFAULT_TEMP = 0.4; // Balanced creativity vs determinism
 
-// Stores currently selected model and temperature from localStorage
+// Persistence layer - retains user preferences across sessions
 let currentModel = localStorage.getItem('nexomente_ai_model') || DEFAULT_MODEL;
 let currentTemp = parseFloat(localStorage.getItem('nexomente_ai_temp')) || DEFAULT_TEMP;
 
@@ -68,6 +72,12 @@ export async function listModels() {
   return ['qwen/qwen3.5-9b'];
 }
 
+/**
+ * Gera resposta simples (texto puro, sem estrutura de mensagem explícita)
+ * @param {string} prompt - Texto ou instrução a ser processada
+ * @param {object} options - Opções: model, temperature, max_tokens
+ * @returns {Promise<{success: boolean, response?: string, error?: string}>}
+ */
 export async function generate(prompt, options = {}) {
   try {
     const temp = options.temperature ?? currentTemp;
@@ -101,6 +111,11 @@ export async function generate(prompt, options = {}) {
   }
 }
 
+/**
+ * Gera resposta em formato chat (suporta múltiplas mensagens com contexto)
+ * @param {Array} messages - Array de objetos {role: 'user'|'assistant', content: string}
+ * @param {object} options - Opções: model, temperature, max_tokens
+ */
 export async function chat(messages, options = {}) {
   try {
     const temp = options.temperature ?? currentTemp;
@@ -136,6 +151,11 @@ export async function chat(messages, options = {}) {
   }
 }
 
+/**
+ * Extrai tags semânticas de uma nota
+ * @param {object} nota - Objeto com titulo e conteudo da nota
+ * @param {number} maxTags - Número máximo de tags a sugerir (default: 8)
+ */
 export async function suggestTags(nota, maxTags = 8) {
   const prompt = `Analise esta nota e sugira até ${maxTags} tags em português (minúsculas, hífen para espaço, máximo 2 palavras cada).
 Responda APENAS com JSON válido: {"tags": ["tag1", "tag2"]}
@@ -160,6 +180,11 @@ Conteúdo: ${(nota.conteudo || '').replace(/<[^>]*>/g, '').substring(0, 1500)}`;
   }
 }
 
+/**
+ * Gera um resumo conciso do conteúdo de uma nota
+ * @param {string} content - Conteúdo da nota para ser resumido  
+ * @param {number} maxTokens - Limite máximo de tokens no resumo (default: 256)
+ */
 export async function summarizeContent(content, maxTokens = 256) {
   const clean = content.replace(/<[^>]*>/g, '').substring(0, 3000);
   const prompt = `Resuma o conteúdo abaixo em 3-5 frases curtas e objetivas:\n\n${clean}\n\nResumo:`;
@@ -167,6 +192,12 @@ export async function summarizeContent(content, maxTokens = 256) {
   return result.success ? result.response : '';
 }
 
+/**
+ * Gera flashcards de revisão baseados na nota
+ * Cada card tem 'frente' (pergunta) e 'verso' (resposta)
+ * @param {object} nota - Objeto com titulo e conteudo da nota
+ * @param {number} maxCards - Número máximo de cards (default: 5)
+ */
 export async function generateFlashcards(nota, maxCards = 5) {
   const prompt = `Gere flashcards de revisão sobre esta nota. Gere o máximo que fizer sentido (até ${maxCards}).
 Cada flashcard deve ter frente (pergunta clara) e verso (resposta objetiva).
@@ -184,6 +215,14 @@ Conteúdo: ${(nota.conteudo || '').replace(/<[^>]*>/g, '').substring(0, 2000)}`;
   }
 }
 
+/**
+ * Gera conteúdo usando um template predeterminado
+ * Templates disponíveis: 'resumir', 'conceitos', 'perguntas', 'critica',
+ * 'conexoes', 'exemplos', 'analogias'
+ * @param {object} nota - Objeto com titulo e conteudo da nota
+ * @param {string} template - Nome do template a usar
+ * @param {object} options - Opções adicionais (temperature, etc.)
+ */
 export async function generateWithTemplate(nota, template, options = {}) {
   const templateMap = {
     resumir: {
