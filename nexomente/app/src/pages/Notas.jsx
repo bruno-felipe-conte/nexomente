@@ -121,6 +121,7 @@ export default function NotasPage() {
               <div className="p-3 border-b border-border-subtle flex items-center gap-2 bg-bg-secondary/50">
                 <input
                   type="text"
+                  aria-label="Título da nota"
                   value={notaSelecionada.titulo}
                   onChange={(e) => setNotaSelecionada({ ...notaSelecionada, titulo: e.target.value })}
                   className="flex-1 bg-transparent text-lg font-bold text-text-primary focus:outline-none"
@@ -154,6 +155,7 @@ export default function NotasPage() {
                   </button>
                 )}
                 <button onClick={() => excluirNota(notaSelecionada.id)}
+                  aria-label="Excluir nota" title="Excluir nota"
                   className="p-1.5 text-text-muted hover:text-danger transition-colors cursor-pointer">
                   <Trash2 size={14} />
                 </button>

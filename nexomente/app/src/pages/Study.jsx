@@ -99,7 +99,7 @@ export default function Study() {
               <Pause size={24} /> Pausar
             </button>
           )}
-          <button onClick={reiniciar} className="px-4 py-3 bg-bg-tertiary border border-border-subtle rounded-xl hover:border-accent-main transition-colors cursor-pointer">
+          <button onClick={reiniciar} aria-label="Reiniciar timer" title="Reiniciar timer" className="px-4 py-3 bg-bg-tertiary border border-border-subtle rounded-xl hover:border-accent-main transition-colors cursor-pointer">
             <RotateCcw size={24} />
           </button>
         </div>

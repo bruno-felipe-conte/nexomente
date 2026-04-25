@@ -25,13 +25,13 @@ export function getTemperature() {
 
 export async function checkLMStudioStatus() {
   try {
-    const response = await fetch(`${LMSTUDIO_HOST}/api/tags`, {
+    const response = await fetch(`${LMSTUDIO_HOST}/v1/models`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
     });
     if (response.ok) {
       const data = await response.json();
-      return { status: 'online', models: data.models || [] };
+      return { status: 'online', models: data.data || [] };
     }
     return { status: 'offline', models: [] };
   } catch {
@@ -42,7 +42,7 @@ export async function checkLMStudioStatus() {
 export async function listModels() {
   const res = await checkLMStudioStatus();
   if (res.status === 'online' && res.models.length > 0) {
-    return res.models.map(m => m.name || m);
+    return res.models.map(m => m.id || m.name || m);
   }
   return [currentModel];
 }
@@ -50,29 +50,33 @@ export async function listModels() {
 export async function generate(prompt, options = {}) {
   try {
     const temp = options.temperature ?? currentTemp;
-    const response = await fetch(`${LMSTUDIO_HOST}/api/generate`, {
+    const response = await fetch(`${LMSTUDIO_HOST}/v1/chat/completions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: options.model || currentModel,
-        prompt,
+        messages: [{ role: 'user', content: prompt }],
         stream: false,
-        options: {
-          temperature: temp,
-          top_p: 0.9,
-          max_tokens: options.max_tokens ?? 512,
-        },
+        temperature: temp,
+        max_tokens: options.max_tokens ?? 512,
       }),
     });
 
     if (!response.ok) {
-      return { success: false, error: `HTTP ${response.status}` };
+      let errDetalhes = '';
+      try {
+        const errorData = await response.json();
+        errDetalhes = errorData.error?.message || JSON.stringify(errorData.error);
+      } catch (e) {
+        errDetalhes = await response.text();
+      }
+      return { success: false, error: `Erro HTTP ${response.status}: ${errDetalhes}` };
     }
 
     const data = await response.json();
-    return { success: true, response: data.response?.trim() || '' };
+    return { success: true, response: data.choices?.[0]?.message?.content?.trim() || '' };
   } catch (error) {
-    return { success: false, error: error.message };
+    return { success: false, error: `Erro de conexão: ${error.message}` };
   }
 }
 
@@ -92,13 +96,22 @@ export async function chat(messages, options = {}) {
     });
 
     if (!response.ok) {
-      return { success: false, error: `HTTP ${response.status}` };
+      let errDetalhes = '';
+      try {
+        const errorData = await response.json();
+        errDetalhes = errorData.error?.message || JSON.stringify(errorData.error);
+      } catch (e) {
+        errDetalhes = await response.text();
+      }
+      console.error('LM Studio HTTP Error:', response.status, errDetalhes);
+      return { success: false, error: `Erro HTTP ${response.status}: ${errDetalhes}` };
     }
 
     const data = await response.json();
     return { success: true, response: data.choices?.[0]?.message?.content?.trim() || '' };
-  } catch {
-    return { success: false, error: 'chat error' };
+  } catch (error) {
+    console.error('LM Studio Chat Exception:', error);
+    return { success: false, error: `Erro de conexão: ${error.message}` };
   }
 }
 

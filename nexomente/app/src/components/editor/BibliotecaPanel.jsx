@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import PropTypes from 'prop-types';
 import {
   FolderOpen, Plus, Folder, FileText, BookOpen, Lightbulb,
   Calendar, Bookmark, BookMarked, ChevronRight
@@ -165,3 +166,10 @@ export default function BibliotecaPanel({ pastas, notas, notaSelecionada, onMove
     </div>
   );
 }
+BibliotecaPanel.propTypes = {
+  pastas: PropTypes.any,
+  notas: PropTypes.any,
+  notaSelecionada: PropTypes.any,
+  onMoverNota: PropTypes.func,
+  onCriarPasta: PropTypes.func,
+};

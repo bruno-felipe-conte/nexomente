@@ -12,6 +12,7 @@
  */
 import { useState, useCallback, useRef } from 'react';
 import { FileText, BookOpen, Lightbulb, Search, Plus } from 'lucide-react';
+import PropTypes from 'prop-types';
 
 const tipoIcons = {
   nota: FileText,
@@ -159,3 +160,12 @@ export default function NotaLista({ notas, notaSelecionada, busca, onBuscaChange
     </div>
   );
 }
+
+NotaLista.propTypes = {
+  notas: PropTypes.any,
+  notaSelecionada: PropTypes.any,
+  busca: PropTypes.any,
+  onBuscaChange: PropTypes.func,
+  onSelect: PropTypes.func,
+  onCriar: PropTypes.func,
+};

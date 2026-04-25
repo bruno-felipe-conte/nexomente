@@ -6,6 +6,7 @@
 import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Brain, RotateCcw, Check, X, ChevronLeft, ChevronRight, Edit } from 'lucide-react';
+import PropTypes from 'prop-types';
 
 const QUALITY_LABELS = {
   1: { label: 'Errei', cor: '#EF4444' },
@@ -121,3 +122,16 @@ export default function FlashcardViewer({
     </div>
   );
 }
+
+FlashcardViewer.propTypes = {
+  cardAtual: PropTypes.any,
+  paraRevisao: PropTypes.any,
+  idxRevisao: PropTypes.any,
+  mostrandoFrente: PropTypes.any,
+  onViraCard: PropTypes.func,
+  onRevisar: PropTypes.func,
+  onAnterior: PropTypes.func,
+  onProximo: PropTypes.func,
+  onEditar: PropTypes.func,
+  onCriar: PropTypes.func,
+};

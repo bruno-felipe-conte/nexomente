@@ -139,9 +139,11 @@ export default function FlashcardsPage() {
               <div className="bg-bg-secondary rounded-lg p-4 border border-border-subtle">
                 <h3 className="font-semibold text-text-primary mb-3 text-sm">Novo Flashcard</h3>
                 <div className="space-y-2">
-                  <input value={novaFrente} onChange={e => setNovaFrente(e.target.value)} placeholder="Frente (pergunta)..."
+                  <input autoFocus value={novaFrente} onChange={e => setNovaFrente(e.target.value)} aria-label="Frente do flashcard" placeholder="Frente (pergunta)..."
+                    onKeyDown={e => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') criarCard(); if (e.key === 'Escape') setShowCriar(false); }}
                     className="w-full bg-bg-tertiary border border-border-subtle rounded px-3 py-2 text-sm focus:border-accent-main focus:outline-none" />
-                  <input value={novoVerso} onChange={e => setNovoVerso(e.target.value)} placeholder="Verso (resposta)..."
+                  <input value={novoVerso} onChange={e => setNovoVerso(e.target.value)} aria-label="Verso do flashcard" placeholder="Verso (resposta)..."
+                    onKeyDown={e => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') criarCard(); if (e.key === 'Escape') setShowCriar(false); }}
                     className="w-full bg-bg-tertiary border border-border-subtle rounded px-3 py-2 text-sm focus:border-accent-main focus:outline-none" />
                   <button onClick={criarCard} className="w-full py-2 bg-accent-main rounded text-sm font-medium cursor-pointer">Criar</button>
                 </div>
@@ -166,7 +168,7 @@ export default function FlashcardsPage() {
         {(modo === 'todos' || modo === 'editar') && (
           <div className="space-y-3">
             <div className="flex gap-2 items-center">
-              <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar cards..."
+              <input value={busca} onChange={e => setBusca(e.target.value)} aria-label="Buscar flashcards" placeholder="Buscar cards..."
                 className="flex-1 bg-bg-secondary border border-border-subtle rounded px-3 py-1.5 text-sm focus:border-accent-main focus:outline-none" />
               <select value={filtro} onChange={e => setFiltro(e.target.value)}
                 className="bg-bg-secondary border border-border-subtle rounded px-2 py-1.5 text-sm cursor-pointer">
@@ -183,9 +185,11 @@ export default function FlashcardsPage() {
               const dom = card.ef >= 2.5 && card.repetitions >= 3;
               if (editandoId === card.id) return (
                 <div key={card.id} className="bg-bg-secondary rounded-lg p-4 border border-accent-main">
-                  <input value={editFrente} onChange={e => setEditFrente(e.target.value)}
+                  <input autoFocus value={editFrente} onChange={e => setEditFrente(e.target.value)} aria-label="Editar frente do flashcard"
+                    onKeyDown={e => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') salvarEdicao(); if (e.key === 'Escape') setEditandoId(null); }}
                     className="w-full bg-bg-tertiary border border-border-subtle rounded px-3 py-1.5 text-sm mb-2 focus:outline-none" />
-                  <input value={editVerso} onChange={e => setEditVerso(e.target.value)}
+                  <input value={editVerso} onChange={e => setEditVerso(e.target.value)} aria-label="Editar verso do flashcard"
+                    onKeyDown={e => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') salvarEdicao(); if (e.key === 'Escape') setEditandoId(null); }}
                     className="w-full bg-bg-tertiary border border-border-subtle rounded px-3 py-1.5 text-sm mb-2 focus:outline-none" />
                   <div className="flex gap-2">
                     <button onClick={salvarEdicao} className="px-3 py-1.5 bg-success rounded text-xs font-medium cursor-pointer flex items-center gap-1"><Save size={12} /> Salvar</button>
@@ -208,9 +212,10 @@ export default function FlashcardsPage() {
                   <div className="flex gap-1 flex-shrink-0">
                     {modo === 'editar' && (
                       <button onClick={() => { setEditandoId(card.id); setEditFrente(card.frente); setEditVerso(card.verso); }}
+                        aria-label="Editar flashcard" title="Editar flashcard"
                         className="p-1.5 text-text-muted hover:text-text-primary cursor-pointer"><Edit size={14} /></button>
                     )}
-                    <button onClick={() => remove(card.id)} className="p-1.5 text-text-muted hover:text-danger cursor-pointer"><Trash2 size={14} /></button>
+                    <button onClick={() => remove(card.id)} aria-label="Excluir flashcard" title="Excluir flashcard" className="p-1.5 text-text-muted hover:text-danger cursor-pointer"><Trash2 size={14} /></button>
                   </div>
                 </div>
               );

@@ -1,3 +1,5 @@
+import PropTypes from 'prop-types';
+
 /**
  * Componente ConfirmDialog — diálogo de confirmação para ações destrutivas.
  * O botão de cancelar é o foco padrão para evitar exclusão acidental com Enter.
@@ -74,5 +76,15 @@ function ConfirmDialog({
     </div>
   );
 }
+
+ConfirmDialog.propTypes = {
+  open: PropTypes.bool,
+  title: PropTypes.string,
+  description: PropTypes.string,
+  confirmLabel: PropTypes.string,
+  confirmVariant: PropTypes.string,
+  onConfirm: PropTypes.func,
+  onCancel: PropTypes.func,
+};
 
 export default ConfirmDialog;

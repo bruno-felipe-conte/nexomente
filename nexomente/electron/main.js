@@ -1,6 +1,10 @@
 import { app, BrowserWindow, ipcMain, dialog } from 'electron';
-import { join, dirname } from 'path';
-import { readFileSync, writeFileSync, existsSync } from 'fs';
+import path, { join, dirname } from 'path';
+import fs, { readFileSync, writeFileSync, existsSync } from 'fs';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const isDev = process.env.NODE_ENV === 'development';
 

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X, ChevronLeft, ChevronRight, Plus, Check, Loader2, RotateCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useFlashcards } from '../../hooks/useFlashcards';
+import PropTypes from 'prop-types';
 
 export default function FlashcardApproveModal({ cards, loading, onCancel, modelo, notaTitulo }) {
   const { create } = useFlashcards();
@@ -201,3 +202,10 @@ export default function FlashcardApproveModal({ cards, loading, onCancel, modelo
     </div>
   );
 }
+FlashcardApproveModal.propTypes = {
+  cards: PropTypes.any,
+  loading: PropTypes.any,
+  onCancel: PropTypes.func,
+  modelo: PropTypes.any,
+  notaTitulo: PropTypes.any,
+};

@@ -6,6 +6,7 @@
 import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { Copy, Plus } from 'lucide-react';
+import PropTypes from 'prop-types';
 
 const ChatMessage = memo(function ChatMessage({ msg, idx, copiadoIdx, onCopiar, onInserir }) {
   const isUser = msg.role === 'user';
@@ -42,5 +43,14 @@ const ChatMessage = memo(function ChatMessage({ msg, idx, copiadoIdx, onCopiar, 
     </motion.div>
   );
 });
+
+
+ChatMessage.propTypes = {
+  msg: PropTypes.any,
+  idx: PropTypes.any,
+  copiadoIdx: PropTypes.any,
+  onCopiar: PropTypes.func,
+  onInserir: PropTypes.func,
+};
 
 export default ChatMessage;

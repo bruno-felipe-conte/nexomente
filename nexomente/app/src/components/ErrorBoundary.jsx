@@ -1,5 +1,6 @@
 import { Component } from 'react';
 import * as Sentry from '@sentry/react';
+import PropTypes from 'prop-types';
 
 /**
  * Componente ErrorBoundary para capturar erros de renderização React.
@@ -78,5 +79,11 @@ class ErrorBoundary extends Component {
     return this.props.children;
   }
 }
+
+ErrorBoundary.propTypes = {
+  context: PropTypes.string,
+  fallback: PropTypes.func,
+  children: PropTypes.node,
+};
 
 export default ErrorBoundary;

@@ -13,6 +13,7 @@ import { useNotes } from '../hooks/useNotes';
 import { chat as lmChat, getTemperature } from '../lib/ai/lmStudioService';
 import toast from 'react-hot-toast';
 import ChatMessage from '../components/ai/ChatMessage';
+import PropTypes from 'prop-types';
 
 const TEMPLATES = [
   { id: 'resumir',   label: 'Resumir',    prompt: 'Resuma o conteúdo em 3-5 frases' },
@@ -216,3 +217,6 @@ export default function AIChatPage({ onNavigate }) {
     </div>
   );
 }
+AIChatPage.propTypes = {
+  onNavigate: PropTypes.func,
+};

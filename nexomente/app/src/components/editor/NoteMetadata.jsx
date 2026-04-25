@@ -1,4 +1,5 @@
 import { FileText, BookOpen, Lightbulb, Calendar, Bookmark, BookMarked, Clock, Star, Hash, User } from 'lucide-react';
+import PropTypes from 'prop-types';
 
 const tipos = [
   { id: 'nota', label: 'Nota', icon: FileText, cor: '#6C63FF' },
@@ -173,3 +174,7 @@ export default function NoteMetadata({ nota, onUpdate }) {
     </div>
   );
 }
+NoteMetadata.propTypes = {
+  nota: PropTypes.any,
+  onUpdate: PropTypes.func,
+};

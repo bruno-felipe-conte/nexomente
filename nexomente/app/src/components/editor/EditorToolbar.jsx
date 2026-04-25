@@ -1,4 +1,5 @@
 import { Editor } from '@tiptap/react';
+import PropTypes from 'prop-types';
 import {
   Bold, Italic, Underline, Strikethrough, Code, Heading1, Heading2, Heading3,
   List, ListOrdered, ListChecks, Quote, Minus, Highlighter, Link,
@@ -201,3 +202,13 @@ export default function EditorToolbar({ editor, focusMode, onToggleFocus }) {
     </div>
   );
 }
+EditorToolbar.propTypes = {
+  onClick: PropTypes.func,
+  active: PropTypes.any,
+  disabled: PropTypes.any,
+  title: PropTypes.string,
+  children: PropTypes.node,
+  editor: PropTypes.any,
+  focusMode: PropTypes.any,
+  onToggleFocus: PropTypes.func,
+};

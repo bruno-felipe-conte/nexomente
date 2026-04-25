@@ -5,7 +5,7 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.js', './app/src/test/setup.js'],
-    include: ['src/test/**/*.test.js', 'app/src/test/**/*.test.js'],
+    include: ['src/test/**/*.{test,spec}.{js,jsx}', 'app/src/test/**/*.{test,spec}.{js,jsx}'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
@@ -35,5 +35,8 @@ export default defineConfig({
         statements: 60,
       }
     }
+  },
+  esbuild: {
+    jsxInject: "import React from 'react'"
   }
 });

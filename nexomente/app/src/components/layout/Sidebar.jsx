@@ -1,4 +1,5 @@
 import { useCallback, useRef } from 'react';
+import PropTypes from 'prop-types';
 import { 
   Home, FileText, BookOpen, Layers, 
   GitBranch, BarChart3, Settings,
@@ -137,3 +138,8 @@ export default function Sidebar({ isOpen, currentPage, onNavigate }) {
     </aside>
   );
 }
+Sidebar.propTypes = {
+  isOpen: PropTypes.bool,
+  currentPage: PropTypes.any,
+  onNavigate: PropTypes.func,
+};

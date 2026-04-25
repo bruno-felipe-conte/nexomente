@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Tag, FileText, Layers, MoreHorizontal, Loader2, WifiOff } from 'lucide-react';
 import { useAIModel } from '../../hooks/useAIModel';
 import { checkLMStudioStatus, getModel } from '../../lib/ai/lmStudioService';
+import PropTypes from 'prop-types';
 
 export default function AIBar({ nota, onTagsOpen, onResumoOpen, onCardsOpen, onChatOpen }) {
   const { status, modeloAtual } = useAIModel();
@@ -87,3 +88,10 @@ export default function AIBar({ nota, onTagsOpen, onResumoOpen, onCardsOpen, onC
     </div>
   );
 }
+AIBar.propTypes = {
+  nota: PropTypes.any,
+  onTagsOpen: PropTypes.func,
+  onResumoOpen: PropTypes.func,
+  onCardsOpen: PropTypes.func,
+  onChatOpen: PropTypes.func,
+};

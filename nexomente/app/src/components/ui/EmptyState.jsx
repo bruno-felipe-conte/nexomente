@@ -1,3 +1,5 @@
+import PropTypes from 'prop-types';
+
 /**
  * Componente EmptyState — exibido quando uma lista ou área não tem conteúdo.
  * Evita que o usuário veja telas vazias sem contexto ou ação clara.
@@ -23,5 +25,12 @@ function EmptyState({ icon, title, description, action }) {
     </div>
   );
 }
+
+EmptyState.propTypes = {
+  icon: PropTypes.node,
+  title: PropTypes.string,
+  description: PropTypes.string,
+  action: PropTypes.node,
+};
 
 export default EmptyState;

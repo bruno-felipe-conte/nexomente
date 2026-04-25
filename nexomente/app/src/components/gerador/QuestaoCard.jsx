@@ -9,6 +9,7 @@ import { useState, memo } from 'react';
 import { motion } from 'framer-motion';
 import { Edit3, BookOpen, Trash2, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
+import PropTypes from 'prop-types';
 
 const QuestaoCard = memo(function QuestaoCard({ questao: q, onEditar, onCriarFlashcard, onDeletar }) {
   const [editando, setEditando] = useState(false);
@@ -103,5 +104,13 @@ const QuestaoCard = memo(function QuestaoCard({ questao: q, onEditar, onCriarFla
     </motion.div>
   );
 });
+
+
+QuestaoCard.propTypes = {
+  questao: PropTypes.any,
+  onEditar: PropTypes.func,
+  onCriarFlashcard: PropTypes.func,
+  onDeletar: PropTypes.func,
+};
 
 export default QuestaoCard;

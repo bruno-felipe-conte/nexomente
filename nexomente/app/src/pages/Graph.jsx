@@ -197,13 +197,13 @@ export default function Graph() {
         </div>
         
         <div className="flex items-center gap-2">
-          <button onClick={zoomIn} className="p-2 bg-bg-secondary border border-border-subtle rounded-lg hover:border-accent-main">
+          <button onClick={zoomIn} aria-label="Aumentar zoom" title="Aumentar zoom" className="p-2 bg-bg-secondary border border-border-subtle rounded-lg hover:border-accent-main">
             <ZoomIn size={20} />
           </button>
-          <button onClick={zoomOut} className="p-2 bg-bg-secondary border border-border-subtle rounded-lg hover:border-accent-main">
+          <button onClick={zoomOut} aria-label="Diminuir zoom" title="Diminuir zoom" className="p-2 bg-bg-secondary border border-border-subtle rounded-lg hover:border-accent-main">
             <ZoomOut size={20} />
           </button>
-          <button onClick={reset} className="p-2 bg-bg-secondary border border-border-subtle rounded-lg hover:border-accent-main">
+          <button onClick={reset} aria-label="Centralizar visão" title="Centralizar visão" className="p-2 bg-bg-secondary border border-border-subtle rounded-lg hover:border-accent-main">
             <Maximize2 size={20} />
           </button>
         </div>
@@ -213,6 +213,7 @@ export default function Graph() {
         <select 
           value={layout} 
           onChange={(e) => setLayout(e.target.value)}
+          aria-label="Layout do grafo"
           className="px-3 py-1 bg-bg-secondary border border-border-subtle rounded-lg text-sm"
         >
           <option value="cose">COSE (automático)</option>
@@ -246,7 +247,7 @@ export default function Graph() {
         <div className="absolute top-20 right-4 w-80 bg-bg-secondary border border-border-subtle rounded-xl p-4 shadow-xl z-10">
           <div className="flex justify-between items-start mb-2">
             <h3 className="font-bold">{notaSelecionada.titulo}</h3>
-            <button onClick={() => setNotaSelecionada(null)}>
+            <button onClick={() => setNotaSelecionada(null)} aria-label="Fechar detalhes da nota" title="Fechar">
               <X size={16} />
             </button>
           </div>

@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { Plus } from 'lucide-react';
 import TagChip from './TagChip';
+import PropTypes from 'prop-types';
 
 export default function TagInput({ tags, onAdd, onRemove }) {
   const [input, setInput] = useState('');
@@ -100,3 +101,8 @@ export default function TagInput({ tags, onAdd, onRemove }) {
     </div>
   );
 }
+TagInput.propTypes = {
+  tags: PropTypes.any,
+  onAdd: PropTypes.func,
+  onRemove: PropTypes.func,
+};

@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Sparkles, Loader2, Tag, FileText, Layers, RefreshCw, Check, X, Zap } from 'lucide-react';
 import { checkLMStudioStatus, generate, setModel, getModel, suggestTags, summarizeContent, generateFlashcards } from '../../lib/ai/lmStudioService';
+import PropTypes from 'prop-types';
 
 export default function AIPanel({ nota, onTagsUpdate, onResumoUpdate, onFlashcardsCreate }) {
   const [status, setStatus] = useState('checking');
@@ -147,3 +148,9 @@ export default function AIPanel({ nota, onTagsUpdate, onResumoUpdate, onFlashcar
     </div>
   );
 }
+AIPanel.propTypes = {
+  nota: PropTypes.any,
+  onTagsUpdate: PropTypes.func,
+  onResumoUpdate: PropTypes.func,
+  onFlashcardsCreate: PropTypes.func,
+};

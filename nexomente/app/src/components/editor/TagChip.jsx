@@ -1,4 +1,5 @@
 import { X } from 'lucide-react';
+import PropTypes from 'prop-types';
 
 export default function TagChip({ tag, color, onRemove }) {
   return (
@@ -26,3 +27,8 @@ export default function TagChip({ tag, color, onRemove }) {
     </span>
   );
 }
+TagChip.propTypes = {
+  tag: PropTypes.any,
+  color: PropTypes.any,
+  onRemove: PropTypes.func,
+};

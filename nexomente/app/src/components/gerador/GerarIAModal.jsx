@@ -5,6 +5,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Wand2, X } from 'lucide-react';
+import PropTypes from 'prop-types';
 
 export default function GerarIAModal({ materias, bancas, onClose, onGerar }) {
   const [config, setConfig] = useState({
@@ -18,6 +19,11 @@ export default function GerarIAModal({ materias, bancas, onClose, onGerar }) {
   const handleGerar = () => {
     onGerar(config);
     onClose();
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Escape') onClose();
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') handleGerar();
   };
 
   return (
@@ -34,6 +40,7 @@ export default function GerarIAModal({ materias, bancas, onClose, onGerar }) {
         exit={{ scale: 0.9 }}
         className="bg-bg-primary p-6 rounded-xl w-full max-w-lg"
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={handleKeyDown}
       >
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Gerar com IA</h2>
@@ -44,6 +51,7 @@ export default function GerarIAModal({ materias, bancas, onClose, onGerar }) {
           <div>
             <label className="block text-sm text-text-muted mb-1">Matéria</label>
             <select
+              autoFocus
               value={config.materia}
               onChange={(e) => setConfig({ ...config, materia: e.target.value })}
               className="w-full p-2 bg-bg-secondary border border-border-subtle rounded-lg"
@@ -102,3 +110,10 @@ export default function GerarIAModal({ materias, bancas, onClose, onGerar }) {
     </motion.div>
   );
 }
+
+GerarIAModal.propTypes = {
+  materias: PropTypes.any,
+  bancas: PropTypes.any,
+  onClose: PropTypes.func,
+  onGerar: PropTypes.func,
+};

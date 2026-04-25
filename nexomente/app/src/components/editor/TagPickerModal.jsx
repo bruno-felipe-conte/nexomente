@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, Plus, Check, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Tag } from 'lucide-react';
+import PropTypes from 'prop-types';
 
 export default function TagPickerModal({ tagsSugeridas, loading, onConfirm, onCancel, modelo }) {
   const [selecionadas, setSelecionadas] = useState({});
@@ -137,3 +138,10 @@ export default function TagPickerModal({ tagsSugeridas, loading, onConfirm, onCa
     </div>
   );
 }
+TagPickerModal.propTypes = {
+  tagsSugeridas: PropTypes.any,
+  loading: PropTypes.any,
+  onConfirm: PropTypes.func,
+  onCancel: PropTypes.func,
+  modelo: PropTypes.any,
+};

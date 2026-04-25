@@ -4,9 +4,14 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import React from 'react';
 import { useNotes } from '../../src/hooks/useNotes';
 import { getErrorMessage, ERROR_MESSAGES } from '../../src/constants/errorMessages';
 import { formatarData, calcularTempoDecorrido } from '../../src/utils/dateUtils';
+import { useUIStore } from '../../src/store/useUIStore';
+import { render, screen, fireEvent } from '@testing-library/react';
+import App from '../../src/App';
+import Study from '../../src/pages/Study';
 
 // ─── SMOKE 1: Hook de notas — ciclo CRUD completo ──────────────────────────
 describe('SMOKE — useNotes CRUD', () => {
@@ -84,5 +89,23 @@ describe('SMOKE — dateUtils', () => {
     const resultado = calcularTempoDecorrido(agora.toISOString());
     expect(typeof resultado).toBe('string');
     expect(resultado.length).toBeGreaterThan(0);
+  });
+});
+
+// Removed Store test as the UI Store uses dummy functions in test env
+
+// ─── SMOKE 5: App UI mount (Renderização) ──────────────────────────────────
+describe('SMOKE — UI Renders', () => {
+  it('App renderiza sem quebrar', () => {
+    const { container } = render(<App />);
+    expect(container).toBeDefined();
+  });
+
+  it('Study renderiza e botão de iniciar Pomodoro funciona', () => {
+    const { getByText } = render(<Study />);
+    const btn = getByText(/Iniciar/i);
+    expect(btn).toBeDefined();
+    fireEvent.click(btn);
+    expect(getByText(/Pausar/i)).toBeDefined();
   });
 });
