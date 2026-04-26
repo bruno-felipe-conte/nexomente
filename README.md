@@ -1,414 +1,633 @@
-# 🧠 NexoMente
+<div align="center">
 
-### Seu segundo cérebro offline — com IA local, grafo de conhecimento e gamificação
+```
+███╗   ██╗███████╗██╗  ██╗ ██████╗ ███╗   ███╗███████╗███╗   ██╗████████╗███████╗
+████╗  ██║██╔════╝╚██╗██╔╝██╔═══██╗████╗ ████║██╔════╝████╗  ██║╚══██╔══╝██╔════╝
+██╔██╗ ██║█████╗   ╚███╔╝ ██║   ██║██╔████╔██║█████╗  ██╔██╗ ██║   ██║   █████╗
+██║╚██╗██║██╔══╝   ██╔██╗ ██║   ██║██║╚██╔╝██║██╔══╝  ██║╚██╗██║   ██║   ██╔══╝
+██║ ╚████║███████╗██╔╝ ██╗╚██████╔╝██║ ╚═╝ ██║███████╗██║ ╚████║   ██║   ███████╗
+╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚═╝     ╚═╝╚══════╝╚═╝  ╚═══╝   ╚═╝   ╚══════╝
+```
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Status-Production-brightgreen?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/Electron-28-47848F?style=for-the-badge&logo=electron" />
-  <img src="https://img.shields.io/badge/AI-Local%20Only-9333EA?style=for-the-badge" />
-</p>
+### ✦ *Seu segundo cérebro — offline, gamificado e com IA local* ✦
+
+<br>
+
+[![Status](https://img.shields.io/badge/⚡_Status-Produção_Pronta-00e676?style=for-the-badge&logoColor=white)](#)
+[![Electron](https://img.shields.io/badge/🖥_Runtime-Electron_28-47848F?style=for-the-badge&logo=electron)](#)
+[![React](https://img.shields.io/badge/⚛_UI-React_18-61DAFB?style=for-the-badge&logo=react&logoColor=black)](#)
+[![AI](https://img.shields.io/badge/🤖_IA-100%25_Local-9333EA?style=for-the-badge&logoColor=white)](#)
+[![Privacy](https://img.shields.io/badge/🔒_Privacidade-Absoluta-ff4757?style=for-the-badge)](#)
+[![License](https://img.shields.io/badge/📄_License-MIT-2ed573?style=for-the-badge)](#)
+
+<br>
+
+> *"Pense no NexoMente como uma fusão de **Obsidian**, **Anki**, **Notion** e um **Tamagotchi**.*
+> *Nenhum byte seu vai para a nuvem. O controle do seu aprendizado voltou para suas mãos."*
+
+<br>
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  📝 Notas Wiki   🤖 IA Offline   📇 Flashcards   🕸️ Grafo   👾 RPG  │
+│  ⏱️ Pomodoro    🎓 Questões     📜 Poemas       💾 100% Local       │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+</div>
 
 ---
 
-## 🎯 O que é?
+<br>
 
-**NexoMente** é um aplicativo desktop para anotação, estudo e construção de conhecimento pessoal — 100% offline, com IA rodando localmente no seu PC.
+## ◈ O que é o NexoMente?
 
-Pense nele como uma combinação de: **Obsidian + Anki + Notion + um segundo cérebro que aprende com você**. Mas com um diferencial central: **nada sai do seu computador**. Nem seus textos, nem suas notas, nem seus dados de estudo. Nunca.
+**NexoMente** é um aplicativo desktop para anotação, estudo e construção de conhecimento pessoal — completamente offline, com IA rodando no *seu* hardware.
 
-O app utiliza LLMs locais (Ollama ou LM Studio) para gerar flashcards, resumir textos, sugerir conexões entre notas e criar questões estilo concurso — sem enviar nenhum dado para a nuvem.
+Cada funcionalidade foi pensada para o estudante sério: quem precisa de um sistema que *cresce com ele*, não de mais uma assinatura de nuvem que vende seus dados.
+
+```
+Obsidian  +  Anki  +  Notion  +  Tamagotchi  =  🧠 NexoMente
+```
 
 ---
 
-## ✨ Funcionalidades Principais
+<br>
 
-### 📝 Sistema de Notas com Wiki-Links
-- Editor TipTap com toolbar completa (negrito, itálico, código, bloco de citação, equações LaTeX)
-- Conexões entre notas via `[[wikilinks]]` com autocompletar
-- Tags manuais e sugestões por IA
-- 7 tipos de nota: livro, projeto, ideia, diário, bíblia, estudo, lembrete
-- Modo Foco para escrita sem distrações
+## ◈ Funcionalidades
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+
+### 📝 Wiki-Notes Mágicas
+
+```
+┌──────────────────────────────┐
+│  # Minha Nota de Física      │
+│                              │
+│  Lembra da [[Lei de Newton]] │
+│  que conecta com [[Energia]] │
+│  e com [[Termodinâmica]]?    │
+│                              │
+│  F = m·a  →  E = mc²  🔗    │
+└──────────────────────────────┘
+```
+
+- Editor **TipTap** premium (Markdown + WYSIWYG)
+- Conexões neurais via `[[wikilinks]]` com autocompletar
+- Suporte nativo a fórmulas **LaTeX** matemáticas
+- **7 tipos de nota:** livro, projeto, ideia, diário, bíblia, estudo, lembrete
+- Modo **Foco** para escrita sem distrações
 - Sincronização bidirecional com pasta local `.md`
 
-### 🗂️ Gerenciamento de Bibliotecas
-- Painel lateral com bibliotecas (tags/pastas virtuais)
-- Filtragem por matéria, tipo e tags
-- Busca full-text no SQLite
-- Interface de card view para navegação rápida
+</td>
+    <td width="50%" valign="top">
 
-### 🧠 Gamificação
-- Sistema de **XP** com eventos configuráveis
-- **Níveis** e títulos que desbloqueiam conforme o uso
-- **Missões diárias** para criar hábito de estudo
-- **Conquistas** desbloqueáveis (streaks, milestones)
-- Animações: XP Toast, Level Up Modal
-- Dashboard de rastreamento de progresso
+### 🤖 IA de Bolso (100% Offline)
+
+```
+┌──────────────────────────────┐
+│  Seu PC                      │
+│  ┌──────────┐                │
+│  │NexoMente │──▶ Ollama      │
+│  └──────────┘    :11434      │
+│                  ▼           │
+│            LLM local         │
+│       (seus dados ficam      │
+│        no seu hardware)      │
+└──────────────────────────────┘
+```
+
+- Gera **resumos** e extrai conceitos-chave
+- Cria **Flashcards** e Questões de Concurso automaticamente
+- Chat contextual que "lê" suas anotações ativas
+- Conecta ao **Ollama** ou **LM Studio** invisivelmente
+- Sugestão inteligente de **tags e conexões**
+
+</td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
 
 ### 📇 Flashcards com Spaced Repetition
-- Algoritmo **SM-2** (SuperMemo) para revisão adaptativa
-- Criação automática por IA a partir de textos e notas
-- CRUD completo com gerenciador central
-- Botão de "Recitei" com undo de 5 segundos
-- Filtro "Visualizar Todos" para revisão de cards dominados
 
-### 💬 Chat com IA Local
-- Conversa integrada com Ollama ou LM Studio
-- Modelo configurável (padrão: `llama3.2:3b`)
-- Status de conexão visível na interface
-- Contexto de notas e flashcards para conversas enriched
+```
+┌──────────────────────────────┐
+│  ╔════════════════════╗      │
+│  ║  O que é o SM-2?  ║      │
+│  ╚════════════════════╝      │
+│  [Fácil] [Médio] [Difícil]  │
+│                              │
+│  Próxima revisão: em 4 dias  │
+│  Taxa de acerto: 87% ████▓   │
+└──────────────────────────────┘
+```
+
+- Algoritmo **SuperMemo 2** adaptativo
+- Criação **manual ou massiva via IA**
+- Revisões focadas só no que você está esquecendo
+- Botão "Recitei" com **undo de 5 segundos**
+- Gerenciador central com filtros avançados
+
+</td>
+    <td width="50%" valign="top">
 
 ### 🕸️ Grafo de Conexões
-- Visualização interativa com **Cytoscape.js**
-- Nós por tipo de nota, cor por matéria
-- Filtros por tipo, matéria e tags
-- Preview de nota ao clicar no nó
-- Conexões: wikilinks + tags compartilhadas
 
-### ⏱️ Estudo e Pomodoro
-- Timer Pomodoro (25/50/15 min configurável)
-- Sessões registradas por matéria
-- Metas de horas por matéria
-- Histórico de sessões com estatísticas
+```
+      [Física]──────[Energia]
+          │               │
+     [Newton]         [Química]
+          │               │
+      [Força]────[Termodinâmica]
+          │
+     [Cinemática]
+```
+
+- Visualização interativa com **Cytoscape.js**
+- Nós coloridos por **tipo de nota e matéria**
+- Filtros por tipo, matéria e tags
+- Preview da nota ao **clicar no nó**
+- Conexões via wikilinks + tags compartilhadas
+
+</td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+
+### ⏱️ Pomodoro & Estudo
+
+```
+┌──────────────────────────────┐
+│     ◉ FOCO TOTAL             │
+│                              │
+│       25 : 00                │
+│     ████████████             │
+│                              │
+│  Matéria: Direito Civil      │
+│  Sessão: #4  |  XP: +10 🔥  │
+└──────────────────────────────┘
+```
+
+- Timer **25 / 50 / 15 min** configurável
+- Sessões registradas **por matéria**
+- Metas de horas com acompanhamento
+- Histórico com estatísticas detalhadas
+- **+XP a cada Pomodoro** concluído
+
+</td>
+    <td width="50%" valign="top">
 
 ### 🎓 Gerador de Questões (Concurseiro)
-- Upload de arquivos (TXT, MD, PNG, JPG) ou texto colado
-- Geração de questões estilo banca por IA
-- Justificativas pedagógicas para cada alternativa
-- Exportação para DOC, HTML, JSON
-- Tags, dispositivo legal e metadata por questão
 
-### 📜 Dashboard de Poemas
-- Recitação ativa de poemas com navegação
-- Tipografia limpa com formatação preservada
-- Contador de dias ativo / recitações
-- Backstage de gestão de poemas (título, autor, ano)
+```
+┌──────────────────────────────┐
+│  [Upload TXT/MD/PNG/JPG]     │
+│         ▼                    │
+│   IA analisa o conteúdo      │
+│         ▼                    │
+│  ✓ Questão estilo banca      │
+│  ✓ Alternativas A-E          │
+│  ✓ Justificativa pedagógica  │
+│  ✓ Export DOC / HTML / JSON  │
+└──────────────────────────────┘
+```
 
-### 💾 Sincronização e Backup
-- Pasta local espelhada (Google Drive File Stream ready)
-- Backups automáticos do banco SQLite
-- Exportação de flashcards em JSON
-- Tudo 100% offline — seus dados não vão para a nuvem
+- Upload de arquivos **TXT, MD, PNG, JPG**
+- Questões no estilo de **bancas reais**
+- Justificativas pedagógicas por alternativa
+- Exportação para **DOC, HTML, JSON**
+- Tags, dispositivo legal e metadata
+
+</td>
+  </tr>
+</table>
 
 ---
 
-## 🏗️ Arquitetura
+<br>
+
+## ◈ O Tamagotchi de Estudos — Sistema RPG
+
+> NexoMente não é apenas um bloco de notas. É um **RPG do seu conhecimento.**
+
+Acompanhe a evolução de um mascote virtual que reage diretamente ao seu esforço. Cada sessão de Pomodoro alimenta o seu companheiro de estudos.
+
+<details open>
+<summary><b>▶ Tabela de XP e Mecânicas de Evolução</b></summary>
+
+<br>
+
+**⚡ Ganho de XP por Sessão de Foco:**
+
+| Duração | XP Base | 🔥 Ofensiva 7d `×2` | 🔥 Ofensiva 30d `×3` |
+|:-------:|:-------:|:-------------------:|:--------------------:|
+| Livre `< 15m` | `5 XP` | `10 XP` | `15 XP` |
+| Padrão `25m`  | `15 XP` | `30 XP` | `45 XP` |
+| Intenso `50m` | `30 XP` | `60 XP` | `90 XP` |
+| Maratona `2h+`| `80 XP` | `160 XP`| `240 XP`|
+
+<br>
+
+**🛡️ Mecânica de Vida (HP):**
+
+```
+Estudou hoje?   ✅  →  HP estável + XP ganho
+Faltou 1 dia?   ⚠️  →  -10 HP
+Faltou 2 dias?  ❌  →  -30 HP
+HP = 0?         💀  →  HIBERNAÇÃO — ofensiva quebrada
+                        (Volte a estudar para ressuscitar!)
+```
+
+<br>
+
+**🐉 A Escalada de 30 Níveis:**
+
+```
+Nv. 01-05  ┃  🥚 Ovinho ──────────────▶ 🦆 Pato
+           ┃  O Nascimento — primeiros passos
+─────────────────────────────────────────────────
+Nv. 06-10  ┃  🐰 Coelho ─────────────▶ 🦊 Raposa
+           ┃  A Descoberta — curiosidade aflora
+─────────────────────────────────────────────────
+Nv. 11-15  ┃  🦝 Guaxinim ───────────▶ 🦁 Leão
+           ┃  A Ascensão — confiança e força
+─────────────────────────────────────────────────
+Nv. 16-20  ┃  🐯 Tigre ──────────────▶ 🐉 Dragão Jovem
+           ┃  O Poder — domínio total
+─────────────────────────────────────────────────
+Nv. 21-25  ┃  🐍 Serpente ───────────▶ 🐲 Dragão Arco-Íris
+           ┃  A Transcendência — além dos limites
+─────────────────────────────────────────────────
+Nv. 26-30  ┃  🌌 Ser Cósmico ────────▶ ✴️  Forma Final
+           ┃  O Absoluto — habilidades cósmicas desbloqueadas
+```
+
+</details>
+
+<details>
+<summary><b>▶ Tabela Completa de XP por Ação</b></summary>
+
+<br>
+
+| Ação | XP | Observação |
+|------|----|-----------|
+| Criar uma nota | `+5 XP` | Por nota criada |
+| Revisar flashcard | `+2 XP` | Por card revisado |
+| Completar Pomodoro | `+10 XP` | Timer finalizado |
+| Criar questão (concurso) | `+5 XP` | Via gerador ou manual |
+| Resolver simulado | `+10 XP` | Simulado completo |
+| 10 acertos seguidos | `+15 XP` | Combo streak |
+| Missão diária completa | `+20 XP` | Todas as missões do dia |
+
+**Progressão de Títulos:**
+`Estudante` → `Aprendiz` → `Pesquisador` → `Mestre do Conhecimento` → `Sábio Digital`
+
+</details>
+
+---
+
+<br>
+
+## ◈ Arquitetura Técnica
+
+<details open>
+<summary><b>▶ Stack Completa</b></summary>
+
+<br>
+
+```
+╔═══════════════════════════════════════════════════════════════╗
+║                     NEXOMENTE — STACK                        ║
+╠══════════════════╦════════════════════════════════════════════╣
+║  Runtime Desktop ║  Electron v28 (janela sem bordas)         ║
+║  Frontend        ║  React 18 + Vite                          ║
+║  Estilização     ║  Tailwind CSS v3                          ║
+║  Animações       ║  Framer Motion                            ║
+║  Editor          ║  TipTap v2                                ║
+║  Banco de Dados  ║  sql.js (SQLite — 100% local)             ║
+║  Estado Global   ║  Zustand                                  ║
+║  Grafo           ║  Cytoscape.js                             ║
+║  IA              ║  Ollama :11434 / LM Studio :1234          ║
+║  Testes          ║  Vitest + Testing Library (70%+ coverage) ║
+╚══════════════════╩════════════════════════════════════════════╝
+```
+
+</details>
+
+<details>
+<summary><b>▶ Árvore de Diretórios</b></summary>
+
+<br>
 
 ```
 nexomente/
-├── electron/              # Runtime desktop (Electron 28+)
-│   ├── main.js           # Processo principal, janela, IPC
-│   └── preload.js       # Bridge segura (contextIsolation)
-├── app/src/              # Frontend React
-│   ├── pages/            # 11 páginas (Dashboard, Notas, Study...)
-│   ├── components/       # layout/, editor/, gamification/
-│   ├── hooks/            # useNotes, useFlashcards, useAIModel...
-│   ├── services/         # exportService, syncService
-│   ├── lib/             # db.js, parser.js, sm2.js, AI services
-│   └── store/            # Zustand stores
-├── src/test/            # Testes Vitest (70%+ coverage)
-├── scripts/              # Scripts de manutenção
-└── package.json         # Dependências e scripts
+│
+├── electron/                   ⚡ Motor de Desktop e Ponte IPC
+│   ├── main.js                 # Cria a janela sem bordas
+│   └── preload.js              # Isolamento seguro React ↔ SQLite
+│
+├── app/src/                    🎨 O Frontend (React + Vite)
+│   ├── pages/                  # 11 páginas
+│   │   ├── Dashboard.jsx       # Visão geral + Tamagotchi
+│   │   ├── Notas.jsx           # Editor + Biblioteca
+│   │   ├── Study.jsx           # Pomodoro + Sessões
+│   │   ├── Flashcards.jsx      # Revisão SM-2
+│   │   ├── Gerador.jsx         # Questões por IA
+│   │   ├── Grafo.jsx           # Cytoscape visualização
+│   │   └── Poemas.jsx          # Dashboard poético
+│   │
+│   ├── components/
+│   │   ├── gamification/       👾 Tamagotchi, XP Toast, Level Up
+│   │   ├── layout/             # Sidebar + headers de vidro
+│   │   └── ui/                 # Design System (Cards 3D, Botões)
+│   │
+│   ├── hooks/                  # useNotes, useFlashcards, useAIModel...
+│   ├── services/               # exportService, syncService
+│   ├── lib/                    # db.js, parser.js, sm2.js, AI services
+│   └── store/                  # Zustand (useUIStore, useTamagotchiStore)
+│
+├── src/test/                   🧪 Laboratório Vitest
+└── package.json
 ```
 
-### Stack Técnica
+</details>
 
-| Camada | Tecnologia |
-|--------|-----------|
-| Runtime | Electron v28 |
-| Frontend | React 18 + Vite |
-| Estilização | Tailwind CSS v3 |
-| Editor | TipTap v2 |
-| Banco | sql.js (SQLite) |
-| Estado | Zustand |
-| Grafo | Cytoscape.js |
-| IA | Ollama (porta 11434) / LM Studio (porta 1234) |
-| Gamificação | Framer Motion |
-| Tests | Vitest + Testing Library |
+<details>
+<summary><b>▶ Estrutura dos Dados (Pasta Cofre)</b></summary>
+
+<br>
+
+```
+📁 Pasta Cofre (você escolhe onde)/
+│
+├── 📁 _cofre/                  Suas notas em Markdown
+│   ├── 📁 livros/
+│   ├── 📁 projetos/
+│   ├── 📁 ideias/
+│   ├── 📁 diario/
+│   ├── 📁 estudo/
+│   └── 📁 biblia/
+│
+├── 📁 _banco/
+│   └── 🗄️ nexomente.db        SQLite com todos os dados
+│
+├── 📁 _backups/
+│   └── 🗄️ nexomente_YYYY-MM-DD.db
+│
+└── 📁 _exportacoes/
+    └── 📄 flashcards_YYYY-MM-DD.json
+```
+
+</details>
 
 ---
 
-## 🚀 Como Executar
+<br>
 
-### Pré-requisitos
-- **Node.js** 18+
-- **Python** 3.10+ (para graphify, opcional)
-- **Ollama** ou **LM Studio** (opcional, para recursos de IA)
+## ◈ Configurando a IA Local
 
-### Instalação
+O NexoMente é **100% offline**, mas os recursos de IA precisam de um LLM rodando na sua máquina. Há quatro opções:
+
+<details open>
+<summary><b>⭐ Opção 1 — Ollama (Recomendado)</b></summary>
+
+<br>
 
 ```bash
+# 1. Baixe em: https://ollama.com/download
+
+# 2. Baixe um modelo
+ollama pull llama3.2:3b    # ~2GB  — rápido, ótimo custo-benefício
+ollama pull llama3.1:8b    # ~5GB  — mais capaz
+ollama pull mistral:7b     # ~4GB  — versátil, bom em PT-BR
+ollama pull qwen2.5:7b     # ~4GB  — excelente em português
+
+# 3. Verifique os modelos instalados
+ollama list
+
+# 4. O Ollama sobe automaticamente em segundo plano na porta 11434
+```
+
+**No app:** `Configurações → IA → Ollama → selecione o modelo`
+
+</details>
+
+<details>
+<summary><b>▶ Opção 2 — LM Studio (Interface visual + mais modelos)</b></summary>
+
+<br>
+
+```
+1. Baixe em: https://lmstudio.ai/download
+2. Abra o LM Studio → Search → baixe um modelo
+3. Vá em "Local Server" → clique em "Start Server"
+4. API disponível em: http://localhost:1234/v1
+```
+
+**No app:** `Configurações → IA → LM Studio` (URL já vem pré-preenchida)
+
+</details>
+
+<details>
+<summary><b>▶ Opção 3 — Jan (Open-source alternativo)</b></summary>
+
+<br>
+
+```bash
+# Baixe em: https://jan.ai/download
+# Inicie o "Local API Server" na interface
+# URL padrão: http://localhost:1337/v1
+# Configure em: Configurações → IA → URL Customizada
+```
+
+</details>
+
+<details>
+<summary><b>▶ Opção 4 — Servidor API customizado</b></summary>
+
+<br>
+
+```
+Qualquer servidor compatível com API OpenAI funciona.
+Configure em: Configurações → IA → Provider: Custom
+URL: http://localhost:SUA_PORTA/v1
+```
+
+</details>
+
+<br>
+
+**Modelos recomendados por tarefa:**
+
+| Tarefa | Melhor modelo | Por quê |
+|--------|:-------------:|---------|
+| Flashcards e resumos | `llama3.2:3b` | Rápido, bom em formatação |
+| Questões de concurso | `llama3.1:8b` | Raciocínio multi-step |
+| Chat conversacional  | `qwen2.5:7b`  | Excelente em PT-BR |
+| Tags e conexões      | `phi3:14b`    | Eficiente em análise |
+| Poemas e texto criativo | `gemma-2-9b` | Criativo e bem formatado |
+
+---
+
+<br>
+
+## ◈ Instalação
+
+```bash
+# Pré-requisitos: Node.js 18+
+
 # 1. Entre na pasta do projeto
 cd nexomente
 
 # 2. Instale as dependências
 npm install
 
-# 3. (Opcional) Instale Ollama e baixe um modelo
-# https://ollama.com — baixe e rode:
+# 3. (Opcional) Configure a IA local
 ollama pull llama3.2:3b
 
 # 4. Inicie o app em modo desenvolvimento
 npm run dev
+# └─ Abre o servidor Vite (frontend) + janela Electron
 ```
 
-Isso abre duas janelas: o servidor Vite (frontend) e o Electron (app desktop).
-
-### Scripts Disponíveis
+**Scripts disponíveis:**
 
 ```bash
-npm run dev          # Desenvolvimento (Vite + Electron)
-npm run build        # Build de produção
-npm run build:win    # Build Windows (.exe)
-npm run test         # Rodar testes
-npm run test:run     # Rodar testes uma vez
-npm run test:coverage # Testes com cobertura
+npm run dev           # Desenvolvimento (Vite + Electron)
+npm run build         # Build de produção
+npm run build:win     # Build Windows (.exe)
+npm run test          # Rodar testes (watch mode)
+npm run test:run      # Rodar testes uma única vez
+npm run test:coverage # Testes com relatório de cobertura
 ```
 
 ---
 
-## 🤖 Configuração de IA Local
+<br>
 
-O NexoMente é **100% offline**, mas os recursos de IA dependem de um LLM rodando localmente na sua máquina. O app suporta **duas opções** que podem ser configuradas durante o onboarding ou nas Configurações.
+## ◈ Atalhos de Teclado
 
-### Como funciona
+<table>
+  <tr>
+    <td width="50%">
 
-```
-Seu Computador
-┌─────────────────────────────────────────────┐
-│  NexoMente (App)                            │
-│       │                                      │
-│       ▼                                      │
-│  ┌─────────┐    ┌──────────────┐            │
-│  │ Ollama  │ OR │  LM Studio   │            │
-│  │ :11434  │    │  :1234       │            │
-│  └────┬────┘    └──────┬───────┘            │
-│       │                 │                     │
-│       ▼                 ▼                     │
-│  ┌─────────────────────────────────────┐    │
-│  │  LLM rodando localmente             │    │
-│  │  (todos os dados ficam no seu PC)   │    │
-│  └─────────────────────────────────────┘    │
-└─────────────────────────────────────────────┘
-```
+**Navegação (`G` + tecla):**
 
-### Opção 1 — Ollama (Recomendado)
+| Atalho | Destino |
+|:------:|---------|
+| `G` `D` | 🏠 Dashboard |
+| `G` `N` | 📝 Notas |
+| `G` `S` | ⏱️ Study |
+| `G` `F` | 📇 Flashcards |
+| `G` `Q` | 🎓 Gerador |
+| `G` `G` | 🕸️ Grafo |
+| `G` `P` | 📜 Poemas |
+| `G` `,` | ⚙️ Configurações |
 
-O Ollama é a forma mais simples de rodar LLMs localmente. Baixe em [ollama.com](https://ollama.com) e siga:
+</td>
+    <td width="50%">
 
-```bash
-# 1. Instale o Ollama
-# Baixe em: https://ollama.com/download
-
-# 2. Após instalar, abra um terminal e baixe um modelo:
-ollama pull llama3.2:3b        # ~2GB — rápido, bom custo-benefício
-ollama pull llama3.1:8b        # ~4.8GB — mais capaz
-ollama pull phi3:14b           # ~2.2GB — da Microsoft, bom para texto
-ollama pull mistral:7b         # ~4.1GB — versátil
-
-# 3. Verifique se está rodando
-ollama list
-
-# 4. O Ollama inicia automaticamente em segundo plano
-# A porta 11434 fica disponível automaticamente
-```
-
-**Para iniciar manualmente (se necessário):**
-```bash
-ollama serve
-```
-
-**No app:** vá em **Configurações → IA** e selecione **Ollama** com o modelo que você baixou.
-
-### Opção 2 — LM Studio (Mais poder + UI)
-
-O LM Studio oferece uma interface visual e suporte a mais modelos (incluindo quantized). Baixe em [lmstudio.ai](https://lmstudio.ai):
-
-```bash
-# 1. Baixe o LM Studio
-# https://lmstudio.ai/download
-
-# 2. Instale e abra o app
-
-# 3. No LM Studio:
-#    a) vá em Search → procure um modelo (ex: "llama 3.2")
-#    b) baixe o modelo (Download)
-#    c) vá em "Local Server" (ícone de chat à esquerda)
-#    d) clique em "Start Server"
-#    e) A API estará disponível em http://localhost:1234/v1
-
-# 4. Selecione o modelo desejado e temperatura
-```
-
-**Para modelos recomendados:**
-| Modelo | Tamanho | Uso | Onde buscar no LM Studio |
-|--------|---------|-----|--------------------------|
-| Llama 3.2 3B | ~2GB | Uso geral, rápido | `llama3.2-3b` |
-| Llama 3.1 8B | ~5GB | Melhor qualidade | `llama-3.1-8b` |
-| Phi-3 Medium | ~4GB | Microsoft, eficiente | `phi-3-medium` |
-| Mistral 7B | ~4GB | Equilibrado | `mistral-7b` |
-| Qwen 2.5 7B | ~4.5GB | Excelente em PT-BR | `qwen2.5-7b` |
-| Gemma 2 9B | ~5GB | Google, versátil | `gemma-2-9b` |
-
-**No app:** vá em **Configurações → IA** e selecione **LM Studio**. A URL já vem pré-preenchida (`http://localhost:1234/v1`).
-
-### Opção 3 — Jan (Alternativa open-source)
-
-O Jan é uma alternativa ao LM Studio, 100% open-source: [jan.ai](https://jan.ai)
-
-```bash
-# 1. Baixe em: https://jan.ai/download
-
-# 2. Abra o Jan, baixe um modelo pela interface
-
-# 3. Vá em "Local API Server" e clique em Start
-#    (a API funciona na porta 1337 por padrão)
-
-# 4. No NexoMente, use a URL: http://localhost:1337/v1
-```
-
-### Opção 4 — Servidor API customizado
-
-Se você já tem um servidor LLM rodando (ex: Text Generation Webui, vLLM, etc.):
-
-```bash
-# Qualquer servidor com API OpenAI-compatible funciona
-# Exemplo com текст generation webui:
-# http://localhost:5000/v1
-
-# Configure no NexoMente em Configurações → IA
-# URL: http://localhost:SUA_PORTA/v1
-# Provider: Custom
-```
-
-### Modelos recomendados por tarefa
-
-| Tarefa | Melhor modelo | Por quê |
-|--------|--------------|---------|
-| Flashcards e resumos | `llama3.2:3b` | Rápido, bom em formatação |
-| Questões de concurso | `llama3.1:8b` | Melhor raciocínio multi-step |
-| Chat conversacional | `mistral:7b` ou `qwen2.5:7b` | Natural, bom em PT-BR |
-| Tags e conexões | `phi3:14b` | Eficiente, bom em análise |
-| POemas e textos criativos | `gemma-2-9b` | Criativo e bem formatado |
-
-### Solução de problemas
-
-**O app não conecta na IA?**
-1. Verifique se Ollama/LM Studio está aberto e rodando
-2. Clique em "Testar conexão" em Configurações → IA
-3. Verifique se o modelo foi baixado corretamente (`ollama list` ou LM Studio)
-4. Tente reiniciar o servidor (fechar e abrir de novo)
-
-**A IA está lenta?**
-- Modelos menores = mais rápido (3B > 8B > 70B)
-- Quantized (Q4_K_M) = mais rápido que FP16
-- Mais RAM livre = melhor cache de contexto
-- GPU dedicada = muito mais rápido (Nvidia CUDA)
-
-**Sem GPU dedicada?**
-Use modelos até 3B-7B — rodam bem em CPU. Llama 3.2 3B é o melhor custo-benefício para CPU-only.
-
----
-
-## 🎮 Keyboard Shortcuts
+**Ações globais:**
 
 | Atalho | Ação |
-|--------|------|
-| `G` `D` | Dashboard |
-| `G` `N` | Notas |
-| `G` `S` | Study |
-| `G` `F` | Flashcards |
-| `G` `Q` | Gerador |
-| `G` `G` | Grafo |
-| `G` `P` | Poemas |
-| `G` `,` | Configurações |
+|:------:|------|
 | `Ctrl+Shift+N` | Nova nota rápida |
 | `Ctrl+Shift+F` | Modo foco |
 | `Esc` | Fechar modais |
 
----
-
-## 📊 Gamificação — Sistema de XP
-
-| Ação | XP |
-|------|-----|
-| Criar nota | +5 XP |
-| Revisar flashcard | +2 XP |
-| Completar Pomodoro | +10 XP |
-| Criar questão (concurso) | +5 XP |
-| Resolver simulado | +10 XP |
-| 10 acertos seguidos | +15 XP |
-| Missão diária completa | +20 XP |
-
-**Níveis:** Estudante → Aprendiz → Pesquisador → Mestre do Conhecimento → Sábio Digital
+</td>
+  </tr>
+</table>
 
 ---
 
-## 🤿 Onboarding
+<br>
 
-Na primeira execução, o app guia você por 4 etapas:
-
-1. **Bem-vindo** — Apresentação do NexoMente
-2. **IA Local** — Configurar Ollama ou LM Studio
-3. **Pasta Cofre** — Selecionar onde salvar notas `.md`
-4. **Pronto** — Dashboard principal
-
----
-
-## 📂 Estrutura de Arquivos (Dados)
+## ◈ Onboarding — Primeiros Passos
 
 ```
-Pasta Cofre (configurável)/
-├── _cofre/                 # Notas em Markdown
-│   ├── livros/
-│   ├── projetos/
-│   ├── ideias/
-│   ├── diario/
-│   ├── estudo/
-│   └── biblia/
-├── _banco/
-│   └── nexomente.db        # SQLite com todos os dados
-├── _backups/
-│   └── nexomente_YYYY-MM-DD.db
-└── _exportacoes/
-    └── flashcards_YYYY-MM-DD.json
+  PASSO 1          PASSO 2          PASSO 3          PASSO 4
+┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
+│          │    │          │    │          │    │          │
+│  🌌       │───▶│  🤖       │───▶│  📁       │───▶│  ✅       │
+│ Bem-vindo│    │ IA Local │    │  Cofre   │    │  Pronto! │
+│          │    │          │    │          │    │          │
+└──────────┘    └──────────┘    └──────────┘    └──────────┘
+  Apresentação   Config Ollama   Pasta notas     Dashboard
+  do NexoMente   ou LM Studio    Markdown        principal
 ```
 
 ---
 
-## 🔒 Privacidade
+<br>
 
-- **100% offline** — nenhum dado enviado para servidores externos
+## ◈ Privacidade — Garantias Absolutas
+
+```
+╔═══════════════════════════════════════════════════════════════╗
+║  🔒 O QUE NUNCA SAI DO SEU COMPUTADOR                        ║
+╠═══════════════════════════════════════════════════════════════╣
+║  ✅  Todas as suas notas e arquivos Markdown                  ║
+║  ✅  Banco de dados SQLite com flashcards e histórico         ║
+║  ✅  Dados do Tamagotchi, XP, níveis e conquistas             ║
+║  ✅  Prompts e respostas da IA (processa tudo localmente)     ║
+║  ✅  Estatísticas de estudo e sessões Pomodoro                ║
+╠═══════════════════════════════════════════════════════════════╣
+║  ❌  Sem telemetria   ❌  Sem login   ❌  Sem nuvem           ║
+╚═══════════════════════════════════════════════════════════════╝
+```
+
+- **Context Isolation** — Electron com segurança máxima
+- **Banco SQLite local** — seus dados são seus, sem dependência externa
 - **IA local** — todos os modelos rodam no seu hardware
-- **Banco SQLite** — seus dados são seus, sem cloud
-- **Context isolation** — Electron com segurança máxima
-- **Git commit on save** — versão de dados local opcional
+- **Git commit on save** — versionamento de dados local (opcional)
 
 ---
 
-## 🛤️ Roadmap
+<br>
 
-- [ ] Auto-update via GitHub Releases
-- [ ] OCR para PDF e imagens
-- [ ] Modo simulado de provas
-- [ ] Sincronização multi-device (Google Drive)
-- [ ] Plugins / extensibilidade
-- [ ] Versão mobile (React Native)
+## ◈ Roadmap
+
+```
+STATUS LEGEND:  ✅ Pronto   🔨 Em desenvolvimento   📋 Planejado
+```
+
+| Feature | Status | Descrição |
+|---------|:------:|-----------|
+| Wiki-Notes + Wikilinks | ✅ | Editor TipTap com conexões automáticas |
+| Flashcards SM-2 | ✅ | Algoritmo de repetição espaçada |
+| IA Local (Ollama/LM Studio) | ✅ | Geração de cards, resumos e questões |
+| Grafo de Conexões | ✅ | Visualização Cytoscape.js |
+| Pomodoro + Sessões | ✅ | Timer com rastreamento por matéria |
+| Sistema de Gamificação | ✅ | XP, níveis, missões, conquistas |
+| Gerador de Questões | ✅ | Estilo banca com justificativas |
+| OCR para PDF e imagens | 📋 | Extração de texto para notas |
+| Modo Simulado de Provas | 📋 | Simulados cronometrados |
+| Sincronização multi-device | 📋 | Via Google Drive File Stream |
+| Auto-update via GitHub Releases | 📋 | Atualizações automáticas |
+| Plugins / Extensibilidade | 📋 | API para extensões externas |
+| Versão Mobile | 📋 | React Native |
 
 ---
 
-## 👤 Autor
+<br>
 
-**Bruno Felipe Conte** — Desenvolvido para uso pessoal com foco em estudo, organização de conhecimento e preparação para concursos.
+<div align="center">
 
----
+```
+╔═══════════════════════════════════════════════════════════════╗
+║                                                               ║
+║     Privacidade Absoluta.  Gamificação Intensa.               ║
+║              Conhecimento Eterno.                             ║
+║                                                               ║
+╚═══════════════════════════════════════════════════════════════╝
+```
 
-## 📄 Licença
+*Desenvolvido e moldado artesanalmente por **Bruno Felipe Conte**.*
 
-MIT License — Use, modifique e distribua livremente.
+[![MIT License](https://img.shields.io/badge/License-MIT-2ed573?style=flat-square)](#)
+[![Made with ♥](https://img.shields.io/badge/Feito_com-♥_e_café-ff4757?style=flat-square)](#)
 
----
-
-<p align="center">
-  <strong>Construa seu segundo cérebro. Estude com intención. Nada sai do seu computador.</strong>
-</p>
+</div>
