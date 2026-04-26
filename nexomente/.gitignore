@@ -17,9 +17,24 @@ dist_old/
 npm-debug.log*
 
 # Relatórios gerados (exceto o .example)
+reports/
 reports/lighthouse*.html
 reports/bundle-stats.html
 reports/security-*.json
+
+# Arquivos de desenvolvimento / planejamento interno
+CHANGELOG.md
+LOG_PROGRESSO.md
+PLAN.md
+FERRAMENTAS.md
+*.temp.js
+eslint.config.temp.js
+
+# Husky (hooks de dev — não necessário para quem clona)
+.husky/
+
+# Scripts internos de manutenção
+scripts/
 
 # Cobertura
 coverage/
