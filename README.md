@@ -22,8 +22,8 @@
 
 <br>
 
-> *"Pense no NexoMente como uma fusão de **Obsidian**, **Anki**, **Notion** e um **Tamagotchi**.*
-> *Nenhum byte seu vai para a nuvem. O controle do seu aprendizado voltou para suas mãos."*
+> *"Imagine uma fusão de **Obsidian**, **Anki**, **Notion** e um **Tamagotchi** — onde*
+> *nenhum byte seu vai para a nuvem. O controle do seu aprendizado voltou para suas mãos."*
 
 <br>
 
@@ -42,9 +42,9 @@
 
 ## ◈ O que é o NexoMente?
 
-**NexoMente** é um aplicativo desktop para anotação, estudo e construção de conhecimento pessoal — completamente offline, com IA rodando no *seu* hardware.
+**NexoMente** é um aplicativo desktop para anotação, estudo e construção de conhecimento — **completamente offline**, com Inteligência Artificial rodando no *seu* hardware.
 
-Cada funcionalidade foi pensada para o estudante sério: quem precisa de um sistema que *cresce com ele*, não de mais uma assinatura de nuvem que vende seus dados.
+Cada funcionalidade foi projetada para o estudante que leva conhecimento a sério: quem precisa de um sistema que *evolui junto*, não de mais uma assinatura de nuvem que monetiza seus dados.
 
 ```
 Obsidian  +  Anki  +  Notion  +  Tamagotchi  =  🧠 NexoMente
@@ -60,7 +60,7 @@ Obsidian  +  Anki  +  Notion  +  Tamagotchi  =  🧠 NexoMente
   <tr>
     <td width="50%" valign="top">
 
-### 📝 Wiki-Notes Mágicas
+### 📝 Wiki-Notes Inteligentes
 
 ```
 ┌──────────────────────────────┐
@@ -76,10 +76,10 @@ Obsidian  +  Anki  +  Notion  +  Tamagotchi  =  🧠 NexoMente
 
 - Editor **TipTap** premium (Markdown + WYSIWYG)
 - Conexões neurais via `[[wikilinks]]` com autocompletar
-- Suporte nativo a fórmulas **LaTeX** matemáticas
-- **7 tipos de nota:** livro, projeto, ideia, diário, bíblia, estudo, lembrete
+- Suporte nativo a fórmulas **LaTeX**
+- **7 tipos:** livro, projeto, ideia, diário, bíblia, estudo, lembrete
 - Modo **Foco** para escrita sem distrações
-- Sincronização bidirecional com pasta local `.md`
+- Sincronização bidirecional com pasta `.md` local
 
 </td>
     <td width="50%" valign="top">
@@ -99,8 +99,8 @@ Obsidian  +  Anki  +  Notion  +  Tamagotchi  =  🧠 NexoMente
 └──────────────────────────────┘
 ```
 
-- Gera **resumos** e extrai conceitos-chave
-- Cria **Flashcards** e Questões de Concurso automaticamente
+- Gera **resumos** e extrai conceitos-chave automaticamente
+- Cria **Flashcards** e Questões de Concurso da sua nota
 - Chat contextual que "lê" suas anotações ativas
 - Conecta ao **Ollama** ou **LM Studio** invisivelmente
 - Sugestão inteligente de **tags e conexões**
@@ -110,7 +110,7 @@ Obsidian  +  Anki  +  Notion  +  Tamagotchi  =  🧠 NexoMente
   <tr>
     <td width="50%" valign="top">
 
-### 📇 Flashcards com Spaced Repetition
+### 📇 Flashcards — Repetição Espaçada
 
 ```
 ┌──────────────────────────────┐
@@ -124,8 +124,8 @@ Obsidian  +  Anki  +  Notion  +  Tamagotchi  =  🧠 NexoMente
 └──────────────────────────────┘
 ```
 
-- Algoritmo **SuperMemo 2** adaptativo
-- Criação **manual ou massiva via IA**
+- Algoritmo **SuperMemo 2** adaptativo ao seu ritmo
+- Criação **manual ou em massa via IA**
 - Revisões focadas só no que você está esquecendo
 - Botão "Recitei" com **undo de 5 segundos**
 - Gerenciador central com filtros avançados
@@ -147,16 +147,16 @@ Obsidian  +  Anki  +  Notion  +  Tamagotchi  =  🧠 NexoMente
 
 - Visualização interativa com **Cytoscape.js**
 - Nós coloridos por **tipo de nota e matéria**
-- Filtros por tipo, matéria e tags
+- Filtros dinâmicos por tipo, matéria e tags
 - Preview da nota ao **clicar no nó**
-- Conexões via wikilinks + tags compartilhadas
+- Conexões: wikilinks + tags compartilhadas
 
 </td>
   </tr>
   <tr>
     <td width="50%" valign="top">
 
-### ⏱️ Pomodoro & Estudo
+### ⏱️ Pomodoro & Sessões de Estudo
 
 ```
 ┌──────────────────────────────┐
@@ -172,9 +172,9 @@ Obsidian  +  Anki  +  Notion  +  Tamagotchi  =  🧠 NexoMente
 
 - Timer **25 / 50 / 15 min** configurável
 - Sessões registradas **por matéria**
-- Metas de horas com acompanhamento
+- Metas de horas com acompanhamento visual
 - Histórico com estatísticas detalhadas
-- **+XP a cada Pomodoro** concluído
+- **+XP e HP** para o Tamagotchi a cada sessão
 
 </td>
     <td width="50%" valign="top">
@@ -195,10 +195,10 @@ Obsidian  +  Anki  +  Notion  +  Tamagotchi  =  🧠 NexoMente
 ```
 
 - Upload de arquivos **TXT, MD, PNG, JPG**
-- Questões no estilo de **bancas reais**
+- Questões no estilo de **bancas reais** (CESPE, FGV, FCC)
 - Justificativas pedagógicas por alternativa
 - Exportação para **DOC, HTML, JSON**
-- Tags, dispositivo legal e metadata
+- Tags, dispositivo legal e metadata inclusos
 
 </td>
   </tr>
@@ -212,7 +212,7 @@ Obsidian  +  Anki  +  Notion  +  Tamagotchi  =  🧠 NexoMente
 
 > NexoMente não é apenas um bloco de notas. É um **RPG do seu conhecimento.**
 
-Acompanhe a evolução de um mascote virtual que reage diretamente ao seu esforço. Cada sessão de Pomodoro alimenta o seu companheiro de estudos.
+Acompanhe a evolução de um mascote virtual que reage diretamente ao seu esforço real. Cada sessão de Pomodoro concluída alimenta, cura e evolui o seu companheiro de estudos.
 
 <details open>
 <summary><b>▶ Tabela de XP e Mecânicas de Evolução</b></summary>
@@ -226,6 +226,7 @@ Acompanhe a evolução de um mascote virtual que reage diretamente ao seu esfor�
 | Livre `< 15m` | `5 XP` | `10 XP` | `15 XP` |
 | Padrão `25m`  | `15 XP` | `30 XP` | `45 XP` |
 | Intenso `50m` | `30 XP` | `60 XP` | `90 XP` |
+| Foco `1-2h`   | `50 XP` | `100 XP`| `150 XP`|
 | Maratona `2h+`| `80 XP` | `160 XP`| `240 XP`|
 
 <br>
@@ -233,9 +234,9 @@ Acompanhe a evolução de um mascote virtual que reage diretamente ao seu esfor�
 **🛡️ Mecânica de Vida (HP):**
 
 ```
-Estudou hoje?   ✅  →  HP estável + XP ganho
+Estudou hoje?   ✅  →  HP estável + XP ganho + HP recuperado
 Faltou 1 dia?   ⚠️  →  -10 HP
-Faltou 2 dias?  ❌  →  -30 HP
+Faltou 2 dias?  ❌  →  -30 HP (acumulativo)
 HP = 0?         💀  →  HIBERNAÇÃO — ofensiva quebrada
                         (Volte a estudar para ressuscitar!)
 ```
@@ -246,43 +247,42 @@ HP = 0?         💀  →  HIBERNAÇÃO — ofensiva quebrada
 
 ```
 Nv. 01-05  ┃  🥚 Ovinho ──────────────▶ 🦆 Pato
-           ┃  O Nascimento — primeiros passos
-─────────────────────────────────────────────────
+           ┃  O Nascimento — primeiros passos tímidos
+─────────────────────────────────────────────────────
 Nv. 06-10  ┃  🐰 Coelho ─────────────▶ 🦊 Raposa
-           ┃  A Descoberta — curiosidade aflora
-─────────────────────────────────────────────────
+           ┃  A Descoberta — a curiosidade aflora
+─────────────────────────────────────────────────────
 Nv. 11-15  ┃  🦝 Guaxinim ───────────▶ 🦁 Leão
-           ┃  A Ascensão — confiança e força
-─────────────────────────────────────────────────
+           ┃  A Ascensão — confiança e força crescem
+─────────────────────────────────────────────────────
 Nv. 16-20  ┃  🐯 Tigre ──────────────▶ 🐉 Dragão Jovem
-           ┃  O Poder — domínio total
-─────────────────────────────────────────────────
+           ┃  O Poder — domínio das matérias
+─────────────────────────────────────────────────────
 Nv. 21-25  ┃  🐍 Serpente ───────────▶ 🐲 Dragão Arco-Íris
-           ┃  A Transcendência — além dos limites
-─────────────────────────────────────────────────
+           ┃  A Transcendência — além dos limites humanos
+─────────────────────────────────────────────────────
 Nv. 26-30  ┃  🌌 Ser Cósmico ────────▶ ✴️  Forma Final
            ┃  O Absoluto — habilidades cósmicas desbloqueadas
 ```
 
+Cada forma desbloqueia **habilidades passivas exclusivas** — o Gato reduz dano por ausência, a Raposa dá bônus em sessões longas, a Fênix ressuscita com mais HP, e a Forma Final nunca perde o multiplicador de streak abaixo de ×2.
+
 </details>
 
 <details>
-<summary><b>▶ Tabela Completa de XP por Ação</b></summary>
+<summary><b>▶ XP por Ação (Fora do Pomodoro)</b></summary>
 
 <br>
 
-| Ação | XP | Observação |
-|------|----|-----------|
-| Criar uma nota | `+5 XP` | Por nota criada |
-| Revisar flashcard | `+2 XP` | Por card revisado |
-| Completar Pomodoro | `+10 XP` | Timer finalizado |
-| Criar questão (concurso) | `+5 XP` | Via gerador ou manual |
-| Resolver simulado | `+10 XP` | Simulado completo |
-| 10 acertos seguidos | `+15 XP` | Combo streak |
-| Missão diária completa | `+20 XP` | Todas as missões do dia |
-
-**Progressão de Títulos:**
-`Estudante` → `Aprendiz` → `Pesquisador` → `Mestre do Conhecimento` → `Sábio Digital`
+| Ação | XP | Nota |
+|:-----|:--:|------|
+| Criar uma nota | `+5` | Por nota |
+| Revisar flashcard | `+2` | Por card |
+| Completar Pomodoro | `+10` | Timer finalizado |
+| Criar questão | `+5` | Via gerador ou manual |
+| Resolver simulado | `+10` | Simulado completo |
+| Combo 10 acertos | `+15` | Streak de acertos |
+| Missão diária | `+20` | Todas as tasks do dia |
 
 </details>
 
@@ -301,16 +301,16 @@ Nv. 26-30  ┃  🌌 Ser Cósmico ────────▶ ✴️  Forma Fina
 ╔═══════════════════════════════════════════════════════════════╗
 ║                     NEXOMENTE — STACK                        ║
 ╠══════════════════╦════════════════════════════════════════════╣
-║  Runtime Desktop ║  Electron v28 (janela sem bordas)         ║
-║  Frontend        ║  React 18 + Vite                          ║
-║  Estilização     ║  Tailwind CSS v3                          ║
-║  Animações       ║  Framer Motion                            ║
-║  Editor          ║  TipTap v2                                ║
-║  Banco de Dados  ║  sql.js (SQLite — 100% local)             ║
-║  Estado Global   ║  Zustand                                  ║
-║  Grafo           ║  Cytoscape.js                             ║
-║  IA              ║  Ollama :11434 / LM Studio :1234          ║
-║  Testes          ║  Vitest + Testing Library (70%+ coverage) ║
+║  Runtime Desktop ║  Electron v28 (frameless window)          ║
+║  Frontend        ║  React 18 + Vite (HMR instantâneo)       ║
+║  Estilização     ║  Tailwind CSS v3 + CSS Variables          ║
+║  Animações       ║  Framer Motion + canvas-confetti          ║
+║  Editor Rich     ║  TipTap v2 (extensões customizadas)       ║
+║  Banco de Dados  ║  sql.js (SQLite compilado p/ WASM)       ║
+║  Estado Global   ║  Zustand (persist middleware)             ║
+║  Grafo Visual    ║  Cytoscape.js                             ║
+║  IA Local        ║  Ollama :11434 / LM Studio :1234          ║
+║  Testes          ║  Vitest + Testing Library                 ║
 ╚══════════════════╩════════════════════════════════════════════╝
 ```
 
@@ -323,59 +323,38 @@ Nv. 26-30  ┃  🌌 Ser Cósmico ────────▶ ✴️  Forma Fina
 
 ```
 nexomente/
-│
-├── electron/                   ⚡ Motor de Desktop e Ponte IPC
-│   ├── main.js                 # Cria a janela sem bordas
-│   └── preload.js              # Isolamento seguro React ↔ SQLite
-│
-├── app/src/                    🎨 O Frontend (React + Vite)
-│   ├── pages/                  # 11 páginas
-│   │   ├── Dashboard.jsx       # Visão geral + Tamagotchi
-│   │   ├── Notas.jsx           # Editor + Biblioteca
-│   │   ├── Study.jsx           # Pomodoro + Sessões
-│   │   ├── Flashcards.jsx      # Revisão SM-2
-│   │   ├── Gerador.jsx         # Questões por IA
-│   │   ├── Grafo.jsx           # Cytoscape visualização
-│   │   └── Poemas.jsx          # Dashboard poético
-│   │
+├── electron/                   ⚡ Desktop Runtime + IPC Bridge
+│   ├── main.js                 # Janela frameless + segurança
+│   └── preload.js              # contextBridge (React ↔ SQLite)
+├── app/src/                    🎨 Frontend React + Vite
+│   ├── pages/                  # Dashboard, Notas, Study, Flashcards,
+│   │                           # Gerador, Grafo, Poemas, AIChat, Settings
 │   ├── components/
-│   │   ├── gamification/       👾 Tamagotchi, XP Toast, Level Up
-│   │   ├── layout/             # Sidebar + headers de vidro
-│   │   └── ui/                 # Design System (Cards 3D, Botões)
-│   │
-│   ├── hooks/                  # useNotes, useFlashcards, useAIModel...
-│   ├── services/               # exportService, syncService
-│   ├── lib/                    # db.js, parser.js, sm2.js, AI services
-│   └── store/                  # Zustand (useUIStore, useTamagotchiStore)
-│
-├── src/test/                   🧪 Laboratório Vitest
-└── package.json
+│   │   ├── gamification/       # 👾 TamagotchiWidget, LevelUpOverlay
+│   │   ├── layout/             # Sidebar glassmorphism, Header
+│   │   └── ui/                 # Card (parallax 3D), Button, Badge
+│   ├── store/                  # Zustand: useUIStore, useTamagotchiStore
+│   ├── hooks/                  # useNotes, useFlashcards, useAIModel
+│   └── lib/                    # db.js, sm2.js, parser, AI services
+└── src/test/                   🧪 Vitest suite
 ```
 
 </details>
 
 <details>
-<summary><b>▶ Estrutura dos Dados (Pasta Cofre)</b></summary>
+<summary><b>▶ Dados Locais (Pasta Cofre)</b></summary>
 
 <br>
 
 ```
-📁 Pasta Cofre (você escolhe onde)/
-│
-├── 📁 _cofre/                  Suas notas em Markdown
-│   ├── 📁 livros/
-│   ├── 📁 projetos/
-│   ├── 📁 ideias/
-│   ├── 📁 diario/
-│   ├── 📁 estudo/
-│   └── 📁 biblia/
-│
+📁 Pasta Cofre (você escolhe)/
+├── 📁 _cofre/                  Notas em Markdown
+│   ├── livros/ · projetos/ · ideias/
+│   ├── diario/ · estudo/ · biblia/
 ├── 📁 _banco/
-│   └── 🗄️ nexomente.db        SQLite com todos os dados
-│
+│   └── 🗄️ nexomente.db        SQLite (todos os dados)
 ├── 📁 _backups/
 │   └── 🗄️ nexomente_YYYY-MM-DD.db
-│
 └── 📁 _exportacoes/
     └── 📄 flashcards_YYYY-MM-DD.json
 ```
@@ -388,120 +367,62 @@ nexomente/
 
 ## ◈ Configurando a IA Local
 
-O NexoMente é **100% offline**, mas os recursos de IA precisam de um LLM rodando na sua máquina. Há quatro opções:
+100% offline, mas os recursos de IA precisam de um LLM rodando na sua máquina:
 
 <details open>
-<summary><b>⭐ Opção 1 — Ollama (Recomendado)</b></summary>
-
-<br>
+<summary><b>⭐ Ollama (Recomendado)</b></summary>
 
 ```bash
-# 1. Baixe em: https://ollama.com/download
-
-# 2. Baixe um modelo
-ollama pull llama3.2:3b    # ~2GB  — rápido, ótimo custo-benefício
-ollama pull llama3.1:8b    # ~5GB  — mais capaz
-ollama pull mistral:7b     # ~4GB  — versátil, bom em PT-BR
-ollama pull qwen2.5:7b     # ~4GB  — excelente em português
-
-# 3. Verifique os modelos instalados
-ollama list
-
-# 4. O Ollama sobe automaticamente em segundo plano na porta 11434
+# 1. Baixe: https://ollama.com/download
+# 2. Instale um modelo:
+ollama pull llama3.2:3b    # ~2GB — rápido, ótimo custo-benefício
+ollama pull qwen2.5:7b     # ~4GB — excelente em português
+# 3. Pronto! Porta 11434 sobe automaticamente.
 ```
-
 **No app:** `Configurações → IA → Ollama → selecione o modelo`
 
 </details>
 
 <details>
-<summary><b>▶ Opção 2 — LM Studio (Interface visual + mais modelos)</b></summary>
+<summary><b>▶ LM Studio / Jan / API Custom</b></summary>
 
-<br>
-
-```
-1. Baixe em: https://lmstudio.ai/download
-2. Abra o LM Studio → Search → baixe um modelo
-3. Vá em "Local Server" → clique em "Start Server"
-4. API disponível em: http://localhost:1234/v1
-```
-
-**No app:** `Configurações → IA → LM Studio` (URL já vem pré-preenchida)
-
-</details>
-
-<details>
-<summary><b>▶ Opção 3 — Jan (Open-source alternativo)</b></summary>
-
-<br>
-
-```bash
-# Baixe em: https://jan.ai/download
-# Inicie o "Local API Server" na interface
-# URL padrão: http://localhost:1337/v1
-# Configure em: Configurações → IA → URL Customizada
-```
-
-</details>
-
-<details>
-<summary><b>▶ Opção 4 — Servidor API customizado</b></summary>
-
-<br>
-
-```
-Qualquer servidor compatível com API OpenAI funciona.
-Configure em: Configurações → IA → Provider: Custom
-URL: http://localhost:SUA_PORTA/v1
-```
+- **LM Studio:** Baixe em [lmstudio.ai](https://lmstudio.ai) → Start Server → `localhost:1234/v1`
+- **Jan:** Baixe em [jan.ai](https://jan.ai) → Local API → `localhost:1337/v1`
+- **Custom:** Qualquer servidor OpenAI-compatible → `Configurações → IA → URL`
 
 </details>
 
 <br>
 
-**Modelos recomendados por tarefa:**
-
-| Tarefa | Melhor modelo | Por quê |
-|--------|:-------------:|---------|
-| Flashcards e resumos | `llama3.2:3b` | Rápido, bom em formatação |
+| Tarefa | Modelo ideal | Por quê |
+|--------|:---:|---------|
+| Flashcards / resumos | `llama3.2:3b` | Rápido, boa formatação |
 | Questões de concurso | `llama3.1:8b` | Raciocínio multi-step |
-| Chat conversacional  | `qwen2.5:7b`  | Excelente em PT-BR |
-| Tags e conexões      | `phi3:14b`    | Eficiente em análise |
-| Poemas e texto criativo | `gemma-2-9b` | Criativo e bem formatado |
+| Chat em português | `qwen2.5:7b` | Excelente em PT-BR |
+| Poemas / texto criativo | `gemma-2-9b` | Criativo e expressivo |
 
 ---
 
 <br>
 
-## ◈ Instalação
+## ◈ Instalação Rápida
 
 ```bash
-# Pré-requisitos: Node.js 18+
-
-# 1. Entre na pasta do projeto
-cd nexomente
-
-# 2. Instale as dependências
-npm install
-
-# 3. (Opcional) Configure a IA local
-ollama pull llama3.2:3b
-
-# 4. Inicie o app em modo desenvolvimento
-npm run dev
-# └─ Abre o servidor Vite (frontend) + janela Electron
+cd nexomente && npm install && npm run dev
 ```
 
-**Scripts disponíveis:**
+<details>
+<summary><b>▶ Scripts disponíveis</b></summary>
 
 ```bash
 npm run dev           # Desenvolvimento (Vite + Electron)
 npm run build         # Build de produção
 npm run build:win     # Build Windows (.exe)
-npm run test          # Rodar testes (watch mode)
-npm run test:run      # Rodar testes uma única vez
-npm run test:coverage # Testes com relatório de cobertura
+npm run test          # Testes (watch mode)
+npm run test:coverage # Cobertura de código
 ```
+
+</details>
 
 ---
 
@@ -509,55 +430,13 @@ npm run test:coverage # Testes com relatório de cobertura
 
 ## ◈ Atalhos de Teclado
 
-<table>
-  <tr>
-    <td width="50%">
-
-**Navegação (`G` + tecla):**
-
-| Atalho | Destino |
-|:------:|---------|
-| `G` `D` | 🏠 Dashboard |
-| `G` `N` | 📝 Notas |
-| `G` `S` | ⏱️ Study |
-| `G` `F` | 📇 Flashcards |
-| `G` `Q` | 🎓 Gerador |
-| `G` `G` | 🕸️ Grafo |
-| `G` `P` | 📜 Poemas |
-| `G` `,` | ⚙️ Configurações |
-
-</td>
-    <td width="50%">
-
-**Ações globais:**
-
-| Atalho | Ação |
-|:------:|------|
-| `Ctrl+Shift+N` | Nova nota rápida |
-| `Ctrl+Shift+F` | Modo foco |
-| `Esc` | Fechar modais |
-
-</td>
-  </tr>
-</table>
-
----
-
-<br>
-
-## ◈ Onboarding — Primeiros Passos
-
-```
-  PASSO 1          PASSO 2          PASSO 3          PASSO 4
-┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
-│          │    │          │    │          │    │          │
-│  🌌       │───▶│  🤖       │───▶│  📁       │───▶│  ✅       │
-│ Bem-vindo│    │ IA Local │    │  Cofre   │    │  Pronto! │
-│          │    │          │    │          │    │          │
-└──────────┘    └──────────┘    └──────────┘    └──────────┘
-  Apresentação   Config Ollama   Pasta notas     Dashboard
-  do NexoMente   ou LM Studio    Markdown        principal
-```
+| Navegação | | Ações |  |
+|:-:|---|:-:|---|
+| `G` `D` | 🏠 Dashboard | `Ctrl+Shift+N` | Nova nota |
+| `G` `N` | 📝 Notas | `Ctrl+Shift+F` | Modo foco |
+| `G` `S` | ⏱️ Estudo | `Ctrl+B` | Toggle sidebar |
+| `G` `F` | 📇 Flashcards | `Esc` | Fechar modais |
+| `G` `G` | 🕸️ Grafo | `←` `→` | Navegar páginas |
 
 ---
 
@@ -569,20 +448,14 @@ npm run test:coverage # Testes com relatório de cobertura
 ╔═══════════════════════════════════════════════════════════════╗
 ║  🔒 O QUE NUNCA SAI DO SEU COMPUTADOR                        ║
 ╠═══════════════════════════════════════════════════════════════╣
-║  ✅  Todas as suas notas e arquivos Markdown                  ║
-║  ✅  Banco de dados SQLite com flashcards e histórico         ║
+║  ✅  Notas, flashcards, poemas e banco de dados               ║
 ║  ✅  Dados do Tamagotchi, XP, níveis e conquistas             ║
-║  ✅  Prompts e respostas da IA (processa tudo localmente)     ║
+║  ✅  Prompts e respostas da IA (tudo local)                   ║
 ║  ✅  Estatísticas de estudo e sessões Pomodoro                ║
 ╠═══════════════════════════════════════════════════════════════╣
 ║  ❌  Sem telemetria   ❌  Sem login   ❌  Sem nuvem           ║
 ╚═══════════════════════════════════════════════════════════════╝
 ```
-
-- **Context Isolation** — Electron com segurança máxima
-- **Banco SQLite local** — seus dados são seus, sem dependência externa
-- **IA local** — todos os modelos rodam no seu hardware
-- **Git commit on save** — versionamento de dados local (opcional)
 
 ---
 
@@ -590,25 +463,20 @@ npm run test:coverage # Testes com relatório de cobertura
 
 ## ◈ Roadmap
 
-```
-STATUS LEGEND:  ✅ Pronto   🔨 Em desenvolvimento   📋 Planejado
-```
-
-| Feature | Status | Descrição |
-|---------|:------:|-----------|
-| Wiki-Notes + Wikilinks | ✅ | Editor TipTap com conexões automáticas |
-| Flashcards SM-2 | ✅ | Algoritmo de repetição espaçada |
-| IA Local (Ollama/LM Studio) | ✅ | Geração de cards, resumos e questões |
-| Grafo de Conexões | ✅ | Visualização Cytoscape.js |
-| Pomodoro + Sessões | ✅ | Timer com rastreamento por matéria |
-| Sistema de Gamificação | ✅ | XP, níveis, missões, conquistas |
-| Gerador de Questões | ✅ | Estilo banca com justificativas |
-| OCR para PDF e imagens | 📋 | Extração de texto para notas |
-| Modo Simulado de Provas | 📋 | Simulados cronometrados |
-| Sincronização multi-device | 📋 | Via Google Drive File Stream |
-| Auto-update via GitHub Releases | 📋 | Atualizações automáticas |
-| Plugins / Extensibilidade | 📋 | API para extensões externas |
-| Versão Mobile | 📋 | React Native |
+| Feature | Status | |
+|---------|:------:|---|
+| Wiki-Notes + Wikilinks | ✅ | Editor TipTap com conexões |
+| Flashcards SM-2 | ✅ | Repetição espaçada adaptativa |
+| IA Local (Ollama/LM Studio) | ✅ | Cards, resumos, questões |
+| Grafo de Conexões | ✅ | Cytoscape.js interativo |
+| Pomodoro + Sessões | ✅ | Timer por matéria |
+| Tamagotchi de Estudos | ✅ | 30 níveis, HP, XP, passivas |
+| Gerador de Questões | ✅ | Estilo banca + justificativas |
+| Dashboard + Poema Vigente | ✅ | Inspiração diária |
+| OCR para PDF/imagens | 📋 | Planejado |
+| Modo Simulado de Provas | 📋 | Planejado |
+| Sync multi-device | 📋 | Planejado |
+| Versão Mobile | 📋 | Planejado |
 
 ---
 
