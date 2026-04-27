@@ -14,8 +14,9 @@ const tipoCores = {
 };
 
 export default function Graph() {
-  const Notas = useUIStore.getState().Notas;
-  const Pastas = useUIStore.getState().Pastas;
+  const uiState = useUIStore();
+  const Notas = uiState.Notas;
+  const Pastas = uiState.Pastas;
   const containerRef = useRef(null);
   const cyRef = useRef(null);
   const [notas, setNotas] = useState([]);
@@ -47,6 +48,7 @@ export default function Graph() {
   }, []);
 
   useEffect(() => {
+    if (!Notas) return;
     setNotas(Notas.getAll());
   }, [Notas]);
 

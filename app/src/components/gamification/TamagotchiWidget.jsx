@@ -14,8 +14,15 @@ export default function TamagotchiWidget({ className = '' }) {
     checkDailyStatus();
   }, [checkDailyStatus]);
 
-  const hpPercent = (player.hp / player.hp_max) * 100;
+  // Determinar o humor e o emoji secundário baseado no HP
+  let moodEmoji = '😐';
+  let moodStatus = 'Neutro';
+  let isShaking = false;
+  let isBouncing = false;
+  let isSpinning = false;
   
+  const hpPercent = (player.hp / player.hp_max) * 100;
+
   if (player.hibernating || player.hp === 0) {
     moodEmoji = '💀';
     moodStatus = 'Hibernando';
