@@ -1,350 +1,357 @@
 /**
- * AIChatPage — página de chat com IA local (LM Studio).
- * Refatorado (Tarefa 4.1): ChatMessage extraído para componente próprio.
+ * AIChatPage — Alta Fidelidade Claude.ai.
+ * Implementação de Popovers integrados para Contexto e Modelos.
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
-import {
-  MessageSquare, Send, Loader2, ChevronDown, RefreshCw,
-  WifiOff, Wifi, Trash2, Bot, Globe, Cpu, Zap
+import { 
+  Plus, Send, Loader2, ChevronDown, 
+  Trash2, Bot, Zap, Check, FileText,
+  Search, Info, Sparkles
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useAIModel, useAIChat } from '../hooks/useAIModel';
 import { useNotes } from '../hooks/useNotes';
 import * as aiProvider from '../lib/ai/aiProvider';
-import { getTemperature } from '../lib/ai/lmStudioService';
 import toast from 'react-hot-toast';
 import ChatMessage from '../components/ai/ChatMessage';
-import AIFallbackModal from '../components/ai/AIFallbackModal';
-import AIMemoryIndicator from '../components/ai/AIMemoryIndicator';
-import PropTypes from 'prop-types';
 
 const TEMPLATES = [
-  { id: 'resumir',   label: 'Resumir',    prompt: 'Resuma o conteúdo em 3-5 frases' },
-  { id: 'conceitos', label: 'Conceitos',  prompt: 'Extraia os 5 conceitos-chave' },
-  { id: 'perguntas', label: 'Perguntas',  prompt: 'Gere 5 perguntas de revisão' },
-  { id: 'critica',   label: 'Crítica',    prompt: 'Analise criticamente: o que falta?' },
-  { id: 'conexoes',  label: 'Conexões',   prompt: 'Que conexões tem com outras áreas?' },
-  { id: 'exemplos',  label: 'Exemplos',   prompt: 'Gere 3 exemplos práticos' },
-  { id: 'analogias', label: 'Analogias',  prompt: 'Explique com uma analogia do cotidiano' },
+  { id: 'escrever',   label: 'Escrever',    prompt: 'Escreva um texto sobre...' },
+  { id: 'estrategias', label: 'Estratégias', prompt: 'Crie uma estratégia de estudo para...' },
+  { id: 'aprender',   label: 'Aprender',    prompt: 'Me ensine sobre...' },
+  { id: 'codigo',     label: 'Código',      prompt: 'Explique o código...' },
 ];
 
-function AIChatPage({ onNavigate }) {
-  const notas = useNotes();
-  const { status, provider, modelos, modeloAtual, loading: statusLoading, trocarModelo, trocarTemperatura, verificar } = useAIModel();
-
+export default function AIChatPage({ onNavigate }) {
+  const { notas } = useNotes();
+  const { status, modelos, modeloAtual, trocarModelo, tempLocal, trocarTemperatura } = useAIModel();
+  
   const [notaId, setNotaId] = useState(null);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [tempLocal, setTempLocal] = useState(getTemperature());
-  const [showModelo, setShowModelo] = useState(false);
+  const [showModelMenu, setShowModelMenu] = useState(false);
+  const [showAttachMenu, setShowAttachMenu] = useState(false);
+  const [buscaNota, setBuscaNota] = useState('');
   const [copiadoIdx, setCopiadoIdx] = useState(null);
-  const [fallbackData, setFallbackData] = useState({ isOpen: false, error: '' });
-  const [contextStats, setContextStats] = useState({ activeTokens: 0, maxTokens: 4096 });
 
   const { mensagens, adicionar, limpar } = useAIChat(notaId);
-  const notaAtual = notaId ? notas.getById(notaId) : null;
+  const notaAtual = notaId ? notas.find(n => n.id === notaId) : null;
   const bottomRef = useRef(null);
 
-  const fetchStats = useCallback(async () => {
-    try {
-      const stats = await window.electronAPI.invoke('ai:getContextStats');
-      setContextStats(stats);
-    } catch (e) {
-      console.warn('Erro ao buscar stats de contexto:', e);
-    }
+  // Fechar menus ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setShowModelMenu(false);
+      setShowAttachMenu(false);
+    };
+    window.addEventListener('click', handleClickOutside);
+    return () => window.removeEventListener('click', handleClickOutside);
   }, []);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [mensagens]);
-  useEffect(() => { if (status === 'offline' && provider === 'local') verificar(); }, [status, provider]);
-  useEffect(() => { fetchStats(); }, [mensagens, fetchStats]);
 
   const buildMessages = useCallback((userPrompt) => {
     const sys = notaAtual
-      ? `Você é um assistente de estudo. Contexto: Nota "${notaAtual.titulo}".\nConteúdo:\n${(notaAtual.conteudo || '').replace(/<[^>]*>/g, '').substring(0, 2000)}`
+      ? `Você é um assistente de estudo. Contexto: Nota "${notaAtual.titulo}".\nConteúdo:\n${(notaAtual.conteudo || '').replace(/<[^>]*>/g, '').substring(0, 4000)}`
       : 'Você é um assistente de estudo prestativo. Responda em português.';
+    
     const msgs = [{ role: 'system', content: sys }];
-    mensagens.slice(-20).forEach(m => msgs.push({ role: m.role, content: m.texto }));
+    mensagens.slice(-10).forEach(m => msgs.push({ role: m.role, content: m.texto }));
     if (userPrompt) msgs.push({ role: 'user', content: userPrompt });
     return msgs;
   }, [notaAtual, mensagens]);
 
   const enviar = async (promptExtra) => {
     const prompt = promptExtra || input.trim();
-    if (!prompt) return;
+    if (!prompt || loading) return;
+    
     setLoading(true);
     if (!promptExtra) setInput('');
     adicionar('user', prompt);
+    
     try {
       const res = await aiProvider.chat(buildMessages(prompt), { 
         model: modeloAtual, 
         temperature: tempLocal, 
-        max_tokens: 1024 
+        max_tokens: 2000 
       });
-
-      if (!res.success) {
-        if (res.isProviderError) setFallbackData({ isOpen: true, error: res.error });
-        adicionar('assistant', res.error, res.code);
-      } else {
-        adicionar('assistant', res.response);
-      }
+      adicionar('assistant', res.success ? res.response : res.error, res.code);
     } catch (e) {
-      adicionar('assistant', e.message, 'ERR-JS-EXCEPTION');
+      adicionar('assistant', e.message, 'ERROR');
     }
     setLoading(false);
   };
 
-  const handleCopiar = (texto, idx) => {
-    navigator.clipboard.writeText(texto).then(() => {
-      setCopiadoIdx(idx);
-      setTimeout(() => setCopiadoIdx(null), 2000);
-    });
-  };
-
-  const handleInserir = () => {
-    if (!notaAtual) { toast.error('Nenhuma nota aberta'); return; }
-    onNavigate?.('notes');
-    toast.success('Resposta copiada — cole no editor');
-  };
+  const notasFiltradas = notas.filter(n => 
+    n.titulo.toLowerCase().includes(buscaNota.toLowerCase())
+  ).slice(0, 5);
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header Premium Adaptativo */}
-      <div className="p-4 border-b border-border-subtle bg-bg-secondary/30 backdrop-blur-xl sticky top-0 z-20 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3 overflow-hidden">
-          <div className="flex flex-col">
-            <h1 className="text-sm font-black text-text-primary flex items-center gap-2 uppercase tracking-tighter">
-              {notaId ? (
-                <>
-                  <Bot size={16} className="text-accent-main" />
-                  Contexto Ativo
-                </>
-              ) : (
-                <>
-                  <MessageSquare size={16} className="text-accent-light" />
-                  Chat Global
-                </>
-              )}
-            </h1>
-            <p className="text-[10px] text-text-muted truncate max-w-[180px] font-medium">
-              {notaAtual ? notaAtual.titulo : 'Exploração Livre'}
-            </p>
+    <div className="flex flex-col h-full bg-bg-primary font-sans">
+      {/* Header Minimalista (Claude Style) */}
+      <div className="h-14 px-8 flex items-center justify-between border-b border-white/[0.03] bg-bg-primary sticky top-0 z-40">
+        <div className="flex items-center gap-3">
+          <div className="w-6 h-6 rounded bg-white/5 flex items-center justify-center">
+            <Bot size={14} className="text-text-lo/40" />
           </div>
-          
-          {/* Indicador de Memória TurboQuant */}
-          <div className="hidden lg:block ml-4">
-             <AIMemoryIndicator 
-               activeTokens={contextStats.activeTokens} 
-               maxTokens={contextStats.maxTokens} 
-             />
-          </div>
+          <span className="text-sm font-medium text-text-lo/60">NexoMente AI</span>
         </div>
-
-        <div className="flex items-center gap-2">
-          {/* Seletor de Contexto (Nota) */}
-          <select
-            value={notaId || ''}
-            onChange={e => { setNotaId(e.target.value || null); limpar(); }}
-            className="hidden md:block bg-bg-tertiary/50 border border-border-subtle rounded-full px-3 py-1 text-[11px] font-bold text-text-secondary cursor-pointer hover:border-accent-main/50 transition-all focus:outline-none"
+        
+        <div className="flex items-center gap-1">
+          <button 
+            onClick={(e) => { e.stopPropagation(); limpar(); }}
+            className="p-2 text-text-lo/40 hover:text-danger transition-colors cursor-pointer rounded-lg hover:bg-white/5"
+            title="Novo Chat"
           >
-            <option value="">Conversa livre</option>
-            {notas.notas.map(n => <option key={n.id} value={n.id}>{n.titulo}</option>)}
-          </select>
+            <Trash2 size={16} />
+          </button>
+        </div>
+      </div>
 
-          {/* Seletor de IA Dinâmico e Premium */}
-          <div className="relative">
-            <button
-              onClick={() => setShowModelo(!showModelo)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all hover:scale-105 active:scale-95 group ${
-                status === 'online' 
-                  ? 'bg-success/5 border-success/20 text-success' 
-                  : 'bg-danger/5 border-danger/20 text-danger'
-              }`}
+      {/* Área Principal */}
+      <div className="flex-1 overflow-auto flex flex-col scrollbar-none relative">
+        {mensagens.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center p-8 pb-32">
+            {/* Saudação Claude */}
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-12 text-center"
             >
-              <div className={`w-1.5 h-1.5 rounded-full ${status === 'online' ? 'bg-success shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse' : 'bg-danger'}`} />
-              <span className="text-[11px] font-black tracking-wide uppercase">
-                {modeloAtual.split('/').pop().substring(0, 15) || 'Selecionar IA'}
-              </span>
-              <ChevronDown size={10} className={`transition-transform duration-300 ${showModelo ? 'rotate-180' : ''}`} />
-            </button>
+              <h1 className="text-[44px] font-serif text-text-hi tracking-tight leading-tight mb-2">Boa noite, bruno</h1>
+            </motion.div>
 
-            <AnimatePresence>
-              {showModelo && (
-                <motion.div
-                  initial={{ opacity: 0, y: 8, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 8, scale: 0.98 }}
-                  className="absolute right-0 mt-3 w-64 bg-bg-secondary/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-2 z-50 overflow-hidden"
-                >
-                  <div className="px-3 py-2 flex items-center justify-between border-b border-white/5 mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="p-1 rounded bg-accent-main/20 text-accent-main">
-                        {provider === 'cloud' ? <Globe size={10} /> : <Cpu size={10} />}
-                      </div>
-                      <span className="text-[10px] font-black uppercase tracking-widest text-text-muted">{provider}</span>
-                    </div>
-                    <button onClick={verificar} className="p-1 hover:bg-white/5 rounded text-text-lo hover:text-accent-main transition-colors">
-                      <RefreshCw size={10} />
-                    </button>
-                  </div>
-                  
-                  <div className="max-h-60 overflow-y-auto custom-scrollbar pr-1 flex flex-col gap-1">
-                    {modelos.length > 0 ? modelos.map((m) => (
-                      <button
-                        key={m}
-                        onClick={() => { trocarModelo(m); setShowModelo(false); }}
-                        className={`w-full text-left px-3 py-2.5 rounded-xl text-xs flex items-center justify-between transition-all group ${
-                          modeloAtual === m 
-                            ? 'bg-accent-main text-white shadow-lg shadow-accent-main/20' 
-                            : 'hover:bg-white/5 text-text-secondary hover:text-text-primary'
-                        }`}
+            <div className="w-full max-w-2xl relative">
+              {/* Hub de Input Alta Fidelidade */}
+              <div className="bg-bg-secondary/30 border border-white/5 rounded-[1.5rem] p-4 pb-3 shadow-2xl transition-all focus-within:bg-bg-secondary/50">
+                <textarea
+                  value={input}
+                  onChange={e => setInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(); } }}
+                  placeholder="Como posso ajudar você hoje?"
+                  className="w-full bg-transparent border-none p-2 text-lg text-text-hi placeholder-text-lo/20 focus:outline-none focus:ring-0 resize-none min-h-[50px] leading-relaxed"
+                />
+                
+                <div className="flex items-center justify-between mt-2">
+                  <div className="flex items-center gap-1">
+                    {/* Botão de Anexo (+) */}
+                    <div className="relative">
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setShowAttachMenu(!showAttachMenu); setShowModelMenu(false); }}
+                        className={`p-2 rounded-lg transition-all ${showAttachMenu ? 'bg-white/10 text-text-hi' : 'text-text-lo/40 hover:bg-white/5 hover:text-text-hi'}`}
                       >
-                        <span className="truncate flex-1">{m.split('/').pop()}</span>
-                        {modeloAtual === m ? (
-                          <Zap size={10} className="fill-current text-white" />
-                        ) : (
-                          <div className="w-1 h-1 rounded-full bg-text-lo group-hover:bg-accent-main transition-colors" />
-                        )}
+                        <Plus size={20} />
                       </button>
-                    )) : (
-                      <div className="p-4 text-center">
-                        <p className="text-[10px] text-text-muted italic">Nenhum modelo ativo.</p>
+
+                      <AnimatePresence>
+                        {showAttachMenu && (
+                          <motion.div 
+                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                            className="absolute bottom-full left-0 mb-3 w-72 bg-bg-secondary border border-white/10 rounded-2xl shadow-2xl p-2 z-50"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <div className="p-2 relative">
+                              <Search size={12} className="absolute left-4 top-4 text-text-lo/40" />
+                              <input 
+                                autoFocus
+                                placeholder="Buscar nota para anexo..."
+                                value={buscaNota}
+                                onChange={e => setBuscaNota(e.target.value)}
+                                className="w-full bg-white/5 border-none rounded-xl py-2 pl-8 pr-4 text-xs text-text-hi placeholder-text-lo/20 focus:ring-0"
+                              />
+                            </div>
+                            <div className="mt-1 flex flex-col gap-0.5">
+                              {notasFiltradas.map(n => (
+                                <button
+                                  key={n.id}
+                                  onClick={() => { setNotaId(n.id); setShowAttachMenu(false); }}
+                                  className="w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-xs text-text-lo hover:bg-white/5 hover:text-text-hi transition-all group"
+                                >
+                                  <FileText size={14} className="opacity-40 group-hover:opacity-100" />
+                                  <span className="truncate flex-1 text-left">{n.titulo}</span>
+                                  {notaId === n.id && <Check size={12} className="text-accent-main" />}
+                                </button>
+                              ))}
+                              {notasFiltradas.length === 0 && (
+                                <p className="p-4 text-[10px] text-center text-text-lo/40 uppercase tracking-widest">Nenhuma nota encontrada</p>
+                              )}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
+                    {notaId && (
+                      <div className="flex items-center gap-2 bg-accent-main/10 text-accent-main px-3 py-1.5 rounded-full text-[11px] font-bold">
+                        <FileText size={12} />
+                        {notaAtual?.titulo.substring(0, 15)}...
+                        <button onClick={() => setNotaId(null)} className="ml-1 hover:text-white"><Plus size={12} className="rotate-45" /></button>
                       </div>
                     )}
                   </div>
 
-                  <div className="mt-2 pt-2 border-t border-white/5 px-3 pb-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[9px] font-bold text-text-lo uppercase tracking-tighter">Temperatura</span>
-                      <div className="flex gap-1">
-                        {[0.3, 0.7, 1.0].map(t => (
-                          <button
-                            key={t}
-                            onClick={() => trocarTemperatura(t)}
-                            className={`w-7 h-5 rounded-md flex items-center justify-center text-[9px] font-black border transition-all ${
-                              tempLocal === t 
-                                ? 'bg-text-primary text-bg-primary border-text-primary' 
-                                : 'text-text-muted border-white/5 hover:border-white/20'
-                            }`}
+                  <div className="flex items-center gap-2">
+                    {/* Seletor de Modelo Estilo Claude */}
+                    <div className="relative">
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setShowModelMenu(!showModelMenu); setShowAttachMenu(false); }}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-full text-[12px] font-medium text-text-lo/60 hover:bg-white/5 transition-all group"
+                      >
+                        <span className="group-hover:text-text-hi transition-colors">{modeloAtual.split('/').pop()}</span>
+                        <ChevronDown size={14} className={`opacity-40 transition-transform ${showModelMenu ? 'rotate-180' : ''}`} />
+                      </button>
+
+                      <AnimatePresence>
+                        {showModelMenu && (
+                          <motion.div 
+                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                            className="absolute bottom-full right-0 mb-3 w-72 bg-bg-secondary border border-white/10 rounded-2xl shadow-2xl p-2 z-50 overflow-hidden"
+                            onClick={(e) => e.stopPropagation()}
                           >
-                            {t}
-                          </button>
-                        ))}
-                      </div>
+                            <div className="p-3 flex flex-col gap-1">
+                              {modelos.map(m => {
+                                const isCurrent = modeloAtual === m;
+                                const name = m.split('/').pop();
+                                return (
+                                  <button
+                                    key={m}
+                                    onClick={() => { trocarModelo(m); setShowModelMenu(false); }}
+                                    className={`w-full p-3 rounded-xl text-left transition-all group ${isCurrent ? 'bg-white/5' : 'hover:bg-white/[0.03]'}`}
+                                  >
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className={`text-xs font-bold ${isCurrent ? 'text-text-hi' : 'text-text-lo/60'}`}>{name}</span>
+                                      {isCurrent && <Check size={12} className="text-accent-main" />}
+                                    </div>
+                                    <p className="text-[10px] text-text-lo/30 leading-normal">
+                                      {name.includes('7b') || name.includes('8b') ? 'Otimizado para respostas rápidas.' : 'Modelo avançado para tarefas complexas.'}
+                                    </p>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            
+                            <div className="mt-1 border-t border-white/5 p-3 flex items-center justify-between">
+                              <div className="flex flex-col">
+                                <span className="text-[11px] font-bold text-text-hi">Pensamento adaptativo</span>
+                                <span className="text-[9px] text-text-lo/40">Raciocina para tarefas complexas</span>
+                              </div>
+                              <button 
+                                onClick={() => trocarTemperatura(tempLocal === 0.7 ? 0.3 : 0.7)}
+                                className={`w-8 h-4 rounded-full p-0.5 transition-colors ${tempLocal < 0.5 ? 'bg-accent-main' : 'bg-white/10'}`}
+                              >
+                                <div className={`w-3 h-3 bg-white rounded-full transition-transform ${tempLocal < 0.5 ? 'translate-x-4' : 'translate-x-0'}`} />
+                              </button>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
+
+                    <button 
+                      onClick={() => enviar()} 
+                      disabled={loading || !input.trim()}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                        input.trim() ? 'bg-accent-main text-white' : 'text-text-lo/10 cursor-not-allowed'
+                      }`}
+                    >
+                      <Send size={16} />
+                    </button>
                   </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+                </div>
+              </div>
 
-          <button onClick={limpar} className="p-2 hover:bg-danger/10 text-text-muted hover:text-danger rounded-full transition-all active:scale-90" title="Limpar conversa">
-            <Trash2 size={18} />
-          </button>
-        </div>
-      </div>
-
-      {/* Contexto da nota */}
-      {notaAtual && (
-        <div className="px-4 py-2 border-b border-border-subtle bg-accent-main/5">
-          <p className="text-xs text-text-muted">
-            Contexto: <span className="text-accent-main font-medium">{notaAtual.titulo}</span>
-            <button onClick={() => { setNotaId(null); limpar(); }} className="ml-2 text-text-muted hover:text-danger text-[10px]">[livre]</button>
-          </p>
-        </div>
-      )}
-
-      {/* Mensagens */}
-      <div className="flex-1 overflow-auto p-4 space-y-3">
-        {mensagens.length === 0 && (
-          <div className="flex items-center justify-center h-full text-text-muted">
-            <div className="text-center">
-              <MessageSquare size={40} className="mx-auto mb-3 opacity-30" />
-              {notaAtual
-                ? <><p className="text-sm mb-1">Nota &quot;{notaAtual.titulo}&quot; carregada.</p><p className="text-xs">Use os botões abaixo ou digite sua pergunta.</p></>
-                : <><p className="text-sm mb-1">Conversa livre.</p><p className="text-xs">Selecione uma nota no menu acima para contexto.</p></>
-              }
-            </div>
-          </div>
-        )}
-        <AnimatePresence>
-          {mensagens.map((msg, idx) => (
-            <ChatMessage key={idx} msg={msg} idx={idx} copiadoIdx={copiadoIdx} onCopiar={handleCopiar} onInserir={handleInserir} />
-          ))}
-        </AnimatePresence>
-        {loading && (
-          <div className="flex justify-start">
-            <div className="bg-bg-secondary border border-border-subtle rounded-xl px-4 py-3">
-              <div className="flex items-center gap-2 text-text-muted">
-                <Loader2 size={14} className="animate-spin" />
-                <span className="text-xs">{modeloAtual}</span>
+              {/* Botões de Ação Sugerida */}
+              <div className="flex flex-wrap justify-center gap-2 mt-6">
+                {TEMPLATES.map(tpl => (
+                  <button 
+                    key={tpl.id} 
+                    onClick={() => enviar(tpl.prompt)}
+                    className="px-4 py-2 border border-white/[0.05] rounded-full text-[12px] font-medium text-text-lo/60 hover:text-text-hi hover:bg-white/5 hover:border-white/10 transition-all cursor-pointer"
+                  >
+                    {tpl.label}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
+        ) : (
+          <div className="p-8 space-y-10 max-w-3xl mx-auto w-full pb-32">
+            <AnimatePresence>
+              {mensagens.map((msg, idx) => (
+                <ChatMessage 
+                  key={idx} 
+                  msg={msg} 
+                  idx={idx} 
+                  copiadoIdx={copiadoIdx} 
+                  onCopiar={(t, i) => { navigator.clipboard.writeText(t); setCopiadoIdx(i); setTimeout(() => setCopiadoIdx(null), 2000); }} 
+                  onInserir={() => { onNavigate?.('notes'); toast.success('Conteúdo pronto para colar'); }} 
+                />
+              ))}
+            </AnimatePresence>
+            {loading && (
+              <div className="flex items-start gap-4 px-2">
+                <div className="w-8 h-8 rounded-lg bg-accent-main/10 flex items-center justify-center shrink-0 border border-accent-main/20">
+                  <Loader2 size={14} className="text-accent-main animate-spin" />
+                </div>
+                <div className="py-2">
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-accent-main">Processando...</span>
+                </div>
+              </div>
+            )}
+            <div ref={bottomRef} />
+          </div>
         )}
-        <div ref={bottomRef} />
       </div>
 
-      {/* Templates de prompt */}
-      {notaAtual && (
-        <div className="px-4 py-2 border-t border-border-subtle bg-bg-secondary/30">
-          <div className="flex flex-wrap gap-1">
-            {TEMPLATES.map(tpl => (
-              <button key={tpl.id} onClick={() => enviar(`${tpl.prompt} sobre o conteúdo acima.`)} disabled={loading}
-                className="px-2 py-1 bg-bg-tertiary border border-border-subtle rounded text-[10px] hover:border-accent-main disabled:opacity-40 cursor-pointer">
-                {tpl.label}
-              </button>
-            ))}
+      {/* Input Flutuante Sticky (Mesma Estética) */}
+      {mensagens.length > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-bg-primary via-bg-primary/80 to-transparent z-30">
+          <div className="max-w-3xl mx-auto w-full relative">
+            <div className="bg-bg-secondary border border-white/5 rounded-[1.5rem] p-3 shadow-2xl flex flex-col gap-2">
+              <div className="flex items-end gap-3 px-1">
+                <textarea
+                  value={input}
+                  onChange={e => setInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(); } }}
+                  placeholder="Responder ao NexoMente..."
+                  rows={1}
+                  className="flex-1 bg-transparent border-none p-2 text-sm text-text-hi placeholder-text-lo/20 focus:outline-none focus:ring-0 resize-none min-h-[40px]"
+                />
+                <button 
+                  onClick={() => enviar()} 
+                  disabled={loading || !input.trim()}
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
+                    input.trim() ? 'bg-accent-main text-white' : 'bg-white/5 text-text-lo/10'
+                  }`}
+                >
+                  <Send size={16} />
+                </button>
+              </div>
+              
+              <div className="flex items-center gap-2 px-1">
+                 <button 
+                    onClick={(e) => { e.stopPropagation(); setShowAttachMenu(!showAttachMenu); }}
+                    className="p-1.5 rounded-lg text-text-lo/40 hover:bg-white/5 transition-all"
+                  >
+                    <Plus size={16} />
+                  </button>
+                  <div className="h-3 w-[1px] bg-white/5" />
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setShowModelMenu(!showModelMenu); }}
+                    className="flex items-center gap-2 px-2 py-1 rounded-lg text-[10px] font-bold text-text-lo/40 hover:bg-white/5 transition-all"
+                  >
+                    {modeloAtual.split('/').pop()}
+                    <ChevronDown size={10} />
+                  </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
-
-      {/* Input */}
-      <div className="p-4 border-t border-border-subtle space-y-3">
-        <div className="flex items-center gap-2">
-          <input
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter' && !loading) enviar(); }}
-            placeholder="Digite sua mensagem..."
-            disabled={loading}
-            className="flex-1 bg-bg-tertiary border border-border-subtle rounded-lg px-4 py-2.5 text-sm focus:border-accent-main focus:outline-none disabled:opacity-40"
-          />
-          <button onClick={() => enviar()} disabled={loading || !input.trim()}
-            className="p-2.5 bg-accent-main rounded-lg hover:bg-accent-main/90 disabled:opacity-40 cursor-pointer">
-            {loading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-          </button>
-          {mensagens.length > 0 && (
-            <button onClick={limpar} className="p-2.5 text-text-muted hover:text-danger cursor-pointer" title="Limpar">
-              <Trash2 size={16} />
-            </button>
-          )}
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-text-muted whitespace-nowrap">Temp:</span>
-          <input type="range" min="0.1" max="1.0" step="0.1" value={tempLocal}
-            onChange={e => { const t = parseFloat(e.target.value); setTempLocal(t); trocarTemperatura(t); }}
-            className="flex-1 h-1 accent-accent-main cursor-pointer"
-          />
-          <span className="text-xs text-text-muted tabular-nums w-8">{tempLocal.toFixed(1)}</span>
-        </div>
-      </div>
-
-      <AIFallbackModal
-        isOpen={fallbackData.isOpen}
-        error={fallbackData.error}
-        onRetry={() => { setFallbackData({ isOpen: false, error: '' }); enviar(); }}
-        onSwitchProvider={(p) => {
-          localStorage.setItem('nexomente_ai_provider', p);
-          setFallbackData({ isOpen: false, error: '' });
-          window.location.reload();
-        }}
-        onClose={() => setFallbackData({ isOpen: false, error: '' })}
-      />
     </div>
   );
 }
-AIChatPage.propTypes = {
-  onNavigate: PropTypes.func,
-};
-
-export default AIChatPage;

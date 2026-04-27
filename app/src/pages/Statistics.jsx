@@ -1,22 +1,21 @@
 import React from 'react';
-import { useUIStore } from '../store/useUIStore';
+import { useDBStore } from '../store/useDBStore';
+import { useNotes } from '../hooks/useNotes';
+import { useFlashcards } from '../hooks/useFlashcards';
 import { BarChart3, TrendingUp, Clock, BookOpen, Trophy, Target } from 'lucide-react';
 import LevelCard from '../components/gamification/LevelCard';
 import ActivityHeatmap from '../components/gamification/ActivityHeatmap';
 import Card from '../components/ui/Card';
 
 export default function Statistics() {
-  const Notas = useUIStore.getState().Notas;
-  const Sessoes = useUIStore.getState().Sessoes;
-  const Flashcards = useUIStore.getState().Flashcards;
-  const XP = useUIStore.getState().XP;
+  const { SessoesEstudo, XP } = useDBStore();
+  const { notas } = useNotes();
+  const { cards: flashcards } = useFlashcards();
   
-  const notas = Notas.getAll();
-  const sessoes = Sessoes.getAll();
-  const flashcards = Flashcards.getAll();
-  const xp = XP.getTotal();
+  const sessoes = SessoesEstudo?.getAll() || [];
+  const xp = XP?.getTotal() || 0;
   
-  const porTipo = notas.reduce((acc, n) => {
+  const porTipo = (notas || []).reduce((acc, n) => {
     acc[n.tipo] = (acc[n.tipo] || 0) + 1;
     return acc;
   }, {});

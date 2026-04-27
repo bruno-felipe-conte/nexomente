@@ -96,46 +96,65 @@ export default function NotasPage() {
 
   return (
     <div className={`flex h-full ${focoMode ? 'bg-bg-primary' : ''}`}>
-      {/* Painel lateral — lista de notas */}
-      <AnimatePresence>
-        {!focoMode && (
-          <motion.div
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 240, opacity: 1 }}
-            exit={{ width: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="border-r border-border-subtle flex flex-col bg-bg-secondary overflow-hidden"
-          >
-            <NotaLista
-              notas={notasFiltradas}
-              notaSelecionada={notaSelecionada}
-              busca={busca}
-              onBuscaChange={setBusca}
-              onSelect={(nota) => { setNotaSelecionada(nota); setEditando(false); }}
-              onCriar={criarNota}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Painel biblioteca */}
+      {/* Coluna 1: BIBLIOTECAS (Navegação Estrutural) */}
       {!focoMode && (
-        <BibliotecaPanel
-          pastas={[]}
-          notas={notas}
-          notaSelecionada={notaSelecionada}
-          onMoverNota={(notaId, pastaId) => {
-            update(notaId, { pasta_id: pastaId });
-            if (notaSelecionada?.id === notaId) setNotaSelecionada(getById(notaId));
-          }}
-          onCriarPasta={() => {}}
-        />
+        <div className="w-64 border-r border-white/5 flex flex-col bg-bg-secondary/20">
+          <BibliotecaPanel
+            pastas={[]}
+            notas={notas}
+            notaSelecionada={notaSelecionada}
+            onMoverNota={update}
+            onCriarPasta={() => {}}
+          />
+        </div>
       )}
 
-      {/* Área principal do editor */}
-      <div className="flex-1 flex flex-col min-w-0">
+      {/* Coluna 2: LISTA DE NOTAS (Navegação de Itens) */}
+      {!focoMode && (
+        <div className="w-72 border-r border-white/5 flex flex-col bg-bg-primary/10">
+          <NotaLista
+            notas={notasFiltradas}
+            notaSelecionada={notaSelecionada}
+            busca={busca}
+            onBuscaChange={setBusca}
+            onSelect={(n) => {
+              setNotaSelecionada(n);
+              setEditando(false);
+            }}
+            onCriar={criarNota}
+          />
+        </div>
+      )}
+
+      {/* Coluna 3: EDITOR (Conteúdo) */}
+      <div className="flex-1 flex flex-col relative bg-bg-primary/5">
         {notaSelecionada ? (
           <>
+            {/* Breadcrumbs & Actions */}
+            <div className="h-10 px-6 flex items-center justify-between border-b border-white/5 bg-bg-primary/20">
+              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-text-lo/50">
+                <span>Bibliotecas</span>
+                <span className="opacity-30">/</span>
+                <span className="text-text-lo">{notaSelecionada.tipo || 'Nota'}</span>
+                <span className="opacity-30">/</span>
+                <span className="text-text-hi">{notaSelecionada.titulo}</span>
+              </div>
+              <div className="flex items-center gap-4">
+                {['IA', 'Info', 'Tags'].map(label => {
+                  const show = label === 'IA' ? mostrandoAI : label === 'Info' ? mostrandoMeta : mostrandoTags;
+                  return (
+                    <button
+                      key={label}
+                      onClick={() => label === 'IA' ? setMostrandoAI(!mostrandoAI) : label === 'Info' ? setMostrandoMeta(!mostrandoMeta) : setMostrandoTags(!mostrandoTags)}
+                      className={`text-[10px] font-black uppercase tracking-widest transition-colors ${show ? 'text-accent-main' : 'text-text-lo hover:text-text-hi'}`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Barra de título + ações */}
             {!focoMode && (
               <div className="p-3 border-b border-border-subtle flex items-center gap-2 bg-bg-secondary/50">
@@ -252,6 +271,7 @@ export default function NotasPage() {
       {mostrandoMeta && notaSelecionada && (
         <NoteMetadata
           nota={notaSelecionada}
+          editor={editor}
           onUpdate={(data) => {
             update(notaSelecionada.id, data);
             setNotaSelecionada(prev => ({ ...prev, ...data }));

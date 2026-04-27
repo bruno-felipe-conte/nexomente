@@ -1,81 +1,37 @@
-import { useState, useEffect, useCallback } from 'react';
-import sm2, { isParaRevisao, isDominado, SM2_DEFAULTS } from './sm2';
-
-const FLASHCARDS_KEY = 'nexomente_flashcards';
+import { useCallback } from 'react';
+import { useDBStore } from '../store/useDBStore';
 
 export function useFlashcards() {
-  const [cards, setCards] = useState(() => {
-    const stored = localStorage.getItem(FLASHCARDS_KEY);
-    if (stored) {
-      try {
-        return JSON.parse(stored);
-      } catch {
-        return [];
-      }
-    }
-    return [];
-  });
-  const [loading, setLoading] = useState(false);
-
-  const persist = useCallback((lista) => {
-    localStorage.setItem(FLASHCARDS_KEY, JSON.stringify(lista));
-    setCards(lista);
-  }, []);
+  const { Flashcards, loading } = useDBStore();
+  const cards = Flashcards?.getAll() || [];
 
   const create = useCallback((cardData) => {
-    const novoCard = {
-      id: `card_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    return Flashcards.create({
       frente: cardData.frente,
       verso: cardData.verso,
-      materia: cardData.materia || 'geral',
-      tags: cardData.tags || [],
-      ...SM2_DEFAULTS,
-      created_at: new Date().toISOString(),
-    };
-
-    setCards(prev => {
-      const updated = [...prev, novoCard];
-      persist(updated);
-      return updated;
+      materia_id: cardData.materia_id || null,
+      nota_id: cardData.nota_id || null,
     });
-    return novoCard.id;
-  }, [persist]);
+  }, [Flashcards]);
 
   const update = useCallback((id, updates) => {
-    setCards(prev => {
-      const updated = prev.map(c => c.id === id ? { ...c, ...updates } : c);
-      persist(updated);
-      return updated;
-    });
-  }, [persist]);
+    return Flashcards.update(id, updates);
+  }, [Flashcards]);
 
   const remove = useCallback((id) => {
-    setCards(prev => {
-      const updated = prev.filter(c => c.id !== id);
-      persist(updated);
-      return updated;
-    });
-  }, [persist]);
+    return Flashcards.delete(id);
+  }, [Flashcards]);
 
   const revisar = useCallback((id, qualidade) => {
-    setCards(prev => {
-      const idx = prev.findIndex(c => c.id === id);
-      if (idx === -1) return prev;
-      
-      const novosDados = sm2(prev[idx], qualidade);
-      const updated = [...prev];
-      updated[idx] = { ...updated[idx], ...novosDados };
-      persist(updated);
-      return updated;
-    });
-  }, [persist]);
+    return Flashcards.revisar(id, qualidade);
+  }, [Flashcards]);
 
   const getParaRevisao = useCallback(() => {
-    return cards.filter(isParaRevisao);
-  }, [cards]);
+    return Flashcards?.getParaRevisao() || [];
+  }, [Flashcards]);
 
   const getDominados = useCallback(() => {
-    return cards.filter(isDominado);
+    return cards.filter(c => c.repeticoes >= 3 && c.ease_factor >= 2.5);
   }, [cards]);
 
   const getById = useCallback((id) => {
@@ -100,4 +56,4 @@ export function useFlashcards() {
     getById,
     stats,
   };
-}
+}

@@ -45,6 +45,7 @@ function NavButton({ item, isActive, isOpen, onNavigate }) {
     <div className="relative px-3 group/nav">
       <motion.button
         whileTap={{ scale: 0.95 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 17 }}
         id={`nav-${item.id}`}
         onClick={() => onNavigate(item.id)}
         className={`
@@ -61,6 +62,7 @@ function NavButton({ item, isActive, isOpen, onNavigate }) {
             className="absolute left-0 w-1 h-1/2 bg-accent-main rounded-full"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
           />
         )}
 
@@ -88,7 +90,7 @@ export default function Sidebar({ isOpen, currentPage, onNavigate }) {
   const navRef = useRef(null);
 
   return (
-    <aside className={`flex flex-col glass-panel !bg-[#0B0C13]/80 border-r border-white/5 transition-all duration-500 ease-spring ${isOpen ? 'w-64' : 'w-20'}`}>
+    <aside className={`flex flex-col glass-panel !bg-[#0B0C13]/80 border-r border-white/5 transition-all duration-500 ease-in-out ${isOpen ? 'w-64' : 'w-20'}`}>
       {/* Cabeçalho Minimalista */}
       <div className="h-20 flex items-center px-6 shrink-0">
         <div className="flex items-center gap-3 group cursor-pointer">

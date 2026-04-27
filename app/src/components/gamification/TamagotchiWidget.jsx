@@ -132,7 +132,7 @@ export default function TamagotchiWidget({ className = '' }) {
                 className={`h-full shadow-[0_0_10px_rgba(var(--color-estudo-rgb),0.5)] ${hpPercent <= 15 ? 'bg-color-error' : hpPercent >= 80 ? 'bg-color-estudo' : 'bg-accent-main'}`}
                 initial={{ width: 0 }}
                 animate={{ width: `${hpPercent}%` }}
-                transition={{ duration: 1.5, ease: "spring" }}
+                transition={{ duration: 1.5, type: "spring" }}
               />
             </div>
           </div>

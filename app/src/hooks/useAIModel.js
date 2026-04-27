@@ -1,76 +1,36 @@
-import { useState, useEffect, useCallback } from 'react';
-import * as aiProvider from '../lib/ai/aiProvider';
-import { getTemperature, getModel } from '../lib/ai/lmStudioService';
+import { useEffect, useCallback } from 'react';
+import { useAIStore } from '../store/useAIStore';
 
 export function useAIModel() {
-  const [status, setStatus] = useState('checking');
-  const [provider, setProvider] = useState(aiProvider.getActiveProvider());
-  const [modelos, setModelos] = useState([]);
-  const [modeloAtual, setModeloAtual] = useState(getModel());
-  const [temperatura, setTemperatura] = useState(getTemperature());
-  const [loading, setLoading] = useState(false);
-
-  const verificar = useCallback(async () => {
-    setLoading(true);
-    setStatus('checking');
-    try {
-      const res = await aiProvider.checkStatus();
-      if (res.status === 'online') {
-        setStatus('online');
-        const mods = res.models.length > 0
-          ? res.models.map(m => typeof m === 'string' ? m : (m.id || m.name || 'unknown'))
-          : [modeloAtual];
-        setModelos(mods);
-        
-        // Auto-seleciona o primeiro se o atual não estiver na lista (ex: mudou de provedor)
-        if (!mods.includes(modeloAtual)) {
-          setModeloAtual(mods[0]);
-          localStorage.setItem('nexomente_ai_model', mods[0]);
-        }
-      } else {
-        setStatus('offline');
-        setModelos([modeloAtual]);
-      }
-    } catch {
-      setStatus('offline');
-      setModelos([modeloAtual]);
-    }
-    setLoading(false);
-  }, [modeloAtual]);
+  const store = useAIStore();
 
   useEffect(() => {
-    verificar();
-  }, [verificar, provider]);
-
-  const trocarProvedor = useCallback((p) => {
-    aiProvider.setActiveProvider(p);
-    setProvider(p);
-  }, []);
-
-  const trocarModelo = useCallback((novoModelo) => {
-    setModeloAtual(novoModelo);
-    localStorage.setItem('nexomente_ai_model', novoModelo);
-  }, []);
-
-  const trocarTemperatura = useCallback((novaTemp) => {
-    setTemperatura(novaTemp);
-  }, []);
+    store.verificarStatus();
+  }, [store.provider]); // Re-verifica sempre que o provedor mudar
 
   return {
-    status,
-    provider,
-    modelos,
-    modeloAtual,
-    temperatura,
-    loading,
-    trocarProvedor,
-    trocarModelo,
-    trocarTemperatura,
-    verificar,
+    status: store.status,
+    provider: store.provider,
+    modelos: store.modelos,
+    modeloAtual: store.modeloAtual,
+    temperatura: store.temperatura,
+    apiKey: store.apiKey,
+    loading: store.loading,
+    setProvider: store.setProvider,
+    setModeloAtual: store.setModeloAtual,
+    setTemperatura: store.setTemperatura,
+    setApiKey: store.setApiKey,
+    verificar: store.verificarStatus,
+    // Compatibilidade com nomes antigos
+    trocarProvedor: store.setProvider,
+    trocarModelo: store.setModeloAtual,
+    trocarTemperatura: store.setTemperatura
   };
 }
 
 const CHAT_KEY_PREFIX = 'nexomente_ai_chat_';
+
+import { useState } from 'react';
 
 export function useAIChat(notaId) {
   const [mensagens, setMensagens] = useState([]);

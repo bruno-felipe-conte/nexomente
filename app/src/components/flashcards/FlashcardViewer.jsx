@@ -159,55 +159,51 @@ export default function FlashcardViewer({
          <div className="flex gap-4 mt-4">
             <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-full border border-white/5">
                <RotateCcw size={12} className="text-warning" />
-               <span className="text-[10px] font-bold text-text-lo uppercase tracking-widest">Repetições: {cardAtual.repetitions}</span>
+               <span className="text-[10px] font-bold text-text-lo uppercase tracking-widest">Repetições: {cardAtual.repeticoes || 0}</span>
             </div>
             <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-full border border-white/5">
                <Check size={12} className="text-success" />
-               <span className="text-[10px] font-bold text-text-lo uppercase tracking-widest">Facilidade: {cardAtual.ef?.toFixed(1)}</span>
+               <span className="text-[10px] font-bold text-text-lo uppercase tracking-widest">Facilidade: {(cardAtual.ease_factor || 2.5).toFixed(1)}</span>
             </div>
          </div>
       )}
-    </div>
-  );
-}
 
-      {/* Navegação */}
-      <div className="border-t border-border-subtle p-3 flex justify-between items-center">
-        <button
-          onClick={onAnterior}
-          disabled={idxRevisao === 0}
-          className="p-2 text-text-muted hover:text-text-primary disabled:opacity-30 cursor-pointer"
-        >
-          <ChevronLeft size={18} />
-        </button>
-        <span className="text-xs text-text-muted">
-          ef: {cardAtual.ef?.toFixed(1)} · streak: {cardAtual.repetitions}
-        </span>
-        <div className="flex gap-1">
-          <button
-            onClick={() => onEditar(cardAtual)}
-            className="px-2 py-1 bg-bg-tertiary border border-border-subtle rounded text-xs text-text-muted hover:text-accent-main hover:border-accent-main cursor-pointer flex items-center gap-1"
-          >
-            <Edit size={12} /> Editar
-          </button>
-          <button
-            onClick={onProximo}
-            disabled={idxRevisao >= paraRevisao.length - 1}
-            className="p-2 text-text-muted hover:text-text-primary disabled:opacity-30 cursor-pointer"
-          >
-            <ChevronRight size={18} />
-          </button>
-        </div>
+      {/* Navegação e Atalhos Rápidos */}
+      <div className="w-full mt-10 pt-6 border-t border-white/5 flex items-center justify-between">
+         <button 
+           onClick={onAnterior}
+           disabled={idxRevisao === 0}
+           className="p-3 text-text-lo hover:text-text-hi disabled:opacity-20 transition-all"
+         >
+           <ChevronLeft size={24} />
+         </button>
+         
+         <div className="flex items-center gap-3">
+            <button 
+              onClick={() => onEditar(cardAtual)}
+              className="px-4 py-2 bg-white/5 rounded-xl text-[10px] font-black uppercase tracking-widest text-text-lo hover:text-text-hi hover:bg-white/10 transition-all flex items-center gap-2"
+            >
+              <Edit size={12} /> Editar Card
+            </button>
+         </div>
+
+         <button 
+           onClick={onProximo}
+           disabled={idxRevisao >= paraRevisao.length - 1}
+           className="p-3 text-text-lo hover:text-text-hi disabled:opacity-20 transition-all"
+         >
+           <ChevronRight size={24} />
+         </button>
       </div>
     </div>
   );
 }
 
 FlashcardViewer.propTypes = {
-  cardAtual: PropTypes.any,
-  paraRevisao: PropTypes.any,
-  idxRevisao: PropTypes.any,
-  mostrandoFrente: PropTypes.any,
+  cardAtual: PropTypes.object,
+  paraRevisao: PropTypes.array,
+  idxRevisao: PropTypes.number,
+  mostrandoFrente: PropTypes.bool,
   onViraCard: PropTypes.func,
   onRevisar: PropTypes.func,
   onAnterior: PropTypes.func,

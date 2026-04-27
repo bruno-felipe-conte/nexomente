@@ -15,7 +15,7 @@ export async function initDB() {
   
   try {
     const SQL = await initSqlJs({
-      locateFile: file => `https://sql.js.org/dist/${file}`
+      locateFile: file => `/${file}`
     });
     
     const savedData = localStorage.getItem('nexomente_db');
@@ -169,14 +169,21 @@ export const useDBStore = create((set, get) => ({
   db: null,
   loading: true,
   error: null,
+  totalXP: 0,
   
   init: async () => {
     try {
       const db = await initDB();
       set({ db, loading: false });
+      get().syncXP();
     } catch (error) {
       set({ error: error.message, loading: false });
     }
+  },
+
+  syncXP: () => {
+    const total = get().XP.getTotal();
+    set({ totalXP: total });
   },
   
  Notas: {
@@ -305,7 +312,7 @@ export const useDBStore = create((set, get) => ({
     },
   },
   
-  Minas: {
+  Materias: {
     getAll: () => {
       const db = get().db;
       if (!db) return [];
@@ -470,6 +477,7 @@ export const useDBStore = create((set, get) => ({
         [id, xp, motivo, source_type, source_id]
       );
       saveDB();
+      get().syncXP();
     },
   },
 }));

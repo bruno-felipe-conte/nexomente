@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useUIStore } from '../store/useUIStore';
+import { useDBStore } from '../store/useDBStore';
 import { useTamagotchiStore } from '../store/useTamagotchiStore';
 import { useMaterias } from '../hooks/useMaterias';
 import { Play, Pause, RotateCcw, Clock, Check, Plus, Trash2, Zap, AlertCircle } from 'lucide-react';
@@ -16,8 +16,7 @@ const MODOS = [
 
 export default function Study() {
   const { materias, create, remove } = useMaterias();
-  const Sessoes = useUIStore.getState().Sessoes;
-  const XP = useUIStore.getState().XP;
+  const { SessoesEstudo, XP } = useDBStore();
 
   const [timer, setTimer] = useState(25 * 60);
   const [totalSeconds, setTotalSeconds] = useState(25 * 60);
@@ -31,7 +30,11 @@ export default function Study() {
 
   const currentModo = MODOS.find(m => m.id === modo);
 
-  useEffect(() => { setSessoesList(Sessoes.getAll()); }, []);
+  useEffect(() => { 
+    if (SessoesEstudo) {
+      setSessoesList(SessoesEstudo.getAll()); 
+    }
+  }, [SessoesEstudo]);
 
   useEffect(() => {
     let interval;
@@ -46,10 +49,10 @@ export default function Study() {
   const handleComplete = () => {
     setRodando(false);
     if (sessaoId) {
-      Sessoes.completar(sessaoId);
+      SessoesEstudo.completar(sessaoId);
       XP.add(15, 'Sessão concluída', 'sessao', sessaoId);
       useTamagotchiStore.getState().registerStudySession(currentModo.minutos);
-      setSessoesList(Sessoes.getAll());
+      setSessoesList(SessoesEstudo.getAll());
       toast.success('Sessão finalizada! Bom trabalho.');
     }
   };
@@ -59,7 +62,7 @@ export default function Study() {
       toast.error('Selecione uma matéria antes de começar!');
       return;
     }
-    const id = Sessoes.create({ materia_id: materiaAtiva, tipo: modo, duracao_minutos: currentModo.minutos });
+    const id = SessoesEstudo.create({ materia_id: materiaAtiva, tipo: modo, duracao_minutos: currentModo.minutos });
     setSessaoId(id);
     setRodando(true);
   };

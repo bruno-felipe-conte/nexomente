@@ -253,7 +253,7 @@ export default function GeradorPage() {
           >
             {t.label}
             {aba === t.id && (
-              <motion.div layoutId="activeTabUnderline" className="absolute bottom-[-2px] left-0 right-0 h-0.5 bg-color-gerador" />
+              <motion.div layoutId="activeTabUnderline" transition={{ type: 'spring', stiffness: 500, damping: 30 }} className="absolute bottom-[-2px] left-0 right-0 h-0.5 bg-color-gerador" />
             )}
           </button>
         ))}

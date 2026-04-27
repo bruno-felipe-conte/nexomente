@@ -5,7 +5,7 @@
  */
 import { memo } from 'react';
 import { motion } from 'framer-motion';
-import { Copy, Plus } from 'lucide-react';
+import { Copy, Plus, Bot } from 'lucide-react';
 import PropTypes from 'prop-types';
 
 const ChatMessage = memo(function ChatMessage({ msg, idx, copiadoIdx, onCopiar, onInserir }) {
@@ -16,47 +16,56 @@ const ChatMessage = memo(function ChatMessage({ msg, idx, copiadoIdx, onCopiar, 
       animate={{ opacity: 1, y: 0 }}
       className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
     >
-      <div className={`max-w-[80%] rounded-xl px-4 py-3 ${
-        isUser
-          ? 'bg-accent-main/20 border border-accent-main/30 text-text-primary'
-          : 'bg-bg-secondary border border-border-subtle text-text-primary'
-      }`}>
-        {msg.isError ? (
-          <div className="flex items-center gap-2 mt-1 py-1 px-3 bg-danger/10 border border-danger/20 rounded-lg">
-            <span className="text-[9px] font-black bg-danger text-white px-1.5 py-0.5 rounded uppercase tracking-tighter shadow-sm">
-              {msg.errorCode || 'ERR-SYS'}
-            </span>
-            <p className="text-[10px] text-danger/90 font-bold">
-              {msg.texto}
-            </p>
+      <div className={`max-w-[85%] flex gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+        {!isUser && (
+          <div className="w-8 h-8 rounded-lg bg-accent-main/10 flex items-center justify-center shrink-0 border border-accent-main/20">
+            <Bot size={14} className="text-accent-main" />
           </div>
-        ) : (
-          <div className="flex flex-col">
-            <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.texto}</p>
-            {isUser && msg.ts && (
-              <span className="text-[9px] text-text-muted mt-1 self-end opacity-70">
-                {new Date(msg.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        )}
+        
+        <div className={`px-5 py-4 ${
+          isUser
+            ? 'bg-white/5 text-text-hi rounded-2xl'
+            : 'border border-white/5 text-text-primary rounded-2xl bg-bg-secondary/20'
+        }`}>
+          {msg.isError ? (
+            <div className="flex items-center gap-2 py-1 px-3 bg-danger/10 border border-danger/20 rounded-lg">
+              <span className="text-[9px] font-black bg-danger text-white px-1.5 py-0.5 rounded uppercase tracking-tighter">
+                {msg.errorCode || 'ERR-SYS'}
               </span>
-            )}
-          </div>
-        )}
-        {!isUser && !msg.isError && (
-          <div className="flex gap-1 mt-2 pt-2 border-t border-border-subtle">
-            <button
-              onClick={() => onCopiar(msg.texto, idx)}
-              className="px-2 py-1 bg-bg-tertiary rounded text-[10px] hover:border-accent-main cursor-pointer flex items-center gap-1"
-            >
-              <Copy size={10} />
-              {copiadoIdx === idx ? 'Copiado!' : 'Copiar'}
-            </button>
-            <button
-              onClick={() => onInserir(msg.texto)}
-              className="px-2 py-1 bg-bg-tertiary rounded text-[10px] hover:border-accent-main cursor-pointer flex items-center gap-1"
-            >
-              <Plus size={10} /> Inserir
-            </button>
-          </div>
-        )}
+              <p className="text-[10px] text-danger/90 font-bold">
+                {msg.texto}
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-1">
+              <p className="text-[13px] leading-relaxed whitespace-pre-wrap font-medium">{msg.texto}</p>
+              {isUser && msg.ts && (
+                <span className="text-[9px] text-text-lo/20 mt-1 self-end font-mono">
+                  {new Date(msg.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span >
+              )}
+            </div>
+          )}
+          
+          {!isUser && !msg.isError && (
+            <div className="flex gap-2 mt-4 pt-4 border-t border-white/5">
+              <button
+                onClick={() => onCopiar(msg.texto, idx)}
+                className="px-3 py-1 bg-white/5 border border-white/5 rounded-lg text-[10px] font-bold uppercase tracking-widest text-text-lo hover:text-text-hi transition-all cursor-pointer flex items-center gap-2"
+              >
+                <Copy size={12} />
+                {copiadoIdx === idx ? 'Copiado!' : 'Copiar'}
+              </button>
+              <button
+                onClick={() => onInserir(msg.texto)}
+                className="px-3 py-1 bg-white/5 border border-white/5 rounded-lg text-[10px] font-bold uppercase tracking-widest text-text-lo hover:text-text-hi transition-all cursor-pointer flex items-center gap-2"
+              >
+                <Plus size={12} /> Inserir
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </motion.div>
   );

@@ -1,4 +1,4 @@
-import { FileText, BookOpen, Lightbulb, Calendar, Bookmark, BookMarked, Clock, Star, Hash, User } from 'lucide-react';
+import { FileText, BookOpen, Lightbulb, Calendar, Bookmark, BookMarked, Clock, Star, Hash, User, X, Sigma } from 'lucide-react';
 import PropTypes from 'prop-types';
 
 const tipos = [
@@ -20,7 +20,7 @@ const statusLista = [
   { id: 'arquivado', label: 'Arquivado' },
 ];
 
-export default function NoteMetadata({ nota, onUpdate, onClose }) {
+export default function NoteMetadata({ nota, onUpdate, onClose, editor }) {
   if (!nota) return null;
 
   const tipoAtual = tipos.find(t => t.id === nota.tipo) || tipos[0];
@@ -35,7 +35,7 @@ export default function NoteMetadata({ nota, onUpdate, onClose }) {
           className="p-1 hover:bg-bg-tertiary rounded-full text-text-muted hover:text-text-primary transition-colors cursor-pointer"
           title="Fechar"
         >
-          <Hash size={14} className="rotate-45" /> {/* Simulating a close X with a rotated Hash or just use X if I had it, but Hash is available */}
+          <X size={14} />
         </button>
       </div>
 
@@ -147,14 +147,14 @@ export default function NoteMetadata({ nota, onUpdate, onClose }) {
 
         <div className="flex gap-2">
           <button
-            onClick={() => editor.chain().focus().insertContent('$ ').run()}
+            onClick={() => editor?.chain().focus().insertContent('$ ').run()}
             title="Fórmula inline ($)"
             className="p-2 bg-bg-tertiary rounded hover:bg-bg-active"
           >
             <Sigma size={16} />
           </button>
           <button
-            onClick={() => editor.chain().focus().insertContent('$$\n\n$$').run()}
+            onClick={() => editor?.chain().focus().insertContent('$$\n\n$$').run()}
             title="Fórmula bloco ($$)"
             className="p-2 bg-bg-tertiary rounded hover:bg-bg-active"
           >

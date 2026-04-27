@@ -38,8 +38,10 @@ function PageLoader() {
 }
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('dashboard');
-  const { sidebarOpen, toggleSidebar, loading } = useUIStore();
+  const { 
+    sidebarOpen, toggleSidebar, loadingGlobal, 
+    activeTab: currentPage, setActiveTab: setCurrentPage 
+  } = useUIStore();
 
   useEffect(() => {
     // ─── Configurações Padrão de Inicialização (GitHub/Fresh Install) ───
@@ -59,12 +61,35 @@ function App() {
       }
     });
 
-    useUIStore.getState().init();
-    import('./store/useDBStore').then(m => m.useDBStore.getState().init());
+    try {
+      import('./store/useDBStore').then(m => {
+        if (m.useDBStore.getState().init) {
+          m.useDBStore.getState().init();
+        }
+      }).catch(err => console.error("Erro ao carregar DBStore:", err));
+    } catch (e) {
+      console.error("Falha crítica na inicialização:", e);
+    }
 
     const savedTema = localStorage.getItem('nexomente_tema') || 'dark';
     document.documentElement.classList.remove('dark', 'light');
     document.documentElement.classList.add(savedTema);
+  }, []);
+
+  // ── Sincronização de XP DB -> Tamagotchi ──
+  useEffect(() => {
+    const unsub = import('./store/useDBStore').then(m => {
+      return m.useDBStore.subscribe(
+        state => state.totalXP,
+        totalXP => {
+          import('./store/useTamagotchiStore').then(t => {
+             // O tamagotchi já calcula o progresso baseado no XP
+             // Aqui podemos disparar check de HP ou outras reações
+          });
+        }
+      );
+    });
+    return () => unsub.then(u => u && u());
   }, []);
 
   useEffect(() => {
@@ -115,7 +140,7 @@ function App() {
   }, [toggleSidebar, currentPage, pageIndex]);
 
 
-  if (loading) {
+  if (loadingGlobal) {
     return (
       <div className="flex h-full w-full bg-bg-primary items-center justify-center">
         <div className="text-center">
