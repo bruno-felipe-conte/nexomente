@@ -33,3 +33,10 @@ _bmad/
 release/
 .vite/
 .eslintcache
+dist/
+dist-electron/
+dist_old/
+build/
+out/
+coverage/
+reports/
