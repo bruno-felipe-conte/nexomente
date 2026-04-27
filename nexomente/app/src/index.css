@@ -3,6 +3,11 @@
 @tailwind utilities;
 
 :root {
+  /* ── FONTES ─────────────────────────────────────────────── */
+  --font-display: 'Syne', sans-serif;
+  --font-body:    'DM Sans', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+
   /* ── SUPERFÍCIES ────────────────────────────────────────── */
   --surface-base:    #0B0C13;
   --surface-raised:  #111320;
@@ -10,25 +15,23 @@
   --surface-elevated:#1E2238;
   --surface-overlay: #252840;
   --surface-border:  #2E3255;
+  --surface-input:   #1C1E26; /* Cinza/azul profundo e confortável */
+  --border-subtle:   rgba(255, 255, 255, 0.08);
 
   /* ── TEXTO ──────────────────────────────────────────────── */
   --text-hi:   #EEEFFE;
   --text-mid:  #A8ABCC;
   --text-lo:   #646788;
 
-  /* ── CARDS ──────────────────────────────────────────────── */
-  --card-border: 1px solid #2E3255;
-  --card-bg:     #181B2E;
-
-  /* Brand / Modules */
-  --color-brand:      #7C6DFA;
-  --color-notas:      #5B9EFF;
+  /* ── MODULOS (E3.3) ─────────────────────────────────────── */
+  --color-notas:      #4D9EFF;
   --color-estudo:     #2DD4BF;
-  --color-flashcards: #B59EFF;
-  --color-gerador:    #F5A623;
+  --color-flashcards: #A78BFA;
+  --color-gerador:    #B45309; /* Âmbar nobre e profundo para maior conforto visual */
+  --color-poemas:     #EC4899; /* Rosa Magenta Vibrante */
   --color-chat:       #818CF8;
   --color-grafo:      #34D399;
-  --color-stats:      #FB923C;
+  --color-stats:      #F5A623;
 
   /* State */
   --color-success: #84E26E;
@@ -40,8 +43,8 @@
   --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
   --shadow-md: 0 4px 12px rgba(0,0,0,0.3);
   --shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
-  --shadow-glow-violet: 0 0 20px rgba(124,109,250,0.35);
-  --shadow-glow-teal: 0 0 20px rgba(45,212,191,0.35);
+  --shadow-glow-amber: 0 0 20px rgba(245,158,11,0.25);
+  --shadow-glow-violet: 0 0 20px rgba(124,109,250,0.3);
 
   /* Radius */
   --radius-xs: 4px;
@@ -58,6 +61,14 @@
   --duration-slow: 350ms;
   --ease-standard: cubic-bezier(.4,0,.2,1);
   --ease-spring: cubic-bezier(.34,1.56,.64,1);
+
+  /* ── TIPOGRAFIA ─────────────────────────────────────────── */
+  --type-display-xl: 800 2.5rem/1.1 var(--font-display);
+  --type-display-lg: 700 1.75rem/1.2 var(--font-display);
+  --type-display-md: 600 1.25rem/1.3 var(--font-display);
+  --type-body-lg:    500 1rem/1.6 var(--font-body);
+  --type-body-md:    400 0.9375rem/1.6 var(--font-body);
+  --type-body-sm:    400 0.8125rem/1.5 var(--font-body);
 }
 
 .light {
@@ -74,10 +85,17 @@
 html, body, #root { height: 100%; width: 100%; overflow: hidden; }
 body { font-family: 'DM Sans', system-ui, sans-serif; background-color: var(--surface-base); color: var(--text-hi); }
 
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: var(--surface-base); }
-::-webkit-scrollbar-thumb { background: var(--surface-border); border-radius: var(--radius-sm); }
-::-webkit-scrollbar-thumb:hover { background: var(--color-brand); }
+/* ── Scrollbar Premium (Fase 5.3) ─────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--surface-border, #2a2a2a);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-lo, #555);
+}
+
 *:focus-visible { outline: 2px solid var(--color-brand); outline-offset: 2px; }
 
 .ProseMirror { font-family: 'DM Sans', sans-serif; font-size: 16px; line-height: 1.6; padding: 1rem; }
@@ -86,6 +104,12 @@ body { font-family: 'DM Sans', system-ui, sans-serif; background-color: var(--su
 
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 .animate-spin { animation: spin 1s linear infinite; }
+
+/* ── Skeleton Shimmer (Fase 4.1) ──────────────────────────── */
+@keyframes shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
 
 /* ============================================================
    FIXES PONTUAIS POR COMPONENTE
@@ -231,4 +255,102 @@ input[placeholder*="Buscar"] {
 
 input::placeholder {
   color: #646788 !important;
+}
+
+/* ── TIPTAP EDITOR STYLES ───────────────────────────────── */
+.ProseMirror {
+  outline: none !important;
+}
+
+.ProseMirror ul, 
+.ProseMirror ol {
+  padding: 0 1rem;
+  margin: 1.25rem 1rem 1.25rem 0.4rem;
+}
+
+.ProseMirror ul li {
+  list-style-type: disc;
+}
+
+.ProseMirror ol li {
+  list-style-type: decimal;
+}
+
+.ProseMirror ul li p, 
+.ProseMirror ol li p {
+  margin: 0;
+}
+
+.ProseMirror blockquote {
+  border-left: 3px solid var(--color-brand);
+  padding-left: 1rem;
+  margin-left: 0;
+  margin-right: 0;
+  color: var(--text-mid);
+  font-style: italic;
+  background: rgba(124, 109, 250, 0.05);
+  padding: 0.5rem 1rem;
+  border-radius: 0 4px 4px 0;
+}
+
+.ProseMirror pre {
+  background: #0d0e14;
+  color: #fff;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+}
+
+.ProseMirror pre code {
+  color: inherit;
+  padding: 0;
+  background: none;
+  font-size: 0.8rem;
+}
+
+/* Task List */
+.ProseMirror ul[data-type="taskList"] {
+  list-style: none;
+  padding: 0;
+}
+
+.ProseMirror ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.ProseMirror ul[data-type="taskList"] label {
+  user-select: none;
+  margin-top: 0.25rem;
+}
+
+.ProseMirror ul[data-type="taskList"] input[type="checkbox"] {
+  cursor: pointer;
+  accent-color: var(--color-brand);
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.ProseMirror ul[data-type="taskList"] div {
+  flex: 1;
+}
+
+/* Mathematics */
+.tiptap-mathematics {
+  background: rgba(124, 109, 250, 0.1);
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.tiptap-mathematics:hover {
+  background: rgba(124, 109, 250, 0.2);
+}
+
+.tiptap-mathematics.ProseMirror-selectednode {
+  outline: 2px solid var(--color-brand);
 }

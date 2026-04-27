@@ -29,24 +29,24 @@
 
 ### Atividades
 
-- [ ] **1.1** Criar arquivo `tokens.css` (ou seção `:root` global) com variáveis de superfície:
+- [x] **1.1** Criar arquivo `tokens.css` (ou seção `:root` global) com variáveis de superfície:
   ```css
   --surface-base, --surface-raised, --surface-card,
   --surface-elevated, --surface-overlay, --surface-border
   ```
 
-- [ ] **1.2** Adicionar tokens de cor semântica por módulo:
+- [x] **1.2** Adicionar tokens de cor semântica por módulo:
   ```css
   --color-notas, --color-estudo, --color-flashcards,
   --color-gerador, --color-chat, --color-grafo, --color-stats
   ```
 
-- [ ] **1.3** Adicionar cores de estado:
+- [x] **1.3** Adicionar cores de estado:
   ```css
   --color-success, --color-warning, --color-error, --color-info
   ```
 
-- [ ] **1.4** Adicionar tokens de texto:
+- [x] **1.4** Adicionar tokens de texto:
   ```css
   --text-hi, --text-mid, --text-lo
   ```
@@ -68,12 +68,12 @@
   --shadow-glow-violet, --shadow-glow-teal
   ```
 
-- [ ] **1.8** Configurar fontes no `index.html` ou equivalente:
+- [x] **1.8** Configurar fontes no `index.html` ou equivalente:
   - **Display/Títulos:** `Syne` (Google Fonts) — pesos 600, 700, 800
   - **Corpo/UI:** `DM Sans` — pesos 300, 400, 500
   - **Dados/Mono:** `JetBrains Mono` — pesos 400, 500
 
-- [ ] **1.9** Criar tokens de tipografia:
+- [x] **1.9** Criar tokens de tipografia:
   ```css
   --font-display, --font-body, --font-mono
   --type-display-xl, --type-display-lg, --type-display-md,
@@ -140,14 +140,14 @@ Existe um Storybook ou página de preview onde todos os componentes acima são v
 
 ### Atividades
 
-- [ ] **3.1** Reagrupar itens de navegação em 3 grupos com labels:
+- [x] **3.1** Reagrupar itens de navegação em 3 grupos com labels:
   - `APRENDER` → Notas, Estudo, Flashcards
   - `CRIAR` → Gerador, Poemas
   - `EXPLORAR` → Chat IA, Grafo, Estatísticas
 
-- [ ] **3.2** Adicionar divisores visuais entre grupos (1px `--surface-border`)
+- [x] **3.2** Adicionar divisores visuais entre grupos (1px `--surface-border`)
 
-- [ ] **3.3** Atribuir cor única a cada ícone de módulo conforme tabela:
+- [x] **3.3** Atribuir cor única a cada ícone de módulo conforme tabela:
   | Módulo | Cor do ícone |
   |--------|-------------|
   | Notas | `--color-notas` (#4D9EFF) |
@@ -158,7 +158,7 @@ Existe um Storybook ou página de preview onde todos os componentes acima são v
   | Grafo | `--color-grafo` (#34D399) |
   | Estatísticas | `--color-stats` (#F5A623) |
 
-- [ ] **3.4** Estado ativo do nav item: fundo `rgba(cor-do-módulo, 0.08)` + barra esquerda 3px colorida + ícone com cor do módulo
+- [x] **3.4** Estado ativo do nav item: fundo `rgba(cor-do-módulo, 0.08)` + barra esquerda 3px colorida + ícone com cor do módulo
 
 - [ ] **3.5** Implementar colapso de sidebar com `Ctrl+B`:
   - Expandida: 240px com ícone + texto
@@ -167,7 +167,7 @@ Existe um Storybook ou página de preview onde todos os componentes acima são v
 - [ ] **3.6** Adicionar tooltip com atalho de teclado nos nav items (visível no hover quando sidebar colapsada):
   - Ex: "Notas — Ctrl+1"
 
-- [ ] **3.7** Rodapé da sidebar com 2 elementos fixos:
+- [x] **3.7** Rodapé da sidebar com 2 elementos fixos:
   - Status de IA como pílula animada: `● IA Online · [nome do modelo]` (verde pulsante) ou `● IA Offline` (vermelho)
   - Item "Configurações" com ícone de engrenagem
 
@@ -318,19 +318,19 @@ Revisar 10 flashcards usando apenas teclado (Espaço + 1/2/3/4) sem precisar usa
 
 ### Atividades
 
-- [ ] **7.1** Implementar layout de steps com indicador visual:
+- [x] **7.1** Implementar layout de steps com indicador visual:
   ```
   [1 Entrada] → [2 Configurar] → [3 Gerar] → [4 Revisar]
   ```
   Step ativo: círculo cheio + label colorida. Steps futuros: círculo vazio + label esmaecida.
 
-- [ ] **7.2** **Step 1 — Entrada:**
+- [x] **7.2** **Step 1 — Entrada:**
   - Zona de drag-and-drop com borda tracejada animada (pulsante ao arrastar arquivo sobre ela)
   - Aceitar `.txt`, `.md`, `.pdf`
   - OU textarea com contador de caracteres e indicador de tamanho ideal ("~500–3000 palavras para melhores resultados")
   - Preview do texto extraído após upload (colapsável, máx. 5 linhas visíveis)
 
-- [ ] **7.3** **Step 2 — Configurar:**
+- [x] **7.3** **Step 2 — Configurar:**
   - Slider de quantidade: 5, 10, 15, 20 questões
   - Seletor de tipo: `Múltipla Escolha | Verdadeiro/Falso | Dissertativa`
   - Seletor de dificuldade: `Fácil | Médio | Difícil`
@@ -349,7 +349,7 @@ Revisar 10 flashcards usando apenas teclado (Espaço + 1/2/3/4) sem precisar usa
   - Botão "Rejeitar" remove o card com animação de saída
   - CTA final: "Salvar X questões selecionadas no Banco"
 
-- [ ] **7.6** Aba "Banco" com:
+- [x] **7.6** Aba "Banco" com:
   - Grid de cards de questões
   - Filtros por matéria e tipo
   - Exportação para `.txt` e `.docx`

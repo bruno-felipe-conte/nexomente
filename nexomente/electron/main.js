@@ -11,6 +11,11 @@ const isDev = process.env.NODE_ENV === 'development';
 let mainWindow;
 
 app.whenReady().then(() => {
+  console.log('====================================');
+  console.log('NEXOMENTE MAIN PROCESS STARTING...');
+  console.log('DIAGNOSTIC: REGISTERING AI HANDLERS');
+  console.log('====================================');
+
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     const responseHeaders = { ...details.responseHeaders };
     // Remove existing CORS to prevent duplicate '*, *' when fetching from Google Fonts
@@ -70,6 +75,113 @@ app.on('activate', () => {
 });
 
 // IPC Handlers
+
+// ==========================================
+// AI & PROXY HANDLERS (PRIORITÁRIO)
+// ==========================================
+
+let llamaInstance = null;
+let modelInstance = null;
+let contextInstance = null;
+
+// Gemini Proxy
+ipcMain.handle('ai:geminiChat', async (event, { url, body }) => {
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await response.json();
+    return { ok: response.ok, status: response.status, data };
+  } catch (error) {
+    return { ok: false, error: error.message };
+  }
+});
+
+// Embedded LLM (node-llama-cpp)
+ipcMain.handle('ai:embeddedChat', async (event, { modelPath, messages, options }) => {
+  console.log('[AI ENGINE] Requisição recebida. Iniciando processamento...');
+  try {
+    console.log('[AI ENGINE] Importando node-llama-cpp...');
+    const { getLlama, LlamaChatSession } = await import('node-llama-cpp');
+    
+    if (!llamaInstance) {
+      console.log('[AI ENGINE] Inicializando instância Llama...');
+      llamaInstance = await getLlama();
+      console.log('[AI ENGINE] Instância Llama pronta.');
+    }
+    
+    // No app empacotado, os modelos ficam em process.resourcesPath/models
+    const internalModelsDir = app.isPackaged 
+      ? path.join(process.resourcesPath, 'models')
+      : path.join(__dirname, 'models');
+      
+    let finalModelPath = modelPath;
+
+    if (fs.existsSync(internalModelsDir)) {
+      const files = fs.readdirSync(internalModelsDir);
+      const ggufFile = files.find(f => f.endsWith('.gguf'));
+      if (ggufFile) {
+        finalModelPath = path.join(internalModelsDir, ggufFile);
+        console.log('[AI ENGINE] Modelo interno detectado:', ggufFile);
+      }
+    }
+
+    if (!modelInstance || modelInstance.modelPath !== finalModelPath) {
+      console.log('[AI ENGINE] Carregando modelo do disco:', finalModelPath);
+      if (!fs.existsSync(finalModelPath)) {
+        throw new Error(`Arquivo não encontrado no caminho: ${finalModelPath}. Verifique se você moveu o .gguf para a pasta electron/models/`);
+      }
+      
+      modelInstance = await llamaInstance.loadModel({ 
+        modelPath: finalModelPath,
+        gpuLayers: -1, // -1 tenta usar o máximo de aceleração de GPU disponível
+        useMmap: true,
+      });
+      console.log('[AI ENGINE] Modelo carregado com aceleração otimizada.');
+
+      console.log('[AI ENGINE] Criando contexto de alta performance...');
+      contextInstance = await modelInstance.createContext({
+        contextSize: 4096, // Aumentado para lidar com textos maiores
+        batchSize: 512,    // Aumentado para processamento mais rápido
+        threads: 8,        // Aumentado para processadores modernos
+        flashAttention: true 
+      });
+      console.log('[AI ENGINE] Contexto criado e otimizado para velocidade.');
+    }
+
+    console.log('[AI ENGINE] Iniciando sessão de chat...');
+    const session = new LlamaChatSession({ contextSequence: contextInstance.getSequence() });
+    const lastMessage = messages[messages.length - 1].content || messages[messages.length - 1].texto;
+    
+    console.log('[AI ENGINE] Gerando resposta...');
+    const response = await session.prompt(lastMessage, {
+      maxTokens: options.max_tokens || 512,
+      temperature: options.temperature || 0.7,
+    });
+
+    console.log('[AI ENGINE] Resposta gerada com sucesso.');
+    return { success: true, response };
+  } catch (error) {
+    console.error('[AI ENGINE] ERRO CRÍTICO:', error);
+    
+    let errorCode = 'ERR-AI-500'; // Erro Genérico
+    if (error.message.includes('not found')) errorCode = 'ERR-AI-001';
+    if (error.message.includes('VRAM') || error.message.includes('out of memory')) errorCode = 'ERR-AI-002';
+    if (error.message.includes('Failed to load model')) errorCode = 'ERR-AI-003';
+    if (error.message.includes('context size')) errorCode = 'ERR-AI-004';
+    if (error.message.includes('permission denied')) errorCode = 'ERR-SYS-001';
+
+    return { 
+      success: false, 
+      error: error.message,
+      code: errorCode,
+      details: `Consulte o manual para o código ${errorCode}`,
+      stack: isDev ? error.stack : undefined
+    };
+  }
+});
 
 // Database initialization
 let db;

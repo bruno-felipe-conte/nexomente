@@ -41,7 +41,7 @@ const QuestaoCard = memo(function QuestaoCard({ questao: q, onEditar, onCriarFla
             className="w-full p-2 bg-bg-tertiary border border-border-subtle rounded-lg"
           />
           <div className="flex gap-2">
-            {editData?.opcoes.map((o, i) => (
+            {(editData?.opcoes || []).map((o, i) => (
               <div key={o.letra} className="flex-1 flex gap-2">
                 <span className="py-2">{o.letra})</span>
                 <input
@@ -70,22 +70,37 @@ const QuestaoCard = memo(function QuestaoCard({ questao: q, onEditar, onCriarFla
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs text-text-muted">{q.materia}</span>
-                <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">{q.banca}</span>
-                <span className="text-xs text-text-muted">{q.ano}</span>
+                <span className="text-xs text-text-muted">{q.materia || 'Geral'}</span>
+                <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">{q.banca || 'IA'}</span>
+                <span className="text-xs text-text-muted">{q.ano || new Date().getFullYear()}</span>
               </div>
-              <p className="font-medium">{q.pergunta}</p>
-              <div className="mt-2 text-sm">
-                {q.opcoes.map(o => (
-                  <span
+              <p className="font-bold text-lg mb-4 text-text-primary leading-tight">{q.pergunta || 'Questão sem pergunta disponível'}</p>
+              <div className="grid grid-cols-1 gap-2">
+                {(q.opcoes || []).map(o => (
+                  <div
                     key={o.letra}
-                    className={`mr-3 ${o.correta ? 'text-success font-medium' : 'text-text-muted'}`}
+                    className={`p-3 rounded-xl border transition-all flex gap-3 items-start ${
+                      o.correta 
+                        ? 'bg-success/10 border-success/30 text-success' 
+                        : 'bg-bg-tertiary/50 border-border-subtle text-text-secondary'
+                    }`}
                   >
-                    {o.letra}) {o.texto.substring(0, 30)}...
-                  </span>
+                    <span className={`font-black text-xs px-2 py-1 rounded-lg ${o.correta ? 'bg-success text-white' : 'bg-bg-tertiary text-text-muted'}`}>
+                      {o.letra}
+                    </span>
+                    <span className="text-sm">{o.texto || 'Opção vazia'}</span>
+                  </div>
                 ))}
+                {(!q.opcoes || q.opcoes.length === 0) && (
+                  <p className="text-xs text-danger italic">Esta questão não possui alternativas válidas.</p>
+                )}
               </div>
-              <div className="mt-2 text-sm text-success">Gabarito: {q.resposta_correta}</div>
+              {q.opcoes && q.opcoes.find(o => o.correta)?.justificativa_correta && (
+                <div className="mt-4 p-3 bg-bg-tertiary border-l-4 border-primary rounded-r-xl">
+                  <p className="text-[10px] font-black uppercase text-primary mb-1">Justificativa</p>
+                  <p className="text-xs text-text-secondary italic">{q.opcoes.find(o => o.correta).justificativa_correta}</p>
+                </div>
+              )}
             </div>
             <div className="flex gap-1">
               <button onClick={iniciarEdicao} className="p-2 hover:bg-bg-tertiary rounded-lg">

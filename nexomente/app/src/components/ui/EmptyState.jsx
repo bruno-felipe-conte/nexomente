@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { motion } from 'framer-motion';
 
 /**
  * Componente EmptyState — exibido quando uma lista ou área não tem conteúdo.
@@ -11,18 +12,29 @@ import PropTypes from 'prop-types';
  */
 function EmptyState({ icon, title, description, action }) {
   return (
-    <div className="flex flex-col items-center justify-center h-full min-h-[240px] p-8 text-center select-none">
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: 'easeOut' }}
+      className="flex flex-col items-center justify-center h-full min-h-[240px] p-8 text-center select-none"
+    >
       {icon && (
-        <div className="text-text-secondary opacity-40 mb-4" style={{ fontSize: '3rem' }}>
+        <motion.div
+          initial={{ scale: 0.8 }}
+          animate={{ scale: 1 }}
+          transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
+          className="text-text-secondary opacity-30 mb-5"
+          style={{ fontSize: '3.5rem' }}
+        >
           {icon}
-        </div>
+        </motion.div>
       )}
       <h3 className="text-text-primary font-semibold text-base mb-1">{title}</h3>
       {description && (
         <p className="text-text-secondary text-sm max-w-xs mb-4">{description}</p>
       )}
       {action && <div>{action}</div>}
-    </div>
+    </motion.div>
   );
 }
 

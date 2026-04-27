@@ -8,6 +8,7 @@
  */
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { Toaster } from 'react-hot-toast';
+import { AnimatePresence, motion } from 'framer-motion';
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
 import { useUIStore } from './store/useUIStore';
@@ -40,6 +41,23 @@ function App() {
   const { sidebarOpen, toggleSidebar, loading } = useUIStore();
 
   useEffect(() => {
+    // ─── Configurações Padrão de Inicialização (GitHub/Fresh Install) ───
+    const defaults = {
+      'nexomente_ai_provider': 'embedded',
+      'nexomente_ai_language': 'Português Brasileiro',
+      'nexomente_tema': 'dark',
+      'nexomente_ai_temp': '0.7',
+      'nexomente_ai_max_tokens': '1024',
+      'nexomente_embedded_path': './electron/models/llama-3-8b-instruct.gguf',
+      'nexomente_ai_system_prompt': 'Você é o NexoMente, um assistente de estudos de alto desempenho. Responda de forma lógica, profunda e estruturada.'
+    };
+
+    Object.entries(defaults).forEach(([key, val]) => {
+      if (!localStorage.getItem(key)) {
+        localStorage.setItem(key, val);
+      }
+    });
+
     useUIStore.getState().init();
 
     const savedTema = localStorage.getItem('nexomente_tema') || 'dark';
@@ -107,7 +125,7 @@ function App() {
   }
 
   return (
-    <div className="flex h-full w-full bg-bg-primary">
+    <div className="flex h-full w-full bg-surface-base relative">
       <LevelUpOverlay />
       {/* Skip to main content link para navegação por teclado (Tarefa 6.7) */}
       <a 
@@ -139,15 +157,22 @@ function App() {
         onNavigate={setCurrentPage}
       />
 
-      <div className="flex flex-col flex-1 min-w-0">
+      <div className="flex flex-col flex-1 min-w-0 relative h-full">
+        {/* LINHA DE HORIZONTE (Solução Inteligente para continuidade visual) */}
+        <div className="absolute top-14 left-0 right-0 h-[1px] bg-surface-border z-50" />
+        
         <Header
           title={currentPage}
           onToggleSidebar={toggleSidebar}
         />
 
-        <main id="main-content" className="flex-1 overflow-auto focus:outline-none" tabIndex="-1">
+        <main
+          id="main-content"
+          className="flex-1 overflow-auto focus:outline-none relative z-10"
+          tabIndex="-1"
+        >
           {/* ErrorBoundary por página + Suspense para lazy loading */}
-          <ErrorBoundary context={currentPage}>
+          <ErrorBoundary context={currentPage} key={currentPage}>
             <Suspense fallback={<PageLoader />}>
               {currentPage === 'dashboard'   && <Dashboard />}
               {currentPage === 'notes'       && <Notas />}

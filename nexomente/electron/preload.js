@@ -48,4 +48,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   // App
   getPath: (name) => ipcRenderer.invoke('app:getPath', name),
+  
+  // AI Bridge
+  geminiChat: (payload) => ipcRenderer.invoke('ai:geminiChat', payload),
+  embeddedChat: (payload) => ipcRenderer.invoke('ai:embeddedChat', payload),
 });

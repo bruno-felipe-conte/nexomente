@@ -20,7 +20,7 @@ const statusLista = [
   { id: 'arquivado', label: 'Arquivado' },
 ];
 
-export default function NoteMetadata({ nota, onUpdate }) {
+export default function NoteMetadata({ nota, onUpdate, onClose }) {
   if (!nota) return null;
 
   const tipoAtual = tipos.find(t => t.id === nota.tipo) || tipos[0];
@@ -28,8 +28,15 @@ export default function NoteMetadata({ nota, onUpdate }) {
 
   return (
     <div className="w-64 border-l border-border-subtle flex flex-col bg-bg-secondary overflow-auto">
-      <div className="p-3 border-b border-border-subtle">
+      <div className="p-3 border-b border-border-subtle flex items-center justify-between">
         <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">Metadados</span>
+        <button 
+          onClick={onClose}
+          className="p-1 hover:bg-bg-tertiary rounded-full text-text-muted hover:text-text-primary transition-colors cursor-pointer"
+          title="Fechar"
+        >
+          <Hash size={14} className="rotate-45" /> {/* Simulating a close X with a rotated Hash or just use X if I had it, but Hash is available */}
+        </button>
       </div>
 
       <div className="flex-1 overflow-auto p-3 space-y-4">
@@ -138,6 +145,23 @@ export default function NoteMetadata({ nota, onUpdate }) {
           </div>
         )}
 
+        <div className="flex gap-2">
+          <button
+            onClick={() => editor.chain().focus().insertContent('$ ').run()}
+            title="Fórmula inline ($)"
+            className="p-2 bg-bg-tertiary rounded hover:bg-bg-active"
+          >
+            <Sigma size={16} />
+          </button>
+          <button
+            onClick={() => editor.chain().focus().insertContent('$$\n\n$$').run()}
+            title="Fórmula bloco ($$)"
+            className="p-2 bg-bg-tertiary rounded hover:bg-bg-active"
+          >
+            <Sigma size={16} className="rotate-180" />
+          </button>
+        </div>
+
         <div>
           <label className="text-xs text-text-muted mb-1 block">
             <Clock size={10} className="inline mr-1" />
@@ -177,4 +201,5 @@ export default function NoteMetadata({ nota, onUpdate }) {
 NoteMetadata.propTypes = {
   nota: PropTypes.any,
   onUpdate: PropTypes.func,
+  onClose: PropTypes.func,
 };

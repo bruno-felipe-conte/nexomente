@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { setModel as svcSetModel, setTemperature as svcSetTemp, getTemperature, getModel, checkLMStudioStatus } from '../lib/ai/lmStudioService';
+import * as aiProvider from '../lib/ai/aiProvider';
+import { getTemperature, getModel } from '../lib/ai/lmStudioService';
 
 export function useAIModel() {
   const [status, setStatus] = useState('checking');
+  const [provider, setProvider] = useState(aiProvider.getActiveProvider());
   const [modelos, setModelos] = useState([]);
   const [modeloAtual, setModeloAtual] = useState(getModel());
   const [temperatura, setTemperatura] = useState(getTemperature());
@@ -12,48 +14,56 @@ export function useAIModel() {
     setLoading(true);
     setStatus('checking');
     try {
-      const res = await checkLMStudioStatus();
+      const res = await aiProvider.checkStatus();
       if (res.status === 'online') {
         setStatus('online');
         const mods = res.models.length > 0
           ? res.models.map(m => typeof m === 'string' ? m : (m.id || m.name || 'unknown'))
-          : [getModel()];
+          : [modeloAtual];
         setModelos(mods);
-        if (!mods.includes(getModel())) {
-          setModelos(prev => [...prev, getModel()]);
+        
+        // Auto-seleciona o primeiro se o atual não estiver na lista (ex: mudou de provedor)
+        if (!mods.includes(modeloAtual)) {
+          setModeloAtual(mods[0]);
+          localStorage.setItem('nexomente_ai_model', mods[0]);
         }
       } else {
         setStatus('offline');
-        setModelos([getModel()]);
+        setModelos([modeloAtual]);
       }
     } catch {
       setStatus('offline');
-      setModelos([getModel()]);
+      setModelos([modeloAtual]);
     }
     setLoading(false);
-  }, []);
+  }, [modeloAtual]);
 
   useEffect(() => {
     verificar();
-  }, [verificar]);
+  }, [verificar, provider]);
+
+  const trocarProvedor = useCallback((p) => {
+    aiProvider.setActiveProvider(p);
+    setProvider(p);
+  }, []);
 
   const trocarModelo = useCallback((novoModelo) => {
-    svcSetModel(novoModelo);
     setModeloAtual(novoModelo);
     localStorage.setItem('nexomente_ai_model', novoModelo);
   }, []);
 
   const trocarTemperatura = useCallback((novaTemp) => {
-    svcSetTemp(novaTemp);
     setTemperatura(novaTemp);
   }, []);
 
   return {
     status,
+    provider,
     modelos,
     modeloAtual,
     temperatura,
     loading,
+    trocarProvedor,
     trocarModelo,
     trocarTemperatura,
     verificar,
@@ -86,9 +96,15 @@ export function useAIChat(notaId) {
     setMensagens(trimmed);
   }, [storageKey]);
 
-  const adicionar = useCallback((role, texto) => {
+  const adicionar = useCallback((role, texto, errorCode = null) => {
     setMensagens(prev => {
-      const updated = [...prev, { role, texto, ts: Date.now() }];
+      const updated = [...prev, { 
+        role, 
+        texto, 
+        errorCode, 
+        isError: !!errorCode,
+        ts: Date.now() 
+      }];
       persistir(updated);
       return updated;
     });

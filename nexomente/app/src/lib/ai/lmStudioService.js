@@ -94,6 +94,22 @@ export async function generate(prompt, options = {}) {
     });
 
     if (!response.ok) {
+      // Tenta fallback para /api/v1/chat se o padrão OpenAI falhar
+      if (response.status === 404) {
+        const fallbackRes = await fetch(`${LMSTUDIO_HOST}/api/v1/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: options.model || currentModel,
+            prompt: prompt, // Formato simplificado
+          }),
+        });
+        if (fallbackRes.ok) {
+          const fallbackData = await fallbackRes.json();
+          return { success: true, response: fallbackData.choices?.[0]?.text || fallbackData.response || '' };
+        }
+      }
+
       let errDetalhes = '';
       try {
         const errorData = await response.json();
@@ -105,7 +121,10 @@ export async function generate(prompt, options = {}) {
     }
 
     const data = await response.json();
-    return { success: true, response: data.choices?.[0]?.message?.content?.trim() || '' };
+    const content = data.choices?.[0]?.message?.content || 
+                    data.choices?.[0]?.text || 
+                    data.response || '';
+    return { success: true, response: content.trim() };
   } catch (error) {
     return { success: false, error: `Erro de conexão: ${error.message}` };
   }
@@ -117,19 +136,26 @@ export async function generate(prompt, options = {}) {
  * @param {object} options - Opções: model, temperature, max_tokens
  */
 export async function chat(messages, options = {}) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 segundos de limite
+
   try {
+    console.log('[LM-STUDIO] Iniciando chat...', { model: options.model || currentModel });
     const temp = options.temperature ?? currentTemp;
     const response = await fetch(`${LMSTUDIO_HOST}/v1/chat/completions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
       body: JSON.stringify({
         model: options.model || currentModel,
         messages,
         stream: false,
-        max_tokens: options.max_tokens ?? 512,
+        max_tokens: options.max_tokens ?? 1024,
         temperature: temp,
       }),
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       let errDetalhes = '';
@@ -140,14 +166,24 @@ export async function chat(messages, options = {}) {
         errDetalhes = await response.text();
       }
       console.error('LM Studio HTTP Error:', response.status, errDetalhes);
-      return { success: false, error: `Erro HTTP ${response.status}: ${errDetalhes}` };
+      return { success: false, code: `ERR-NET-${response.status}`, error: `Erro HTTP ${response.status}: ${errDetalhes}` };
     }
 
     const data = await response.json();
-    return { success: true, response: data.choices?.[0]?.message?.content?.trim() || '' };
+    const content = data.choices?.[0]?.message?.content || 
+                    data.choices?.[0]?.text || 
+                    data.response || '';
+    
+    console.log('[LM-STUDIO] Resposta recebida com sucesso.');
+    return { success: true, response: content.trim() };
   } catch (error) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      console.error('LM Studio Timeout: IA demorou mais de 60s.');
+      return { success: false, code: 'ERR-TIMEOUT', error: 'A IA demorou muito para responder (Timeout de 60s). Tente diminuir a quantidade de questões ou simplificar o texto.' };
+    }
     console.error('LM Studio Chat Exception:', error);
-    return { success: false, error: `Erro de conexão: ${error.message}` };
+    return { success: false, code: 'ERR-NET-500', error: `Erro de conexão: ${error.message}` };
   }
 }
 

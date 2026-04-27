@@ -6,32 +6,41 @@ function generateId() {
   return `materia_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 }
 
-export function useMaterias() {
-  const [materias, setMaterias] = useState([]);
+const DEFAULT_MATERIAS = [
+  { id: 'materia_default_1', nome: 'Português', cor: '#8B5CF6', icono: 'BookOpen', meta_horas: 10 },
+  { id: 'materia_default_2', nome: 'Inglês', cor: '#3B82F6', icono: 'Globe', meta_horas: 8 },
+  { id: 'materia_default_3', nome: 'Italiano', cor: '#10B981', icono: 'Globe', meta_horas: 5 },
+  { id: 'materia_default_4', nome: 'Filosofia', cor: '#F59E0B', icono: 'Brain', meta_horas: 6 },
+];
 
-  useEffect(() => {
+export function useMaterias() {
+  const [materias, setMaterias] = useState(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       try {
-        setMaterias(JSON.parse(stored));
+        return JSON.parse(stored);
       } catch {
-        setMaterias([]);
+        return DEFAULT_MATERIAS;
       }
-    } else {
-      const defaultMaterias = [
-        { id: 'materia_default_1', nome: 'Português', cor: '#8B5CF6', icono: 'BookOpen', meta_horas: 10 },
-        { id: 'materia_default_2', nome: 'Inglês', cor: '#3B82F6', icono: 'Globe', meta_horas: 8 },
-        { id: 'materia_default_3', nome: 'Italiano', cor: '#10B981', icono: 'Globe', meta_horas: 5 },
-        { id: 'materia_default_4', nome: 'Filosofia', cor: '#F59E0B', icono: 'Brain', meta_horas: 6 },
-      ];
-      setMaterias(defaultMaterias);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultMaterias));
     }
+    return DEFAULT_MATERIAS;
+  });
+
+  // Sincronização entre abas/componentes
+  useEffect(() => {
+    const handleStorage = () => {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        try { setMaterias(JSON.parse(stored)); } catch (e) { /* ignore */ }
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
   }, []);
 
   const persist = useCallback((lista) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(lista));
-    setMaterias(lista);
+    window.dispatchEvent(new Event('storage'));
   }, []);
 
   const create = useCallback((data = {}) => {

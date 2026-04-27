@@ -1,52 +1,36 @@
 %% INÍCIO - AGENTS %%
 
-## graphify
+## CodeGraph
 
-This project has a graphify knowledge graph at graphify-out/.
+This project has a CodeGraph knowledge graph (`.codegraph/`).
 
-### 1. Leia o relatório principal para entender nós centrais e estrutura de comunidades
+### 1. Queries (prefira em vez de grep)
 
 ```bash
-cat graphify-out/GRAPH_REPORT.md
+codegraph query "useFlashcards"         # Find symbol by name
+codegraph status                     # Index stats
+codegraph context "task description"   # Build context for AI
 ```
 
-Este arquivo contém:
-- **God Nodes**: nós mais conectados (abstrações centrais do projeto)
-- **Comunidades**: grupos de funcionalidades relacionadas com métricas de coesão
-- **Lacunas de conhecimento**: nós isolados que precisam de atenção
-- **Perguntas sugeridas**: consultas que o grafo pode responder melhor que buscas simples
+### 2. Index Stats
 
-**Resumo do grafo atual:**
-- 200 nodes · 238 edges · 14 comunidades
-- God nodes: React (28), NexoMente (15), Framer Motion (9)
--useFlashcards() (6), parseArquivo() (6), AIChatPage() (6)
+- 616 nodes · 900 edges · 93 files
+- God nodes: React, NexoMente, Framer Motion, useFlashcards(), parseArquivo()
+- Languages: JSX (48), JavaScript (40), Python (4), TypeScript (1)
+- DB: .codegraph/codegraph.db (1.55 MB)
 
-### 2. Para perguntas específicas
-
-Prefira estes comandos em vez de grep:
+### 3. After modifying code
 
 ```bash
-# Explorar relações entre conceitos
-py -m graphify query "Como o React se conecta às comunidades?"
-
-# Encontrar caminho entre dois nós
-py -m graphify path "React" "useAIModel()"
-
-# Explicar um conceito e suas conexões
-py -m graphify explain "NexoMente"
-```
-
-### 3. Após modificar código
-
-```bash
-py -m graphify update .  # Atualiza o grafo (AST-only, sem API)
+codegraph sync    # Incremental update
+codegraph index  # Full re-index
 ```
 
 ### 4. Learnings (memória entre sessões)
 
 ```bash
 /learn           # Mostre learnings recentes
-/learn search "termo"  #Pesquise
+/learn search "termo"  # Pesquise
 /learn stats    # Estatísticas
 ```
 

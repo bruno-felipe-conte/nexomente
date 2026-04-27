@@ -120,50 +120,71 @@ export default function NotaLista({ notas, notaSelecionada, busca, onBuscaChange
             <p className="text-xs">Nenhuma nota</p>
           </div>
         ) : (
-          <div className="divide-y divide-border-subtle">
-            {notas.map((nota, idx) => {
-              const Icon = tipoIcons[nota.tipo] || FileText;
-              const cor = tipoCores[nota.tipo] || '#6C63FF';
-              const preview = nota.conteudo?.replace(/<[^>]*>/g, '').substring(0, 60);
-              const isSelected = notaSelecionada?.id === nota.id;
-              return (
-                <button
-                  key={nota.id}
-                  data-nota-btn
-                  tabIndex={isSelected ? 0 : -1}
-                  onClick={() => onSelect(nota)}
-                  onKeyDown={(e) => handleNotaKeyDown(e, nota)}
-                  role="option"
-                  aria-selected={isSelected}
-                  className={`w-full p-3 text-left hover:bg-bg-tertiary transition-colors cursor-pointer ${
-                    isSelected ? 'bg-bg-tertiary border-l-2' : ''
-                  }`}
-                  style={{ borderLeftColor: isSelected ? cor : 'transparent' }}
-                >
-                  <div className="flex items-start gap-2">
-                    <Icon size={14} style={{ color: cor }} className="flex-shrink-0 mt-0.5" aria-hidden="true" />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm text-text-primary truncate">{nota.titulo}</p>
-                      {preview && (
-                        <p className="text-xs text-text-muted truncate mt-0.5">{preview}...</p>
-                      )}
-                      {nota.tags?.length > 0 && (
-                        <div className="flex gap-1.5 mt-2 flex-wrap" aria-label="Tags">
-                          {nota.tags.slice(0, 3).map(tag => (
-                            <Badge key={tag} variant="notas" type="pill">
-                              #{tag}
-                            </Badge>
-                          ))}
-                          {nota.tags.length > 3 && (
-                            <Badge variant="gray" type="pill">+{nota.tags.length - 3}</Badge>
-                          )}
+          <div className="flex flex-col">
+            {Object.entries(
+              notas.reduce((acc, nota) => {
+                const date = nota.criado_em ? new Date(nota.criado_em).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Sem data';
+                if (!acc[date]) acc[date] = [];
+                acc[date].push(nota);
+                return acc;
+              }, {})
+            ).map(([date, group]) => (
+              <div key={date}>
+                <div className="px-4 py-1.5 bg-bg-secondary text-[10px] font-bold text-text-lo uppercase tracking-wider sticky top-0 z-10 border-b border-border-subtle/50">
+                  {date}
+                </div>
+                <div className="divide-y divide-border-subtle/30">
+                  {group.map((nota) => {
+                    const Icon = tipoIcons[nota.tipo] || FileText;
+                    const cor = tipoCores[nota.tipo] || '#6C63FF';
+                    const preview = nota.conteudo?.replace(/<[^>]*>/g, '').substring(0, 60);
+                    const isSelected = notaSelecionada?.id === nota.id;
+                    const time = nota.criado_em ? new Date(nota.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
+                    
+                    return (
+                      <button
+                        key={nota.id}
+                        data-nota-btn
+                        tabIndex={isSelected ? 0 : -1}
+                        onClick={() => onSelect(nota)}
+                        onKeyDown={(e) => handleNotaKeyDown(e, nota)}
+                        role="option"
+                        aria-selected={isSelected}
+                        className={`w-full p-3 text-left hover:bg-bg-tertiary transition-colors cursor-pointer group ${
+                          isSelected ? 'bg-bg-tertiary border-l-2' : ''
+                        }`}
+                        style={{ borderLeftColor: isSelected ? cor : 'transparent' }}
+                      >
+                        <div className="flex items-start gap-2">
+                          <Icon size={14} style={{ color: cor }} className="flex-shrink-0 mt-0.5" aria-hidden="true" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="font-medium text-sm text-text-primary truncate">{nota.titulo}</p>
+                              <span className="text-[10px] text-text-lo font-mono flex-shrink-0">{time}</span>
+                            </div>
+                            {preview && (
+                              <p className="text-xs text-text-muted truncate mt-0.5">{preview}...</p>
+                            )}
+                            {nota.tags?.length > 0 && (
+                              <div className="flex gap-1.5 mt-2 flex-wrap" aria-label="Tags">
+                                {nota.tags.slice(0, 3).map(tag => (
+                                  <Badge key={tag} variant="notas" type="pill">
+                                    #{tag}
+                                  </Badge>
+                                ))}
+                                {nota.tags.length > 3 && (
+                                  <Badge variant="gray" type="pill">+{nota.tags.length - 3}</Badge>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

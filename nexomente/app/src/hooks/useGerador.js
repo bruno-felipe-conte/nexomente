@@ -1,8 +1,11 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useFlashcards } from './useFlashcards';
 import { parseArquivo, gerarQuestoesComIA } from '../lib/parser';
 
-const BANCAS = [
+const QUESTOES_KEY = 'nexomente_questoes';
+const BANCAS_KEY = 'nexomente_bancas';
+
+const DEFAULT_BANCAS = [
   { key: 'fcc', nome: 'FCC' },
   { key: 'cespe', nome: 'CESPE/Cebraspe' },
   { key: 'fgv', nome: 'FGV' },
@@ -10,8 +13,6 @@ const BANCAS = [
   { key: 'vunesp', nome: 'VUNESP' },
   { key: 'outras', nome: 'Outras' },
 ];
-
-const QUESTOES_KEY = 'nexomente_questoes';
 
 function generateId() {
   return `q_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
@@ -31,6 +32,36 @@ export function useGerador() {
     }
     return [];
   });
+
+  // Listener para sincronização em tempo real entre abas/componentes
+  useEffect(() => {
+    const sync = () => {
+      const stored = localStorage.getItem(QUESTOES_KEY);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          setQuestoes(parsed);
+        } catch (e) {
+          console.error('Erro ao sincronizar questões:', e);
+        }
+      }
+    };
+
+    window.addEventListener('storage', sync);
+    return () => window.removeEventListener('storage', sync);
+  }, []);
+
+  const [bancas, setBancas] = useState(() => {
+    const stored = localStorage.getItem(BANCAS_KEY);
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch {
+        return DEFAULT_BANCAS;
+      }
+    }
+    return DEFAULT_BANCAS;
+  });
   
   const [carregando, setCarregando] = useState(false);
   const [progresso, setProgresso] = useState(0);
@@ -39,7 +70,25 @@ export function useGerador() {
   const persist = useCallback((lista) => {
     localStorage.setItem(QUESTOES_KEY, JSON.stringify(lista));
     setQuestoes(lista);
+    window.dispatchEvent(new Event('storage'));
   }, []);
+
+  const persistBancas = useCallback((lista) => {
+    localStorage.setItem(BANCAS_KEY, JSON.stringify(lista));
+    setBancas(lista);
+  }, []);
+
+  const addBanca = useCallback((nome) => {
+    const key = nome.toLowerCase().replace(/\s+/g, '_');
+    if (bancas.find(b => b.key === key)) return;
+    const novas = [...bancas, { key, nome }];
+    persistBancas(novas);
+  }, [bancas, persistBancas]);
+
+  const removeBanca = useCallback((key) => {
+    const novas = bancas.filter(b => b.key !== key);
+    persistBancas(novas);
+  }, [bancas, persistBancas]);
   
   const processarTexto = useCallback(async (texto, tipoArquivo = 'txt') => {
     setCarregando(true);
@@ -80,10 +129,16 @@ export function useGerador() {
     setProgresso(10);
     
     try {
-      const questoesGeradas = await gerarQuestoesComIA(texto, config);
+      const resultado = await gerarQuestoesComIA(texto, config);
+      
+      if (!resultado.success) {
+        setErro(resultado.erro || 'Falha na geração');
+        return resultado;
+      }
+
       setProgresso(90);
       
-      const novasQuestoes = questoesGeradas.map(q => ({
+      const novasQuestoes = resultado.questoes.map(q => ({
         ...q,
         id: generateId(),
       }));
@@ -97,7 +152,8 @@ export function useGerador() {
       setProgresso(100);
       return { success: true, total: novasQuestoes.length };
     } catch (e) {
-      setErro(e.message);
+      console.error('[GERADOR] Erro fatal:', e);
+      setErro(`Erro inesperado: ${e.message}`);
       return { success: false, erro: e.message };
     } finally {
       setCarregando(false);
@@ -203,7 +259,9 @@ export function useGerador() {
     carregando,
     progresso,
     erro,
-    bancas: BANCAS,
+    bancas,
+    addBanca,
+    removeBanca,
     processarTexto,
     gerarComIA,
     atualizarQuestao,

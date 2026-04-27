@@ -143,15 +143,13 @@ export default function EditorToolbar({ editor, focusMode, onToggleFocus }) {
         <Code size={16} className="rotate-45" />
       </ToolbarButton>
       <ToolbarButton
-        onClick={() => editor.chain().focus().setInlineMath().run()}
-        active={editor.isActive('inlineMath')}
+        onClick={() => editor.chain().focus().insertContent('$ ').run()}
         title="Fórmula inline ($)"
       >
         <Sigma size={16} />
       </ToolbarButton>
       <ToolbarButton
-        onClick={() => editor.chain().focus().setBlockMath().run()}
-        active={editor.isActive('blockMath')}
+        onClick={() => editor.chain().focus().insertContent('$$\n\n$$').run()}
         title="Fórmula bloco ($$)"
       >
         <Sigma size={16} className="rotate-180" />

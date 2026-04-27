@@ -5,7 +5,7 @@
  *   - useNotaEditor  → editor TipTap + ações de IA
  *   - NotaLista      → painel lateral de busca/listagem
  */
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { EditorContent } from '@tiptap/react';
 import { FileText, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -66,6 +66,25 @@ export default function NotasPage() {
     setEditando(false);
     setCriando(false);
   };
+
+  // Atalhos de teclado
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Ctrl+Shift+N: Nova Nota
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'n') {
+        e.preventDefault();
+        criarNota('nota');
+      }
+      // Esc: Fechar painéis/modais
+      if (e.key === 'Escape') {
+        setMostrandoAI(false);
+        setMostrandoMeta(false);
+        setMostrandoTags(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const excluirNota = (id) => {
     remove(id);
@@ -233,6 +252,7 @@ export default function NotasPage() {
             update(notaSelecionada.id, data);
             setNotaSelecionada(prev => ({ ...prev, ...data }));
           }}
+          onClose={() => setMostrandoMeta(false)}
         />
       )}
 

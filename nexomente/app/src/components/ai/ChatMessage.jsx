@@ -21,8 +21,26 @@ const ChatMessage = memo(function ChatMessage({ msg, idx, copiadoIdx, onCopiar, 
           ? 'bg-accent-main/20 border border-accent-main/30 text-text-primary'
           : 'bg-bg-secondary border border-border-subtle text-text-primary'
       }`}>
-        <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.texto}</p>
-        {!isUser && (
+        {msg.isError ? (
+          <div className="flex items-center gap-2 mt-1 py-1 px-3 bg-danger/10 border border-danger/20 rounded-lg">
+            <span className="text-[9px] font-black bg-danger text-white px-1.5 py-0.5 rounded uppercase tracking-tighter shadow-sm">
+              {msg.errorCode || 'ERR-SYS'}
+            </span>
+            <p className="text-[10px] text-danger/90 font-bold">
+              {msg.texto}
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col">
+            <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.texto}</p>
+            {isUser && msg.ts && (
+              <span className="text-[9px] text-text-muted mt-1 self-end opacity-70">
+                {new Date(msg.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
+          </div>
+        )}
+        {!isUser && !msg.isError && (
           <div className="flex gap-1 mt-2 pt-2 border-t border-border-subtle">
             <button
               onClick={() => onCopiar(msg.texto, idx)}
