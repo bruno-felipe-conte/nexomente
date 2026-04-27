@@ -1,6 +1,6 @@
-import { useCallback, useRef } from 'react';
-import PropTypes from 'prop-types';
+import { useRef } from 'react';
 import { motion } from 'framer-motion';
+import PropTypes from 'prop-types';
 import {
   Home, FileText, BookOpen, Layers,
   GitBranch, BarChart3, Settings,
@@ -85,6 +85,13 @@ function NavButton({ item, isActive, isOpen, onNavigate }) {
     </div>
   );
 }
+
+NavButton.propTypes = {
+  item: PropTypes.object.isRequired,
+  isActive: PropTypes.bool,
+  isOpen: PropTypes.bool,
+  onNavigate: PropTypes.func.isRequired,
+};
 
 export default function Sidebar({ isOpen, currentPage, onNavigate }) {
   const navRef = useRef(null);

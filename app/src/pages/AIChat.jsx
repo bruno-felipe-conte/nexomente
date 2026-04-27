@@ -3,10 +3,11 @@
  * Implementação de Popovers integrados para Contexto e Modelos.
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
+import PropTypes from 'prop-types';
 import { 
   Plus, Send, Loader2, ChevronDown, 
-  Trash2, Bot, Zap, Check, FileText,
-  Search, Info, Sparkles
+  Trash2, Bot, Check, FileText,
+  Search
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useAIModel, useAIChat } from '../hooks/useAIModel';
@@ -355,3 +356,7 @@ export default function AIChatPage({ onNavigate }) {
     </div>
   );
 }
+
+AIChatPage.propTypes = {
+  onNavigate: PropTypes.func,
+};

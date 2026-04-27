@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import PropTypes from 'prop-types';
 import AIPerformancePanel from '../components/ai/AIPerformancePanel';
 import Card from '../components/ui/Card';
 import { 
@@ -17,13 +18,9 @@ export default function Settings() {
   const [deleteType, setDeleteType] = useState(null);
 
   // Estados Locais de UI (Não globais)
-  const [localApiKey, setLocalApiKey] = useState(apiKey);
+  const [localApiKey, setLocalApiKey] = useState(() => apiKey || '');
   const [userName, setUserName] = useState(localStorage.getItem('nexomente_user_name') || 'bruno');
   const [notifStudy, setNotifStudy] = useState(localStorage.getItem('nexomente_notif_study') === 'true');
-
-  useEffect(() => {
-    setLocalApiKey(apiKey);
-  }, [apiKey]);
 
   const saveConfig = (key, value, setter) => {
     if (key === 'nexomente_gemini_key') {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useDBStore } from '../store/useDBStore';
 import { useTamagotchiStore } from '../store/useTamagotchiStore';
 import { useMaterias } from '../hooks/useMaterias';
@@ -26,28 +26,11 @@ export default function Study() {
   const [modo, setModo] = useState('pomodoro');
   const [showCriar, setShowCriar] = useState(false);
   const [novaMateria, setNovaMateria] = useState('');
-  const [sessoesList, setSessoesList] = useState([]);
+  const [sessoesList, setSessoesList] = useState(() => SessoesEstudo?.getAll() || []);
 
   const currentModo = MODOS.find(m => m.id === modo);
 
-  useEffect(() => { 
-    if (SessoesEstudo) {
-      setSessoesList(SessoesEstudo.getAll()); 
-    }
-  }, [SessoesEstudo]);
-
-  useEffect(() => {
-    let interval;
-    if (rodando && timer > 0) {
-      interval = setInterval(() => setTimer(t => t - 1), 1000);
-    } else if (timer === 0 && rodando) {
-      handleComplete();
-    }
-    return () => clearInterval(interval);
-  }, [rodando, timer]);
-
-  const handleComplete = () => {
-    setRodando(false);
+const handleComplete = useCallback(() => {
     if (sessaoId) {
       SessoesEstudo.completar(sessaoId);
       XP.add(15, 'Sessão concluída', 'sessao', sessaoId);
@@ -55,7 +38,23 @@ export default function Study() {
       setSessoesList(SessoesEstudo.getAll());
       toast.success('Sessão finalizada! Bom trabalho.');
     }
-  };
+    setRodando(false);
+    setSessaoId(null);
+  }, [sessaoId, SessoesEstudo, XP, currentModo]);
+
+  useEffect(() => {
+    if (!rodando || timer <= 0) return;
+    const interval = setInterval(() => {
+      setTimer(prev => {
+        if (prev <= 1) {
+          handleComplete();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [rodando, handleComplete]);
 
   const iniciar = () => {
     if (!materiaAtiva && modo !== 'descanso') {

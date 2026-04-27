@@ -1,26 +1,21 @@
-import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React from 'react';
+import PropTypes from 'prop-types';
+import { useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { useTamagotchiStore, getLevelData } from '../../store/useTamagotchiStore';
 import Card from '../ui/Card';
 import Badge from '../ui/Badge';
 
 export default function TamagotchiWidget({ className = '' }) {
-  const { player, checkDailyStatus, registerStudySession } = useTamagotchiStore();
+  const { player, checkDailyStatus } = useTamagotchiStore();
   const levelData = getLevelData(player.xp);
 
   useEffect(() => {
     checkDailyStatus();
   }, [checkDailyStatus]);
 
-  // Determinar o humor e o emoji secundário baseado no HP
-  let moodEmoji = '😐';
-  let moodStatus = 'Neutro';
-  let isShaking = false;
-  let isBouncing = false;
-  let isSpinning = false;
-  
   const hpPercent = (player.hp / player.hp_max) * 100;
-
+  
   if (player.hibernating || player.hp === 0) {
     moodEmoji = '💀';
     moodStatus = 'Hibernando';
@@ -155,3 +150,7 @@ export default function TamagotchiWidget({ className = '' }) {
     </Card>
   );
 }
+
+TamagotchiWidget.propTypes = {
+  className: PropTypes.string,
+};

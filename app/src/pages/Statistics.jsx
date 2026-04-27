@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { useDBStore } from '../store/useDBStore';
 import { useNotes } from '../hooks/useNotes';
 import { useFlashcards } from '../hooks/useFlashcards';
@@ -194,3 +195,26 @@ function NextAchievement({ icon, label, desc, progress }) {
     </div>
   );
 }
+
+StatCard.propTypes = {
+  icon: PropTypes.any,
+  value: PropTypes.any,
+  label: PropTypes.string,
+  sub: PropTypes.string,
+  color: PropTypes.string,
+  bg: PropTypes.string,
+};
+
+GoalProgress.propTypes = {
+  label: PropTypes.string,
+  current: PropTypes.number,
+  target: PropTypes.number,
+  color: PropTypes.string,
+};
+
+NextAchievement.propTypes = {
+  icon: PropTypes.any,
+  label: PropTypes.string,
+  desc: PropTypes.string,
+  progress: PropTypes.number,
+};

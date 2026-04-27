@@ -8,7 +8,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { EditorContent } from '@tiptap/react';
 import { FileText, Trash2 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useNotes } from '../hooks/useNotes';
 import { useFlashcards } from '../hooks/useFlashcards';
 import { useNotaEditor } from '../hooks/useNotaEditor';
@@ -281,13 +280,6 @@ export default function NotasPage() {
       )}
 
       {/* Modais de IA */}
-      {showTagPicker && (
-        <TagPickerModal
-          tagsSugeridas={tagsSugeridas} loading={aiLoadingTags}
-          onConfirm={handleTagsConfirm} onCancel={() => setShowTagPicker(false)}
-          modelo={getModel()}
-        />
-      )}
       {showCardApprove && (
         <FlashcardApproveModal
           cards={cardsSugeridos} loading={aiLoadingCards}

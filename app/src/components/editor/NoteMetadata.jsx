@@ -24,7 +24,6 @@ export default function NoteMetadata({ nota, onUpdate, onClose, editor }) {
   if (!nota) return null;
 
   const tipoAtual = tipos.find(t => t.id === nota.tipo) || tipos[0];
-  const TipoIcon = tipoAtual.icon;
 
   return (
     <div className="w-64 border-l border-border-subtle flex flex-col bg-bg-secondary overflow-auto">
@@ -202,4 +201,5 @@ NoteMetadata.propTypes = {
   nota: PropTypes.any,
   onUpdate: PropTypes.func,
   onClose: PropTypes.func,
+  editor: PropTypes.any,
 };
