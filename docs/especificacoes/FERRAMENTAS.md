@@ -5,8 +5,8 @@
 Utilizado para construir o aplicativo desktop NexoMente.
 
 - **Arquivos principais:**
-  - `nexomente/electron/main.js` - Processo principal, janela, IPC handlers
-  - `nexomente/electron/preload.js` - Bridge segura entre renderer e Node.js
+  - `electron/main.js` - Processo principal, janela, IPC handlers
+  - `electron/preload.js` - Bridge segura entre renderer e Node.js
 
 - **Stack Electron:**
   - Electron v28+ (configurado no package.json)
@@ -20,9 +20,9 @@ Utilizado para construir o aplicativo desktop NexoMente.
 Framework CSS utilitário utilizado em todo o frontend.
 
 - **Arquivos:**
-  - `nexomente/tailwind.config.js` - Configuração do tema customizado
-  - `nexomente/postcss.config.js` - Configuração PostCSS
-  - `nexomente/app/src/index.css` - Estilos globais + CSS variables
+  - `tailwind.config.js` - Configuração do tema customizado
+  - `postcss.config.js` - Configuração PostCSS
+  - `app/src/index.css` - Estilos globais + CSS variables
 
 - **Tema Dark Academic Digital:**
   - Cores definidas via CSS custom properties
@@ -77,7 +77,7 @@ Framework de skills para fluxos de trabalho estruturados.
 
 ## Sistema de Exportação (exportService.js)
 
-Arquivo: `nexomente/app/src/services/exportService.js`
+Arquivo: `app/src/services/exportService.js`
 
 ### Funções disponíveis:
 - `exportarParaTexto(questoes, opcoes)` - Exporta questões em formato TXT
@@ -98,7 +98,7 @@ Arquivo: `nexomente/app/src/services/exportService.js`
 
 ### Ollama (ollamaService.js)
 
-Arquivo: `nexomente/app/src/lib/ai/ollamaService.js`
+Arquivo: `app/src/lib/ai/ollamaService.js`
 
 - **Endpoint:** `http://localhost:11434`
 - **Modelo padrão:** `llama3.2:3b`
@@ -116,7 +116,7 @@ Arquivo: `nexomente/app/src/lib/ai/ollamaService.js`
 
 ### LM Studio (lmStudioService.js)
 
-Arquivo: `nexomente/app/src/lib/ai/lmStudioService.js`
+Arquivo: `app/src/lib/ai/lmStudioService.js`
 
 - **Endpoint:** `http://localhost:1234/v1`
 - **Modelo padrão:** configurável
@@ -136,7 +136,7 @@ Arquivo: `nexomente/app/src/lib/ai/lmStudioService.js`
 
 ### useAIModel Hook
 
-Arquivo: `nexomente/app/src/hooks/useAIModel.js`
+Arquivo: `app/src/hooks/useAIModel.js`
 
 Hook unificado que abstrai Ollama e LM Studio:
 

@@ -322,21 +322,19 @@ Cada forma desbloqueia **habilidades passivas exclusivas** — o Gato reduz dano
 <br>
 
 ```
-nexomente/
+.
 ├── electron/                   ⚡ Desktop Runtime + IPC Bridge
 │   ├── main.js                 # Janela frameless + segurança
 │   └── preload.js              # contextBridge (React ↔ SQLite)
 ├── app/src/                    🎨 Frontend React + Vite
-│   ├── pages/                  # Dashboard, Notas, Study, Flashcards,
-│   │                           # Gerador, Grafo, Poemas, AIChat, Settings
-│   ├── components/
-│   │   ├── gamification/       # 👾 TamagotchiWidget, LevelUpOverlay
-│   │   ├── layout/             # Sidebar glassmorphism, Header
-│   │   └── ui/                 # Card (parallax 3D), Button, Badge
-│   ├── store/                  # Zustand: useUIStore, useTamagotchiStore
-│   ├── hooks/                  # useNotes, useFlashcards, useAIModel
-│   └── lib/                    # db.js, sm2.js, parser, AI services
-└── src/test/                   🧪 Vitest suite
+│   ├── pages/                  # Dashboard, Notas, Study, Flashcards...
+│   ├── components/             # Gamification, Layout, UI components
+│   ├── store/                  # Zustand state management
+│   ├── hooks/                  # Custom React hooks
+│   └── lib/                    # DB, AI services, Utils
+├── docs/                       📂 Documentação e Especificações
+├── scripts/                    🛠️ Scripts de manutenção
+└── src/test/                   🧪 Suíte de testes Vitest
 ```
 
 </details>
@@ -408,7 +406,7 @@ ollama pull qwen2.5:7b     # ~4GB — excelente em português
 ## ◈ Instalação Rápida
 
 ```bash
-cd nexomente && npm install && npm run dev
+npm install && npm run dev
 ```
 
 <details>

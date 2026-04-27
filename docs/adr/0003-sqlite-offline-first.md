@@ -16,7 +16,7 @@ Como o NexoMente opera via Electron, foi escolhido o uso do **SQLite** (via paco
 
 ### Positivas
 - **Robustez e Velocidade:** Operações complexas e buscas completas (LIKE, JOINs) são instantâneas. Sem limitações práticas de tamanho.
-- **Segurança dos Dados:** O banco é um arquivo físico persistido no sistema de arquivos do usuário (`~/.nexomente/database.sqlite`), o qual é fácil de realizar backup.
+- **Segurança dos Dados:** O banco é um arquivo físico persistido no sistema de arquivos do usuário (`~/.database.sqlite`), o qual é fácil de realizar backup.
 - **Estabilidade no Main Process:** O processamento SQL não bloqueia a UI (Renderer thread).
 
 ### Negativas

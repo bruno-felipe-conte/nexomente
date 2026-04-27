@@ -63,12 +63,17 @@
   --ease-spring: cubic-bezier(.34,1.56,.64,1);
 
   /* ── TIPOGRAFIA ─────────────────────────────────────────── */
-  --type-display-xl: 800 2.5rem/1.1 var(--font-display);
-  --type-display-lg: 700 1.75rem/1.2 var(--font-display);
-  --type-display-md: 600 1.25rem/1.3 var(--font-display);
-  --type-body-lg:    500 1rem/1.6 var(--font-body);
-  --type-body-md:    400 0.9375rem/1.6 var(--font-body);
-  --type-body-sm:    400 0.8125rem/1.5 var(--font-body);
+  --type-display-xl: 800 3rem/1.1 var(--font-display);
+  --type-display-lg: 700 2rem/1.2 var(--font-display);
+  --type-display-md: 600 1.5rem/1.3 var(--font-display);
+  --type-body-lg:    500 1.125rem/1.6 var(--font-body);
+  --type-body-md:    400 1rem/1.6 var(--font-body);
+  --type-body-sm:    400 0.875rem/1.5 var(--font-body);
+
+  /* ── UTILITIES ─────────────────────────────────────────── */
+  --glass-bg: rgba(15, 14, 23, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-blur: blur(12px);
 }
 
 .light {
@@ -105,156 +110,47 @@ body { font-family: 'DM Sans', system-ui, sans-serif; background-color: var(--su
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 .animate-spin { animation: spin 1s linear infinite; }
 
+/* ── Premium Utilities ────────────────────────────────────── */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+}
+
+.glass-panel-light {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.text-glow {
+  text-shadow: 0 0 10px currentColor;
+}
+
+.bg-glow-purple { background: radial-gradient(circle at center, rgba(124, 109, 250, 0.15) 0%, transparent 70%); }
+.bg-glow-blue { background: radial-gradient(circle at center, rgba(77, 158, 255, 0.15) 0%, transparent 70%); }
+.bg-glow-teal { background: radial-gradient(circle at center, rgba(45, 212, 191, 0.15) 0%, transparent 70%); }
+.bg-glow-amber { background: radial-gradient(circle at center, rgba(245, 166, 35, 0.15) 0%, transparent 70%); }
+
+.inner-shadow {
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.hover-lift {
+  transition: transform var(--duration-normal) var(--ease-spring), box-shadow var(--duration-normal) var(--ease-standard);
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
 /* ── Skeleton Shimmer (Fase 4.1) ──────────────────────────── */
 @keyframes shimmer {
   0%   { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
-}
-
-/* ============================================================
-   FIXES PONTUAIS POR COMPONENTE
-   ============================================================ */
-
-/* Sidebar — aumentar contraste dos labels de grupo */
-.nav-group-label,
-[class*="group-label"],
-[class*="nav-label"] {
-  color: #646788 !important;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-}
-
-/* Nav items — texto mais legível */
-.nav-item,
-[class*="nav-item"],
-[class*="sidebar-item"] {
-  color: #A8ABCC !important;
-}
-
-.nav-item:hover,
-[class*="nav-item"]:hover {
-  color: #EEEFFE !important;
-  background: rgba(255,255,255,0.05) !important;
-}
-
-.nav-item.active,
-[class*="nav-item"][aria-current] {
-  color: #7C6DFA !important;
-}
-
-/* Cards de Estatística (Notas, Estudado, Para Revisar, Flashcards) */
-.stat-card,
-[class*="stat-card"],
-[class*="stats-card"],
-[class*="metric-card"] {
-  background: #181B2E !important;
-  border: 1px solid #2E3255 !important;
-  border-radius: 14px !important;
-}
-
-/* Número grande dos cards de stat */
-.stat-card .value,
-[class*="stat-card"] .value,
-[class*="stat-value"],
-[class*="metric-value"] {
-  color: #EEEFFE !important;
-  font-size: 28px !important;
-  font-weight: 700 !important;
-}
-
-/* Label abaixo do número (NOTAS, ESTUDADO HOJE, etc.) */
-.stat-card .label,
-[class*="stat-label"],
-[class*="metric-label"] {
-  color: #A8ABCC !important;
-  font-size: 11px !important;
-  letter-spacing: 1px !important;
-  text-transform: uppercase !important;
-}
-
-/* Card de Nível (XP) */
-[class*="level-card"],
-[class*="xp-card"] {
-  background: linear-gradient(
-    135deg,
-    #181B2E 0%,
-    #1E2238 100%
-  ) !important;
-  border: 1px solid rgba(124, 109, 250, 0.3) !important;
-}
-
-[class*="level-title"],
-[class*="xp-title"] {
-  color: #EEEFFE !important;
-  font-size: 22px !important;
-  font-weight: 700 !important;
-}
-
-[class*="xp-value"],
-[class*="xp-amount"] {
-  color: #A8ABCC !important;
-}
-
-[class*="xp-remaining"],
-[class*="level-subtitle"] {
-  color: #646788 !important;
-}
-
-/* Cards de Ação Rápida */
-[class*="quick-action"],
-[class*="action-card"] {
-  background: #181B2E !important;
-  border: 1px solid #2E3255 !important;
-}
-
-[class*="quick-action"]:hover,
-[class*="action-card"]:hover {
-  border-color: rgba(124, 109, 250, 0.4) !important;
-  background: #1E2238 !important;
-}
-
-[class*="action-title"],
-[class*="quick-action"] h3,
-[class*="action-card"] h3 {
-  color: #EEEFFE !important;
-  font-size: 16px !important;
-  font-weight: 600 !important;
-}
-
-[class*="action-desc"],
-[class*="quick-action"] p,
-[class*="action-card"] p {
-  color: #A8ABCC !important;
-  font-size: 13px !important;
-}
-
-/* Título de Página (Dashboard, Notas, etc.) */
-h1,
-[class*="page-title"] {
-  color: #EEEFFE !important;
-  font-size: 32px !important;
-  font-weight: 700 !important;
-}
-
-/* Subtítulo de página */
-[class*="page-subtitle"],
-[class*="page-description"] {
-  color: #A8ABCC !important;
-  font-size: 14px !important;
-}
-
-/* Barra de busca */
-[class*="search"],
-input[placeholder*="Buscar"] {
-  background: #181B2E !important;
-  border: 1px solid #2E3255 !important;
-  color: #EEEFFE !important;
-}
-
-input::placeholder {
-  color: #646788 !important;
 }
 
 /* ── TIPTAP EDITOR STYLES ───────────────────────────────── */
@@ -353,4 +249,49 @@ input::placeholder {
 
 .tiptap-mathematics.ProseMirror-selectednode {
   outline: 2px solid var(--color-brand);
+}
+
+/* ── Layout Overrides ───────────────────────────────────── */
+.main-content {
+  background: radial-gradient(circle at 50% 0%, #161827 0%, #0B0C13 100%);
+}
+
+/* ── RESPONSIVIDADE (Mobile First) ───────────────────────── */
+@media (max-width: 768px) {
+  aside {
+    display: none; /* Esconde sidebar no mobile (usará BottomNav) */
+  }
+  
+  .main-content {
+    padding-bottom: 5rem; /* Respiro para o BottomNav */
+  }
+
+  .perspective-2000 {
+    perspective: 1000px; /* Reduz perspectiva no mobile para evitar distorções */
+  }
+
+  /* Ajustes de grid */
+  .grid-cols-2, .grid-cols-3, .grid-cols-4 {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+  }
+  
+  .md\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  h1 { font-size: 1.5rem !important; }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .grid-cols-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Utility for hiding on mobile */
+.hide-mobile {
+  display: none;
+}
+@media (min-width: 768px) {
+  .hide-mobile { display: block; }
 }

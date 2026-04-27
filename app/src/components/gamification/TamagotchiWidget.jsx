@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTamagotchiStore, getLevelData } from '../../store/useTamagotchiStore';
 import Card from '../ui/Card';
+import Badge from '../ui/Badge';
 
 export default function TamagotchiWidget({ className = '' }) {
   const { player, checkDailyStatus, registerStudySession } = useTamagotchiStore();
@@ -76,69 +77,78 @@ export default function TamagotchiWidget({ className = '' }) {
   else if (isBouncing) currentVariant = "bouncing";
 
   return (
-    <Card className={`flex flex-col items-center justify-center relative overflow-hidden ${className}`} interactive>
-      {/* Background Effect based on level (optional, based on spec) */}
-      {player.level >= 20 && (
-        <div className="absolute inset-0 bg-gradient-to-tr from-accent-main/10 to-transparent animate-pulse rounded-[18px]" />
-      )}
+    <Card className={`glass-panel border-white/5 flex flex-col items-center justify-center relative overflow-hidden group hover-lift ${className}`} interactive>
+      {/* Dynamic Background Glow based on Health/Level */}
+      <div className={`absolute inset-0 transition-opacity duration-1000 ${hpPercent <= 30 ? 'bg-red-500/5' : 'bg-accent-main/5'} opacity-40 group-hover:opacity-100`} />
       
-      <div className="text-center z-10 relative">
-        <h3 className="text-text-mid text-sm font-bold uppercase tracking-wider mb-4">
-          Meu Mascote
-        </h3>
+      <div className="text-center z-10 relative w-full h-full flex flex-col items-center">
+        <header className="w-full flex items-center justify-between mb-2">
+           <span className="text-[10px] font-bold uppercase tracking-widest text-text-lo">NexoPet Status</span>
+           <Badge variant={hpPercent <= 15 ? 'error' : 'success'} className="text-[9px] py-0">{moodStatus}</Badge>
+        </header>
         
-        <div className="relative inline-block my-4">
+        <div className="relative inline-block my-8">
+          {/* Circular Glow behind Mascot */}
+          <div className="absolute inset-0 bg-accent-main/20 blur-3xl rounded-full scale-150 animate-pulse" />
+          
           <motion.div 
-            className="text-7xl filter drop-shadow-lg cursor-pointer"
+            className="text-8xl filter drop-shadow-[0_0_20px_rgba(124,109,250,0.5)] cursor-pointer relative z-10"
             variants={idleVariants}
             animate={currentVariant}
-            whileHover={{ scale: 1.1 }}
+            whileHover={{ scale: 1.15, rotate: 5 }}
             title={`Nível ${player.level} - ${levelData.title}`}
           >
             {levelData.form}
           </motion.div>
-          <div className="absolute -bottom-2 -right-4 text-2xl" title={`Humor: ${moodStatus}`}>
+          <motion.div 
+            className="absolute -bottom-2 -right-4 text-3xl bg-surface-raised rounded-full w-10 h-10 flex items-center justify-center shadow-lg border border-white/10"
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.5, type: "spring" }}
+          >
             {moodEmoji}
-          </div>
+          </motion.div>
         </div>
 
-        <h2 className="text-xl font-bold text-text-hi mt-2">
-          {player.pet_name || levelData.name}
-        </h2>
-        <p className="text-text-lo text-sm mt-1">
-          Nível {player.level} • {levelData.title}
-        </p>
+        <div className="space-y-1">
+          <h2 className="text-2xl font-display font-bold text-text-hi">
+            {player.pet_name || levelData.name}
+          </h2>
+          <p className="text-text-mid text-xs font-bold uppercase tracking-widest opacity-60">
+            {levelData.title} • Nível {player.level}
+          </p>
+        </div>
 
-        {/* Barras de Status */}
-        <div className="w-full mt-6 space-y-3">
-          {/* Barra de HP */}
-          <div>
-            <div className="flex justify-between text-xs mb-1">
-              <span className="text-text-mid font-semibold">Saúde (HP)</span>
-              <span className="text-text-hi font-bold">{player.hp} / {player.hp_max}</span>
+        {/* Status Indicators (Minimalist & Premium) */}
+        <div className="w-full mt-10 space-y-5">
+          {/* HP Bar */}
+          <div className="space-y-2">
+            <div className="flex justify-between items-end">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-text-lo">Vitalidade (HP)</span>
+              <span className="text-xs font-bold text-text-hi">{player.hp}<span className="text-text-lo">/{player.hp_max}</span></span>
             </div>
-            <div className="w-full h-2.5 bg-surface-base rounded-full overflow-hidden border border-border-subtle">
+            <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden inner-shadow">
               <motion.div 
-                className={`h-full ${hpPercent <= 15 ? 'bg-color-warning' : hpPercent >= 80 ? 'bg-color-estudo' : 'bg-accent-main'}`}
+                className={`h-full shadow-[0_0_10px_rgba(var(--color-estudo-rgb),0.5)] ${hpPercent <= 15 ? 'bg-color-error' : hpPercent >= 80 ? 'bg-color-estudo' : 'bg-accent-main'}`}
                 initial={{ width: 0 }}
                 animate={{ width: `${hpPercent}%` }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
+                transition={{ duration: 1.5, ease: "spring" }}
               />
             </div>
           </div>
 
-          {/* Barra de XP */}
-          <div>
-            <div className="flex justify-between text-xs mb-1">
-              <span className="text-text-mid font-semibold">Experiência</span>
-              <span className="text-text-hi font-bold">{player.xp} XP</span>
-            </div>
-          </div>
-
-          {/* Streak Indicator */}
-          <div className="pt-2 border-t border-border-subtle flex items-center justify-center space-x-2">
-            <span className="text-xl">🔥</span>
-            <span className="text-sm text-text-hi font-bold">{player.streak} dias de ofensiva</span>
+          {/* XP Summary */}
+          <div className="glass-panel-light p-3 rounded-2xl flex items-center justify-between">
+             <div className="flex flex-col items-start">
+                <span className="text-[9px] font-bold uppercase tracking-widest text-text-lo">Experiência</span>
+                <span className="text-sm font-bold text-text-hi">{player.xp} <span className="text-text-lo text-[10px]">XP TOTAL</span></span>
+             </div>
+             <div className="flex flex-col items-end">
+                <span className="text-[9px] font-bold uppercase tracking-widest text-text-lo">Streak</span>
+                <span className="text-sm font-bold text-color-warning flex items-center gap-1">
+                   🔥 {player.streak}d
+                </span>
+             </div>
           </div>
         </div>
       </div>

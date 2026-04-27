@@ -15,6 +15,7 @@ import { getTemperature } from '../lib/ai/lmStudioService';
 import toast from 'react-hot-toast';
 import ChatMessage from '../components/ai/ChatMessage';
 import AIFallbackModal from '../components/ai/AIFallbackModal';
+import AIMemoryIndicator from '../components/ai/AIMemoryIndicator';
 import PropTypes from 'prop-types';
 
 const TEMPLATES = [
@@ -38,13 +39,24 @@ function AIChatPage({ onNavigate }) {
   const [showModelo, setShowModelo] = useState(false);
   const [copiadoIdx, setCopiadoIdx] = useState(null);
   const [fallbackData, setFallbackData] = useState({ isOpen: false, error: '' });
+  const [contextStats, setContextStats] = useState({ activeTokens: 0, maxTokens: 4096 });
 
   const { mensagens, adicionar, limpar } = useAIChat(notaId);
   const notaAtual = notaId ? notas.getById(notaId) : null;
   const bottomRef = useRef(null);
 
+  const fetchStats = useCallback(async () => {
+    try {
+      const stats = await window.electronAPI.invoke('ai:getContextStats');
+      setContextStats(stats);
+    } catch (e) {
+      console.warn('Erro ao buscar stats de contexto:', e);
+    }
+  }, []);
+
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [mensagens]);
   useEffect(() => { if (status === 'offline' && provider === 'local') verificar(); }, [status, provider]);
+  useEffect(() => { fetchStats(); }, [mensagens, fetchStats]);
 
   const buildMessages = useCallback((userPrompt) => {
     const sys = notaAtual
@@ -116,6 +128,14 @@ function AIChatPage({ onNavigate }) {
             <p className="text-[10px] text-text-muted truncate max-w-[180px] font-medium">
               {notaAtual ? notaAtual.titulo : 'Exploração Livre'}
             </p>
+          </div>
+          
+          {/* Indicador de Memória TurboQuant */}
+          <div className="hidden lg:block ml-4">
+             <AIMemoryIndicator 
+               activeTokens={contextStats.activeTokens} 
+               maxTokens={contextStats.maxTokens} 
+             />
           </div>
         </div>
 

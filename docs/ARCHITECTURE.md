@@ -133,7 +133,7 @@ sequenceDiagram
 ## Estrutura de Diretórios
 
 ```
-nexomente/
+.
 ├── app/
 │   └── src/
 │       ├── components/

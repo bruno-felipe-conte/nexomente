@@ -122,44 +122,59 @@ export default function Graph() {
           selector: 'node',
           style: {
             'label': 'data(label)',
-            'background-color': '#6C63FF',
+            'background-color': '#7C6DFA',
             'color': '#F2F0FF',
-            'font-size': '12px',
+            'font-family': 'Syne, sans-serif',
+            'font-weight': '700',
+            'font-size': '10px',
             'text-valign': 'bottom',
-            'text-margin-y': 8,
-            'width': 40,
-            'height': 40,
+            'text-margin-y': 10,
+            'width': 30,
+            'height': 30,
+            'overlay-opacity': 0,
+            'transition-property': 'background-color, line-color, width, height',
+            'transition-duration': '0.3s'
           },
         },
         ...Object.entries(tipoCores).map(([tipo, cor]) => ({
           selector: `node[tipo="${tipo}"]`,
-          style: { 'background-color': cor },
+          style: { 
+            'background-color': cor,
+            'shadow-blur': 15,
+            'shadow-color': cor,
+            'shadow-opacity': 0.3
+          },
         })),
+        {
+          selector: 'edge',
+          style: {
+            'width': 1,
+            'line-color': 'rgba(255,255,255,0.1)',
+            'curve-style': 'haystack',
+            'overlay-opacity': 0
+          }
+        },
         {
           selector: 'edge[tipo="wikilink"]',
           style: {
-            'width': 3,
-            'line-color': '#6C63FF',
-            'target-arrow-color': '#6C63FF',
-            'target-arrow-shape': 'triangle',
+            'width': 2,
+            'line-color': '#7C6DFA',
+            'line-style': 'solid',
+            'opacity': 0.4,
             'curve-style': 'bezier',
-          },
-        },
-        {
-          selector: 'edge[tipo="tag"]',
-          style: {
-            'width': 1,
-            'line-color': '#4A4A6A',
-            'target-arrow-color': '#4A4A6A',
-            'target-arrow-shape': 'triangle',
-            'line-style': 'dashed',
+            'target-arrow-shape': 'vee',
+            'target-arrow-color': '#7C6DFA'
           },
         },
         {
           selector: 'node:selected',
           style: {
-            'border-width': 3,
-            'border-color': '#F2F0FF',
+            'width': 45,
+            'height': 45,
+            'border-width': 4,
+            'border-color': '#FFF',
+            'font-size': '12px',
+            'text-margin-y': 14,
           },
         },
       ],

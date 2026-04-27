@@ -27,113 +27,149 @@ export default function FlashcardViewer({
     const handleKey = (e) => {
       if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
       if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); onViraCard(); }
-      else if (mostrandoFrente) return; // Só permite avaliar se o card estiver virado
-      else if (e.key === '1') { e.preventDefault(); onRevisar(1); }
-      else if (e.key === '2') { e.preventDefault(); onRevisar(2); }
-      else if (e.key === '3') { e.preventDefault(); onRevisar(3); }
-      else if (e.key === '4') { e.preventDefault(); onRevisar(4); }
-      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); onAnterior(); }
-      else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); onProximo(); }
-      else if (e.key === 'e' || e.key === 'E') { e.preventDefault(); onEditar(cardAtual); }
+      else if (mostrandoFrente) return; 
+      else if (['1', '2', '3', '4'].includes(e.key)) { e.preventDefault(); onRevisar(parseInt(e.key)); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); onAnterior(); }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); onProximo(); }
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [cardAtual, onViraCard, onRevisar, onAnterior, onProximo, onEditar]);
+  }, [cardAtual, onViraCard, onRevisar, onAnterior, onProximo, mostrandoFrente]);
 
   if (!cardAtual) {
     return (
-      <div className="bg-bg-secondary rounded-xl p-12 border border-border-subtle text-center">
-        <Brain size={48} className="mx-auto mb-4 text-text-muted opacity-25" />
-        <p className="text-lg text-text-primary">Nenhum card para revisar!</p>
-        <p className="text-sm text-text-muted mt-1">Volte mais tarde ou crie novos cards</p>
-        <Button onClick={onCriar} variant="primary" className="mt-4">
-          Criar card
+      <div className="bg-bg-secondary/50 backdrop-blur-xl rounded-3xl p-16 border border-white/5 text-center max-w-xl mx-auto animate-in fade-in zoom-in-95 duration-500">
+        <div className="w-20 h-20 bg-accent-main/10 rounded-2xl flex items-center justify-center mx-auto mb-6 text-accent-main">
+           <Brain size={40} />
+        </div>
+        <h2 className="text-2xl font-display font-bold text-text-hi mb-2">Meta Batida!</h2>
+        <p className="text-text-mid text-sm mb-8">Nenhum card pendente para revisão no momento. Que tal criar novos cards ou revisar seus dominados?</p>
+        <Button onClick={onCriar} variant="primary" size="lg" className="rounded-2xl px-10">
+          Criar Novo Card
         </Button>
       </div>
     );
   }
 
   return (
-    <div className="max-w-3xl mx-auto w-full flex flex-col items-center">
-      <div className="w-full flex justify-between items-center mb-6">
-        <span className="text-sm font-bold text-text-mid uppercase tracking-widest">
-          {idxRevisao + 1} / {paraRevisao.length}
-        </span>
-        <div className="flex gap-2">
-          <Button variant="ghost" size="sm" onClick={() => onEditar(cardAtual)}>
-            <Edit size={14} className="mr-2" /> Editar
-          </Button>
+    <div className="max-w-4xl mx-auto w-full flex flex-col items-center animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="w-full flex justify-between items-center mb-8 px-2">
+        <div className="flex flex-col">
+           <span className="text-[10px] font-black text-text-lo uppercase tracking-[0.2em] mb-1">Sessão Ativa</span>
+           <span className="text-xs font-bold text-text-hi">
+             Progresso: {idxRevisao + 1} de {paraRevisao.length}
+           </span>
+        </div>
+        <div className="h-1.5 w-32 bg-white/5 rounded-full overflow-hidden">
+           <motion.div 
+             className="h-full bg-accent-main"
+             initial={{ width: 0 }}
+             animate={{ width: `${((idxRevisao + 1) / paraRevisao.length) * 100}%` }}
+           />
         </div>
       </div>
 
       {/* Container do Flip 3D */}
       <div 
-        className="w-full aspect-[4/3] lg:aspect-[3/2] relative cursor-pointer group perspective-1000 mb-8"
+        className="w-full aspect-[16/10] relative cursor-pointer group perspective-2000 mb-10"
         onClick={onViraCard}
-        style={{ perspective: 1200 }}
       >
         <motion.div
           className="w-full h-full relative preserve-3d"
           animate={{ rotateY: mostrandoFrente ? 0 : 180 }}
-          transition={{ duration: 0.6, type: "spring", stiffness: 200, damping: 20 }}
+          transition={{ duration: 0.7, type: "spring", stiffness: 100, damping: 15 }}
           style={{ transformStyle: "preserve-3d" }}
         >
           {/* Lado da Frente */}
           <Card 
-            className="absolute inset-0 w-full h-full p-8 flex flex-col items-center justify-center text-center m-0 backface-hidden bg-surface-card border-accent-main/20 hover:border-accent-main/40 hover:shadow-glow-violet transition-all"
+            className="absolute inset-0 w-full h-full p-10 flex flex-col items-center justify-center text-center m-0 backface-hidden glass-panel border-white/5 shadow-2xl"
             style={{ backfaceVisibility: "hidden" }}
           >
-            <p className="text-3xl md:text-5xl font-display font-bold text-text-hi leading-tight">
+            <div className="absolute top-6 left-6 flex items-center gap-2">
+               <div className="w-1.5 h-1.5 rounded-full bg-accent-main animate-pulse" />
+               <span className="text-[10px] font-bold text-text-lo uppercase tracking-widest">Pergunta</span>
+            </div>
+            <p className="text-3xl md:text-5xl font-display font-bold text-text-hi leading-tight tracking-tight px-4">
               {cardAtual.frente}
             </p>
-            <p className="absolute bottom-6 text-sm text-text-muted opacity-0 group-hover:opacity-100 transition-opacity">
-              Pressione <kbd className="px-2 py-1 bg-surface-base rounded mx-1">Espaço</kbd> para virar
-            </p>
+            <div className="absolute bottom-10 flex items-center gap-2 opacity-40 group-hover:opacity-100 transition-opacity">
+               <span className="text-[10px] font-bold uppercase tracking-widest text-text-lo">Toque para revelar</span>
+               <div className="px-1.5 py-0.5 rounded bg-white/10 text-[9px] font-mono text-text-hi">SPACE</div>
+            </div>
           </Card>
 
           {/* Lado de Trás */}
           <Card 
-            className="absolute inset-0 w-full h-full p-8 flex flex-col items-start justify-start text-left m-0 backface-hidden bg-surface-elevated overflow-y-auto"
+            className="absolute inset-0 w-full h-full p-10 flex flex-col items-start justify-start text-left m-0 backface-hidden bg-[#121422] border-white/10 shadow-2xl overflow-y-auto custom-scrollbar"
             style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
           >
-            <div className="w-full pb-4 border-b border-surface-border mb-6">
-              <p className="text-sm font-display font-bold text-text-mid uppercase tracking-widest">Resposta</p>
+            <div className="w-full flex items-center justify-between pb-4 border-b border-white/5 mb-8">
+              <span className="text-[10px] font-black text-accent-main uppercase tracking-[0.2em]">Resposta Correta</span>
+              <div className="flex gap-1">
+                 <div className="w-1.5 h-1.5 rounded-full bg-white/20" />
+                 <div className="w-1.5 h-1.5 rounded-full bg-white/20" />
+                 <div className="w-1.5 h-1.5 rounded-full bg-white/20" />
+              </div>
             </div>
-            <div className="prose prose-invert max-w-none text-lg text-text-hi leading-relaxed">
+            <div className="prose prose-invert max-w-none text-xl md:text-2xl font-medium text-text-hi leading-relaxed px-2">
               {cardAtual.verso}
             </div>
           </Card>
         </motion.div>
       </div>
 
-      {/* Botões de avaliação aparecem apenas após virar */}
-      {!mostrandoFrente && (
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="w-full"
-        >
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full">
-            {Object.entries(QUALITY_LABELS).map(([q, info]) => (
-              <button
-                key={q}
-                onClick={() => onRevisar(parseInt(q))}
-                className="group flex flex-col items-center justify-center p-4 rounded-xl border transition-all duration-200 cursor-pointer"
-                style={{ 
-                  backgroundColor: `color-mix(in srgb, ${info.cor} 10%, transparent)`,
-                  borderColor: `color-mix(in srgb, ${info.cor} 30%, transparent)`,
-                  color: info.cor
-                }}
-              >
-                <span className="font-bold text-lg group-hover:scale-110 transition-transform mb-1">
-                  {info.label}
-                </span>
-                <span className="text-xs opacity-60">Tecla {q}</span>
-              </button>
-            ))}
-          </div>
-        </motion.div>
+      {/* Botões de avaliação */}
+      <AnimatePresence>
+        {!mostrandoFrente && (
+          <motion.div 
+            initial={{ opacity: 0, y: 30, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="w-full space-y-4"
+          >
+            <p className="text-center text-[10px] font-black text-text-lo uppercase tracking-[0.3em]">Como foi seu desempenho?</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
+              {Object.entries(QUALITY_LABELS).map(([q, info]) => (
+                <button
+                  key={q}
+                  onClick={(e) => { e.stopPropagation(); onRevisar(parseInt(q)); }}
+                  className="group relative flex flex-col items-center justify-center p-6 rounded-2xl border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer overflow-hidden"
+                  style={{ 
+                    backgroundColor: 'rgba(255,255,255,0.02)',
+                    borderColor: 'rgba(255,255,255,0.05)',
+                  }}
+                >
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity" style={{ backgroundColor: info.cor }} />
+                  <span className="font-black text-lg mb-1 transition-colors" style={{ color: info.cor }}>
+                    {info.label}
+                  </span>
+                  <div className="flex items-center gap-1.5 mt-1 opacity-40 group-hover:opacity-100 transition-all">
+                     <span className="text-[9px] font-bold uppercase tracking-tighter">Tecla</span>
+                     <span className="px-1.5 py-0.5 rounded bg-white/10 text-[9px] font-mono text-text-hi">{q}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      {/* Rodapé de Meta */}
+      {mostrandoFrente && (
+         <div className="flex gap-4 mt-4">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-full border border-white/5">
+               <RotateCcw size={12} className="text-warning" />
+               <span className="text-[10px] font-bold text-text-lo uppercase tracking-widest">Repetições: {cardAtual.repetitions}</span>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-full border border-white/5">
+               <Check size={12} className="text-success" />
+               <span className="text-[10px] font-bold text-text-lo uppercase tracking-widest">Facilidade: {cardAtual.ef?.toFixed(1)}</span>
+            </div>
+         </div>
       )}
+    </div>
+  );
+}
 
       {/* Navegação */}
       <div className="border-t border-border-subtle p-3 flex justify-between items-center">

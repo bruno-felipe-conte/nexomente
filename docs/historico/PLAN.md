@@ -32,7 +32,7 @@ Uso pessoal único - Bruno (PC + Celular via sincronização Google Drive)
 
 ### Estrutura de Pastas
 ```
-nexomente/
+
 ├── app/                    # React frontend
 │   ├── src/
 │   │   ├── pages/          # Dashboard, Notas, Study, Flashcards, Graph, Statistics, Settings
@@ -51,7 +51,7 @@ nexomente/
 
 ### Pasta Cofre - Estrutura de Arquivos
 ```
-NexoMente/
+
 ├── _cofre/                    ← Notas em Markdown (editáveis externamente)
 │   ├── livros/
 │   ├── projetos/

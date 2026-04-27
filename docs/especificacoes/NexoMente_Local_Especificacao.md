@@ -38,7 +38,7 @@ O único app de notas pessoal que combina: (1) armazenamento 100% local e privad
 | Frontend                | React 18 + Vite - mesmo stack do plano original. Roda dentro do Electron como renderer process.                                                                                                    |
 | Estilização             | Tailwind CSS v3 + CSS custom properties - responsivo, tema escuro por padrão, animações CSS para tudo exceto gamificação.                                                                          |
 | Editor de texto         | TipTap v2 (extensões gratuitas) - editor rico com suporte a wiki-links [[note]] para o grafo de conexões.                                                                                      |
-| Banco de dados local    | better-sqlite3 - banco SQLite embutido. Sem servidor, sem configuração. Arquivo único em ~/NexoMente/nexomente.db.                                                                                 |
+| Banco de dados local    | better-sqlite3 - banco SQLite embutido. Sem servidor, sem configuração. Arquivo único em ~/nexomente.db.                                                                                 |
 | Gerenciamento de estado | Zustand - leve, sem boilerplate, ideal para estado local.                                                                                                                                          |
 | Grafo de conexões       | Cytoscape.js - API simples, performático com centenas de nós, estilo customizável ao nível do Obsidian.                                                                                            |
 | IA local                | Ollama (recomendado) ou LM Studio - servidor HTTP local na porta 11434/3747. Modelos sugeridos: llama3.2:3b (rápido) ou mistral:7b (qualidade).                                                    |
@@ -53,7 +53,7 @@ O único app de notas pessoal que combina: (1) armazenamento 100% local e privad
 **📁 Estrutura do Repositório (monorepo)**
 
 ```
-nexomente/
+
 ├── app/                    # React frontend (renderer do Electron)
 │   ├── src/
 │   │   ├── pages/          # Login, Dashboard, Notes, Study, Flashcards, Statistics, Settings, Graph
@@ -74,10 +74,10 @@ nexomente/
 
 A Pasta Cofre é o coração da versão local. É uma pasta normal no sistema de arquivos que o Google Drive espelha automaticamente. Toda nota salva no app gera/atualiza um arquivo .md correspondente nela.
 
-**📂 Estrutura da Pasta Cofre (~/ Google Drive/NexoMente/)**
+**📂 Estrutura da Pasta Cofre (~/ Google Drive/)**
 
 ```
-NexoMente/                          ← Pasta raiz no Google Drive
+                          ← Pasta raiz no Google Drive
 ├── _cofre/                            ← Notas em Markdown (editáveis externamente)
 │   ├── livros/
 │   │   └── Atomic Habits.md
@@ -194,7 +194,7 @@ A sincronização é baseada no Google Drive File Stream (PC) ou Google Drive pa
 
 1. Instalar Google Drive para Desktop (drive.google.com/download)
 2. Abrir NexoMente → Configurações → "Pasta Cofre"
-3. Selecionar a pasta: Google Drive/NexoMente/ (criar se não existir)
+3. Selecionar a pasta: Google Drive/ (criar se não existir)
 4. O app salva o caminho em _config/config.json e começa a espelhar
 5. A partir daí: toda nota salva no app → arquivo .md atualizado → Google Drive sobe em background
 

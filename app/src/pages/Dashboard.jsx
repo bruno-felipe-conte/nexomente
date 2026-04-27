@@ -1,234 +1,225 @@
-/**
- * @module Dashboard
- * @description Tela inicial (Home) do NexoMente. Exibe um resumo geral das notas, 
- * sessões de estudo, flashcards e o sistema de gamificação (Níveis e XP).
- * Construído utilizando os componentes de UI padronizados para garantir contraste.
- */
-import { useUIStore } from '../store/useUIStore';
-import { BookOpen, FileText, Brain, Clock, Zap, Target, ArrowRight } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  FileText, Clock, Brain, BookOpen, 
+  ArrowRight, Sparkles, Play, Plus,
+  ChevronRight, Calendar, Edit, Star
+} from 'lucide-react';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import TamagotchiWidget from '../components/gamification/TamagotchiWidget';
+import { useTamagotchiStore } from '../store/useTamagotchiStore';
+import { useDBStore } from '../store/useDBStore';
+import { usePoemas } from '../hooks/useMaterias';
 
-/**
- * Componente principal do Dashboard.
- * 
- * @returns {JSX.Element} Dashboard UI renderizada.
- */
 export default function Dashboard() {
-  // 1. Coleta os dados em memória usando o Zustand (useUIStore)
-  const Notas = useUIStore.getState().Notas;
-  const Sessoes = useUIStore.getState().Sessoes;
-  const Flashcards = useUIStore.getState().Flashcards;
-  const XP = useUIStore.getState().XP;
+  const { player } = useTamagotchiStore();
+  const { Notas, Flashcards, SessoesEstudo } = useDBStore();
+  const { poemas } = usePoemas();
   
-  const notas = Notas.getAll();
-  const sessoes = Sessoes.getAll();
-  const flashcards = Flashcards.getAll();
-  const xp = XP.getTotal();
+  const notas = Notas?.getAll() || [];
+  const flashcards = Flashcards?.getAll() || [];
+  const studySessions = SessoesEstudo?.getAll() || [];
   
-  const poemas = notas.filter(n => n.tipo === 'poema');
-  // Pega um poema aleatório todo dia ou o último atualizado
-  const poemaVigente = poemas.length > 0 ? poemas[0] : null;
+  // Cálculo de estatísticas reais
+  const hoje = new Date().toISOString().split('T')[0];
+  const minutosHoje = studySessions
+    ?.filter(s => s.started_at && s.started_at.startsWith(hoje))
+    .reduce((acc, s) => acc + (s.duracao_minutos || 0), 0) || 0;
   
-  // 2. Filtra sessões de estudo cujo carimbo de tempo seja de hoje
-  const sessoesHoje = sessoes.filter(s => {
-    if (!s.started_at) return false;
-    const hoje = new Date().toDateString();
-    return new Date(s.started_at).toDateString() === hoje;
-  });
+  const poemaVigente = poemas?.find(p => p.favorito) || poemas?.[0];
   
-  // 3. Calcula o total de minutos estudados hoje
-  const minutosHoje = sessoesHoje.reduce((acc, s) => acc + (s.duracao_minutos || 0), 0);
-  
-  // 4. Determina quais flashcards estão pendentes de revisão hoje (baseado no algoritmo SM-2)
-  const cardsParaRevisao = Flashcards.getParaRevisao();
-  
-  // 5. Sistema de Níveis e XP (Roadmap E10 Gamification)
-  // Define 500 XP como teto para cada nível. 
-  // O progresso barra a barra anima visualmente do 0 ao 100%.
-  const XP_POR_NIVEL = 500;
-  const level = Math.floor(xp / XP_POR_NIVEL) + 1; // Nunca é nível 0
-  const xpCurrentLevel = xp % XP_POR_NIVEL; // Sobra para o nível atual
-  const progress = (xpCurrentLevel / XP_POR_NIVEL) * 100; // Porcentagem para o CSS width
+  // Mock ou cálculo para cards de revisão (depende da sua lógica de SRS)
+  const cardsParaRevisao = flashcards?.filter(c => c.next_review && new Date(c.next_review) <= new Date()) || [];
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="main-content min-h-screen p-4 md:p-8 lg:p-10 space-y-8 lg:space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
       
-      {/* Cabeçalho */}
-      <div className="flex items-end justify-between">
-        <div>
-          <h1 className="text-4xl font-display font-bold text-text-hi mb-2 tracking-tight">Dashboard</h1>
-          <p className="text-text-mid text-lg">Resumo do seu progresso e conhecimento.</p>
+      {/* Hero Header */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        <div className="space-y-2">
+          <h1 className="text-4xl md:text-5xl font-display font-bold text-text-hi tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-text-hi to-text-mid">
+            Bem-vindo, Bruno
+          </h1>
+          <p className="text-text-mid text-base md:text-lg font-medium opacity-80">Seu ecossistema de conhecimento está evoluindo.</p>
+        </div>
+        
+        {/* Status Rápido no Header */}
+        <div className="flex items-center gap-4 bg-white/5 p-2 rounded-2xl border border-white/5 backdrop-blur-xl">
+           <div className="px-4 py-2 text-center border-r border-white/10">
+              <p className="text-[10px] font-bold text-text-lo uppercase tracking-widest">Nível</p>
+              <p className="text-xl font-black text-accent-main">{player.level}</p>
+           </div>
+           <div className="px-4 py-2 text-center">
+              <p className="text-[10px] font-bold text-text-lo uppercase tracking-widest">Ofensiva</p>
+              <p className="text-xl font-black text-color-warning flex items-center gap-1">
+                {player.streak}<span className="text-sm">d</span>
+              </p>
+           </div>
         </div>
       </div>
       
-      {/* Hero Section: Tamagotchi & Poema */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-stretch min-h-[300px]">
-        <div className="flex justify-center items-center w-full">
-          <div className="w-full max-w-sm h-full">
-            <TamagotchiWidget className="h-full w-full" />
+      {/* Grid Principal (Hero Section) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+        
+        {/* Mascote (Grande Destaque) */}
+        <div className="lg:col-span-5 xl:col-span-4 h-full">
+           <TamagotchiWidget className="glass-panel border-white/10 shadow-2xl h-full min-h-[450px] py-10" />
+        </div>
+
+        {/* Status Cards & Poema */}
+        <div className="lg:col-span-7 xl:col-span-8 grid grid-cols-1 gap-6 h-full">
+          
+          {/* Poema com Design Editorial */}
+          <div className="h-full">
+            {poemaVigente ? (
+              <Card className="glass-panel border-pink-500/10 h-full relative overflow-hidden p-6 md:p-8 group hover-lift">
+                <div className="absolute -right-20 -top-20 w-64 h-64 bg-pink-500/5 rounded-full blur-3xl group-hover:bg-pink-500/10 transition-colors" />
+                
+                <div className="relative z-10 flex flex-col h-full">
+                  <header className="flex items-center justify-between mb-6 md:mb-8">
+                    <span className="px-3 py-1 bg-pink-500/10 text-pink-500 text-[10px] font-bold uppercase tracking-widest rounded-full border border-pink-500/20">
+                      Poesia do Dia
+                    </span>
+                  </header>
+
+                  <div className="flex-1 flex flex-col justify-center">
+                    <h2 className="text-2xl md:text-3xl font-display font-bold text-text-hi mb-4 md:mb-6 leading-tight max-w-md">
+                      {poemaVigente.titulo}
+                    </h2>
+                    <div 
+                      className="text-text-mid italic font-serif text-base md:text-lg leading-relaxed max-w-xl opacity-90 line-clamp-3 md:line-clamp-4"
+                      dangerouslySetInnerHTML={{ __html: poemaVigente.conteudo?.replace(/<p><\/p>/g, '<br/>') || '' }}
+                    />
+                  </div>
+
+                  <footer className="mt-8 pt-6 border-t border-white/5">
+                     <button 
+                        onClick={() => window.dispatchEvent(new CustomEvent('navigate', { detail: 'poemas' }))}
+                        className="w-full md:w-auto px-6 py-2 bg-text-hi text-surface-base font-bold text-xs uppercase tracking-widest rounded-xl hover:scale-105 transition-transform"
+                     >
+                        Ler Obra Completa
+                     </button>
+                  </footer>
+                </div>
+              </Card>
+            ) : (
+              <Card className="glass-panel border-dashed border-white/10 flex flex-col items-center justify-center p-8 md:p-12 text-center group transition-all hover:bg-white/[0.02]">
+                <div className="w-12 h-12 md:w-16 md:h-16 rounded-3xl bg-surface-raised flex items-center justify-center mb-6 inner-shadow group-hover:scale-110 transition-transform">
+                   <BookOpen size={24} className="text-text-lo" />
+                </div>
+                <h3 className="text-lg md:text-xl font-bold text-text-hi mb-2">Momento de Inspiração</h3>
+                <p className="text-text-mid text-sm max-w-xs mb-8">Nenhum poema foi selecionado para hoje.</p>
+                <button 
+                  onClick={() => window.dispatchEvent(new CustomEvent('navigate', { detail: 'poemas' }))}
+                  className="w-full md:w-auto px-8 py-3 bg-surface-raised text-text-hi text-xs font-bold uppercase tracking-widest rounded-xl border border-white/10 hover:border-pink-500/40 transition-all"
+                >
+                  Criar Poesia
+                </button>
+              </Card>
+            )}
+          </div>
+
+          {/* Mini Stats (Modernizados) */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+            {[
+              { label: 'Notas', value: notas.length, unit: '', icon: FileText, color: 'text-color-notas', bg: 'bg-glow-blue' },
+              { label: 'Minutos', value: minutosHoje, unit: 'm', icon: Clock, color: 'text-color-estudo', bg: 'bg-glow-teal' },
+              { label: 'Revisar', value: cardsParaRevisao.length, unit: '', icon: Brain, color: 'text-color-warning', bg: 'bg-glow-amber' },
+              { label: 'Cards', value: flashcards.length, unit: '', icon: BookOpen, color: 'text-color-flashcards', bg: 'bg-glow-purple' },
+            ].map((stat, i) => (
+              <Card key={i} interactive className={`glass-panel border-white/5 p-4 md:p-6 flex flex-col items-center justify-center text-center relative overflow-hidden group ${stat.bg}`}>
+                <stat.icon className={`${stat.color} mb-3 group-hover:scale-110 transition-transform mx-auto`} size={22} />
+                <div className="flex flex-col gap-0.5">
+                   <div className="flex items-baseline justify-center gap-0.5">
+                      <span className="text-3xl md:text-4xl font-display font-bold text-text-hi text-glow leading-none">{stat.value}</span>
+                      {stat.unit && <span className="text-sm font-bold text-text-lo opacity-50 uppercase">{stat.unit}</span>}
+                   </div>
+                   <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-text-lo mt-1">{stat.label}</span>
+                </div>
+              </Card>
+            ))}
           </div>
         </div>
-        
-        <div className="flex flex-col">
-          {poemaVigente ? (
-            <Card className="flex-1 relative overflow-hidden border-accent-main/20 bg-gradient-to-b from-surface-card to-surface-base p-6 flex flex-col shadow-lg">
-              <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-accent-main/50 to-transparent"></div>
-              
-              <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-accent-main mb-3 text-center">
-                Poema Vigente
-              </h3>
-              
-              <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar flex flex-col items-center justify-center">
-                <h2 className="text-xl font-display font-bold text-text-hi mb-4 text-center">
-                  {poemaVigente.titulo}
-                </h2>
-                
-                <div 
-                  className="text-text-mid italic text-center font-serif text-sm leading-relaxed max-w-sm mx-auto"
-                  dangerouslySetInnerHTML={{ __html: poemaVigente.conteudo?.replace(/<p><\/p>/g, '<br/>') || '' }}
-                />
-              </div>
-              
-              {/* Botões pequenos */}
-              <div className="flex justify-center gap-3 mt-5 pt-4 border-t border-border-subtle/50">
-                <button 
-                  onClick={() => window.dispatchEvent(new CustomEvent('navigate', { detail: 'poemas' }))}
-                  className="px-3 py-1.5 text-xs font-semibold bg-surface-raised hover:bg-surface-elevated text-text-mid hover:text-text-hi rounded-md transition-colors border border-border-subtle"
-                >
-                  Gerenciar
-                </button>
-                <button 
-                  onClick={() => window.dispatchEvent(new CustomEvent('navigate', { detail: 'poemas' }))}
-                  className="px-3 py-1.5 text-xs font-semibold bg-accent-main/10 hover:bg-accent-main/20 text-accent-main rounded-md transition-colors border border-accent-main/20"
-                >
-                  Ler Completo
-                </button>
-              </div>
-            </Card>
-          ) : (
-            <Card className="flex-1 flex flex-col items-center justify-center p-8 border-dashed border-border-subtle/50 bg-surface-base/50">
-              <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-text-mid mb-3">Poema Vigente</h3>
-              <p className="text-text-lo text-center mb-5 text-sm">Nenhum poema para inspirar seu dia ainda.</p>
-              <button 
-                onClick={() => window.dispatchEvent(new CustomEvent('navigate', { detail: 'poemas' }))}
-                className="px-4 py-2 text-xs font-bold uppercase tracking-wider bg-surface-raised hover:bg-surface-elevated rounded-md text-text-hi transition-colors border border-border-subtle"
-              >
-                Escrever Poema
-              </button>
-            </Card>
-          )}
-        </div>
       </div>
-      
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
-        <Card interactive className="flex flex-col items-center justify-center text-center p-6">
-          <FileText className="text-color-notas mb-3" size={28} />
-          <p className="text-3xl font-display font-bold text-text-hi">{notas.length}</p>
-          <p className="text-sm font-medium text-text-mid mt-1 uppercase tracking-wider">Notas</p>
-        </Card>
+
+      {/* Seção Inferior: Notas Recentes & Ações Rápidas */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
-        <Card interactive className="flex flex-col items-center justify-center text-center p-6">
-          <Clock className="text-color-estudo mb-3" size={28} />
-          <p className="text-3xl font-display font-bold text-text-hi">{minutosHoje}m</p>
-          <p className="text-sm font-medium text-text-mid mt-1 uppercase tracking-wider">Estudado Hoje</p>
-        </Card>
-        
-        <Card interactive className="flex flex-col items-center justify-center text-center p-6 relative overflow-hidden">
-          {cardsParaRevisao.length > 0 && (
-            <div className="absolute top-0 right-0 w-16 h-16 bg-color-warning/10 rounded-bl-full -z-0" />
-          )}
-          <Brain className="text-color-warning mb-3 z-10" size={28} />
-          <p className="text-3xl font-display font-bold text-text-hi z-10">{cardsParaRevisao.length}</p>
-          <p className="text-sm font-medium text-text-mid mt-1 uppercase tracking-wider z-10">Para Revisar</p>
-        </Card>
-        
-        <Card interactive className="flex flex-col items-center justify-center text-center p-6">
-          <BookOpen className="text-color-flashcards mb-3" size={28} />
-          <p className="text-3xl font-display font-bold text-text-hi">{flashcards.length}</p>
-          <p className="text-sm font-medium text-text-mid mt-1 uppercase tracking-wider">Flashcards</p>
-        </Card>
-      </div>
-      
-      {/* Quick Actions (Cards Interativos) */}
-      <div>
-        <h3 className="text-lg font-bold text-text-hi mb-4 flex items-center gap-2">
-          <Target size={18} className="text-accent-main" /> Ações Rápidas
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          <Card 
-            interactive 
-            onClick={() => window.dispatchEvent(new CustomEvent('navigate', { detail: 'notes' }))}
-            className="group flex flex-col items-start"
-          >
-            <div className="p-2 bg-[color-mix(in_srgb,var(--color-notas)_15%,transparent)] rounded-lg mb-4 text-color-notas">
-              <FileText size={24} />
-            </div>
-            <p className="font-display font-bold text-lg text-text-hi mb-1 group-hover:text-color-notas transition-colors">Criar Nota</p>
-            <p className="text-sm text-text-mid">Capture uma ideia ou rascunho</p>
-          </Card>
-          
-          <Card 
-            interactive 
-            onClick={() => window.dispatchEvent(new CustomEvent('navigate', { detail: 'study' }))}
-            className="group flex flex-col items-start"
-          >
-            <div className="p-2 bg-[color-mix(in_srgb,var(--color-estudo)_15%,transparent)] rounded-lg mb-4 text-color-estudo">
-              <Clock size={24} />
-            </div>
-            <p className="font-display font-bold text-lg text-text-hi mb-1 group-hover:text-color-estudo transition-colors">Iniciar Sessão</p>
-            <p className="text-sm text-text-mid">Estude com timer Pomodoro</p>
-          </Card>
-          
-          <Card 
-            interactive 
-            onClick={() => window.dispatchEvent(new CustomEvent('navigate', { detail: 'flashcards' }))}
-            className="group flex flex-col items-start"
-          >
-            <div className="p-2 bg-[color-mix(in_srgb,var(--color-warning)_15%,transparent)] rounded-lg mb-4 text-color-warning">
-              <Brain size={24} />
-            </div>
-            <p className="font-display font-bold text-lg text-text-hi mb-1 group-hover:text-color-warning transition-colors">Revisar Flashcards</p>
-            <p className="text-sm text-text-mid">Repetição espaçada ativa</p>
-          </Card>
-        </div>
-      </div>
-      
-      {/* Recent Notes */}
-      {notas.length > 0 && (
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-text-hi">Notas Recentes</h3>
+        {/* Notas Recentes (Editorial Style) */}
+        <div className="lg:col-span-8 space-y-6">
+          <div className="flex items-center justify-between px-2">
+            <h3 className="text-xl font-bold text-text-hi font-display">Notas Recentes</h3>
             <button 
               onClick={() => window.dispatchEvent(new CustomEvent('navigate', { detail: 'notes' }))}
-              className="text-sm font-medium text-accent-main hover:text-accent-light flex items-center gap-1 transition-colors"
+              className="text-xs font-bold uppercase tracking-widest text-accent-main hover:text-white transition-colors"
             >
-              Ver todas <ArrowRight size={14} />
+              Ver Todas
             </button>
           </div>
-          <Card className="p-0 overflow-hidden">
-            <div className="divide-y divide-border-subtle">
-              {notas.slice(0, 5).map(nota => (
-                <div 
-                  key={nota.id} 
-                  onClick={() => window.dispatchEvent(new CustomEvent('navigate', { detail: 'notes' }))}
-                  className="p-4 hover:bg-surface-raised cursor-pointer transition-colors group flex items-center gap-4"
-                >
-                  <div className="w-10 h-10 rounded-full bg-surface-base flex items-center justify-center flex-shrink-0 border border-border-subtle group-hover:border-accent-main/30">
-                    <FileText size={18} className="text-text-mid group-hover:text-accent-main transition-colors" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-text-hi truncate group-hover:text-accent-main transition-colors">{nota.titulo}</p>
-                    <p className="text-sm text-text-mid truncate">{nota.conteudo?.replace(/<[^>]*>/g, '').substring(0, 100) || 'Sem conteúdo...'}</p>
-                  </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {notas.slice(0, 4).map((nota) => (
+              <Card 
+                key={nota.id} 
+                interactive 
+                className="glass-panel border-white/5 p-5 group hover:border-accent-main/30 transition-all"
+                onClick={() => window.dispatchEvent(new CustomEvent('navigate', { detail: 'notes' }))}
+              >
+                <div className="flex items-start justify-between mb-3">
+                   <div className="w-10 h-10 rounded-xl bg-accent-main/10 flex items-center justify-center text-accent-main group-hover:bg-accent-main group-hover:text-white transition-all">
+                      <FileText size={18} />
+                   </div>
+                   <span className="text-[10px] font-bold text-text-lo/40 uppercase">{new Date(nota.atualizado_em).toLocaleDateString()}</span>
                 </div>
-              ))}
-            </div>
-          </Card>
+                <h4 className="text-base font-bold text-text-hi mb-1 group-hover:text-accent-main transition-colors line-clamp-1">{nota.titulo}</h4>
+                <p className="text-xs text-text-mid line-clamp-2 opacity-60 leading-relaxed">
+                  {nota.conteudo?.replace(/<[^>]*>/g, '').substring(0, 100) || 'Sem conteúdo adicional...'}
+                </p>
+              </Card>
+            ))}
+            {notas.length === 0 && (
+              <div className="md:col-span-2 py-12 glass-panel border-dashed border-white/5 flex flex-col items-center justify-center text-center">
+                 <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-4 text-text-lo/20">
+                    <Edit size={24} />
+                 </div>
+                 <p className="text-text-lo text-sm font-medium">Nenhuma nota criada ainda.</p>
+              </div>
+            )}
+          </div>
         </div>
-      )}
+
+        {/* Ações Rápidas & Atalhos */}
+        <div className="lg:col-span-4 space-y-6">
+          <h3 className="text-xl font-bold text-text-hi font-display px-2">Ações Rápidas</h3>
+          <div className="space-y-3">
+             {[
+               { id: 'notes', label: 'Nova Nota', desc: 'Capture uma ideia', icon: Edit, color: 'from-blue-500/20 to-blue-600/20', text: 'text-blue-400' },
+               { id: 'study', label: 'Iniciar Estudo', desc: 'Focar no conhecimento', icon: Play, color: 'from-teal-500/20 to-teal-600/20', text: 'text-teal-400' },
+               { id: 'flashcards', label: 'Revisar Cards', desc: 'Fortalecer memória', icon: Brain, color: 'from-purple-500/20 to-purple-600/20', text: 'text-purple-400' },
+               { id: 'gerador', label: 'Gerar Conteúdo', desc: 'IA ao seu serviço', icon: Sparkles, color: 'from-pink-500/20 to-pink-600/20', text: 'text-pink-400' },
+             ].map((action) => (
+               <button
+                 key={action.id}
+                 onClick={() => window.dispatchEvent(new CustomEvent('navigate', { detail: action.id }))}
+                 className="w-full flex items-center gap-4 p-4 rounded-2xl glass-panel border-white/5 hover:border-white/10 hover:bg-white/[0.02] transition-all group"
+               >
+                 <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${action.color} flex items-center justify-center ${action.text} group-hover:scale-110 transition-transform shadow-inner`}>
+                    <action.icon size={20} />
+                 </div>
+                 <div className="flex-1 text-left">
+                    <p className="text-sm font-bold text-text-hi group-hover:text-glow transition-all">{action.label}</p>
+                    <p className="text-[10px] font-medium text-text-lo uppercase tracking-wider">{action.desc}</p>
+                 </div>
+                 <div className="text-text-lo/20 group-hover:text-text-hi transition-colors">
+                    <ArrowRight size={16} />
+                 </div>
+               </button>
+             ))}
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 }

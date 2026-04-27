@@ -21,11 +21,7 @@ export default function Header({ title, onToggleSidebar }) {
 
   return (
     <header
-      className="
-        flex items-center justify-between h-14 px-4
-        bg-surface-base/80 backdrop-blur-md
-        sticky top-0 z-40
-      "
+      className="flex items-center justify-between h-20 px-6 glass-panel !bg-[#0B0C13]/60 border-b border-white/5 sticky top-0 z-40"
       style={{ WebkitAppRegion: 'drag' }}
     >
       {/* Left: Menu toggle + Breadcrumb */}
@@ -44,16 +40,19 @@ export default function Header({ title, onToggleSidebar }) {
       </div>
 
       {/* Center: Search */}
-      <div className="flex-1 max-w-md mx-8" style={{ WebkitAppRegion: 'no-drag' }}>
+      <div className="flex-1 max-w-lg mx-12" style={{ WebkitAppRegion: 'no-drag' }}>
         <div className="relative group">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-lo/40 group-focus-within:text-color-gerador transition-colors" />
+          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-lo/40 group-focus-within:text-accent-main transition-colors" />
           <input
             type="text"
-            placeholder="Buscar... (Ctrl+K)"
-            className="w-full pl-10 pr-4 py-2 bg-surface-elevated/50 border border-[#333] rounded-lg
-                       text-text-hi placeholder-text-lo/30 text-xs
-                       focus:border-color-gerador/30 focus:outline-none transition-all"
+            placeholder="O que você deseja aprender hoje? (Ctrl+K)"
+            className="w-full pl-12 pr-4 py-3 bg-white/[0.03] border border-white/5 rounded-2xl
+                       text-text-hi placeholder-text-lo/30 text-sm font-medium
+                       focus:border-accent-main/30 focus:bg-white/[0.05] focus:outline-none transition-all inner-shadow"
           />
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded-md border border-white/10 text-[10px] font-bold text-text-lo opacity-0 group-hover:opacity-100 transition-opacity">
+             ⌘K
+          </div>
         </div>
       </div>
 
@@ -69,11 +68,12 @@ export default function Header({ title, onToggleSidebar }) {
           <button
             onClick={() => setIsProfileOpen(!isProfileOpen)}
             className={`
-              w-8 h-8 rounded-full border transition-all flex items-center justify-center font-black text-[11px]
-              ${isProfileOpen ? 'border-color-gerador bg-color-gerador/10 text-color-gerador' : 'border-[#444] bg-surface-elevated text-text-hi hover:border-[#666]'}
+              w-10 h-10 rounded-2xl border transition-all flex items-center justify-center font-black text-sm relative overflow-hidden group/avatar
+              ${isProfileOpen ? 'border-accent-main bg-accent-main/10 text-accent-main shadow-glow-violet' : 'border-white/10 bg-surface-raised text-text-hi hover:border-white/30'}
             `}
           >
-            B
+            <div className="absolute inset-0 bg-gradient-to-tr from-accent-main/20 to-transparent opacity-0 group-hover/avatar:opacity-100 transition-opacity" />
+            <span className="relative z-10">B</span>
           </button>
 
           {/* Popover de Perfil (E3.2) */}
@@ -130,10 +130,10 @@ export default function Header({ title, onToggleSidebar }) {
 
         {/* Window controls Electron */}
         {window.electronAPI && (
-          <div className="flex items-center gap-2 ml-2 border-l border-[#333] pl-4">
-            <button onClick={() => window.electronAPI.minimize()} className="text-text-lo hover:text-text-hi"><Minus size={16} /></button>
-            <button onClick={() => window.electronAPI.maximize()} className="text-text-lo hover:text-text-hi"><Square size={14} /></button>
-            <button onClick={() => window.electronAPI.close()} className="text-text-lo hover:text-color-error"><X size={16} /></button>
+          <div className="flex items-center gap-3 ml-4 border-l border-white/5 pl-6">
+            <button onClick={() => window.electronAPI.minimize()} className="text-text-lo hover:text-text-hi transition-colors p-1"><Minus size={18} /></button>
+            <button onClick={() => window.electronAPI.maximize()} className="text-text-lo hover:text-text-hi transition-colors p-1"><Square size={14} /></button>
+            <button onClick={() => window.electronAPI.close()} className="text-text-lo hover:text-color-error transition-colors p-1"><X size={18} /></button>
           </div>
         )}
       </div>

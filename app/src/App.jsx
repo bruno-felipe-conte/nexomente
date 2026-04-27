@@ -14,6 +14,7 @@ import Header from './components/layout/Header';
 import { useUIStore } from './store/useUIStore';
 import ErrorBoundary from './components/ErrorBoundary';
 import LevelUpOverlay from './components/gamification/LevelUpOverlay';
+import BottomNav from './components/layout/BottomNav';
 
 // ─── Code Splitting — cada página carrega só quando necessária (Tarefa 5.1) ───
 const Dashboard    = lazy(() => import('./pages/Dashboard'));
@@ -59,6 +60,7 @@ function App() {
     });
 
     useUIStore.getState().init();
+    import('./store/useDBStore').then(m => m.useDBStore.getState().init());
 
     const savedTema = localStorage.getItem('nexomente_tema') || 'dark';
     document.documentElement.classList.remove('dark', 'light');
@@ -125,7 +127,7 @@ function App() {
   }
 
   return (
-    <div className="flex h-full w-full bg-surface-base relative">
+    <div className="flex h-full w-full bg-[#0B0C13] relative overflow-hidden text-text-hi selection:bg-accent-main/30">
       <LevelUpOverlay />
       {/* Skip to main content link para navegação por teclado (Tarefa 6.7) */}
       <a 
@@ -158,8 +160,8 @@ function App() {
       />
 
       <div className="flex flex-col flex-1 min-w-0 relative h-full">
-        {/* LINHA DE HORIZONTE (Solução Inteligente para continuidade visual) */}
-        <div className="absolute top-14 left-0 right-0 h-[1px] bg-surface-border z-50" />
+        {/* LINHA DE HORIZONTE (Ajustada para o novo header h-20) */}
+        <div className="absolute top-20 left-0 right-0 h-[1px] bg-white/5 z-50" />
         
         <Header
           title={currentPage}
@@ -168,7 +170,7 @@ function App() {
 
         <main
           id="main-content"
-          className="flex-1 overflow-auto focus:outline-none relative z-10"
+          className="main-content flex-1 overflow-auto focus:outline-none relative z-10 custom-scrollbar"
           tabIndex="-1"
         >
           {/* ErrorBoundary por página + Suspense para lazy loading */}
@@ -188,6 +190,7 @@ function App() {
           </ErrorBoundary>
         </main>
       </div>
+      <BottomNav currentPage={currentPage} onNavigate={setCurrentPage} />
     </div>
   );
 }

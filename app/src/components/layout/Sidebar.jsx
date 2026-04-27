@@ -42,24 +42,41 @@ function NavButton({ item, isActive, isOpen, onNavigate }) {
   const Icon = item.icon;
 
   return (
-    <div className="relative group/tip">
+    <div className="relative px-3 group/nav">
       <motion.button
-        whileTap={{ scale: 0.98 }}
+        whileTap={{ scale: 0.95 }}
         id={`nav-${item.id}`}
         onClick={() => onNavigate(item.id)}
         className={`
-          w-full flex items-center gap-3 px-4 py-2.5 transition-all duration-200 border-l-2
+          w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-300 relative overflow-hidden
           ${isActive 
-            ? 'border-color-gerador text-text-hi font-bold' 
-            : 'border-transparent text-text-lo hover:text-text-mid'}
+            ? 'bg-white/5 text-text-hi shadow-[inset_0_0_20px_rgba(255,255,255,0.02)]' 
+            : 'text-text-lo hover:text-text-mid hover:bg-white/[0.02]'}
         `}
       >
-        <Icon size={18} className={isActive ? 'text-color-gerador' : 'inherit'} />
-        {isOpen && <span className="text-[13px] tracking-wide">{item.label}</span>}
+        {/* Active Indicator Glow */}
+        {isActive && (
+          <motion.div 
+            layoutId="active-glow"
+            className="absolute left-0 w-1 h-1/2 bg-accent-main rounded-full"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          />
+        )}
+
+        <Icon 
+          size={18} 
+          className={`transition-all duration-300 ${isActive ? 'text-accent-main drop-shadow-[0_0_8px_rgba(124,109,250,0.5)]' : 'group-hover/nav:text-text-hi'}`} 
+        />
+        {isOpen && (
+          <span className={`text-[13px] font-medium tracking-wide transition-all ${isActive ? 'text-text-hi' : ''}`}>
+            {item.label}
+          </span>
+        )}
       </motion.button>
 
       {!isOpen && (
-        <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 z-50 bg-surface-overlay border border-surface-border text-text-hi text-[10px] px-2 py-1 rounded shadow-xl whitespace-nowrap opacity-0 group-hover/tip:opacity-100 transition-opacity">
+        <div className="absolute left-full ml-4 top-1/2 -translate-y-1/2 z-50 glass-panel-light text-text-hi text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg shadow-2xl whitespace-nowrap opacity-0 group-hover/nav:opacity-100 transition-all pointer-events-none translate-x-[-10px] group-hover/nav:translate-x-0">
           {item.label}
         </div>
       )}
@@ -71,10 +88,15 @@ export default function Sidebar({ isOpen, currentPage, onNavigate }) {
   const navRef = useRef(null);
 
   return (
-    <aside className={`flex flex-col bg-surface-base border-r border-[#333] transition-all duration-300 ${isOpen ? 'w-64' : 'w-16'}`}>
+    <aside className={`flex flex-col glass-panel !bg-[#0B0C13]/80 border-r border-white/5 transition-all duration-500 ease-spring ${isOpen ? 'w-64' : 'w-20'}`}>
       {/* Cabeçalho Minimalista */}
-      <div className="h-14 flex items-center px-5 shrink-0">
-        <span className="text-sm font-black tracking-[0.3em] text-text-hi uppercase font-display">NexoMente</span>
+      <div className="h-20 flex items-center px-6 shrink-0">
+        <div className="flex items-center gap-3 group cursor-pointer">
+           <div className="w-8 h-8 bg-accent-main rounded-xl flex items-center justify-center shadow-glow-violet group-hover:scale-110 transition-transform">
+              <Sparkles size={18} className="text-white" />
+           </div>
+           {isOpen && <span className="text-lg font-black tracking-tighter text-text-hi font-display group-hover:text-glow transition-all">NEXOMENTE</span>}
+        </div>
       </div>
 
       <nav ref={navRef} className="flex-1 overflow-y-auto py-6 scrollbar-none">

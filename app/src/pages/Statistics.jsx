@@ -1,5 +1,9 @@
+import React from 'react';
 import { useUIStore } from '../store/useUIStore';
-import { BarChart3, TrendingUp, Clock, BookOpen, Zap } from 'lucide-react';
+import { BarChart3, TrendingUp, Clock, BookOpen, Trophy, Target } from 'lucide-react';
+import LevelCard from '../components/gamification/LevelCard';
+import ActivityHeatmap from '../components/gamification/ActivityHeatmap';
+import Card from '../components/ui/Card';
 
 export default function Statistics() {
   const Notas = useUIStore.getState().Notas;
@@ -25,9 +29,6 @@ export default function Statistics() {
   });
   
   const minutosEsteMes = sessoesEsteMes.reduce((acc, s) => acc + (s.duracao_minutos || 0), 0);
-  
-  const diasComEstudo = new Set(sessoesEsteMes.map(s => s.started_at?.split('T')[0])).size;
-  
   const streak = calcularStreak(sessoes);
   
   function calcularStreak(sessoes) {
@@ -36,105 +37,161 @@ export default function Statistics() {
       .map(s => s.started_at.split('T')[0])
       .sort()
       .reverse();
-    
     if (datas.length === 0) return 0;
-    
     let atual = 0;
     const hoje = new Date().toISOString().split('T')[0];
-    
     if (datas[0] === hoje) atual = 1;
-    
     for (let i = 1; i < datas.length; i++) {
       const diff = new Date(datas[i-1]) - new Date(datas[i]);
       if (diff / (1000 * 60 * 60 * 24) === 1) atual++;
       else break;
     }
-    
     return atual;
   }
   
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-text-primary mb-2">Estatísticas</h1>
-        <p className="text-text-secondary">Seu progresso ao longo do tempo</p>
-      </div>
+    <div className="main-content p-4 md:p-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <header>
+        <h1 className="text-3xl font-display font-bold text-text-hi mb-2">Seu Progresso</h1>
+        <p className="text-text-mid text-sm">Métricas de aprendizagem e conquistas acumuladas.</p>
+      </header>
       
-      {/* XP Total */}
-      <div className="bg-bg-secondary rounded-xl p-6 border border-border-subtle">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-xp/20 flex items-center justify-center">
-            <Zap className="text-xp" size={32} />
-          </div>
-          <div>
-            <p className="text-4xl font-bold text-xp">{xp}</p>
-            <p className="text-text-muted">XP Total</p>
-          </div>
-        </div>
-      </div>
+      {/* Nível Premium */}
+      <LevelCard xp={xp} />
       
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-bg-secondary rounded-xl p-4 border border-border-subtle">
-          <TrendingUp className="text-accent-main mb-2" size={24} />
-          <p className="text-2xl font-bold text-text-primary">{streak}</p>
-          <p className="text-sm text-text-muted">Dias em sequência</p>
-        </div>
-        
-        <div className="bg-bg-secondary rounded-xl p-4 border border-border-subtle">
-          <Clock className="text-success mb-2" size={24} />
-          <p className="text-2xl font-bold text-text-primary">{minutosEsteMes}m</p>
-          <p className="text-sm text-text-muted">Este mês</p>
-        </div>
-        
-        <div className="bg-bg-secondary rounded-xl p-4 border border-border-subtle">
-          <BookOpen className="text-node-book mb-2" size={24} />
-          <p className="text-2xl font-bold text-text-primary">{notas.length}</p>
-          <p className="text-sm text-text-muted">Notas criadas</p>
-        </div>
-        
-        <div className="bg-bg-secondary rounded-xl p-4 border border-border-subtle">
-          <BarChart3 className="text-warning mb-2" size={24} />
-          <p className="text-2xl font-bold text-text-primary">{flashcards.length}</p>
-          <p className="text-sm text-text-muted">Flashcards</p>
-        </div>
+      {/* Stats Grid Principal */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard 
+          icon={TrendingUp} 
+          value={streak} 
+          label="Dias Seguidos" 
+          sub="Recorde: 12 dias" 
+          color="text-orange-400" 
+          bg="bg-orange-500/10" 
+        />
+        <StatCard 
+          icon={Clock} 
+          value={`${minutosEsteMes}m`} 
+          label="Tempo este Mês" 
+          sub="Meta: 500m" 
+          color="text-teal-400" 
+          bg="bg-teal-500/10" 
+        />
+        <StatCard 
+          icon={BookOpen} 
+          value={notas.length} 
+          label="Notas Criadas" 
+          sub="+3 esta semana" 
+          color="text-blue-400" 
+          bg="bg-blue-500/10" 
+        />
+        <StatCard 
+          icon={BarChart3} 
+          value={flashcards.length} 
+          label="Flashcards" 
+          sub="85% dominados" 
+          color="text-purple-400" 
+          bg="bg-purple-500/10" 
+        />
       </div>
-      
-      {/* Por Tipo */}
-      <div className="bg-bg-secondary rounded-xl p-4 border border-border-subtle">
-        <h2 className="font-semibold text-text-primary mb-4">Notas por Tipo</h2>
-        <div className="space-y-2">
-          {Object.entries(porTipo).map(([tipo, count]) => (
-            <div key={tipo} className="flex items-center justify-between">
-              <span className="text-text-secondary capitalize">{tipo}</span>
-              <div className="flex items-center gap-2">
-                <div className="w-32 h-2 bg-bg-tertiary rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-accent-main rounded-full" 
-                    style={{ width: `${(count / notas.length) * 100}%` }}
-                  />
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Lado Esquerdo: Heatmap */}
+        <div className="lg:col-span-8 space-y-8">
+          <ActivityHeatmap sessoes={sessoes} />
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+             <Card className="glass-panel p-6">
+                <h3 className="text-sm font-bold text-text-hi font-display mb-6 flex items-center gap-2">
+                   <Target size={16} className="text-accent-main" />
+                   Metas Semanais
+                </h3>
+                <div className="space-y-4">
+                   <GoalProgress label="Minutos de Estudo" current={minutosEsteMes} target={500} color="bg-teal-500" />
+                   <GoalProgress label="Novas Notas" current={notas.length % 10} target={10} color="bg-blue-500" />
+                   <GoalProgress label="Cards Revisados" current={12} target={50} color="bg-purple-500" />
                 </div>
-                <span className="text-text-primary font-medium">{count}</span>
+             </Card>
+
+             <Card className="glass-panel p-6">
+                <h3 className="text-sm font-bold text-text-hi font-display mb-6 flex items-center gap-2">
+                   <Trophy size={16} className="text-yellow-400" />
+                   Próximas Conquistas
+                </h3>
+                <div className="space-y-3">
+                   <NextAchievement icon="🔥" label="Maratonista" desc="7 dias de streak" progress={streak/7*100} />
+                   <NextAchievement icon="📚" label="Bibliotecário" desc="50 notas criadas" progress={notas.length/50*100} />
+                </div>
+             </Card>
+          </div>
+        </div>
+
+        {/* Lado Direito: Distribuição */}
+        <div className="lg:col-span-4">
+           <Card className="glass-panel p-6 h-full">
+              <h3 className="text-sm font-bold text-text-hi font-display mb-6">Foco do Conhecimento</h3>
+              <div className="space-y-6">
+                {Object.entries(porTipo).map(([tipo, count]) => (
+                  <div key={tipo} className="space-y-2">
+                    <div className="flex justify-between text-xs">
+                       <span className="text-text-hi font-bold capitalize">{tipo}</span>
+                       <span className="text-text-lo">{count} notas</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                       <div 
+                         className="h-full bg-accent-main rounded-full" 
+                         style={{ width: `${(count / notas.length) * 100}%` }}
+                       />
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
-          ))}
+           </Card>
         </div>
       </div>
-      
-      {/* Histórico */}
-      <div className="bg-bg-secondary rounded-xl p-4 border border-border-subtle">
-        <h2 className="font-semibold text-text-primary mb-4">Esse Mês</h2>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <p className="text-2xl font-bold text-text-primary">{diasComEstudo}</p>
-            <p className="text-sm text-text-muted">Dias estudados</p>
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-text-primary">{sessoesEsteMes.filter(s => s.concluida).length}</p>
-            <p className="text-sm text-text-muted">Sessões concluídas</p>
-          </div>
-        </div>
+    </div>
+  );
+}
+
+function StatCard({ icon: Icon, value, label, sub, color, bg }) {
+  return (
+    <Card className="glass-panel p-5 border-white/5 hover:border-white/10 transition-all group">
+      <div className={`w-10 h-10 rounded-xl ${bg} ${color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+        <Icon size={20} />
       </div>
+      <p className="text-2xl font-black text-text-hi tabular-nums">{value}</p>
+      <p className="text-xs font-bold text-text-mid uppercase tracking-wider">{label}</p>
+      <p className="text-[10px] text-text-lo mt-1">{sub}</p>
+    </Card>
+  );
+}
+
+function GoalProgress({ label, current, target, color }) {
+  const percent = Math.min((current / target) * 100, 100);
+  return (
+    <div className="space-y-1.5">
+       <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider">
+          <span className="text-text-lo">{label}</span>
+          <span className="text-text-hi">{current} / {target}</span>
+       </div>
+       <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+          <div className={`h-full ${color} rounded-full`} style={{ width: `${percent}%` }} />
+       </div>
+    </div>
+  );
+}
+
+function NextAchievement({ icon, label, desc, progress }) {
+  return (
+    <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 transition-colors">
+       <div className="text-xl">{icon}</div>
+       <div className="flex-1 min-w-0">
+          <p className="text-xs font-bold text-text-hi truncate">{label}</p>
+          <p className="text-[10px] text-text-lo truncate">{desc}</p>
+          <div className="h-1 w-full bg-white/5 rounded-full mt-1 overflow-hidden">
+             <div className="h-full bg-accent-main rounded-full" style={{ width: `${Math.min(progress, 100)}%` }} />
+          </div>
+       </div>
     </div>
   );
 }

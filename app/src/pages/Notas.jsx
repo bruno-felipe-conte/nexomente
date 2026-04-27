@@ -19,8 +19,8 @@ import NoteMetadata from '../components/editor/NoteMetadata';
 import TagInput from '../components/editor/TagInput';
 import AIPanel from '../components/editor/AIPanel';
 import AIBar from '../components/editor/AIBar';
-import TagPickerModal from '../components/editor/TagPickerModal';
 import FlashcardApproveModal from '../components/editor/FlashcardApproveModal';
+import EditorContextMenus from '../components/editor/EditorContextMenus';
 import { getModel } from '../lib/ai/lmStudioService';
 import Button from '../components/ui/Button';
 
@@ -205,12 +205,16 @@ export default function NotasPage() {
             )}
 
             <EditorToolbar editor={editor} focusMode={focoMode} onToggleFocus={() => setFocoMode(p => !p)} />
-            <AIBar nota={notaSelecionada}
-              onTagsOpen={handleTagsOpen} onResumoOpen={handleResumoOpen}
-              onCardsOpen={handleCardsOpen} onChatOpen={handleChatOpen}
-            />
+            
+            {!focoMode && (
+              <AIBar nota={notaSelecionada}
+                onTagsOpen={handleTagsOpen} onResumoOpen={handleResumoOpen}
+                onCardsOpen={handleCardsOpen} onChatOpen={handleChatOpen}
+              />
+            )}
 
-            <div className={`flex-1 overflow-auto ${focoMode ? 'max-w-3xl mx-auto w-full px-8 py-12' : ''}`}>
+            <div className={`flex-1 overflow-auto relative ${focoMode ? 'max-w-3xl mx-auto w-full px-8 py-12' : ''}`}>
+              <EditorContextMenus editor={editor} onAIAction={(action) => action === 'summarize' && handleResumoOpen()} />
               <EditorContent editor={editor} className="h-full" />
             </div>
           </>

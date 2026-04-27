@@ -2,6 +2,9 @@ import { app, BrowserWindow, ipcMain, dialog, session } from 'electron';
 import path, { join, dirname } from 'path';
 import fs, { readFileSync, writeFileSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
+import { detectHardware } from './ai/hardwareDetector.js';
+import diagnostics from './ai/diagnostics.js';
+import { SmartContextManager } from './ai/SmartContextManager.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -83,6 +86,7 @@ app.on('activate', () => {
 let llamaInstance = null;
 let modelInstance = null;
 let contextInstance = null;
+let smartContext = null;
 
 // Gemini Proxy
 ipcMain.handle('ai:geminiChat', async (event, { url, body }) => {
@@ -141,25 +145,48 @@ ipcMain.handle('ai:embeddedChat', async (event, { modelPath, messages, options }
       });
       console.log('[AI ENGINE] Modelo carregado com aceleração otimizada.');
 
-      console.log('[AI ENGINE] Criando contexto de alta performance...');
-      contextInstance = await modelInstance.createContext({
-        contextSize: 4096, // Aumentado para lidar com textos maiores
-        batchSize: 512,    // Aumentado para processamento mais rápido
-        threads: 8,        // Aumentado para processadores modernos
-        flashAttention: true 
-      });
-      console.log('[AI ENGINE] Contexto criado e otimizado para velocidade.');
+      // Detectar hardware para configuração adaptativa
+      const hardware = await detectHardware();
+      diagnostics.snapshot('before-context');
+
+      // Configuração adaptativa do KV Cache (Fase 1 do Guia TurboQuant)
+      const contextConfig = {
+        contextSize: hardware.ramGB >= 16 ? 8192 : 4096,
+        batchSize: hardware.ramGB >= 16 ? 512 : 256,
+        threads: Math.max(1, Math.floor(hardware.cpuCores * 0.75)),
+        flashAttention: true,
+        // Quantização nativa do KV Cache baseada no hardware
+        cacheTypeK: hardware.ramGB >= 16 ? 'q8_0' : 'q4_0',
+        cacheTypeV: 'q4_0' // Values são menos sensíveis, q4_0 economiza muita RAM
+      };
+
+      console.log(`[AI ENGINE] Criando contexto adaptativo (${hardware.tier} tier):`, contextConfig);
+      contextInstance = await modelInstance.createContext(contextConfig);
+      
+      // Inicializar o gerenciador de contexto inteligente (Fase 2 do Guia)
+      smartContext = new SmartContextManager(contextInstance, hardware);
+      
+      diagnostics.snapshot('after-context');
+      const delta = diagnostics.delta('before-context', 'after-context');
+      console.log(`[AI ENGINE] KV Cache alocado: ~${delta.externalDeltaMB}MB`);
     }
 
     console.log('[AI ENGINE] Iniciando sessão de chat...');
-    const session = new LlamaChatSession({ contextSequence: contextInstance.getSequence() });
     const lastMessage = messages[messages.length - 1].content || messages[messages.length - 1].texto;
     
+    // Adicionar mensagem ao histórico inteligente e comprimir se necessário
+    await smartContext.addMessage('user', lastMessage);
+    
+    const session = new LlamaChatSession({ contextSequence: contextInstance.getSequence() });
+    
     console.log('[AI ENGINE] Gerando resposta...');
-    const response = await session.prompt(lastMessage, {
+    const response = await session.prompt(smartContext.buildOptimizedPrompt(lastMessage), {
       maxTokens: options.max_tokens || 512,
       temperature: options.temperature || 0.7,
     });
+
+    // Salvar resposta da IA no histórico
+    await smartContext.addMessage('assistant', response);
 
     console.log('[AI ENGINE] Resposta gerada com sucesso.');
     return { success: true, response };
@@ -181,6 +208,24 @@ ipcMain.handle('ai:embeddedChat', async (event, { modelPath, messages, options }
       stack: isDev ? error.stack : undefined
     };
   }
+});
+
+// Novo handler para info de hardware (Fase 4 do Guia TurboQuant)
+ipcMain.handle('ai:getHardwareInfo', async () => {
+  try {
+    return await detectHardware();
+  } catch (error) {
+    return { error: error.message };
+  }
+});
+
+// Novo handler para estatísticas de contexto (Fase 4 do Guia TurboQuant)
+ipcMain.handle('ai:getContextStats', async () => {
+  if (!smartContext) return { activeTokens: 0, maxTokens: 4096 };
+  return {
+    activeTokens: smartContext.getTotalActiveTokens(),
+    maxTokens: smartContext.maxActiveTokens
+  };
 });
 
 // Database initialization
