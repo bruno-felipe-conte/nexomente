@@ -4,7 +4,7 @@
  */
 
 const getApiKey = () => localStorage.getItem('nexomente_gemini_key') || '';
-const getModel = () => localStorage.getItem('nexomente_gemini_model') || 'gemini-1.5-flash';
+const getModel = () => localStorage.getItem('nexomente_gemini_model') || 'gemini-2.0-flash';
 
 export async function chat(messages, options = {}) {
   const apiKey = getApiKey();
@@ -78,6 +78,6 @@ export async function checkStatus() {
     }
     return { status: 'offline', error: 'Chave inválida ou sem permissão', models: [] };
   } catch {
-    return { status: 'online', models: ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro'] };
+    return { status: 'online', models: ['gemini-2.0-flash', 'gemini-2.0-flash-lite'] };
   }
 }
