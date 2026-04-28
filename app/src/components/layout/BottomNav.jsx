@@ -8,6 +8,7 @@ export default function BottomNav({ currentPage, onNavigate }) {
     { id: 'study', icon: BookOpen, label: 'Estudo' },
     { id: 'flashcards', icon: Layers, label: 'Cards' },
     { id: 'ai', icon: MessageSquare, label: 'IA' },
+    { id: 'settings', icon: Settings, label: 'Config' },
   ];
 
   return (

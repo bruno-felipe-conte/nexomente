@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import initSqlJs from 'sql.js';
+// SQL.js agora é carregado globalmente via index.html para evitar conflitos de versão
 
 let dbInstance = null;
 let initResolve = null;
@@ -14,14 +14,23 @@ export async function initDB() {
   if (dbInstance) return dbInstance;
   
   try {
-    const SQL = await initSqlJs({
-      locateFile: file => `/${file}`
+    const initSql = window.initSqlJs;
+    if (!initSql) throw new Error("Aguardando carregamento do SQL.js...");
+    
+    const SQL = await initSql({
+      locateFile: () => `https://unpkg.com/sql.js@1.12.0/dist/sql-wasm.wasm`
     });
     
     const savedData = localStorage.getItem('nexomente_db');
     if (savedData) {
-      const data = Uint8Array.from(atob(savedData), c => c.charCodeAt(0));
-      dbInstance = new SQL.Database(data);
+      try {
+        const data = Uint8Array.from(atob(savedData), c => c.charCodeAt(0));
+        dbInstance = new SQL.Database(data);
+      } catch (dbErr) {
+        console.error("Banco de dados corrompido, reiniciando...", dbErr);
+        localStorage.removeItem('nexomente_db');
+        dbInstance = new SQL.Database();
+      }
     } else {
       dbInstance = new SQL.Database();
     }
@@ -123,6 +132,7 @@ function createTables(db) {
       ['pasta_raiz', 'Minha Biblioteca', '#6C63FF', 'library']);
   }
   
+  /* 
   db.run(`
     CREATE VIRTUAL TABLE IF NOT EXISTS notas_fts USING fts5(
       titulo,
@@ -150,6 +160,7 @@ function createTables(db) {
       INSERT INTO notas_fts(rowid, titulo, conteudo) VALUES (new.rowid, new.titulo, new.conteudo);
     END
   `);
+  */
   
   saveDB();
 }
@@ -228,13 +239,12 @@ export const useDBStore = create((set, get) => ({
       const db = get().db;
       if (!db || !query) return [];
       const result = db.exec(`
-        SELECT n.* FROM notas n
-        JOIN notas_fts fts ON n.rowid = fts.rowid
-        WHERE notas_fts MATCH ?
-        AND n.status = 'ativo'
-        ORDER BY rank
+        SELECT * FROM notas 
+        WHERE (titulo LIKE ? OR conteudo LIKE ?)
+        AND status = 'ativo'
+        ORDER BY atualizado_em DESC
         LIMIT 50
-      `, [query + '*']);
+      `, [`%${query}%`, `%${query}%`]);
       if (!result[0]) return [];
       return result[0].values.map(row => ({
         id: row[0],

@@ -3,13 +3,25 @@
  * Carrega modelos GGUF locais diretamente no processo do Electron.
  */
 
-const getModelPath = () => localStorage.getItem('nexomente_embedded_path') || 'C:/Users/bruno/.lmstudio/models/unsloth/gemma-4-E4B-it-GGUF/gemma-4-E4B-it-Q4_K_S.gguf';
+const getModelPath = () => localStorage.getItem('nexomente_embedded_path') || './electron/models/llama-3.2-1b.gguf';
 
 export async function chat(messages, options = {}) {
   const modelPath = getModelPath();
   
-  if (!window.electronAPI?.embeddedChat) {
-    return { success: false, error: 'Motor embutido não disponível. Certifique-se de que o app foi reiniciado.' };
+  if (!window.electronAPI) {
+    return { 
+      success: false, 
+      error: 'O Motor Embutido requer o aplicativo desktop NexoMente. No navegador, use o provedor "Cloud" (Gemini) ou "Local (LM Studio)".',
+      code: 'ERR-ENV-BROWSER'
+    };
+  }
+
+  if (!window.electronAPI.embeddedChat) {
+    return { 
+      success: false, 
+      error: 'Ponte de IA não encontrada. Certifique-se de que o aplicativo foi iniciado corretamente ou tente reiniciá-lo.',
+      code: 'ERR-IPC-MISSING'
+    };
   }
 
   try {
@@ -51,7 +63,7 @@ export async function chat(messages, options = {}) {
 
 export async function checkStatus() {
   if (window.electronAPI?.embeddedChat) {
-    return { status: 'online', models: ['Gemma 4B (Interno)'] };
+    return { status: 'online', models: ['Llama 3.2 (Motor Interno)'] };
   }
   return { status: 'offline', models: [] };
 }

@@ -17,17 +17,19 @@ export async function detectHardware() {
 
   try {
     if (process.platform === 'win32') {
-      const output = execSync(
-        'wmic path win32_VideoController get Name,AdapterRAM /format:csv',
-        { encoding: 'utf8', timeout: 3000 }
-      );
-      const lines = output.trim().split('\n').filter(l => l.includes(','));
-      if (lines.length > 0) {
-        const parts = lines[0].split(',');
-        hardware.hasGPU = true;
-        hardware.gpuName = parts[2]?.trim() || 'Unknown GPU';
-        const rawVram = parseInt(parts[1]);
-        hardware.vramMB = Math.abs(Math.floor(rawVram / 1024 / 1024)) || 0;
+      try {
+        const psCmd = 'powershell -Command "Get-CimInstance Win32_VideoController | ForEach-Object { \'{0},{1}\' -f $_.Name, $_.AdapterRAM }"';
+        const output = execSync(psCmd, { encoding: 'utf8', timeout: 5000 }).trim();
+        const lines = output.split('\n').filter(l => l.includes(','));
+        if (lines.length > 0) {
+          const parts = lines[0].split(',');
+          hardware.hasGPU = true;
+          hardware.gpuName = parts[0]?.trim() || 'Unknown GPU';
+          const rawVram = parseInt(parts[1]) || 0;
+          hardware.vramMB = Math.abs(Math.floor(rawVram / 1024 / 1024));
+        }
+      } catch (err) {
+        console.warn('[HardwareDetector] PowerShell GPU detection failed:', err.message);
       }
     } else if (process.platform === 'darwin') {
       const output = execSync('system_profiler SPDisplaysDataType', { encoding: 'utf8', timeout: 3000 });
@@ -50,7 +52,7 @@ export async function detectHardware() {
       }
     }
   } catch (err) {
-    console.warn('[HardwareDetector] GPU detection failed:', err.message);
+    console.warn('[HardwareDetector] General GPU detection failed:', err.message);
   }
 
   hardware.tier = classifyHardware(hardware);

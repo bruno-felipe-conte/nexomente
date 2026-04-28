@@ -14,26 +14,26 @@ const ChatMessage = memo(function ChatMessage({ msg, idx, copiadoIdx, onCopiar, 
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
+      className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}
     >
-      <div className={`max-w-[85%] flex gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+      <div className={`max-w-[92%] md:max-w-[85%] flex gap-2 md:gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
         {!isUser && (
-          <div className="w-8 h-8 rounded-lg bg-accent-main/10 flex items-center justify-center shrink-0 border border-accent-main/20">
+          <div className="w-8 h-8 rounded-lg bg-accent-main/10 flex items-center justify-center shrink-0 border border-accent-main/20 mt-1">
             <Bot size={14} className="text-accent-main" />
           </div>
         )}
         
-        <div className={`px-5 py-4 ${
+        <div className={`px-3 md:px-5 py-3 md:py-4 ${
           isUser
-            ? 'bg-white/5 text-text-hi rounded-2xl'
+            ? 'bg-white/5 text-text-hi rounded-2xl shadow-sm'
             : 'border border-white/5 text-text-primary rounded-2xl bg-bg-secondary/20'
         }`}>
           {msg.isError ? (
-            <div className="flex items-center gap-2 py-1 px-3 bg-danger/10 border border-danger/20 rounded-lg">
-              <span className="text-[9px] font-black bg-danger text-white px-1.5 py-0.5 rounded uppercase tracking-tighter">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 py-2 px-3 bg-danger/10 border border-danger/20 rounded-xl">
+              <span className="text-[9px] font-black bg-danger text-white px-1.5 py-0.5 rounded uppercase tracking-tighter shrink-0">
                 {msg.errorCode || 'ERR-SYS'}
               </span>
-              <p className="text-[10px] text-danger/90 font-bold">
+              <p className="text-[11px] text-danger/90 font-bold leading-snug">
                 {msg.texto}
               </p>
             </div>

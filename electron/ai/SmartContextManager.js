@@ -66,11 +66,17 @@ export class SmartContextManager {
     }
   }
 
-  buildOptimizedPrompt(newUserMessage) {
-    const historyText = this.conversationHistory
-      .map(m => `${m.role === 'user' ? 'Usuário' : 'IA'}: ${m.content}`)
+  buildOptimizedPrompt() {
+    if (this.conversationHistory.length === 0) return "";
+    
+    // Constrói o prompt a partir do histórico já atualizado
+    const prompt = this.conversationHistory
+      .map(m => {
+        const roleName = m.role === 'user' ? 'User' : (m.role === 'system' ? 'System' : 'Assistant');
+        return `${roleName}: ${m.content}`;
+      })
       .join('\n\n');
     
-    return `${historyText}\n\nUsuário: ${newUserMessage}\nIA:`;
+    return `${prompt}\n\nAssistant:`;
   }
 }

@@ -46,7 +46,7 @@ function App() {
   useEffect(() => {
     // ─── Configurações Padrão de Inicialização (GitHub/Fresh Install) ───
     const defaults = {
-      'nexomente_ai_provider': 'embedded',
+      'nexomente_ai_provider': window.electronAPI ? 'embedded' : 'cloud',
       'nexomente_ai_language': 'Português Brasileiro',
       'nexomente_tema': 'dark',
       'nexomente_ai_temp': '0.7',
@@ -182,20 +182,22 @@ function App() {
         isOpen={sidebarOpen}
         currentPage={currentPage}
         onNavigate={setCurrentPage}
+        className="z-[100]"
       />
 
       <div className="flex flex-col flex-1 min-w-0 relative h-full">
         {/* LINHA DE HORIZONTE (Ajustada para o novo header h-20) */}
-        <div className="absolute top-20 left-0 right-0 h-[1px] bg-white/5 z-50" />
+        <div className="absolute top-20 left-0 right-0 h-[1px] bg-white/5 z-0 pointer-events-none" />
         
         <Header
           title={currentPage}
           onToggleSidebar={toggleSidebar}
+          onNavigate={setCurrentPage}
         />
 
         <main
           id="main-content"
-          className="main-content flex-1 overflow-auto focus:outline-none relative z-10 custom-scrollbar"
+          className="main-content flex-1 overflow-auto focus:outline-none relative z-10 custom-scrollbar pb-16 md:pb-0"
           tabIndex="-1"
         >
           {/* ErrorBoundary por página + Suspense para lazy loading */}

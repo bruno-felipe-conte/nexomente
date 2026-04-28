@@ -101,6 +101,19 @@ body { font-family: 'DM Sans', system-ui, sans-serif; background-color: var(--su
   background: var(--text-lo, #555);
 }
 
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.6);
+}
+
 *:focus-visible { outline: 2px solid var(--color-brand); outline-offset: 2px; }
 
 .ProseMirror { font-family: 'DM Sans', sans-serif; font-size: 16px; line-height: 1.6; padding: 1rem; }

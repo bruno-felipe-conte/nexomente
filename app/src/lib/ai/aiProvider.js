@@ -61,9 +61,10 @@ export async function chat(messages, options = {}) {
     result = await lmStudio.chat(finalMessages, finalOptions);
   }
 
-  // Padronização: garante que 'content' exista para o frontend
-  if (result.success && !result.content && result.response) {
-    result.content = result.response;
+  // Padronização: garante que 'content' e 'response' existam para o frontend
+  if (result.success) {
+    if (!result.content && result.response) result.content = result.response;
+    if (result.content && !result.response) result.response = result.content;
   }
   
   return result;

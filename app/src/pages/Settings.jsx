@@ -113,12 +113,20 @@ export default function Settings() {
                   {[
                     { id: 'cloud', label: 'Gemini Pro', icon: Globe, desc: 'API Cloud (Alta performance)', color: 'text-blue-400' },
                     { id: 'local', label: 'LM Studio', icon: Cpu, desc: 'Localhost (Privacidade)', color: 'text-accent-main' },
-                    { id: 'embedded', label: 'Interno', icon: Sparkles, desc: 'Nativo NexoMente', color: 'text-purple-400' },
+                    { 
+                      id: 'embedded', 
+                      label: 'Interno', 
+                      icon: Sparkles, 
+                      desc: window.electronAPI ? 'Nativo NexoMente' : 'Apenas no Desktop', 
+                      color: window.electronAPI ? 'text-purple-400' : 'text-text-lo/20',
+                      disabled: !window.electronAPI 
+                    },
                   ].map(opt => (
                     <button
                       key={opt.id}
+                      disabled={opt.disabled}
                       onClick={() => setProvider(opt.id)}
-                      className={`p-6 rounded-3xl border transition-all text-left flex flex-col gap-4 group relative ${provider === opt.id ? 'bg-white/5 border-accent-main/30' : 'bg-transparent border-white/5 hover:border-white/10'}`}
+                      className={`p-6 rounded-3xl border transition-all text-left flex flex-col gap-4 group relative ${provider === opt.id ? 'bg-white/5 border-accent-main/30' : 'bg-transparent border-white/5 hover:border-white/10'} ${opt.disabled ? 'opacity-40 cursor-not-allowed grayscale' : ''}`}
                     >
                       <div className={`w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center ${opt.color}`}>
                         <opt.icon size={20} />

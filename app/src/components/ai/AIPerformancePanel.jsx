@@ -45,13 +45,19 @@ export default function AIPerformancePanel() {
 
   useEffect(() => {
     const fetchHardware = async () => {
-      const info = await window.electronAPI.invoke('ai:getHardwareInfo');
-      setHardware(info);
-      
-      // Auto-selecionar baseado no hardware
-      if (info.ramGB >= 32) setSelectedPreset('quality');
-      else if (info.ramGB >= 16) setSelectedPreset('balanced');
-      else setSelectedPreset('performance');
+      if (!window.electronAPI?.getHardwareInfo) return;
+      try {
+        const info = await window.electronAPI.getHardwareInfo();
+        if (info) {
+          setHardware(info);
+          // Auto-selecionar baseado no hardware
+          if (info.ramGB >= 32) setSelectedPreset('quality');
+          else if (info.ramGB >= 16) setSelectedPreset('balanced');
+          else setSelectedPreset('performance');
+        }
+      } catch (err) {
+        console.error('Falha ao obter hardware:', err);
+      }
     };
     fetchHardware();
   }, []);
@@ -70,7 +76,7 @@ export default function AIPerformancePanel() {
         </div>
         
         {hardware && (
-          <Badge variant="subtle" className="bg-white/5 border-white/10 py-1.5 px-3">
+          <Badge variant="gray" className="bg-white/5 border-white/10 py-1.5 px-3">
              <Activity size={12} className="mr-2 text-green-400" />
              {hardware.ramGB}GB RAM · {hardware.hasGPU ? 'GPU Ativa' : 'Apenas CPU'}
           </Badge>

@@ -52,4 +52,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // AI Bridge
   geminiChat: (payload) => ipcRenderer.invoke('ai:geminiChat', payload),
   embeddedChat: (payload) => ipcRenderer.invoke('ai:embeddedChat', payload),
+  getHardwareInfo: () => ipcRenderer.invoke('ai:getHardwareInfo'),
+  getContextStats: () => ipcRenderer.invoke('ai:getContextStats'),
 });

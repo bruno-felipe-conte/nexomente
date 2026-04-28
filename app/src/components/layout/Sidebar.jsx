@@ -1,11 +1,8 @@
 import { useRef } from 'react';
 import { motion } from 'framer-motion';
 import PropTypes from 'prop-types';
-import {
-  Home, FileText, BookOpen, Layers,
-  GitBranch, BarChart3, Settings,
-  Sparkles, Cloud, Book, MessageSquare, ClipboardList
-} from 'lucide-react';
+import { Home, FileText, BookOpen, Layers, GitBranch, BarChart3, Settings, Sparkles, MessageSquare, ClipboardList, Book, Cpu, Cloud, Globe } from 'lucide-react';
+import { useAIStore } from '../../store/useAIStore';
 
 const NAV_GROUPS = [
   {
@@ -93,11 +90,15 @@ NavButton.propTypes = {
   onNavigate: PropTypes.func.isRequired,
 };
 
-export default function Sidebar({ isOpen, currentPage, onNavigate }) {
+export default function Sidebar({ isOpen, currentPage, onNavigate, className = '' }) {
   const navRef = useRef(null);
+  const { status, provider, modeloAtual } = useAIStore();
+
+  const isOnline = status === 'online';
+  const providerLabel = provider === 'embedded' ? 'Motor Interno' : (provider === 'cloud' ? 'Gemini Cloud' : 'LM Studio');
 
   return (
-    <aside className={`flex flex-col glass-panel !bg-[#0B0C13]/80 border-r border-white/5 transition-all duration-500 ease-in-out ${isOpen ? 'w-64' : 'w-20'}`}>
+    <aside className={`hidden md:flex flex-col glass-panel !bg-[#0B0C13]/80 border-r border-white/5 transition-all duration-500 ease-in-out ${isOpen ? 'w-64' : 'w-20'} ${className}`}>
       {/* Cabeçalho Minimalista */}
       <div className="h-20 flex items-center px-6 shrink-0">
         <div className="flex items-center gap-3 group cursor-pointer">
@@ -108,7 +109,7 @@ export default function Sidebar({ isOpen, currentPage, onNavigate }) {
         </div>
       </div>
 
-      <nav ref={navRef} className="flex-1 overflow-y-auto py-6 scrollbar-none">
+      <nav ref={navRef} className={`flex-1 ${isOpen ? 'overflow-y-auto' : 'overflow-hidden'} overflow-x-hidden py-6 scrollbar-none`}>
         {/* Dashboard isolado */}
         <div className="mb-8">
           <NavButton item={DASHBOARD_ITEM} isActive={currentPage === DASHBOARD_ITEM.id} isOpen={isOpen} onNavigate={onNavigate} />
@@ -136,12 +137,17 @@ export default function Sidebar({ isOpen, currentPage, onNavigate }) {
       {/* Rodapé de Utilidades */}
       <div className="mt-auto border-t border-[#333] bg-surface-base/50">
         <div className="px-5 py-4 space-y-4">
-          <div className={`flex items-center gap-2 ${isOpen ? '' : 'justify-center'}`}>
-            <div className="w-1.5 h-1.5 rounded-full bg-color-success shadow-[0_0_6px_rgba(132,226,110,0.4)]" />
+          <div className={`flex items-center gap-2 ${isOpen ? '' : 'justify-center'}`} title={`${providerLabel}: ${isOnline ? 'Pronto' : 'Indisponível'}`}>
+            <div className={`w-1.5 h-1.5 rounded-full transition-colors duration-500 ${isOnline ? 'bg-color-success shadow-[0_0_6px_rgba(132,226,110,0.4)]' : 'bg-danger shadow-[0_0_6px_rgba(255,71,87,0.4)]'}`} />
             {isOpen && (
-              <span className="text-[9px] font-mono font-bold tracking-tighter text-text-lo uppercase">
-                IA ONLINE - LLAMA 3
-              </span>
+              <div className="flex flex-col">
+                <span className={`text-[9px] font-mono font-bold tracking-tighter uppercase ${isOnline ? 'text-text-lo' : 'text-danger/60'}`}>
+                  IA {status.toUpperCase()}
+                </span>
+                <span className="text-[8px] text-text-lo/30 font-medium truncate max-w-[120px]">
+                  {provider === 'embedded' ? modeloAtual.split('/').pop() : providerLabel}
+                </span>
+              </div>
             )}
           </div>
           <button 

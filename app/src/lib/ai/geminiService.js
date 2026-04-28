@@ -4,14 +4,17 @@
  */
 
 const getApiKey = () => localStorage.getItem('nexomente_gemini_key') || '';
-const getModel = () => localStorage.getItem('nexomente_gemini_model') || 'gemini-2.0-flash';
+const getModel = () => localStorage.getItem('nexomente_ai_model') || 'gemini-1.5-flash';
 
 export async function chat(messages, options = {}) {
   const apiKey = getApiKey();
   if (!apiKey) return { success: false, error: 'Chave API do Gemini não configurada.' };
 
-  const model = options.model || getModel();
-  const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
+  let model = options.model || getModel();
+  if (model.includes('models/')) model = model.replace('models/', '');
+  
+  
+  // O processamento da URL e do payload agora ocorre dentro do bloco try para maior segurança
 
   // Converte o histórico para o formato do Gemini, removendo mensagens vazias
   const contents = messages
@@ -24,6 +27,8 @@ export async function chat(messages, options = {}) {
   if (contents.length === 0) return { success: false, error: 'Nenhuma mensagem válida para enviar.' };
 
   try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
     const payload = {
       url,
       body: {
@@ -40,18 +45,20 @@ export async function chat(messages, options = {}) {
     if (window.electronAPI?.geminiChat) {
       res = await window.electronAPI.geminiChat(payload);
     } else {
-      // Fallback para browser comum
       const response = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey // Redundância para chaves sensíveis
+        },
         body: JSON.stringify(payload.body)
       });
       const data = await response.json();
-      res = { ok: response.ok, data };
+      res = { ok: response.ok, status: response.status, data };
     }
 
     if (!res.ok) {
-      return { success: false, error: res.data?.error?.message || res.error || 'Erro na API do Gemini' };
+      return { success: false, error: res.data?.error?.message || res.error || `Erro na API do Gemini (${res.status || '?'})` };
     }
 
     const text = res.data.candidates?.[0]?.content?.parts?.[0]?.text || '';
@@ -66,7 +73,7 @@ export async function checkStatus() {
   if (!apiKey) return { status: 'offline', models: [] };
   
   try {
-    const url = `https://generativelanguage.googleapis.com/v1/models?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
     const response = await fetch(url);
     if (response.ok) {
       const data = await response.json();
@@ -78,6 +85,6 @@ export async function checkStatus() {
     }
     return { status: 'offline', error: 'Chave inválida ou sem permissão', models: [] };
   } catch {
-    return { status: 'online', models: ['gemini-2.0-flash', 'gemini-2.0-flash-lite'] };
+    return { status: 'online', models: ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro'] };
   }
 }

@@ -87,6 +87,7 @@ let llamaInstance = null;
 let modelInstance = null;
 let contextInstance = null;
 let smartContext = null;
+let currentModelPath = null; // Rastreia o caminho do modelo carregado
 
 // Gemini Proxy
 ipcMain.handle('ai:geminiChat', async (event, { url, body }) => {
@@ -112,16 +113,19 @@ ipcMain.handle('ai:embeddedChat', async (event, { modelPath, messages, options }
     
     if (!llamaInstance) {
       console.log('[AI ENGINE] Inicializando instância Llama...');
-      llamaInstance = await getLlama();
+      llamaInstance = await getLlama({
+        debug: isDev // Ativa logs detalhados em desenvolvimento
+      });
       console.log('[AI ENGINE] Instância Llama pronta.');
     }
     
-    // No app empacotado, os modelos ficam em process.resourcesPath/models
+    // Caminho dos modelos internos
     const internalModelsDir = app.isPackaged 
       ? path.join(process.resourcesPath, 'models')
       : path.join(__dirname, 'models');
       
-    let finalModelPath = modelPath;
+    // Prioriza o modelo na pasta 'models' se existir qualquer .gguf lá
+    let finalModelPath = path.isAbsolute(modelPath) ? modelPath : path.resolve(process.cwd(), modelPath);
 
     if (fs.existsSync(internalModelsDir)) {
       const files = fs.readdirSync(internalModelsDir);
@@ -132,18 +136,32 @@ ipcMain.handle('ai:embeddedChat', async (event, { modelPath, messages, options }
       }
     }
 
-    if (!modelInstance || modelInstance.modelPath !== finalModelPath) {
+    // Só recarrega se o modelo mudou ou não existe
+    if (!modelInstance || currentModelPath !== finalModelPath) {
       console.log('[AI ENGINE] Carregando modelo do disco:', finalModelPath);
+      
       if (!fs.existsSync(finalModelPath)) {
-        throw new Error(`Arquivo não encontrado no caminho: ${finalModelPath}. Verifique se você moveu o .gguf para a pasta electron/models/`);
+        throw new Error(`Arquivo não encontrado: ${finalModelPath}`);
       }
       
-      modelInstance = await llamaInstance.loadModel({ 
-        modelPath: finalModelPath,
-        gpuLayers: -1, // -1 tenta usar o máximo de aceleração de GPU disponível
-        useMmap: true,
-      });
-      console.log('[AI ENGINE] Modelo carregado com aceleração otimizada.');
+      try {
+        console.log('[AI ENGINE] Tentando carregamento acelerado (GPU)...');
+        modelInstance = await llamaInstance.loadModel({ 
+          modelPath: finalModelPath,
+          gpuLayers: -1,
+          useMmap: true,
+        });
+      } catch (gpuError) {
+        console.warn('[AI ENGINE] Falha na GPU, tentando modo CPU/Compatibilidade:', gpuError.message);
+        modelInstance = await llamaInstance.loadModel({ 
+          modelPath: finalModelPath,
+          gpuLayers: 0,
+          useMmap: false, // Desativa mmap em modo de compatibilidade para evitar erros de memória
+        });
+      }
+      
+      currentModelPath = finalModelPath;
+      console.log('[AI ENGINE] Modelo carregado com sucesso.');
 
       // Detectar hardware para configuração adaptativa
       const hardware = await detectHardware();
@@ -154,10 +172,10 @@ ipcMain.handle('ai:embeddedChat', async (event, { modelPath, messages, options }
         contextSize: hardware.ramGB >= 16 ? 8192 : 4096,
         batchSize: hardware.ramGB >= 16 ? 512 : 256,
         threads: Math.max(1, Math.floor(hardware.cpuCores * 0.75)),
-        flashAttention: true,
+        flashAttention: false, // Desativado por padrão para maior compatibilidade
         // Quantização nativa do KV Cache baseada no hardware
         cacheTypeK: hardware.ramGB >= 16 ? 'q8_0' : 'q4_0',
-        cacheTypeV: 'q4_0' // Values são menos sensíveis, q4_0 economiza muita RAM
+        cacheTypeV: 'q4_0'
       };
 
       console.log(`[AI ENGINE] Criando contexto adaptativo (${hardware.tier} tier):`, contextConfig);
@@ -180,7 +198,7 @@ ipcMain.handle('ai:embeddedChat', async (event, { modelPath, messages, options }
     const session = new LlamaChatSession({ contextSequence: contextInstance.getSequence() });
     
     console.log('[AI ENGINE] Gerando resposta...');
-    const response = await session.prompt(smartContext.buildOptimizedPrompt(lastMessage), {
+    const response = await session.prompt(smartContext.buildOptimizedPrompt(), {
       maxTokens: options.max_tokens || 512,
       temperature: options.temperature || 0.7,
     });

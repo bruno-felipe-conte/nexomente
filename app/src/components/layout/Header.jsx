@@ -21,7 +21,7 @@ export default function Header({ title, onToggleSidebar }) {
 
   return (
     <header
-      className="flex items-center justify-between h-20 px-6 glass-panel !bg-[#0B0C13]/60 border-b border-white/5 sticky top-0 z-40"
+      className="flex items-center justify-between h-20 px-4 md:px-6 glass-panel !bg-[#0B0C13]/60 border-b border-white/5 sticky top-0 z-[100]"
       style={{ WebkitAppRegion: 'drag' }}
     >
       {/* Left: Menu toggle + Breadcrumb */}
@@ -39,8 +39,8 @@ export default function Header({ title, onToggleSidebar }) {
         </nav>
       </div>
 
-      {/* Center: Search */}
-      <div className="flex-1 max-w-lg mx-12" style={{ WebkitAppRegion: 'no-drag' }}>
+      {/* Center: Search — Hidden on mobile */}
+      <div className="hidden md:flex flex-1 max-w-lg mx-12" style={{ WebkitAppRegion: 'no-drag' }}>
         <div className="relative group">
           <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-lo/40 group-focus-within:text-accent-main transition-colors" />
           <input
@@ -80,12 +80,12 @@ export default function Header({ title, onToggleSidebar }) {
           <AnimatePresence>
             {isProfileOpen && (
               <>
-                <div className="fixed inset-0 z-40" onClick={() => setIsProfileOpen(false)} />
+                <div className="fixed inset-0 z-[110]" onClick={() => setIsProfileOpen(false)} />
                 <motion.div
                   initial={{ opacity: 0, y: 10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  className="absolute top-12 right-0 w-64 bg-surface-base border border-[#333] rounded-2xl shadow-2xl z-50 p-5 overflow-hidden"
+                  className="absolute top-12 right-0 w-64 bg-surface-base border border-[#333] rounded-2xl shadow-2xl z-[120] p-5 overflow-hidden"
                 >
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
@@ -119,7 +119,12 @@ export default function Header({ title, onToggleSidebar }) {
 
                   {/* Links de Gestão solicitados (Eletivos) */}
                   <div className="mt-6 pt-4 border-t border-[#333] grid grid-cols-2 gap-2">
-                    <button className="py-2 text-[9px] font-black uppercase tracking-widest text-text-lo hover:text-text-hi transition-colors bg-surface-elevated rounded-lg">Perfil</button>
+                    <button 
+                      onClick={() => { onNavigate('settings'); setIsProfileOpen(false); }}
+                      className="py-2 text-[9px] font-black uppercase tracking-widest text-text-lo hover:text-text-hi transition-colors bg-surface-elevated rounded-lg"
+                    >
+                      Config
+                    </button>
                     <button className="py-2 text-[9px] font-black uppercase tracking-widest text-text-lo hover:text-text-hi transition-colors bg-surface-elevated rounded-lg">Logout</button>
                   </div>
                 </motion.div>
