@@ -1,0 +1,12 @@
+{
+  "project": "NexoMente",
+  "version": "1.0.0",
+  "intel": {
+    "enabled": true,
+    "last_refresh": null
+  },
+  "conventions": {
+    "styles": "Vanilla CSS",
+    "frameworks": ["React", "Electron", "Vite"]
+  }
+}
