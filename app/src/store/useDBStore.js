@@ -13,9 +13,16 @@ const dbPromise = new Promise((resolve, reject) => {
 export async function initDB() {
   if (dbInstance) return dbInstance;
   
+  // Aguarda o script global SQL.js ser carregado (max 5s)
+  let attempts = 0;
+  while (!window.initSqlJs && attempts < 50) {
+    await new Promise(r => setTimeout(r, 100));
+    attempts++;
+  }
+  
   try {
     const initSql = window.initSqlJs;
-    if (!initSql) throw new Error("Aguardando carregamento do SQL.js...");
+    if (!initSql) throw new Error("Falha ao carregar motor SQL (Timeout). Verifique o index.html.");
     
     const SQL = await initSql({
       locateFile: () => `https://unpkg.com/sql.js@1.12.0/dist/sql-wasm.wasm`
