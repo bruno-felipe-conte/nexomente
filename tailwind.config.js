@@ -10,6 +10,7 @@ export default {
         'surface-card': 'var(--surface-card)',
         'surface-elevated': 'var(--surface-elevated)',
         'surface-border': 'var(--surface-border)',
+        'surface-input': 'var(--surface-input)',
         'bg-primary': 'var(--surface-base)',
         'bg-secondary': 'var(--surface-raised)',
         'bg-tertiary': 'var(--surface-card)',

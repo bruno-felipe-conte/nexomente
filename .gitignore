@@ -15,9 +15,9 @@ graphify-out/
 *.pyc
 __pycache__/
 
-# AI Models (Do not commit heavy models)
-electron/models/
-nexomente/electron/models/
+# AI Models (Libertados para portabilidade total)
+# assets/models/
+# electron/models/
 
 # Tooling & Cache
 .codegraph/

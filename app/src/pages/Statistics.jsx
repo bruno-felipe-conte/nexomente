@@ -3,18 +3,20 @@ import PropTypes from 'prop-types';
 import { useDBStore } from '../store/useDBStore';
 import { useNotes } from '../hooks/useNotes';
 import { useFlashcards } from '../hooks/useFlashcards';
+import { useTamagotchiStore } from '../store/useTamagotchiStore';
 import { BarChart3, TrendingUp, Clock, BookOpen, Trophy, Target } from 'lucide-react';
 import LevelCard from '../components/gamification/LevelCard';
 import ActivityHeatmap from '../components/gamification/ActivityHeatmap';
 import Card from '../components/ui/Card';
 
 export default function Statistics() {
-  const { SessoesEstudo, XP } = useDBStore();
+  const { SessoesEstudo } = useDBStore();
+  const { player } = useTamagotchiStore();
   const { notas } = useNotes();
   const { cards: flashcards } = useFlashcards();
   
   const sessoes = SessoesEstudo?.getAll() || [];
-  const xp = XP?.getTotal() || 0;
+  const xp = player.xp;
   
   const porTipo = (notas || []).reduce((acc, n) => {
     acc[n.tipo] = (acc[n.tipo] || 0) + 1;

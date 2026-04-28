@@ -132,6 +132,25 @@ function createTables(db) {
       created_at TEXT DEFAULT (datetime('now'))
     )
   `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS poemas (
+      id TEXT PRIMARY KEY,
+      titulo TEXT NOT NULL,
+      autor TEXT,
+      corpo TEXT NOT NULL,
+      epoca TEXT,
+      tema TEXT DEFAULT '[]',
+      forma TEXT,
+      tags TEXT DEFAULT '[]',
+      notas_usuario TEXT,
+      ano TEXT,
+      streak_recitacao INTEGER DEFAULT 0,
+      ultima_recitacao TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
   
   const pastas = db.exec("SELECT COUNT(*) as count FROM pastas")[0]?.values[0][0] || 0;
   if (pastas === 0) {
@@ -174,9 +193,32 @@ function createTables(db) {
 
 export function saveDB() {
   if (!dbInstance) return;
-  const data = dbInstance.export();
-  const base64 = btoa(String.fromCharCode.apply(null, data));
-  localStorage.setItem('nexomente_db', base64);
+  try {
+    const data = dbInstance.export();
+    
+    // Conversão segura de Uint8Array para Base64
+    let binary = '';
+    const bytes = new Uint8Array(data);
+    const len = bytes.byteLength;
+    for (let i = 0; i < len; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    const base64 = btoa(binary);
+    localStorage.setItem('nexomente_db', base64);
+    
+    // Notifica o Zustand que os dados mudaram (usando acesso tardio para evitar TDZ)
+    setTimeout(() => {
+      if (typeof useDBStore !== 'undefined' && useDBStore.getState().incrementVersion) {
+        useDBStore.getState().incrementVersion();
+      }
+    }, 0);
+  } catch (err) {
+    console.error('Erro crítico ao salvar banco de dados:', err);
+    // Tenta avisar o usuário se o localStorage estiver cheio
+    if (err.name === 'QuotaExceededError') {
+      alert('Aviso: Espaço de armazenamento cheio. Remova alguns itens para continuar salvando.');
+    }
+  }
 }
 
 export function getDB() {
@@ -188,6 +230,9 @@ export const useDBStore = create((set, get) => ({
   loading: true,
   error: null,
   totalXP: 0,
+  version: 0,
+  
+  incrementVersion: () => set(state => ({ version: state.version + 1 })),
   
   init: async () => {
     try {
@@ -496,5 +541,185 @@ export const useDBStore = create((set, get) => ({
       saveDB();
       get().syncXP();
     },
+  },
+
+  Poemas: {
+    getAll: () => {
+      const db = get().db;
+      if (!db) return [];
+      const result = db.exec("SELECT * FROM poemas ORDER BY created_at DESC");
+      if (!result[0]) return [];
+      return result[0].values.map(row => ({
+        id: row[0],
+        titulo: row[1],
+        autor: row[2],
+        corpo: row[3],
+        epoca: row[4],
+        tema: JSON.parse(row[5] || '[]'),
+        forma: row[6],
+        tags: JSON.parse(row[7] || '[]'),
+        notas_usuario: row[8],
+        ano: row[9],
+        streak_recitacao: row[10],
+        ultima_recitacao: row[11],
+        created_at: row[12],
+        updated_at: row[13]
+      }));
+    },
+
+    getById: (id) => {
+      const db = get().db;
+      if (!db) return null;
+      const result = db.exec("SELECT * FROM poemas WHERE id = ?", [id]);
+      if (!result[0]?.values[0]) return null;
+      const row = result[0].values[0];
+      return {
+        id: row[0],
+        titulo: row[1],
+        autor: row[2],
+        corpo: row[3],
+        epoca: row[4],
+        tema: JSON.parse(row[5] || '[]'),
+        forma: row[6],
+        tags: JSON.parse(row[7] || '[]'),
+        notas_usuario: row[8],
+        ano: row[9],
+        streak_recitacao: row[10],
+        ultima_recitacao: row[11],
+        created_at: row[12],
+        updated_at: row[13]
+      };
+    },
+
+    createMany: (list) => {
+      const db = get().db;
+      if (!db || !Array.isArray(list)) return;
+      try {
+        db.run("BEGIN TRANSACTION");
+        const now = new Date().toISOString();
+        const stmt = db.prepare(`INSERT INTO poemas (id, titulo, autor, corpo, epoca, tema, forma, tags, notas_usuario, ano) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+        
+        list.forEach(p => {
+          const id = `poema_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+          stmt.run([
+            id, p.titulo || 'Sem título', p.autor || '', p.corpo || '', 
+            p.epoca || '', JSON.stringify(p.tema || []), p.forma || '', 
+            JSON.stringify(p.tags || []), p.notas_usuario || '', p.ano || ''
+          ]);
+        });
+        
+        stmt.free();
+        db.run("COMMIT");
+        saveDB();
+      } catch (err) {
+        db.run("ROLLBACK");
+        console.error('Erro ao salvar lote de poemas:', err);
+        throw err;
+      }
+    },
+
+    create: (p) => {
+      const db = get().db;
+      if (!db) return;
+      try {
+        const id = p.id || `poema_${Date.now()}`;
+        db.run(
+          `INSERT INTO poemas (id, titulo, autor, corpo, epoca, tema, forma, tags, notas_usuario, ano) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            id, 
+            p.titulo, 
+            p.autor || '', 
+            p.corpo, 
+            p.epoca || '', 
+            JSON.stringify(p.tema || []), 
+            p.forma || '', 
+            JSON.stringify(p.tags || []),
+            p.notas_usuario || '',
+            p.ano || ''
+          ]
+        );
+        saveDB();
+        return id;
+      } catch (err) {
+        console.error('Erro ao criar poema:', err);
+        return null;
+      }
+    },
+
+    update: (id, updates) => {
+      const db = get().db;
+      if (!db) return;
+      const fields = [];
+      const values = [];
+      
+      const map = {
+        titulo: 'titulo', autor: 'autor', corpo: 'corpo', 
+        epoca: 'epoca', forma: 'forma', notas_usuario: 'notas_usuario',
+        ano: 'ano'
+      };
+
+      for (const [key, field] of Object.entries(map)) {
+        if (updates[key] !== undefined) {
+          fields.push(`${field} = ?`);
+          values.push(updates[key]);
+        }
+      }
+
+      if (updates.tema !== undefined) {
+        fields.push('tema = ?');
+        values.push(JSON.stringify(updates.tema));
+      }
+
+      if (updates.tags !== undefined) {
+        fields.push('tags = ?');
+        values.push(JSON.stringify(updates.tags));
+      }
+
+      if (fields.length === 0) return;
+      
+      fields.push("updated_at = datetime('now')");
+      values.push(id);
+      
+      db.run(`UPDATE poemas SET ${fields.join(', ')} WHERE id = ?`, values);
+      saveDB();
+    },
+
+    delete: (id) => {
+      const db = get().db;
+      if (!db) return;
+      db.run("DELETE FROM poemas WHERE id = ?", [id]);
+      saveDB();
+    },
+
+    registrarRecitacao: (id) => {
+      const db = get().db;
+      if (!db) return;
+      const p = get().Poemas.getById(id);
+      if (!p) return;
+
+      const hoje = new Date().toISOString().split('T')[0];
+      const ultima = p.ultima_recitacao ? p.ultima_recitacao.split('T')[0] : null;
+      
+      let novoStreak = p.streak_recitacao || 0;
+      if (ultima !== hoje) {
+        if (ultima) {
+          const ontem = new Date();
+          ontem.setDate(ontem.getDate() - 1);
+          const ontemStr = ontem.toISOString().split('T')[0];
+          if (ultima === ontemStr) novoStreak += 1;
+          else novoStreak = 1;
+        } else {
+          novoStreak = 1;
+        }
+      }
+
+      db.run(
+        "UPDATE poemas SET streak_recitacao = ?, ultima_recitacao = ?, updated_at = datetime('now') WHERE id = ?",
+        [novoStreak, new Date().toISOString(), id]
+      );
+      saveDB();
+      return novoStreak;
+    }
   },
 }));

@@ -98,7 +98,7 @@ export default function Sidebar({ isOpen, currentPage, onNavigate, className = '
   const providerLabel = provider === 'embedded' ? 'Motor Interno' : (provider === 'cloud' ? 'Gemini Cloud' : 'LM Studio');
 
   return (
-    <aside className={`hidden md:flex flex-col glass-panel !bg-[#0B0C13]/80 border-r border-white/5 transition-all duration-500 ease-in-out ${isOpen ? 'w-64' : 'w-20'} ${className}`}>
+    <aside className={`hidden lg:flex flex-col glass-panel !bg-[#0B0C13]/80 border-r border-white/5 transition-all duration-500 ease-in-out ${isOpen ? 'w-64' : 'w-20'} ${className}`}>
       {/* Cabeçalho Minimalista */}
       <div className="h-20 flex items-center px-6 shrink-0">
         <div className="flex items-center gap-3 group cursor-pointer">

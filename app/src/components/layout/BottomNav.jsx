@@ -12,7 +12,7 @@ export default function BottomNav({ currentPage, onNavigate }) {
   ];
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#0B0C13]/90 backdrop-blur-xl border-t border-white/5 flex items-center justify-around px-2 z-[100]">
+    <div className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#0B0C13]/90 backdrop-blur-xl border-t border-white/5 flex items-center justify-around px-2 z-[100]">
       {items.map((item) => {
         const Icon = item.icon;
         const isActive = currentPage === item.id;
@@ -20,12 +20,12 @@ export default function BottomNav({ currentPage, onNavigate }) {
           <button
             key={item.id}
             onClick={() => onNavigate(item.id)}
-            className={`flex flex-col items-center justify-center gap-1 transition-all ${isActive ? 'text-accent-main' : 'text-text-lo hover:text-text-mid'}`}
+            className={`flex flex-col items-center justify-center min-w-[45px] gap-0.5 transition-all ${isActive ? 'text-accent-main' : 'text-text-lo hover:text-text-mid'}`}
           >
-            <div className={`p-1.5 rounded-xl ${isActive ? 'bg-accent-main/10 shadow-glow-violet' : ''}`}>
-               <Icon size={20} />
+            <div className={`p-1 rounded-xl ${isActive ? 'bg-accent-main/10 shadow-glow-violet' : ''}`}>
+               <Icon size={18} />
             </div>
-            <span className="text-[9px] font-bold uppercase tracking-tighter">{item.label}</span>
+            <span className="hidden min-[360px]:inline-block text-[7px] sm:text-[9px] font-bold uppercase tracking-tighter">{item.label}</span>
           </button>
         );
       })}

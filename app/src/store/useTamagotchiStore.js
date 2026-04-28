@@ -46,6 +46,18 @@ function getLevelData(xp) {
   return current;
 }
 
+function getLevelProgress(xp) {
+  const current = getLevelData(xp);
+  const nextIdx = TAMAGOTCHI_LEVELS.indexOf(current) + 1;
+  const next = TAMAGOTCHI_LEVELS[nextIdx];
+  
+  if (!next) return 100; // Nível máximo
+  
+  const range = next.xp - current.xp;
+  const currentProgress = xp - current.xp;
+  return Math.min(100, Math.max(0, (currentProgress / range) * 100));
+}
+
 function getStreakMultiplier(streak) {
   if (streak >= 30) return 3;
   if (streak >= 14) return 2.5;
@@ -266,4 +278,4 @@ export const useTamagotchiStore = create(
   )
 );
 
-export { TAMAGOTCHI_LEVELS, getLevelData };
+export { TAMAGOTCHI_LEVELS, getLevelData, getLevelProgress };

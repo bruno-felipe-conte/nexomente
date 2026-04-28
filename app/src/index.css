@@ -270,9 +270,9 @@ body { font-family: 'DM Sans', system-ui, sans-serif; background-color: var(--su
 }
 
 /* ── RESPONSIVIDADE (Mobile First) ───────────────────────── */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   aside {
-    display: none; /* Esconde sidebar no mobile (usará BottomNav) */
+    display: none !important; /* Esconde sidebar no mobile/tablet (usará BottomNav) */
   }
   
   .main-content {

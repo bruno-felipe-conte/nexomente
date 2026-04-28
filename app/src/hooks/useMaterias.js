@@ -1,9 +1,9 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useDBStore } from '../store/useDBStore';
 
 export function useMaterias() {
-  const { Materias, loading } = useDBStore();
-  const materias = Materias?.getAll() || [];
+  const { Materias, loading, version } = useDBStore();
+  const materias = useMemo(() => Materias?.getAll() || [], [Materias, version]);
 
   const create = useCallback((data = {}) => {
     return Materias.create({
@@ -29,42 +29,45 @@ export function useMaterias() {
   return { materias, loading, create, update, remove, getById };
 }
 
-// TODO: Migrate Poemas to SQLite. For now, we'll keep them in a safe wrapper.
-const POEMAS_KEY = 'nexomente_poemas';
-
 export function usePoemas() {
-  const getStored = () => {
-    try {
-      const stored = localStorage.getItem(POEMAS_KEY);
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  };
-
-  const poemas = getStored();
-
-  const persist = (lista) => {
-    localStorage.setItem(POEMAS_KEY, JSON.stringify(lista));
-  };
+  const { Poemas, loading, version } = useDBStore();
+  const poemas = useMemo(() => Poemas?.getAll() || [], [Poemas, version]);
 
   const create = useCallback((data = {}) => {
-    const id = `poema_${Date.now()}`;
-    const novo = {
-      id,
-      titulo: data.titulo || 'Novo Poema',
-      autor: data.autor || '',
-      corpo: data.corpo || '',
-      tags: data.tags || [],
-      data_cadastro: new Date().toISOString(),
-    };
-    persist([...getStored(), novo]);
-    return id;
-  }, []);
+    return Poemas.create(data);
+  }, [Poemas]);
+
+  const createMany = useCallback((list = []) => {
+    return Poemas.createMany(list);
+  }, [Poemas]);
+
+  const update = useCallback((id, data) => {
+    return Poemas.update(id, data);
+  }, [Poemas]);
 
   const remove = useCallback((id) => {
-    persist(getStored().filter(p => p.id !== id));
-  }, []);
+    return Poemas.delete(id);
+  }, [Poemas]);
 
-  return { poemas, create, remove };
+  const getById = useCallback((id) => {
+    return Poemas.getById(id);
+  }, [Poemas]);
+
+  const registrarRecitacao = useCallback((id) => {
+    return Poemas.registrarRecitacao(id);
+  }, [Poemas]);
+
+  const proximoPoema = useCallback((id) => {
+    const idx = poemas.findIndex(p => p.id === id);
+    if (idx === -1 || idx === poemas.length - 1) return poemas[0];
+    return poemas[idx + 1];
+  }, [poemas]);
+
+  const poemaAnterior = useCallback((id) => {
+    const idx = poemas.findIndex(p => p.id === id);
+    if (idx === -1 || idx === 0) return poemas[poemas.length - 1];
+    return poemas[idx - 1];
+  }, [poemas]);
+
+  return { poemas, loading, create, createMany, update, remove, getById, registrarRecitacao, proximoPoema, poemaAnterior };
 }

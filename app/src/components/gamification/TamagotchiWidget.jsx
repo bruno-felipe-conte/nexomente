@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useTamagotchiStore, getLevelData } from '../../store/useTamagotchiStore';
+import { useTamagotchiStore, getLevelData, getLevelProgress } from '../../store/useTamagotchiStore';
 import Card from '../ui/Card';
 import Badge from '../ui/Badge';
 
@@ -139,17 +139,35 @@ export default function TamagotchiWidget({ className = '' }) {
             </div>
           </div>
 
-          {/* XP Summary */}
-          <div className="glass-panel-light p-3 rounded-2xl flex items-center justify-between">
-             <div className="flex flex-col items-start">
-                <span className="text-[9px] font-bold uppercase tracking-widest text-text-lo">Experiência</span>
-                <span className="text-sm font-bold text-text-hi">{player.xp} <span className="text-text-lo text-[10px]">XP TOTAL</span></span>
+          {/* XP Summary & Progress */}
+          <div className="glass-panel-light p-4 rounded-2xl space-y-3">
+             <div className="flex items-center justify-between">
+                <div className="flex flex-col items-start">
+                   <span className="text-[9px] font-bold uppercase tracking-widest text-text-lo">Experiência</span>
+                   <span className="text-sm font-bold text-text-hi">{player.xp} <span className="text-text-lo text-[10px]">XP TOTAL</span></span>
+                </div>
+                <div className="flex flex-col items-end">
+                   <span className="text-[9px] font-bold uppercase tracking-widest text-text-lo">Streak</span>
+                   <span className="text-sm font-bold text-color-warning flex items-center gap-1">
+                      🔥 {player.streak}d
+                   </span>
+                </div>
              </div>
-             <div className="flex flex-col items-end">
-                <span className="text-[9px] font-bold uppercase tracking-widest text-text-lo">Streak</span>
-                <span className="text-sm font-bold text-color-warning flex items-center gap-1">
-                   🔥 {player.streak}d
-                </span>
+             
+             {/* XP Progress Bar (Synced with Egg/Pet) */}
+             <div className="space-y-1.5 pt-1">
+                <div className="flex justify-between text-[8px] font-black uppercase tracking-tighter text-text-lo/40">
+                   <span>Progresso para Nível {player.level + 1}</span>
+                   <span>{Math.round(getLevelProgress(player.xp))}%</span>
+                </div>
+                <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+                   <motion.div 
+                     className="h-full bg-accent-main shadow-[0_0_8px_rgba(var(--color-accent-rgb),0.3)]"
+                     initial={{ width: 0 }}
+                     animate={{ width: `${getLevelProgress(player.xp)}%` }}
+                     transition={{ duration: 1.5, type: "spring" }}
+                   />
+                </div>
              </div>
           </div>
         </div>

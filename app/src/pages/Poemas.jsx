@@ -5,7 +5,7 @@ import PoemasGerenciador from '../components/poemas/PoemasGerenciador';
 
 export default function PoemasPage() {
   const { getById } = usePoemas();
-  const [tela, setTela] = useState('leitura'); // 'leitura' | 'gerenciar'
+  const [tela, setTela] = useState('gerenciar'); // Default agora é gerenciar
   const [poemaSelecionado, setPoemaSelecionado] = useState(null);
 
   // Garante que se houve edição o poema selecionado seja atualizado

@@ -6,7 +6,7 @@ import { execSync } from 'child_process';
  */
 export async function detectHardware() {
   const hardware = {
-    ramGB: Math.floor(os.totalmem() / 1024 / 1024 / 1024),
+    ramGB: Math.round(os.totalmem() / 1024 / 1024 / 1024),
     cpuCores: os.cpus().length,
     cpuModel: os.cpus()[0]?.model || 'Unknown',
     hasGPU: false,

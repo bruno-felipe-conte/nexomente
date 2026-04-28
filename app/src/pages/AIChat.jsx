@@ -107,20 +107,20 @@ export default function AIChatPage({ onNavigate }) {
             <motion.div 
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mb-8 md:mb-12 text-center"
+              className="mb-6 md:mb-12 text-center w-full"
             >
-              <h1 className="text-[32px] md:text-[44px] font-serif text-text-hi tracking-tight leading-tight mb-2 px-4">Boa noite, bruno</h1>
+              <h1 className="text-2xl md:text-[44px] font-serif text-text-hi tracking-tight leading-tight mb-2 px-6">Boa noite, bruno</h1>
             </motion.div>
 
             <div className="w-full max-w-2xl relative px-4 md:px-0">
               {/* Hub de Input Alta Fidelidade */}
-              <div className="bg-bg-secondary/30 border border-white/5 rounded-[1.5rem] p-4 pb-3 shadow-2xl transition-all focus-within:bg-bg-secondary/50">
+              <div className="bg-bg-secondary/30 border border-white/5 rounded-[1.2rem] md:rounded-[1.5rem] p-3 md:p-4 pb-2 md:pb-3 shadow-2xl transition-all focus-within:bg-bg-secondary/50">
                 <textarea
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(); } }}
                   placeholder="Como posso ajudar você hoje?"
-                  className="w-full bg-transparent border-none p-2 text-lg text-text-hi placeholder-text-lo/20 focus:outline-none focus:ring-0 resize-none min-h-[50px] leading-relaxed"
+                  className="w-full bg-transparent border-none p-2 text-base md:text-lg text-text-hi placeholder-text-lo/20 focus:outline-none focus:ring-0 resize-none min-h-[40px] md:min-h-[50px] leading-relaxed"
                 />
                 
                 <div className="flex items-center justify-between mt-2">
@@ -260,12 +260,12 @@ export default function AIChatPage({ onNavigate }) {
               </div>
 
               {/* Botões de Ação Sugerida */}
-              <div className="flex flex-wrap justify-center gap-2 mt-6">
+              <div className="flex flex-wrap justify-center gap-1.5 md:gap-2 mt-4 md:mt-6 px-2">
                 {TEMPLATES.map(tpl => (
                   <button 
                     key={tpl.id} 
                     onClick={() => enviar(tpl.prompt)}
-                    className="px-4 py-2 border border-white/[0.05] rounded-full text-[12px] font-medium text-text-lo/60 hover:text-text-hi hover:bg-white/5 hover:border-white/10 transition-all cursor-pointer"
+                    className="px-3 md:px-4 py-1.5 md:py-2 border border-white/[0.05] rounded-full text-[10px] md:text-[12px] font-medium text-text-lo/60 hover:text-text-hi hover:bg-white/5 hover:border-white/10 transition-all cursor-pointer"
                   >
                     {tpl.label}
                   </button>
@@ -302,32 +302,32 @@ export default function AIChatPage({ onNavigate }) {
         )}
       </div>
 
-      {/* Input Flutuante Sticky (Mesma Estética) — Sobe no mobile para não cobrir a BottomNav */}
+      {/* Input Flutuante Integrado ao Fluxo */}
       {mensagens.length > 0 && (
-        <div className="fixed bottom-16 md:bottom-0 left-0 right-0 p-3 md:p-8 bg-gradient-to-t from-bg-primary via-bg-primary/80 to-transparent z-30">
-          <div className="max-w-3xl mx-auto w-full relative">
-            <div className="bg-bg-secondary border border-white/5 rounded-[1.2rem] md:rounded-[1.5rem] p-2 md:p-3 shadow-2xl flex flex-col gap-2">
-              <div className="flex items-end gap-3 px-1">
+        <div className="w-full bg-bg-primary/80 backdrop-blur-md border-t border-white/5 p-2 sm:p-3 md:p-6 lg:p-8 z-30">
+          <div className="max-w-3xl mx-auto w-full flex flex-col gap-3">
+            <div className="bg-bg-secondary/95 backdrop-blur-xl border border-white/10 rounded-2xl md:rounded-[1.5rem] p-2 md:p-3 shadow-2xl flex flex-col gap-2">
+              <div className="flex items-end gap-2 md:gap-3">
                 <textarea
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(); } }}
                   placeholder="Responder..."
                   rows={1}
-                  className="flex-1 bg-transparent border-none p-2 text-sm text-text-hi placeholder-text-lo/20 focus:outline-none focus:ring-0 resize-none min-h-[36px]"
+                  className="flex-1 bg-transparent border-none p-2 text-sm text-text-hi placeholder-text-lo/30 focus:outline-none focus:ring-0 resize-none min-h-[40px] max-h-40 overflow-y-auto"
                 />
                 <button 
                   onClick={() => enviar()} 
                   disabled={loading || !input.trim()}
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
-                    input.trim() ? 'bg-accent-main text-white' : 'bg-white/5 text-text-lo/10'
+                  className={`w-10 h-10 shrink-0 rounded-xl flex items-center justify-center transition-all ${
+                    input.trim() ? 'bg-accent-main text-white shadow-lg shadow-accent-main/20' : 'bg-white/5 text-text-lo/20'
                   }`}
                 >
-                  <Send size={16} />
+                  <Send size={18} />
                 </button>
               </div>
               
-              <div className="flex items-center gap-2 px-1">
+              <div className="flex items-center gap-2 px-1 pb-1">
                  <button 
                     onClick={(e) => { e.stopPropagation(); setShowAttachMenu(!showAttachMenu); }}
                     className="p-1.5 rounded-lg text-text-lo/40 hover:bg-white/5 transition-all"

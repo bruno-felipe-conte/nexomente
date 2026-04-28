@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, session } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, session, screen } from 'electron';
 import path, { join, dirname } from 'path';
 import fs, { readFileSync, writeFileSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
@@ -36,11 +36,15 @@ app.whenReady().then(() => {
 });
 
 function createWindow() {
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width: screenWidth } = primaryDisplay.workAreaSize;
+  const minAppWidth = Math.floor(screenWidth * 0.325); // Ajustado para 2.6 vezes a largura base (32.5% da tela)
+
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
-    minWidth: 800,
-    minHeight: 600,
+    minWidth: minAppWidth,
+    minHeight: 500,
     frame: false,
     titleBarStyle: 'hiddenInset',
     webPreferences: {
@@ -50,6 +54,9 @@ function createWindow() {
     },
     backgroundColor: '#0F0E17',
   });
+
+  // FORÇAR BLOQUEIO MÍNIMO (32.5% da largura da tela)
+  mainWindow.setMinimumSize(Math.floor(screenWidth * 0.325), 500);
 
   if (isDev) {
     mainWindow.loadURL('http://localhost:5173');

@@ -2,24 +2,17 @@ import React from 'react';
 import { Zap, Star, Trophy } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const LEVELS = [
-  { min: 0, max: 100, label: "Aprendiz Curioso", icon: "🌱", color: "from-green-500 to-emerald-600" },
-  { min: 101, max: 300, label: "Estudante Iniciante", icon: "📖", color: "from-blue-500 to-indigo-600" },
-  { min: 301, max: 600, label: "Estudante Dedicado", icon: "🔥", color: "from-orange-500 to-red-600" },
-  { min: 601, max: 1000, label: "Explorador do Saber", icon: "🏔️", color: "from-purple-500 to-pink-600" },
-  { min: 1001, max: Infinity, label: "Mestre do Conhecimento", icon: "👑", color: "from-yellow-500 to-amber-600" }
-];
+import { TAMAGOTCHI_LEVELS, getLevelData, getLevelProgress } from '../../store/useTamagotchiStore';
 
 export default function LevelCard({ xp }) {
-  const currentLevel = LEVELS.find(l => xp >= l.min && xp <= l.max) || LEVELS[0];
-  const nextLevel = LEVELS[LEVELS.indexOf(currentLevel) + 1];
+  const currentLevelData = getLevelData(xp);
+  const nextIdx = TAMAGOTCHI_LEVELS.indexOf(currentLevelData) + 1;
+  const nextLevelData = TAMAGOTCHI_LEVELS[nextIdx];
   
-  const progress = nextLevel 
-    ? ((xp - currentLevel.min) / (currentLevel.max - currentLevel.min)) * 100 
-    : 100;
+  const progress = getLevelProgress(xp);
 
   return (
-    <div className={`relative overflow-hidden bg-gradient-to-br ${currentLevel.color} p-6 rounded-2xl shadow-xl text-white`}>
+    <div className={`relative overflow-hidden bg-gradient-to-br ${currentLevelData.level > 20 ? 'from-purple-600 to-indigo-900' : 'from-green-500 to-emerald-600'} p-6 rounded-2xl shadow-xl text-white`}>
       {/* Background Decor */}
       <div className="absolute top-0 right-0 p-2 opacity-10 rotate-12">
          <Trophy size={120} />
@@ -28,7 +21,7 @@ export default function LevelCard({ xp }) {
       <div className="relative z-10 flex flex-col md:flex-row items-center gap-6">
         <div className="relative">
           <div className="w-20 h-20 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-4xl shadow-inner">
-            {currentLevel.icon}
+            {currentLevelData.form}
           </div>
           <motion.div 
             initial={{ scale: 0 }}
@@ -41,16 +34,16 @@ export default function LevelCard({ xp }) {
 
         <div className="flex-1 space-y-2 text-center md:text-left">
           <div className="flex items-center justify-center md:justify-start gap-2">
-            <h2 className="text-2xl font-black font-display tracking-tight">{currentLevel.label}</h2>
+            <h2 className="text-2xl font-black font-display tracking-tight">{currentLevelData.name}</h2>
             <span className="px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-bold uppercase tracking-widest">
-              Level {LEVELS.indexOf(currentLevel) + 1}
+              Level {currentLevelData.level}
             </span>
           </div>
           
           <div className="space-y-1">
             <div className="flex justify-between items-end">
-              <span className="text-xs font-bold opacity-80 uppercase tracking-wider">Progresso de XP</span>
-              <span className="text-sm font-black">{xp} / {nextLevel ? currentLevel.max : 'MAX'}</span>
+              <span className="text-xs font-bold opacity-80 uppercase tracking-wider">{currentLevelData.title}</span>
+              <span className="text-sm font-black">{xp} / {nextLevelData ? nextLevelData.xp : 'MAX'}</span>
             </div>
             <div className="h-3 w-full bg-black/10 rounded-full overflow-hidden border border-white/10 p-0.5">
               <motion.div 

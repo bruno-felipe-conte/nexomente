@@ -11,7 +11,7 @@ const QUALITY_PRESETS = {
     cacheTypeK: 'q8_0',
     cacheTypeV: 'q4_0',
     contextSize: 8192,
-    minRAM: 16,
+    minRAM: 14,
     color: 'text-purple-400',
     borderColor: 'border-purple-500/30'
   },
@@ -118,7 +118,7 @@ export default function AIPerformancePanel() {
               {!isCompatible && (
                 <div className="mt-4 flex items-center gap-2 text-[10px] text-color-error font-bold uppercase">
                    <Info size={12} />
-                   Requer {preset.minRAM}GB+ RAM
+                   Requer {preset.minRAM}GB RAM
                 </div>
               )}
             </Card>

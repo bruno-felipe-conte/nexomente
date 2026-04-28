@@ -5,21 +5,24 @@ import Card from '../components/ui/Card';
 import { 
   Settings as SettingsIcon, Bell, Shield, User, 
   Database, Trash2, Cpu, Globe, RefreshCcw, 
-  AlertTriangle, Sparkles, Key, Save, Download
+  AlertTriangle, Sparkles, Key, Save, Download, Mic
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAIModel } from '../hooks/useAIModel';
+import { useUIStore } from '../store/useUIStore';
 import toast from 'react-hot-toast';
+import RecitacaoSettings from '../components/settings/RecitacaoSettings';
 
 export default function Settings() {
   const { provider, setProvider, apiKey, setApiKey } = useAIModel();
+  const { userName: globalUserName, setUserName: setGlobalUserName } = useUIStore();
   const [activeTab, setActiveTab] = useState('perf');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteType, setDeleteType] = useState(null);
 
   // Estados Locais de UI (Não globais)
   const [localApiKey, setLocalApiKey] = useState(() => apiKey || '');
-  const [userName, setUserName] = useState(localStorage.getItem('nexomente_user_name') || 'bruno');
+  const [userName, setUserName] = useState(() => globalUserName);
   const [notifStudy, setNotifStudy] = useState(localStorage.getItem('nexomente_notif_study') === 'true');
 
   const saveConfig = (key, value, setter) => {
@@ -63,6 +66,7 @@ export default function Settings() {
 
   const TABS = [
     { id: 'perf', label: 'Inteligência Artificial', icon: Cpu },
+    { id: 'recitacao', label: 'Recitação (Whisper)', icon: Mic },
     { id: 'privacy', label: 'Dados & Segurança', icon: Shield },
     { id: 'profile', label: 'Perfil do Usuário', icon: User },
     { id: 'notify', label: 'Notificações', icon: Bell },
@@ -103,69 +107,84 @@ export default function Settings() {
           
           {activeTab === 'perf' && (
             <div className="space-y-10 animate-in fade-in duration-500">
-              <section className="space-y-6">
-                <div className="flex flex-col gap-1 px-2">
-                  <h3 className="text-lg font-serif font-bold text-text-hi">Provedor de Inteligência</h3>
-                  <p className="text-xs text-text-lo/40">Escolha o motor de processamento.</p>
-                </div>
+              {/* Painel Unificado de IA */}
+              <div className="glass-panel border-white/5 rounded-[2.5rem] overflow-hidden bg-white/[0.01]">
+                {/* Seção Superior: Provedor */}
+                <div className="p-8 space-y-8 border-b border-white/5 bg-white/[0.01]">
+                  <div className="flex flex-col gap-1">
+                    <h3 className="text-lg font-serif font-bold text-text-hi flex items-center gap-2">
+                      <Globe size={20} className="text-accent-main" />
+                      Motor de Inteligência
+                    </h3>
+                    <p className="text-xs text-text-lo/40">Defina onde o processamento da sua rede neural acontece.</p>
+                  </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {[
-                    { id: 'cloud', label: 'Gemini Pro', icon: Globe, desc: 'API Cloud (Alta performance)', color: 'text-blue-400' },
-                    { id: 'local', label: 'LM Studio', icon: Cpu, desc: 'Localhost (Privacidade)', color: 'text-accent-main' },
-                    { 
-                      id: 'embedded', 
-                      label: 'Interno', 
-                      icon: Sparkles, 
-                      desc: window.electronAPI ? 'Nativo NexoMente' : 'Apenas no Desktop', 
-                      color: window.electronAPI ? 'text-purple-400' : 'text-text-lo/20',
-                      disabled: !window.electronAPI 
-                    },
-                  ].map(opt => (
-                    <button
-                      key={opt.id}
-                      disabled={opt.disabled}
-                      onClick={() => setProvider(opt.id)}
-                      className={`p-6 rounded-3xl border transition-all text-left flex flex-col gap-4 group relative ${provider === opt.id ? 'bg-white/5 border-accent-main/30' : 'bg-transparent border-white/5 hover:border-white/10'} ${opt.disabled ? 'opacity-40 cursor-not-allowed grayscale' : ''}`}
-                    >
-                      <div className={`w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center ${opt.color}`}>
-                        <opt.icon size={20} />
-                      </div>
-                      <div>
-                        <p className={`text-sm font-bold ${provider === opt.id ? 'text-text-hi' : 'text-text-lo'}`}>{opt.label}</p>
-                        <p className="text-[10px] text-text-lo/40 uppercase tracking-widest mt-1">{opt.desc}</p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-
-                {provider === 'cloud' && (
-                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-6 bg-white/[0.02] border border-white/5 rounded-3xl space-y-4">
-                    <div className="flex items-center gap-2 text-text-hi">
-                      <Key size={16} className="text-blue-400" />
-                      <span className="text-xs font-bold uppercase tracking-widest">Gemini API Key</span>
-                    </div>
-                    <div className="flex gap-2">
-                      <input 
-                        type="password"
-                        value={localApiKey}
-                        onChange={e => setLocalApiKey(e.target.value)}
-                        placeholder="Insira sua chave API do Google AI Studio..."
-                        className="flex-1 bg-bg-secondary border border-white/5 rounded-xl px-4 py-3 text-sm text-text-hi placeholder-text-lo/20 focus:border-blue-400 focus:outline-none"
-                      />
-                      <button 
-                        onClick={() => saveConfig('nexomente_gemini_key', localApiKey)}
-                        className="px-6 py-3 bg-blue-500 text-white rounded-xl font-bold text-xs hover:bg-blue-600 transition-all flex items-center gap-2"
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {[
+                      { id: 'cloud', label: 'Gemini Pro', icon: Globe, desc: 'Alta Performance (Cloud)', color: 'text-blue-400' },
+                      { id: 'local', label: 'LM Studio', icon: Cpu, desc: 'Privacidade Total (Local)', color: 'text-accent-main' },
+                      { 
+                        id: 'embedded', 
+                        label: 'Interno', 
+                        icon: Sparkles, 
+                        desc: window.electronAPI ? 'Nativo NexoMente' : 'Apenas Desktop', 
+                        color: window.electronAPI ? 'text-purple-400' : 'text-text-lo/20',
+                        disabled: !window.electronAPI 
+                      },
+                    ].map(opt => (
+                      <button
+                        key={opt.id}
+                        disabled={opt.disabled}
+                        onClick={() => setProvider(opt.id)}
+                        className={`p-5 rounded-3xl border transition-all text-left flex flex-col gap-3 group relative ${provider === opt.id ? 'bg-white/5 border-accent-main/30 ring-1 ring-accent-main/20' : 'bg-transparent border-white/5 hover:border-white/10'} ${opt.disabled ? 'opacity-40 cursor-not-allowed grayscale' : ''}`}
                       >
-                        <Save size={14} /> Salvar
+                        <div className={`w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center ${opt.color}`}>
+                          <opt.icon size={20} />
+                        </div>
+                        <div>
+                          <p className={`text-sm font-bold ${provider === opt.id ? 'text-text-hi' : 'text-text-lo'}`}>{opt.label}</p>
+                          <p className="text-[9px] text-text-lo/40 uppercase tracking-widest mt-0.5">{opt.desc}</p>
+                        </div>
                       </button>
-                    </div>
-                    <p className="text-[10px] text-text-lo/30">Sua chave é armazenada apenas localmente no seu dispositivo.</p>
-                  </motion.div>
-                )}
-              </section>
+                    ))}
+                  </div>
 
-              <AIPerformancePanel />
+                  {provider === 'cloud' && (
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl space-y-4">
+                      <div className="flex items-center gap-2 text-text-hi">
+                        <Key size={14} className="text-blue-400" />
+                        <span className="text-[10px] font-bold uppercase tracking-widest">Configuração de Chave</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <input 
+                          type="password"
+                          value={localApiKey}
+                          onChange={e => setLocalApiKey(e.target.value)}
+                          placeholder="Gemini API Key..."
+                          className="flex-1 bg-bg-secondary border border-white/5 rounded-xl px-4 py-2.5 text-sm text-text-hi focus:border-blue-400 focus:outline-none"
+                        />
+                        <button 
+                          onClick={() => saveConfig('nexomente_gemini_key', localApiKey)}
+                          className="px-6 py-2.5 bg-blue-500 text-white rounded-xl font-bold text-xs hover:bg-blue-600 transition-all flex items-center gap-2"
+                        >
+                          Salvar
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+
+                {/* Seção Inferior: Performance (Conectada) */}
+                <div className="p-8 bg-black/20">
+                  <AIPerformancePanel />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'recitacao' && (
+            <div className="space-y-10 animate-in fade-in duration-500">
+              <RecitacaoSettings />
             </div>
           )}
 
@@ -228,7 +247,10 @@ export default function Settings() {
                     />
                   </div>
                   <button 
-                    onClick={() => saveConfig('nexomente_user_name', userName)}
+                    onClick={() => {
+                      setGlobalUserName(userName);
+                      toast.success('Perfil atualizado com sucesso');
+                    }}
                     className="w-full py-4 bg-accent-main text-white rounded-2xl font-black uppercase tracking-widest text-[11px] hover:scale-[1.02] transition-all"
                   >
                     Salvar Perfil

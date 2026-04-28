@@ -197,7 +197,7 @@ function App() {
 
         <main
           id="main-content"
-          className="main-content flex-1 overflow-auto focus:outline-none relative z-10 custom-scrollbar pb-16 md:pb-0"
+          className="main-content flex-1 overflow-auto focus:outline-none relative z-10 custom-scrollbar pb-16 lg:pb-0 max-w-[1440px] mx-auto w-full"
           tabIndex="-1"
         >
           {/* ErrorBoundary por página + Suspense para lazy loading */}

@@ -16,8 +16,16 @@ export const useUIStore = create((set) => ({
   // Onboarding
   onboardingCompleted: localStorage.getItem('nexomente_onboarding_done') === 'true',
 
+  // Identidade do Usuário
+  userName: localStorage.getItem('nexomente_user_name') || 'Visitante',
+
   // Actions
   setLoading: (loading) => set({ loadingGlobal: loading }),
+  
+  setUserName: (name) => {
+    localStorage.setItem('nexomente_user_name', name);
+    set({ userName: name });
+  },
   
   toggleSidebar: () => set((state) => {
     const newState = !state.sidebarOpen;
