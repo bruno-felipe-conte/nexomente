@@ -2,193 +2,153 @@
 
 ![NexoMente Hero Banner](./nexomente_hero_banner.png)
 
-# 🌌 NEXOMENTE
-### ✦ *Seu Segundo Cérebro — Offline, Gamificado e com IA de Elite* ✦
+# 🌌 NEXOMENTE: THE ULTIMATE SECOND BRAIN
+### ✦ *Local Intelligence. Gamified Wisdom. Absolute Privacy.* ✦
 
 <br>
 
-[![Status](https://img.shields.io/badge/⚡_Status-Produção_Pronta-00e676?style=for-the-badge&logoColor=white)](#)
-[![AI](https://img.shields.io/badge/🤖_STT-Whisper_Offline-9333EA?style=for-the-badge&logoColor=white)](#)
-[![Electron](https://img.shields.io/badge/🖥_Runtime-Electron_28-47848F?style=for-the-badge&logo=electron)](#)
-[![Privacy](https://img.shields.io/badge/🔒_Privacidade-Absoluta-ff4757?style=for-the-badge)](#)
+[![Status](https://img.shields.io/badge/⚡_Status-Production_Ready-00e676?style=for-the-badge&logoColor=white)](#)
+[![AI-Whisper](https://img.shields.io/badge/🤖_STT-Whisper_Local-9333EA?style=for-the-badge&logoColor=white)](#)
+[![AI-Llama](https://img.shields.io/badge/🧠_LLM-Llama_3.2-3b82f6?style=for-the-badge&logoColor=white)](#)
+[![Runtime](https://img.shields.io/badge/🖥_Runtime-Electron_28-47848F?style=for-the-badge&logo=electron)](#)
+[![Engine](https://img.shields.io/badge/⚙️_Engine-Vite_React-646CFF?style=for-the-badge&logo=vite)](#)
 
 <br>
 
-> *"Onde o **Obsidian** encontra o **Anki** e o **Tamagotchi** em uma interface Sci-Fi premium.*
-> *Nenhum byte sai do seu hardware. O domínio do seu conhecimento é total."*
+> **"A simbiose perfeita entre a profundidade do Obsidian, a eficácia do Anki e o vício do Tamagotchi."**  
+> *Onde cada byte de conhecimento pertence a você e ninguém mais.*
 
 <br>
-
-```
-┌───────────────────────────────────────────────────────────────────────┐
-│  📝 Notas Wiki   🎙️ Dojo de Voz   📇 Flashcards   🕸️ Grafo   👾 RPG    │
-│  ⏱️ Pomodoro    🎓 Questões      📜 Poemas       💾 100% Local (AI)   │
-└───────────────────────────────────────────────────────────────────────┘
-```
 
 </div>
 
 ---
 
-<br>
+## ◈ 📖 O Que é o NexoMente?
 
-## ◈ A Nova Era: Dojo de Poesia 🎙️🖋️
-O NexoMente agora **ouve você**. Treine sua oratória e memorize obras clássicas com o motor **Whisper AI (STT)** rodando 100% local.
+O **NexoMente** não é apenas um app de notas; é um ecossistema de **Gestão do Conhecimento Pessoal (PKM)** projetado para quem busca maestria sem comprometer a privacidade. Ele utiliza Inteligência Artificial de última geração rodando localmente (no seu hardware) para transcrever sua voz, gerar flashcards e organizar seus pensamentos em um grafo neural interativo.
 
-- **Prática Verso a Verso**: Esconda o texto e teste sua memória.
-- **Feedback em Tempo Real**: Palavras brilham em **Verde** (acerto) ou **Vermelho** (erro).
-- **Trava de Progressão**: Avance apenas com **≥70%** de precisão.
-- **Score Animado**: Ganhe XP e suba de nível recitando com maestria.
+---
+
+## ◈ 🎙️ A Joia da Coroa: Dojo de Poesia (Whisper AI)
+
+O Dojo de Recitação é onde a oratória encontra a neurociência. Utilizando o motor **OpenAI Whisper (via Transformers.js)**, o app analisa sua fala verso a verso.
+
+### ⚡ Como funciona o Motor de Voz:
+1.  **Captura High-Fidelity**: Áudio processado a 16kHz via `AudioContext`.
+2.  **Worker Off-Thread**: A transcrição acontece em um Web Worker dedicado, mantendo a interface a 60 FPS.
+3.  **Algoritmo de Match**: Compara tokens normalizados para calcular precisão percentual.
+4.  **Gamificação de Voz**: Ganhe XP proporcional à sua acurácia e memorize obras clássicas para sempre.
 
 ```mermaid
-graph LR
-    A[Escolha o Poema] --> B[Modo Dojo]
-    B --> C{Recitação}
-    C -->|Acerto < 70%| D[Tentar Novamente]
-    C -->|Acerto >= 70%| E[Avançar Verso]
-    E --> F[XP + Evolução Pet]
+graph TD
+    A[Início da Recitação] --> B[Gravação de Áudio WebM]
+    B --> C[Conversão para Float32Array 16kHz]
+    C --> D[Whisper Worker - Modelo ONNX]
+    D --> E[Transcrição de Texto]
+    E --> F{Cálculo de Precisão}
+    F -->|Abaixo do Limiar| G[🔄 Feedback Visual: Erros em Vermelho]
+    F -->|Acima do Limiar| H[✅ Sucesso: XP + Próximo Verso]
+    G --> B
+    H --> I[Conclusão do Poema & Evolução Pet]
 ```
 
 ---
 
-<br>
+## ◈ 🎮 Sistema Tamagotchi: Estude ou o Pet Sofre
 
-## ◈ Dashboard "Horizonte Perfeito" 🏙️
-Uma interface desenhada para o foco absoluto, com estética **Glassmorphism Sci-Fi**.
+O NexoMente transforma seu esforço intelectual em evolução biológica virtual. Seu companheiro reage à sua produtividade.
 
-- **Simetria de Grid**: Alinhamento preciso entre conteúdo e operação em duas faixas horizontais.
-- **Métricas Neon 2x**: Cards com halo radial dinâmico e brilho intenso centrado nos dados.
-- **Comandos Rápidos**: Ações inteligentes integradas ao seu fluxo de trabalho.
-- **Mascote Evolutivo**: Seu Tamagotchi reage em tempo real a cada sessão de estudo concluída.
+### 🧬 Ciclo de Evolução (30 Níveis)
+| Nível | Estágio | Visual | Requisito de Foco |
+| :--- | :--- | :---: | :--- |
+| **01 - 05** | Recém-Nascido | 🥚 ➔ 🐣 | 5h de Estudo Total |
+| **06 - 15** | Aprendiz Ativo | 🐥 ➔ 🦊 | 25h + 100 Flashcards |
+| **16 - 25** | Guardião do Saber | 🐺 ➔ 🦁 | 100h + 500 Flashcards |
+| **26 - 30** | Entidade Cósmica | 🦅 ➔ ✴️ | Domínio Total das Matérias |
 
----
-
-<br>
-
-## ◈ Funcionalidades Core
-
-<table>
-  <tr>
-    <td width="50%" valign="top">
-
-### 📝 Wiki-Notes Inteligentes
-- Editor **TipTap** premium (Markdown + WYSIWYG)
-- Conexões neurais via `[[wikilinks]]` automáticos
-- Suporte nativo a fórmulas **LaTeX** (KaTeX)
-- Sincronização bidirecional com pasta `.md` local
-
-</td>
-    <td width="50%" valign="top">
-
-### 🤖 IA de Bolso (100% Offline)
-- **Llama 3.2** rodando no seu hardware (via Ollama/LM Studio)
-- Gera **Flashcards** e Questões automaticamente
-- Chat contextual que "lê" suas anotações ativas
-- **Privacidade absoluta**: Seus dados nunca saem da máquina
-
-</td>
-  </tr>
-  <tr>
-    <td width="50%" valign="top">
-
-### 📇 Flashcards (SM-2)
-- Algoritmo **SuperMemo 2** adaptativo ao seu ritmo
-- Criação em massa via IA ou Manual
-- Botão "Recitei" com feedback visual imediato
-- Revisões focadas só no que você está esquecendo
-
-</td>
-    <td width="50%" valign="top">
-
-### 🕸️ Grafo de Conexões
-- Visualização interativa via **Cytoscape.js**
-- Nós coloridos por matéria e relevância
-- Preview instantâneo ao pairar sobre os nós
-- Filtros dinâmicos por tags e conexões de conhecimento
-
-</td>
-  </tr>
-</table>
+**⚠️ Mecânica de Sobrevivência**: Se você não estudar por mais de 48 horas, seu pet começa a perder HP. A única cura é uma sessão de foco ou revisão de cards.
 
 ---
 
-<br>
+## ◈ 🧠 Inteligência Artificial 100% Local (LLM)
 
-## ◈ O Sistema RPG — Gamificação Profunda 👾
-Cada sessão de foco concluída alimenta e evolui o seu companheiro virtual.
+Esqueça assinaturas de IA e preocupações com dados na nuvem. O NexoMente integra-se ao seu motor local para:
 
-**⚡ A Jornada de 30 Níveis:**
-- **Nv. 01-05**: 🥚 Ovinho ➔ 🦆 Pato (Início da jornada)
-- **Nv. 11-15**: 🦝 Guaxinim ➔ 🦁 Leão (Força acumulada)
-- **Nv. 26-30**: 🌌 Ser Cósmico ➔ ✴️ Forma Final (Domínio Total)
-
-**🔥 Multiplicadores de Streak:**
-- Estude 7 dias seguidos: **XP x2**
-- Estude 30 dias seguidos: **XP x3**
+- **Geração Automática de Flashcards**: Selecione um parágrafo e peça para a IA criar perguntas SM-2.
+- **Chat Contextual**: A IA "lê" a nota que você está editando e ajuda a expandir conceitos.
+- **Resumos Inteligentes**: Transforme capítulos extensos em bullet points acionáveis.
+- **Suporte a Modelos**: Otimizado para **Llama 3.2 (3B)** e **Qwen 2.5 (7B)**.
 
 ---
 
-<br>
+## ◈ 🕸️ Grafo de Conhecimento Neuronal
 
-## ◈ Stack Técnica de Elite 🛠️
+Visualize como suas ideias se conectam. Cada link `[[wikilink]]` cria um caminho no seu cérebro digital.
 
-```
-╔═══════════════════════════════════════════════════════════════╗
-║                     NEXOMENTE — ARCHITECTURE                 ║
-╠══════════════════╦════════════════════════════════════════════╣
-║  Runtime         ║  Electron v28 (Frameless / Hi-Fi UI)      ║
-║  UI Engine       ║  React 18 + Vite + Framer Motion          ║
-║  Intelligence    ║  Transformers.js (Whisper Offline)        ║
-║  Local LLM       ║  Llama-3.2 (3B) / Qwen-2.5                ║
-║  Database        ║  SQLite WASM (100% Persistente)           ║
-║  Editor          ║  TipTap Pro + LaTeX + WikiLinks           ║
-╚══════════════════╩════════════════════════════════════════════╝
-```
+- **Física de Partículas**: Nós que "puxam" e "empurram" conforme a relação semântica.
+- **Cores por Categoria**: Identifique áreas de domínio (ex: Direito em Vermelho, Medicina em Verde).
+- **Preview Hover**: Veja o conteúdo de uma nota sem sair da visão de Grafo.
 
 ---
 
-<br>
+## ◈ 🛠️ Stack Técnica & Arquitetura
 
-## ◈ Instalação & Setup 🚀
+O NexoMente é construído sobre uma base tecnológica robusta e moderna:
 
+- **Core**: React 18 & Vite (Frontend ultra-veloz)
+- **Runtime**: Electron 28 (Desktop nativo com acesso ao sistema de arquivos)
+- **Estética**: CSS Vanilla com Tokens de Design (Glassmorphism & Sci-Fi)
+- **Voz**: Transformers.js (Whisper ONNX Quantized)
+- **Persistência**: SQLite WASM + LocalStorage (Backup automático em Markdown)
+- **Animações**: Framer Motion & GSAP
+
+---
+
+## ◈ 🚀 Setup Rápido (Developer Mode)
+
+### Pré-requisitos
+- Node.js 18+
+- Git
+
+### Instalação
 ```bash
-# 1. Clone o repositório
+# 1. Obtenha o código
 git clone https://github.com/bruno-felipe-conte/nexomente.git
 
-# 2. Instale dependências
+# 2. Instale as engrenagens
 npm install
 
-# 3. Baixe o motor de voz (Whisper)
+# 3. Prepare o motor de voz (Execute apenas uma vez)
+# Isso baixará o modelo whisper-small para assets/models
 node scripts/download-model.js
 
-# 4. Inicie o ecossistema
+# 4. Decole!
 npm run dev
 ```
 
 ---
 
-<br>
+## ◈ 🔒 O Manifesto da Privacidade
 
-## ◈ Privacidade — O Pilar de Aço
-```
-╔═══════════════════════════════════════════════════════════════╗
-║  🔒 O QUE NUNCA SAI DO SEU COMPUTADOR                        ║
-╠═══════════════════════════════════════════════════════════════╣
-║  ✅  Suas Notas, Flashcards e Segredos                        ║
-║  ✅  Suas Gravações de Voz e Transcrições                     ║
-║  ✅  Prompts enviados para a IA Local                         ║
-╠═══════════════════════════════════════════════════════════════╣
-║  ❌  Sem telemetria   ❌  Sem login   ❌  Sem nuvem           ║
-╚═══════════════════════════════════════════════════════════════╝
-```
+No NexoMente, a privacidade não é uma opção, é a arquitetura.
 
-<br>
+- **Zero Cloud**: Não existe servidor central.
+- **Zero Telemetria**: Não rastreamos seus cliques.
+- **Seus Arquivos, Suas Regras**: Todas as notas são salvas em `.md` legível na sua pasta de usuário. Se você quiser parar de usar o app amanhã, suas notas continuam lá, prontas para qualquer outro editor.
+
+---
 
 <div align="center">
 
-*Moldado com paixão por **Bruno Felipe Conte**.*
+### *“The mind is for having ideas, not holding them.”*  
+**Deixe o NexoMente segurar, organizar e evoluir o seu conhecimento.**
 
-[![MIT License](https://img.shields.io/badge/License-MIT-2ed573?style=flat-square)](#)
-[![Made with ♥](https://img.shields.io/badge/Feito_com-♥_e_café-ff4757?style=flat-square)](#)
+<br>
+
+*Orgulhosamente desenvolvido por [Bruno Felipe Conte](https://github.com/bruno-felipe-conte)*
+
+[![Follow](https://img.shields.io/github/followers/bruno-felipe-conte?label=Follow&style=social)](https://github.com/bruno-felipe-conte)
+[![Star](https://img.shields.io/github/stars/bruno-felipe-conte/nexomente?style=social)](https://github.com/bruno-felipe-conte/nexomente)
 
 </div>
