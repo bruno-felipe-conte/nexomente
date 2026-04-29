@@ -1,0 +1,75 @@
+
+.poema-recitacao-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  padding: 2rem;
+  min-height: 400px;
+}
+
+.poema-texto-display {
+  font-size: 2.5rem;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+  max-width: 800px;
+  perspective: 1000px;
+}
+
+.palavra {
+  display: inline-block;
+  margin: 0 0.3rem;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  color: rgba(255, 255, 255, 0.15);
+  filter: blur(0.5px);
+}
+
+.palavra--neutra {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+/* Verde — palavra correta com Glow Neon */
+.palavra--correta {
+  color: #4ade80;
+  filter: blur(0);
+  text-shadow:
+    0 0 10px rgba(74, 222, 128, 0.8),
+    0 0 25px rgba(74, 222, 128, 0.4),
+    0 0 50px rgba(74, 222, 128, 0.2);
+  animation: pulso-acerto 0.5s ease-out;
+}
+
+/* Vermelho — palavra errada com tremor */
+.palavra--errada {
+  color: #f87171;
+  filter: blur(0);
+  text-shadow:
+    0 0 10px rgba(248, 113, 113, 0.8),
+    0 0 20px rgba(248, 113, 113, 0.4);
+  animation: tremor-erro 0.4s ease-in-out;
+}
+
+@keyframes pulso-acerto {
+  0%   { transform: scale(1); filter: brightness(1); }
+  50%  { transform: scale(1.15); filter: brightness(1.5); }
+  100% { transform: scale(1); filter: brightness(1.2); }
+}
+
+@keyframes tremor-erro {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-5px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(5px); }
+}
+
+.status-feedback {
+  height: 2rem;
+  font-family: monospace;
+  color: #6366f1;
+  font-size: 0.9rem;
+  opacity: 0.8;
+  letter-spacing: 1px;
+}

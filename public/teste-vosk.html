@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Teste Vosk Isolado</title></head>
+<body>
+  <h2>Teste Vosk Puro</h2>
+  <button id="btn">Iniciar</button>
+  <div id="log" style="font-family:monospace;margin-top:20px"></div>
+
+  <script type="module">
+    const log = (msg) => {
+      const logDiv = document.getElementById('log');
+      if (logDiv) {
+        logDiv.innerHTML += '<br>' + msg;
+      }
+      console.log(msg);
+    };
+
+    document.getElementById('btn').onclick = async () => {
+      log('1. Importando vosk-browser...');
+      try {
+        await import('/node_modules/vosk-browser/dist/vosk.js');
+        
+        if (!window.Vosk) {
+          throw new Error('window.Vosk não encontrado após import.');
+        }
+
+        const { createModel } = window.Vosk;
+        log('1.1 createModel encontrada via window.Vosk');
+
+        log('2. Carregando modelo...');
+        const model = await createModel('/models/vosk/model.zip');
+        log('3. ✅ Modelo pronto');
+
+        const rec = new model.KaldiRecognizer(16000);
+        log('4. Recognizer criado: ' + typeof rec);
+        log('5. rec.on existe? ' + typeof rec.on);
+        log('6. rec.acceptWaveform existe? ' + typeof rec.acceptWaveform);
+
+        rec.on('result', (msg) => log('🟢 RESULT: ' + JSON.stringify(msg)));
+        rec.on('partialresult', (msg) => log('🟡 PARTIAL: ' + JSON.stringify(msg)));
+        log('7. Listeners registrados');
+
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        log('8. ✅ Stream obtida');
+
+        const ctx = new AudioContext({ sampleRate: 16000 });
+        log('9. AudioContext: ' + ctx.sampleRate + 'Hz | ' + ctx.state);
+
+        const source = ctx.createMediaStreamSource(stream);
+        const proc = ctx.createScriptProcessor(4096, 1, 1);
+        let frames = 0;
+
+        proc.onaudioprocess = (e) => {
+          frames++;
+          if (frames <= 3) log('🎙️ Frame #' + frames + ' chegou');
+          rec.acceptWaveform(e.inputBuffer);
+        };
+
+        source.connect(proc);
+        proc.connect(ctx.destination);
+        log('10. ✅ Pipeline conectado — FALE AGORA');
+      } catch (err) {
+        log('❌ ERRO: ' + err.message);
+        console.error(err);
+      }
+    };
+  </script>
+</body>
+</html>

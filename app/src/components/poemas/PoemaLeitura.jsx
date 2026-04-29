@@ -88,7 +88,7 @@ export default function PoemaLeitura({ onManage, poemaSelecionado, setPoemaSelec
               className="w-full"
             >
               <PoemaRecitacao 
-                poemaExterno={poemaSelecionado} 
+                poema={poemaSelecionado} 
                 onFinish={() => {
                   setIsDojoMode(false);
                   registrarRecitacao(poemaSelecionado.id);

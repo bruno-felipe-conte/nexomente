@@ -157,6 +157,30 @@ function createTables(db) {
     db.run("INSERT INTO pastas (id, nome, cor, icone) VALUES (?, ?, ?, ?)", 
       ['pasta_raiz', 'Minha Biblioteca', '#6C63FF', 'library']);
   }
+
+  const poemasCount = db.exec("SELECT COUNT(*) as count FROM poemas")[0]?.values[0][0] || 0;
+  if (poemasCount === 0) {
+    const seedPoemas = [
+      {
+        id: 'p1',
+        titulo: 'Mar Português',
+        autor: 'Fernando Pessoa',
+        corpo: 'Ó mar salgado, quanto do teu sal\nSão lágrimas de Portugal!\nPor te cruzarmos, quantas mães choraram,\nQuantos filhos em vão rezaram!\nQuantas noivas ficaram por casar\nPara que fosses nosso, ó mar!',
+        epoca: 'Modernismo'
+      },
+      {
+        id: 'p2',
+        titulo: 'Amor é um fogo que arde sem se ver',
+        autor: 'Luís de Camões',
+        corpo: 'Amor é um fogo que arde sem se ver;\nÉ ferida que dói, e não se sente;\nÉ um contentamento descontente;\nÉ dor que desatina sem doer.',
+        epoca: 'Renascimento'
+      }
+    ];
+    seedPoemas.forEach(p => {
+      db.run("INSERT INTO poemas (id, titulo, autor, corpo, epoca) VALUES (?, ?, ?, ?, ?)", 
+        [p.id, p.titulo, p.autor, p.corpo, p.epoca]);
+    });
+  }
   
   /* 
   db.run(`

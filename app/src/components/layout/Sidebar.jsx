@@ -1,84 +1,68 @@
 import { useRef } from 'react';
 import { motion } from 'framer-motion';
 import PropTypes from 'prop-types';
-import { Home, FileText, BookOpen, Layers, GitBranch, BarChart3, Settings, Sparkles, MessageSquare, ClipboardList, Book, Cpu, Cloud, Globe } from 'lucide-react';
+import { Home, FileText, BookOpen, Layers, GitBranch, BarChart3, Settings, Sparkles, MessageSquare, ClipboardList, Book } from 'lucide-react';
 import { useAIStore } from '../../store/useAIStore';
 
 const NAV_GROUPS = [
   {
-    label: 'ESTUDO',
+    label: 'Estudo',
     items: [
-      { id: 'notes',      label: 'Notas',       icon: FileText,      color: 'var(--color-notas)',      shortcut: 'Ctrl+2' },
-      { id: 'study',      label: 'Estudo',      icon: BookOpen,      color: 'var(--color-estudo)',     shortcut: 'Ctrl+3' },
-      { id: 'flashcards', label: 'Flashcards',  icon: Layers,        color: 'var(--color-flashcards)', shortcut: 'Ctrl+4' },
+      { id: 'notes',      label: 'Notas',       icon: FileText },
+      { id: 'study',      label: 'Estudo',      icon: BookOpen },
+      { id: 'flashcards', label: 'Flashcards',  icon: Layers },
     ]
   },
   {
-    label: 'CRIAÇÃO',
+    label: 'Criação',
     items: [
-      { id: 'gerador',    label: 'Gerador',     icon: ClipboardList, color: 'var(--color-gerador)',    shortcut: 'Ctrl+5' },
-      { id: 'poemas',     label: 'Poemas',      icon: Book,          color: 'var(--color-poemas)',     shortcut: 'Ctrl+P' },
+      { id: 'gerador',    label: 'Gerador IA',  icon: ClipboardList },
+      { id: 'poemas',     label: 'Poemas',      icon: Book },
     ]
   },
   {
-    label: 'IA & DADOS',
+    label: 'Rede Neural',
     items: [
-      { id: 'ai',         label: 'Chat IA',     icon: MessageSquare, color: 'var(--color-chat)',       shortcut: 'Ctrl+6' },
-      { id: 'graph',      label: 'Grafo',       icon: GitBranch,     color: 'var(--color-grafo)',      shortcut: 'Ctrl+7' },
-      { id: 'statistics', label: 'Estatísticas',icon: BarChart3,     color: 'var(--color-stats)',      shortcut: 'Ctrl+8' },
+      { id: 'ai',         label: 'Chat Neural', icon: MessageSquare },
+      { id: 'graph',      label: 'Grafo',       icon: GitBranch },
+      { id: 'statistics', label: 'Métricas',    icon: BarChart3 },
     ]
   }
 ];
 
-const DASHBOARD_ITEM = { id: 'dashboard', label: 'Dashboard', icon: Home, color: 'var(--text-hi)', shortcut: 'Ctrl+1' };
+const DASHBOARD_ITEM = { id: 'dashboard', label: 'Início', icon: Home };
 
-/**
- * NavButton — Estilo Ghost (Sem fundo, apenas borda lateral e cor de texto)
- */
 function NavButton({ item, isActive, isOpen, onNavigate }) {
   const Icon = item.icon;
 
   return (
-    <div className="relative px-3 group/nav">
+    <div className="relative px-3">
       <motion.button
-        whileTap={{ scale: 0.95 }}
-        transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-        id={`nav-${item.id}`}
+        whileTap={{ scale: 0.98 }}
         onClick={() => onNavigate(item.id)}
         className={`
-          w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-300 relative overflow-hidden
+          w-full flex items-center gap-4 px-4 py-3 rounded-nx-sm transition-all duration-nx-fast relative group
           ${isActive 
-            ? 'bg-white/5 text-text-hi shadow-[inset_0_0_20px_rgba(255,255,255,0.02)]' 
-            : 'text-text-lo hover:text-text-mid hover:bg-white/[0.02]'}
+            ? 'bg-nx-primary text-white' 
+            : 'text-nx-dim hover:text-nx-bright hover:bg-nx-surface'}
         `}
       >
-        {/* Active Indicator Glow */}
-        {isActive && (
-          <motion.div 
-            layoutId="active-glow"
-            className="absolute left-0 w-1 h-1/2 bg-accent-main rounded-full"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-          />
-        )}
-
         <Icon 
           size={18} 
-          className={`transition-all duration-300 ${isActive ? 'text-accent-main drop-shadow-[0_0_8px_rgba(124,109,250,0.5)]' : 'group-hover/nav:text-text-hi'}`} 
+          className={`transition-colors duration-nx-fast ${isActive ? 'text-white' : 'group-hover:text-nx-primary'}`} 
         />
         {isOpen && (
-          <span className={`text-[13px] font-medium tracking-wide transition-all ${isActive ? 'text-text-hi' : ''}`}>
+          <span className="text-nx-base font-ui font-medium tracking-wide">
             {item.label}
           </span>
         )}
+        {isActive && isOpen && (
+          <motion.div 
+            layoutId="active-indicator"
+            className="absolute right-3 w-1 h-3 rounded-full bg-white/40"
+          />
+        )}
       </motion.button>
-
-      {!isOpen && (
-        <div className="absolute left-full ml-4 top-1/2 -translate-y-1/2 z-50 glass-panel-light text-text-hi text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg shadow-2xl whitespace-nowrap opacity-0 group-hover/nav:opacity-100 transition-all pointer-events-none translate-x-[-10px] group-hover/nav:translate-x-0">
-          {item.label}
-        </div>
-      )}
     </div>
   );
 }
@@ -91,79 +75,77 @@ NavButton.propTypes = {
 };
 
 export default function Sidebar({ isOpen, currentPage, onNavigate, className = '' }) {
-  const navRef = useRef(null);
-  const { status, provider, modeloAtual } = useAIStore();
-
+  const { status } = useAIStore();
   const isOnline = status === 'online';
-  const providerLabel = provider === 'embedded' ? 'Motor Interno' : (provider === 'cloud' ? 'Gemini Cloud' : 'LM Studio');
 
   return (
-    <aside className={`hidden lg:flex flex-col glass-panel !bg-[#0B0C13]/80 border-r border-white/5 transition-all duration-500 ease-in-out ${isOpen ? 'w-64' : 'w-20'} ${className}`}>
-      {/* Cabeçalho Minimalista */}
-      <div className="h-20 flex items-center px-6 shrink-0">
-        <div className="flex items-center gap-3 group cursor-pointer">
-           <div className="w-8 h-8 bg-accent-main rounded-xl flex items-center justify-center shadow-glow-violet group-hover:scale-110 transition-transform">
-              <Sparkles size={18} className="text-white" />
+    <aside className={`hidden lg:flex flex-col bg-nx-depth border-r border-nx-border transition-all duration-nx-base ease-in-out ${isOpen ? 'w-nx-sidebar' : 'w-20'} ${className}`}>
+      
+      {/* LOGO v1.0 */}
+      <div className="h-24 flex items-center px-6 shrink-0">
+        <div className="flex items-center gap-3 group cursor-pointer" onClick={() => onNavigate('dashboard')}>
+           <div className="w-10 h-10 bg-nx-primary rounded-nx-sm flex items-center justify-center shadow-glow-primary group-hover:scale-105 transition-transform duration-nx-fast">
+              <Sparkles size={20} className="text-white" />
            </div>
-           {isOpen && <span className="text-lg font-black tracking-tighter text-text-hi font-display group-hover:text-glow transition-all">NEXOMENTE</span>}
+           {isOpen && (
+             <span className="text-nx-xl font-display font-black tracking-tighter text-nx-bright uppercase">
+               Nexo<span className="text-nx-primary">Mente</span>
+             </span>
+           )}
         </div>
       </div>
 
-      <nav ref={navRef} className={`flex-1 ${isOpen ? 'overflow-y-auto' : 'overflow-hidden'} overflow-x-hidden py-6 scrollbar-none`}>
-        {/* Dashboard isolado */}
-        <div className="mb-8">
+      <nav className={`flex-1 ${isOpen ? 'overflow-y-auto' : 'overflow-hidden'} py-4 scrollbar-none space-y-8`}>
+        {/* DASHBOARD */}
+        <div>
           <NavButton item={DASHBOARD_ITEM} isActive={currentPage === DASHBOARD_ITEM.id} isOpen={isOpen} onNavigate={onNavigate} />
         </div>
 
-        {/* Grupos com maior respiro */}
-        <div className="space-y-10">
-          {NAV_GROUPS.map((group, gIdx) => (
-            <div key={gIdx}>
-              {isOpen && (
-                <div className="px-5 mb-4 text-[10px] font-black tracking-[0.2em] text-text-lo/40 uppercase">
-                  {group.label}
-                </div>
-              )}
-              <div className="space-y-1">
-                {group.items.map((item) => (
-                  <NavButton key={item.id} item={item} isActive={currentPage === item.id} isOpen={isOpen} onNavigate={onNavigate} />
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </nav>
-
-      {/* Rodapé de Utilidades */}
-      <div className="mt-auto border-t border-[#333] bg-surface-base/50">
-        <div className="px-5 py-4 space-y-4">
-          <div className={`flex items-center gap-2 ${isOpen ? '' : 'justify-center'}`} title={`${providerLabel}: ${isOnline ? 'Pronto' : 'Indisponível'}`}>
-            <div className={`w-1.5 h-1.5 rounded-full transition-colors duration-500 ${isOnline ? 'bg-color-success shadow-[0_0_6px_rgba(132,226,110,0.4)]' : 'bg-danger shadow-[0_0_6px_rgba(255,71,87,0.4)]'}`} />
+        {/* GRUPOS */}
+        {NAV_GROUPS.map((group, gIdx) => (
+          <div key={gIdx} className="space-y-2">
             {isOpen && (
-              <div className="flex flex-col">
-                <span className={`text-[9px] font-mono font-bold tracking-tighter uppercase ${isOnline ? 'text-text-lo' : 'text-danger/60'}`}>
-                  IA {status.toUpperCase()}
-                </span>
-                <span className="text-[8px] text-text-lo/30 font-medium truncate max-w-[120px]">
-                  {provider === 'embedded' ? modeloAtual.split('/').pop() : providerLabel}
-                </span>
+              <div className="px-7 text-nx-xs font-mono font-black tracking-[0.3em] text-nx-muted uppercase">
+                {group.label}
               </div>
             )}
+            <div className="space-y-1">
+              {group.items.map((item) => (
+                <NavButton key={item.id} item={item} isActive={currentPage === item.id} isOpen={isOpen} onNavigate={onNavigate} />
+              ))}
+            </div>
           </div>
+        ))}
+      </nav>
+
+      {/* FOOTER v1.0 */}
+      <div className="mt-auto p-4 border-t border-nx-border">
+        <div className="space-y-4">
+          <div className={`flex items-center gap-3 px-3 py-2 ${isOpen ? '' : 'justify-center'}`}>
+            <div className={`w-1.5 h-1.5 rounded-full transition-colors duration-nx-base ${isOnline ? 'bg-nx-success' : 'bg-nx-error'}`} />
+            {isOpen && (
+              <span className={`text-[10px] font-mono font-bold tracking-widest uppercase ${isOnline ? 'text-nx-dim' : 'text-nx-error'}`}>
+                {status}
+              </span>
+            )}
+          </div>
+          
           <button 
             onClick={() => onNavigate('settings')}
-            className={`flex items-center gap-3 w-full text-text-lo hover:text-text-hi transition-colors ${isOpen ? '' : 'justify-center'}`}
+            className={`flex items-center gap-4 px-4 py-3 w-full rounded-nx-sm text-nx-dim hover:text-nx-bright hover:bg-nx-surface transition-all duration-nx-fast ${isOpen ? '' : 'justify-center'}`}
           >
-            <Settings size={16} />
-            {isOpen && <span className="text-[11px] font-bold uppercase tracking-widest">Configurações</span>}
+            <Settings size={18} />
+            {isOpen && <span className="text-nx-base font-ui font-medium">Configurações</span>}
           </button>
         </div>
       </div>
     </aside>
   );
 }
+
 Sidebar.propTypes = {
   isOpen: PropTypes.bool,
   currentPage: PropTypes.any,
   onNavigate: PropTypes.func,
+  className: PropTypes.string,
 };

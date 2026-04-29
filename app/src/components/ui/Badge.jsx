@@ -3,24 +3,23 @@ import PropTypes from 'prop-types';
 
 export default function Badge({ 
   children, 
-  variant = 'brand',
+  variant = 'primary',
   type = 'pill', // 'pill' or 'count'
   className = '' 
 }) {
   const variants = {
-    brand: "bg-accent-main/10 text-accent-main border-accent-main/20 shadow-[0_0_8px_rgba(124,109,250,0.15)]",
-    notas: "bg-color-notas/10 text-color-notas border-color-notas/20",
-    estudo: "bg-color-estudo/10 text-color-estudo border-color-estudo/20",
-    flashcards: "bg-color-flashcards/10 text-color-flashcards border-color-flashcards/20",
-    success: "bg-color-success/10 text-color-success border-color-success/20",
-    warning: "bg-color-warning/10 text-color-warning border-color-warning/20",
-    error: "bg-color-error/10 text-color-error border-color-error/20",
-    gray: "bg-surface-raised text-text-lo border-white/5"
+    primary: "bg-nx-primary/10 text-nx-primary border-nx-primary/20",
+    secondary: "bg-nx-secondary/10 text-nx-secondary border-nx-secondary/20",
+    accent: "bg-nx-accent/10 text-nx-accent border-nx-accent/20",
+    success: "bg-nx-success/10 text-nx-success border-nx-success/20",
+    warning: "bg-nx-warning/10 text-nx-warning border-nx-warning/20",
+    error: "bg-nx-error/10 text-nx-error border-nx-error/20",
+    gray: "bg-nx-depth text-nx-dim border-nx-border"
   };
 
   const types = {
-    pill: "px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest rounded-full",
-    count: "px-2 h-5 flex items-center justify-center text-[10px] font-black rounded-full font-mono shadow-inner"
+    pill: "px-3 py-0.5 text-nx-xs font-mono font-bold uppercase tracking-widest rounded-nx-full",
+    count: "px-2 h-5 flex items-center justify-center text-nx-xs font-mono font-black rounded-nx-full"
   };
 
   return (
@@ -32,7 +31,7 @@ export default function Badge({
 
 Badge.propTypes = {
   children: PropTypes.node.isRequired,
-  variant: PropTypes.oneOf(['brand', 'notas', 'estudo', 'flashcards', 'success', 'warning', 'error', 'gray']),
+  variant: PropTypes.oneOf(['primary', 'secondary', 'accent', 'success', 'warning', 'error', 'gray']),
   type: PropTypes.oneOf(['pill', 'count']),
   className: PropTypes.string,
 };

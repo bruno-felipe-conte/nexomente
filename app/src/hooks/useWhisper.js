@@ -14,36 +14,16 @@ export function useWhisper({ language = 'portuguese', onResult }) {
   }, [language])
 
   useEffect(() => {
-    // Aponta para o worker recém criado
+    // Whisper desativado para transição para Vosk
+    /*
     const worker = new Worker(
       new URL('../workers/whisper.worker.js', import.meta.url),
       { type: 'module' }
     )
-
-    worker.onmessage = (e) => {
-      const { type } = e.data
-      if (type === 'loading') setStatus('loading')
-      if (type === 'ready') setStatus('ready')
-      if (type === 'download') {
-        setDownloadProgress(prev => ({
-          ...prev,
-          [e.data.file]: e.data.progress
-        }))
-      }
-      if (type === 'result') {
-        setStatus('ready')
-        onResult?.(e.data.text)
-      }
-      if (type === 'error') {
-        setStatus('error')
-        console.error('[Whisper]', e.data.message)
-      }
-    }
-
-    worker.postMessage({ type: 'load' })
-    workerRef.current = worker
-
-    return () => worker.terminate()
+    ...
+    */
+    setStatus('ready') // Simula que está pronto para não quebrar a UI
+    return () => {}
   }, []) 
 
   const startRecording = useCallback(async () => {

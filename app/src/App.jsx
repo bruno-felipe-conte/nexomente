@@ -31,8 +31,8 @@ const Gerador      = lazy(() => import('./pages/Gerador'));
 // Fallback enquanto o chunk carrega
 function PageLoader() {
   return (
-    <div className="flex h-full w-full items-center justify-center">
-      <div className="w-8 h-8 border-4 border-accent-main border-t-transparent rounded-full animate-spin" />
+    <div className="flex h-full w-full items-center justify-center bg-nx-void">
+      <div className="w-10 h-10 border-2 border-nx-primary border-t-transparent rounded-full animate-spin shadow-glow-primary" />
     </div>
   );
 }
@@ -84,7 +84,6 @@ function App() {
         totalXP => {
           import('./store/useTamagotchiStore').then(t => {
              // O tamagotchi já calcula o progresso baseado no XP
-             // Aqui podemos disparar check de HP ou outras reações
           });
         }
       );
@@ -142,39 +141,38 @@ function App() {
 
   if (loadingGlobal) {
     return (
-      <div className="flex h-full w-full bg-bg-primary items-center justify-center">
+      <div className="flex h-full w-full bg-nx-void items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-accent-main border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-text-secondary">Carregando NexoMente...</p>
+          <div className="w-12 h-12 border-4 border-nx-primary border-t-transparent rounded-full animate-spin mx-auto mb-4 shadow-glow-primary"></div>
+          <p className="text-nx-dim font-mono text-[10px] uppercase tracking-widest">Iniciando Rede Neural...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-full w-full bg-[#0B0C13] relative overflow-hidden text-text-hi selection:bg-accent-main/30">
+    <div className="flex h-full w-full bg-nx-void relative overflow-hidden text-nx-text selection:bg-nx-primary/30">
       <LevelUpOverlay />
-      {/* Skip to main content link para navegação por teclado (Tarefa 6.7) */}
       <a 
         href="#main-content" 
-        className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-bg-secondary focus:text-accent-main focus:rounded-br-lg"
+        className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-nx-surface focus:text-nx-primary focus:rounded-br-lg"
       >
         Pular para o conteúdo principal
       </a>
 
-      {/* Toast global — cobre toda a app (Tarefa 6.2) */}
       <Toaster
         position="bottom-right"
         toastOptions={{
           duration: 3000,
           style: {
-            background: 'var(--bg-secondary, #1e1e2e)',
-            color: 'var(--text-primary, #cdd6f4)',
-            border: '1px solid var(--bg-tertiary, #313244)',
-            fontSize: '0.875rem',
+            background: 'var(--nx-overlay)',
+            color: 'var(--nx-bright)',
+            border: '1px solid var(--nx-border)',
+            fontSize: '13px',
+            fontFamily: 'var(--nx-font-ui)',
           },
-          success: { iconTheme: { primary: '#a6e3a1', secondary: '#1e1e2e' } },
-          error:   { iconTheme: { primary: '#f38ba8', secondary: '#1e1e2e' }, duration: 5000 },
+          success: { iconTheme: { primary: 'var(--nx-success)', secondary: 'var(--nx-void)' } },
+          error:   { iconTheme: { primary: 'var(--nx-error)', secondary: 'var(--nx-void)' }, duration: 5000 },
         }}
       />
 
@@ -186,8 +184,8 @@ function App() {
       />
 
       <div className="flex flex-col flex-1 min-w-0 relative h-full">
-        {/* LINHA DE HORIZONTE (Ajustada para o novo header h-20) */}
-        <div className="absolute top-20 left-0 right-0 h-[1px] bg-white/5 z-0 pointer-events-none" />
+        {/* LINHA DE HORIZONTE v1.0 */}
+        <div className="absolute top-20 left-0 right-0 h-[1px] bg-nx-border/30 z-0 pointer-events-none" />
         
         <Header
           title={currentPage}
@@ -197,10 +195,9 @@ function App() {
 
         <main
           id="main-content"
-          className="main-content flex-1 overflow-auto focus:outline-none relative z-10 custom-scrollbar pb-16 lg:pb-0 max-w-[1440px] mx-auto w-full"
+          className="main-content flex-1 overflow-auto focus:outline-none relative z-10 custom-scrollbar pb-16 lg:pb-0 w-full"
           tabIndex="-1"
         >
-          {/* ErrorBoundary por página + Suspense para lazy loading */}
           <ErrorBoundary context={currentPage} key={currentPage}>
             <Suspense fallback={<PageLoader />}>
               {currentPage === 'dashboard'   && <Dashboard />}

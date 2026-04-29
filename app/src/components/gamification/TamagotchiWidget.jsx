@@ -79,31 +79,33 @@ export default function TamagotchiWidget({ className = '' }) {
   else if (isBouncing) currentVariant = "bouncing";
 
   return (
-    <Card className={`glass-panel border-white/5 flex flex-col items-center justify-center relative overflow-hidden group hover-lift ${className}`} interactive>
+    <div className={`nx-panel flex flex-col items-center justify-center relative overflow-hidden group ${className}`}>
       {/* Dynamic Background Glow based on Health/Level */}
-      <div className={`absolute inset-0 transition-opacity duration-1000 ${hpPercent <= 30 ? 'bg-red-500/5' : 'bg-accent-main/5'} opacity-40 group-hover:opacity-100`} />
+      <div className={`absolute inset-0 transition-opacity duration-1000 ${hpPercent <= 30 ? 'bg-nx-error/5' : 'bg-nx-accent/5'} opacity-40 group-hover:opacity-100`} />
       
-      <div className="text-center z-10 relative w-full h-full flex flex-col items-center">
+      <div className="text-center z-10 relative w-full h-full flex flex-col items-center p-6">
         <header className="w-full flex items-center justify-between mb-2">
-           <span className="text-[10px] font-bold uppercase tracking-widest text-text-lo">NexoPet Status</span>
-           <Badge variant={hpPercent <= 15 ? 'error' : 'success'} className="text-[9px] py-0">{moodStatus}</Badge>
+           <span className="text-nx-xs font-mono font-bold uppercase tracking-widest text-nx-muted">NexoPet Status</span>
+           <div className={`text-nx-xs px-2 py-0.5 rounded-nx-xs font-mono uppercase ${hpPercent <= 15 ? 'bg-nx-error/20 text-nx-error border border-nx-error/30' : 'bg-nx-success/20 text-nx-success border border-nx-success/30'}`}>
+             {moodStatus}
+           </div>
         </header>
         
-        <div className="relative inline-block my-8">
+        <div className="relative inline-block my-6">
           {/* Circular Glow behind Mascot */}
-          <div className="absolute inset-0 bg-accent-main/20 blur-3xl rounded-full scale-150 animate-pulse" />
+          <div className="absolute inset-0 bg-nx-primary/10 blur-3xl rounded-full scale-150 animate-pulse" />
           
           <motion.div 
-            className="text-8xl filter drop-shadow-[0_0_20px_rgba(124,109,250,0.5)] cursor-pointer relative z-10"
+            className="text-8xl filter drop-shadow-[0_0_20px_rgba(91,124,244,0.3)] cursor-pointer relative z-10"
             variants={idleVariants}
             animate={currentVariant}
-            whileHover={{ scale: 1.15, rotate: 5 }}
+            whileHover={{ scale: 1.1, rotate: 5 }}
             title={`Nível ${player.level} - ${levelData.title}`}
           >
             {levelData.form}
           </motion.div>
           <motion.div 
-            className="absolute -bottom-2 -right-4 text-3xl bg-surface-raised rounded-full w-10 h-10 flex items-center justify-center shadow-lg border border-white/10"
+            className="absolute -bottom-2 -right-4 text-3xl bg-nx-surface rounded-full w-10 h-10 flex items-center justify-center shadow-glow-primary border border-nx-border"
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.5, type: "spring" }}
@@ -113,25 +115,25 @@ export default function TamagotchiWidget({ className = '' }) {
         </div>
 
         <div className="space-y-1">
-          <h2 className="text-2xl font-display font-bold text-text-hi">
+          <h2 className="text-nx-xl font-display font-bold text-nx-bright">
             {player.pet_name || levelData.name}
           </h2>
-          <p className="text-text-mid text-xs font-bold uppercase tracking-widest opacity-60">
+          <p className="text-nx-dim text-nx-xs font-mono font-bold uppercase tracking-widest opacity-80">
             {levelData.title} • Nível {player.level}
           </p>
         </div>
 
         {/* Status Indicators (Minimalist & Premium) */}
-        <div className="w-full mt-10 space-y-5">
+        <div className="w-full mt-10 space-y-6">
           {/* HP Bar */}
           <div className="space-y-2">
             <div className="flex justify-between items-end">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-text-lo">Vitalidade (HP)</span>
-              <span className="text-xs font-bold text-text-hi">{player.hp}<span className="text-text-lo">/{player.hp_max}</span></span>
+              <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-nx-muted">Vitalidade (HP)</span>
+              <span className="text-nx-xs font-mono font-bold text-nx-bright">{player.hp}<span className="text-nx-muted">/{player.hp_max}</span></span>
             </div>
-            <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden inner-shadow">
+            <div className="w-full h-1.5 bg-nx-void rounded-full overflow-hidden border border-nx-border/50">
               <motion.div 
-                className={`h-full shadow-[0_0_10px_rgba(var(--color-estudo-rgb),0.5)] ${hpPercent <= 15 ? 'bg-color-error' : hpPercent >= 80 ? 'bg-color-estudo' : 'bg-accent-main'}`}
+                className={`h-full ${hpPercent <= 15 ? 'bg-nx-error shadow-[0_0_10px_var(--nx-error)]' : hpPercent >= 80 ? 'bg-nx-success shadow-[0_0_10px_var(--nx-success)]' : 'bg-nx-primary shadow-[0_0_10px_var(--nx-primary)]'}`}
                 initial={{ width: 0 }}
                 animate={{ width: `${hpPercent}%` }}
                 transition={{ duration: 1.5, type: "spring" }}
@@ -140,15 +142,15 @@ export default function TamagotchiWidget({ className = '' }) {
           </div>
 
           {/* XP Summary & Progress */}
-          <div className="glass-panel-light p-4 rounded-2xl space-y-3">
+          <div className="nx-card p-4 rounded-nx-md space-y-4 border-nx-border/40">
              <div className="flex items-center justify-between">
                 <div className="flex flex-col items-start">
-                   <span className="text-[9px] font-bold uppercase tracking-widest text-text-lo">Experiência</span>
-                   <span className="text-sm font-bold text-text-hi">{player.xp} <span className="text-text-lo text-[10px]">XP TOTAL</span></span>
+                   <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-nx-muted">Experiência</span>
+                   <span className="text-nx-sm font-ui font-bold text-nx-bright">{player.xp} <span className="text-nx-muted text-[10px]">XP TOTAL</span></span>
                 </div>
                 <div className="flex flex-col items-end">
-                   <span className="text-[9px] font-bold uppercase tracking-widest text-text-lo">Streak</span>
-                   <span className="text-sm font-bold text-color-warning flex items-center gap-1">
+                   <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-nx-muted">Streak</span>
+                   <span className="text-nx-sm font-ui font-bold text-nx-accent flex items-center gap-1">
                       🔥 {player.streak}d
                    </span>
                 </div>
@@ -156,13 +158,13 @@ export default function TamagotchiWidget({ className = '' }) {
              
              {/* XP Progress Bar (Synced with Egg/Pet) */}
              <div className="space-y-1.5 pt-1">
-                <div className="flex justify-between text-[8px] font-black uppercase tracking-tighter text-text-lo/40">
+                <div className="flex justify-between text-[8px] font-mono font-black uppercase tracking-tighter text-nx-muted/60">
                    <span>Progresso para Nível {player.level + 1}</span>
                    <span>{Math.round(getLevelProgress(player.xp))}%</span>
                 </div>
-                <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+                <div className="w-full h-1 bg-nx-void rounded-full overflow-hidden">
                    <motion.div 
-                     className="h-full bg-accent-main shadow-[0_0_8px_rgba(var(--color-accent-rgb),0.3)]"
+                     className="h-full bg-nx-accent shadow-[0_0_8px_var(--nx-accent-glow)]"
                      initial={{ width: 0 }}
                      animate={{ width: `${getLevelProgress(player.xp)}%` }}
                      transition={{ duration: 1.5, type: "spring" }}
@@ -172,7 +174,7 @@ export default function TamagotchiWidget({ className = '' }) {
           </div>
         </div>
       </div>
-    </Card>
+    </div>
   );
 }
 
