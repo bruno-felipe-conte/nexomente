@@ -105,7 +105,7 @@ export default function LevelUpOverlay() {
           
           <div className="bg-surface-raised p-4 rounded-xl border border-border-subtle mt-6">
             <p className="text-text-mid text-sm italic">
-              "Você estudou o suficiente para me fazer evoluir. Incrível!"
+              &quot;Você estudou o suficiente para me fazer evoluir. Incrível!&quot;
             </p>
           </div>
 

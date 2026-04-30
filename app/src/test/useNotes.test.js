@@ -1,9 +1,65 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+
+// Mock useDBStore with in-memory Zustand store — SQL.js is unavailable in jsdom
+vi.mock('../../src/store/useDBStore', async () => {
+  const { create } = await import('zustand');
+  let _notas = [];
+  let _pastas = [];
+
+  const useDBStore = create((set) => ({
+    loading: false,
+    version: 0,
+    Notas: {
+      getAll: () => [..._notas],
+      getById: (id) => _notas.find(n => n.id === id) ?? null,
+      create: (data) => {
+        const id = `nota_${Date.now()}_${_notas.length}`;
+        _notas.push({ id, tags: [], ...data, status: 'ativo' });
+        set(s => ({ version: s.version + 1 }));
+        return id;
+      },
+      update: (id, updates) => {
+        const idx = _notas.findIndex(n => n.id === id);
+        if (idx >= 0) _notas[idx] = { ..._notas[idx], ...updates };
+        set(s => ({ version: s.version + 1 }));
+      },
+      delete: (id) => {
+        _notas = _notas.filter(n => n.id !== id);
+        set(s => ({ version: s.version + 1 }));
+      },
+      search: (query) => {
+        if (!query) return [..._notas];
+        const q = query.toLowerCase();
+        return _notas.filter(n => (n.titulo || '').toLowerCase().includes(q));
+      },
+    },
+    Pastas: {
+      getAll: () => [..._pastas],
+      create: (data) => {
+        const id = `pasta_${Date.now()}_${_pastas.length}`;
+        _pastas.push({ id, ...data });
+        set(s => ({ version: s.version + 1 }));
+        return id;
+      },
+    },
+  }));
+
+  useDBStore._reset = () => {
+    _notas = [];
+    _pastas = [];
+    useDBStore.setState({ version: 0 });
+  };
+
+  return { useDBStore, initDB: async () => {}, saveDB: () => {}, getDB: () => null };
+});
+
 import { useNotes, usePastas } from '../../src/hooks/useNotes';
+import { useDBStore } from '../../src/store/useDBStore';
 
 describe('useNotes', () => {
   beforeEach(() => {
+    useDBStore._reset();
     localStorage.clear();
   });
 
@@ -90,6 +146,7 @@ describe('useNotes', () => {
 
 describe('usePastas', () => {
   beforeEach(() => {
+    useDBStore._reset();
     localStorage.clear();
   });
 

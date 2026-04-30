@@ -1,5 +1,6 @@
 // src/components/settings/RecitacaoSettings.jsx
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import PropTypes from 'prop-types'
 
 export const LANGUAGES = [
   { value: 'portuguese', label: 'Português', flag: '🇧🇷' },
@@ -201,4 +202,9 @@ function Toggle({ checked, onChange }) {
       }} />
     </div>
   )
+}
+
+Toggle.propTypes = {
+  checked: PropTypes.bool,
+  onChange: PropTypes.func,
 }

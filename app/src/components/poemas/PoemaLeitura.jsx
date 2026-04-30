@@ -192,7 +192,7 @@ export default function PoemaLeitura({ onManage, poemaSelecionado, setPoemaSelec
                     <Settings size={12} /> Minhas Anotações de Estudo
                   </h4>
                   <p className="text-sm text-text-lo/80 leading-relaxed italic">
-                    "{poemaSelecionado.notas_usuario}"
+                    &quot;{poemaSelecionado.notas_usuario}&quot;
                   </p>
                 </div>
               )}

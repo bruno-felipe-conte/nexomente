@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import PropTypes from 'prop-types';
 import { BrainCircuit } from 'lucide-react';
 
 export default function AIMemoryIndicator({ activeTokens, maxTokens }) {
@@ -47,3 +48,8 @@ export default function AIMemoryIndicator({ activeTokens, maxTokens }) {
     </div>
   );
 }
+
+AIMemoryIndicator.propTypes = {
+  activeTokens: PropTypes.number,
+  maxTokens: PropTypes.number,
+};

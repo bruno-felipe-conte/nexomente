@@ -200,12 +200,15 @@ export default function EditorToolbar({ editor, focusMode, onToggleFocus }) {
     </div>
   );
 }
-EditorToolbar.propTypes = {
+ToolbarButton.propTypes = {
   onClick: PropTypes.func,
-  active: PropTypes.any,
-  disabled: PropTypes.any,
+  active: PropTypes.bool,
+  disabled: PropTypes.bool,
   title: PropTypes.string,
   children: PropTypes.node,
+};
+
+EditorToolbar.propTypes = {
   editor: PropTypes.any,
   focusMode: PropTypes.any,
   onToggleFocus: PropTypes.func,

@@ -27,21 +27,24 @@ export function useKeyboardShortcuts() {
 
   // Mantém ref atualizada para o efeito não precisar de re-subscribe
   const shortcutsRef = useRef({});
-  shortcutsRef.current = {
-    'g d': () => navigate('/dashboard'),
-    'g n': () => navigate('/notas'),
-    'g s': () => navigate('/study'),
-    'g f': () => navigate('/flashcards'),
-    'g g': () => navigate('/graph'),
-    'g t': () => navigate('/statistics'),
-    'g ,': () => navigate('/settings'),
-    'g q': () => navigate('/gerador'),
-    'mod+shift+n': createQuickNota,
-    'mod+shift+f': toggleFocusMode,
-    'mod+k': openCommandPalette,
-    'mod+/': showHelp,
-    'escape': closeModals,
-  };
+
+  useEffect(() => {
+    shortcutsRef.current = {
+      'g d': () => navigate('/dashboard'),
+      'g n': () => navigate('/notas'),
+      'g s': () => navigate('/study'),
+      'g f': () => navigate('/flashcards'),
+      'g g': () => navigate('/graph'),
+      'g t': () => navigate('/statistics'),
+      'g ,': () => navigate('/settings'),
+      'g q': () => navigate('/gerador'),
+      'mod+shift+n': createQuickNota,
+      'mod+shift+f': toggleFocusMode,
+      'mod+k': openCommandPalette,
+      'mod+/': showHelp,
+      'escape': closeModals,
+    };
+  });
 
   useEffect(() => {
     const handleKeyDown = (e) => {

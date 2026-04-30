@@ -41,11 +41,14 @@ export function useAIChat(notaId) {
     const stored = localStorage.getItem(storageKey);
     if (stored) {
       try {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setMensagens(JSON.parse(stored));
       } catch {
+         
         setMensagens([]);
       }
     } else {
+       
       setMensagens([]);
     }
   }, [storageKey]);

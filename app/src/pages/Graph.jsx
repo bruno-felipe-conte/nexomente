@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useUIStore } from '../store/useUIStore';
 import cytoscape from 'cytoscape';
-import { GitBranch, ZoomIn, ZoomOut, Maximize2, Filter, Layout, Eye, EyeOff, X } from 'lucide-react';
+import { GitBranch, ZoomIn, ZoomOut, Maximize2, Filter, Search, X } from 'lucide-react';
 
 const tipoCores = {
   nota: '#6C63FF',
@@ -13,207 +13,241 @@ const tipoCores = {
   lembrete: '#EF4444',
 };
 
+// Defined outside component — never recreated on render
+const CYTO_STYLES = [
+  {
+    selector: 'node',
+    style: {
+      'label': 'data(label)',
+      'background-color': '#7C6DFA',
+      'color': '#F2F0FF',
+      'font-family': 'Syne, sans-serif',
+      'font-weight': '700',
+      'font-size': '10px',
+      'text-valign': 'bottom',
+      'text-margin-y': 10,
+      'width': 30,
+      'height': 30,
+      'overlay-opacity': 0,
+      'transition-property': 'background-color, line-color, width, height',
+      'transition-duration': '0.3s',
+    },
+  },
+  ...Object.entries(tipoCores).map(([tipo, cor]) => ({
+    selector: `node[tipo="${tipo}"]`,
+    style: {
+      'background-color': cor,
+      'shadow-blur': 15,
+      'shadow-color': cor,
+      'shadow-opacity': 0.3,
+    },
+  })),
+  {
+    selector: 'edge',
+    style: {
+      'width': 1,
+      'line-color': 'rgba(255,255,255,0.1)',
+      'curve-style': 'haystack',
+      'overlay-opacity': 0,
+    },
+  },
+  {
+    selector: 'edge[tipo="wikilink"]',
+    style: {
+      'width': 2,
+      'line-color': '#7C6DFA',
+      'line-style': 'solid',
+      'opacity': 0.4,
+      'curve-style': 'bezier',
+      'target-arrow-shape': 'vee',
+      'target-arrow-color': '#7C6DFA',
+    },
+  },
+  {
+    selector: 'node:selected',
+    style: {
+      'width': 45,
+      'height': 45,
+      'border-width': 4,
+      'border-color': '#FFF',
+      'font-size': '12px',
+      'text-margin-y': 14,
+    },
+  },
+  { selector: 'node.hidden', style: { 'display': 'none' } },
+  { selector: 'edge.hidden', style: { 'display': 'none' } },
+];
+
+// Hide labels below this zoom level — large perf gain with 1000+ nodes
+const LABEL_ZOOM_THRESHOLD = 0.6;
+
+function extrairLinks(conteudo) {
+  if (!conteudo) return [];
+  const regex = /\[\[([^\]]+)\]\]/g;
+  const links = [];
+  let match;
+  while ((match = regex.exec(conteudo)) !== null) links.push(match[1]);
+  return links;
+}
+
+function extrairTags(nota) {
+  if (!nota.tags) return [];
+  try {
+    return Array.isArray(nota.tags) ? nota.tags : JSON.parse(nota.tags || '[]');
+  } catch {
+    return [];
+  }
+}
+
 export default function Graph() {
   const uiState = useUIStore();
   const Notas = uiState.Notas;
-  const Pastas = uiState.Pastas;
   const containerRef = useRef(null);
   const cyRef = useRef(null);
-  const [notas, setNotas] = useState([]);
+  const notas = useMemo(() => Notas?.getAll() ?? [], [Notas]);
   const [notaSelecionada, setNotaSelecionada] = useState(null);
   const [layout, setLayout] = useState('cose');
+  const [busca, setBusca] = useState('');
   const [filtros, setFiltros] = useState({
-    nota: true,
-    livro: true,
-    ideia: true,
-    diario: true,
-    biblia: true,
-    estudo: true,
+    nota: true, livro: true, ideia: true,
+    diario: true, biblia: true, estudo: true, lembrete: true,
   });
 
-  const extrairLinks = useCallback((conteudo) => {
-    if (!conteudo) return [];
-    const regex = /\[\[([^\]]+)\]\]/g;
-    const links = [];
-    let match;
-    while ((match = regex.exec(conteudo)) !== null) {
-      links.push(match[1]);
-    }
-    return links;
-  }, []);
+  // Pre-compute all elements once — O(n) with O(1) title lookup instead of O(n²)
+  const elementos = useMemo(() => {
+    if (notas.length === 0) return [];
 
-  const extrairTags = useCallback((nota) => {
-    if (!nota.tags) return [];
-    return Array.isArray(nota.tags) ? nota.tags : JSON.parse(nota.tags || '[]');
-  }, []);
+    const nodes = notas.map(nota => ({
+      data: {
+        id: nota.id,
+        label: nota.titulo || 'Sem título',
+        tipo: nota.tipo || 'nota',
+        tags: extrairTags(nota),
+      },
+    }));
 
-  useEffect(() => {
-    if (!Notas) return;
-    setNotas(Notas.getAll());
-  }, [Notas]);
+    const edges = [];
 
-  useEffect(() => {
-    if (!containerRef.current || notas.length === 0) return;
-
-    if (cyRef.current) {
-      cyRef.current.destroy();
-    }
-
-    const elementos = [];
-
-    notas.forEach(nota => {
-      if (!filtros[nota.tipo]) return;
-      
-      elementos.push({
-        data: { 
-          id: nota.id, 
-          label: nota.titulo || 'Sem título', 
-          tipo: nota.tipo || 'nota',
-          conteudo: nota.conteudo,
-          tags: extrairTags(nota),
-        },
-      });
-    });
-
+    // Tag-based connections
     const tagsMap = {};
     notas.forEach(nota => {
-      const tags = extrairTags(nota);
-      tags.forEach(tag => {
+      extrairTags(nota).forEach(tag => {
         if (!tagsMap[tag]) tagsMap[tag] = [];
         tagsMap[tag].push(nota.id);
       });
     });
-
-    Object.values(tagsMap).forEach(notaIds => {
-      if (notaIds.length > 1) {
-        for (let i = 0; i < notaIds.length - 1; i++) {
-          elementos.push({
-            data: {
-              source: notaIds[i],
-              target: notaIds[i + 1],
-              tipo: 'tag',
-            },
-          });
-        }
+    Object.values(tagsMap).forEach(ids => {
+      for (let i = 0; i < ids.length - 1; i++) {
+        edges.push({ data: { source: ids[i], target: ids[i + 1], tipo: 'tag' } });
       }
     });
 
+    // Wikilink connections — title→id map avoids O(n) find() per link
+    const tituloMap = {};
+    notas.forEach(n => { tituloMap[(n.titulo || '').toLowerCase()] = n.id; });
     notas.forEach(nota => {
-      const links = extrairLinks(nota.conteudo);
-      links.forEach(linkTexto => {
-        const notaDestino = notas.find(n => 
-          n.titulo?.toLowerCase() === linkTexto.toLowerCase()
-        );
-        if (notaDestino && notaDestino.id !== nota.id) {
-          elementos.push({
-            data: {
-              source: nota.id,
-              target: notaDestino.id,
-              tipo: 'wikilink',
-            },
-          });
+      extrairLinks(nota.conteudo).forEach(texto => {
+        const targetId = tituloMap[texto.toLowerCase()];
+        if (targetId && targetId !== nota.id) {
+          edges.push({ data: { source: nota.id, target: targetId, tipo: 'wikilink' } });
         }
       });
     });
 
+    return [...nodes, ...edges];
+  }, [notas]);
+
+  const totalConexoes = useMemo(
+    () => elementos.filter(e => e.data.source !== undefined).length,
+    [elementos]
+  );
+
+  // Rebuild Cytoscape only when note data changes, not on filter/layout changes
+  useEffect(() => {
+    if (!containerRef.current || elementos.length === 0) return;
+    if (cyRef.current) cyRef.current.destroy();
+
     cyRef.current = cytoscape({
       container: containerRef.current,
       elements: elementos,
-      style: [
-        {
-          selector: 'node',
-          style: {
-            'label': 'data(label)',
-            'background-color': '#7C6DFA',
-            'color': '#F2F0FF',
-            'font-family': 'Syne, sans-serif',
-            'font-weight': '700',
-            'font-size': '10px',
-            'text-valign': 'bottom',
-            'text-margin-y': 10,
-            'width': 30,
-            'height': 30,
-            'overlay-opacity': 0,
-            'transition-property': 'background-color, line-color, width, height',
-            'transition-duration': '0.3s'
-          },
-        },
-        ...Object.entries(tipoCores).map(([tipo, cor]) => ({
-          selector: `node[tipo="${tipo}"]`,
-          style: { 
-            'background-color': cor,
-            'shadow-blur': 15,
-            'shadow-color': cor,
-            'shadow-opacity': 0.3
-          },
-        })),
-        {
-          selector: 'edge',
-          style: {
-            'width': 1,
-            'line-color': 'rgba(255,255,255,0.1)',
-            'curve-style': 'haystack',
-            'overlay-opacity': 0
-          }
-        },
-        {
-          selector: 'edge[tipo="wikilink"]',
-          style: {
-            'width': 2,
-            'line-color': '#7C6DFA',
-            'line-style': 'solid',
-            'opacity': 0.4,
-            'curve-style': 'bezier',
-            'target-arrow-shape': 'vee',
-            'target-arrow-color': '#7C6DFA'
-          },
-        },
-        {
-          selector: 'node:selected',
-          style: {
-            'width': 45,
-            'height': 45,
-            'border-width': 4,
-            'border-color': '#FFF',
-            'font-size': '12px',
-            'text-margin-y': 14,
-          },
-        },
-      ],
+      style: CYTO_STYLES,
       layout: { name: layout },
-      minZoom: 0.3,
-      maxZoom: 3,
+      minZoom: 0.1,
+      maxZoom: 5,
       wheelSensitivity: 0.3,
     });
 
-    cyRef.current.on('tap', 'node', (evt) => {
-      const node = evt.target;
-      const nota = notas.find(n => n.id === node.id());
-      if (nota) {
-        setNotaSelecionada(nota);
-      }
+    // Level of Detail: skip label rendering when zoomed out far
+    cyRef.current.on('zoom', () => {
+      const z = cyRef.current.zoom();
+      cyRef.current.nodes().style('label', z >= LABEL_ZOOM_THRESHOLD ? 'data(label)' : '');
     });
 
-    return () => {
-      if (cyRef.current) {
-        cyRef.current.destroy();
-      }
-    };
-  }, [notas, filtros, layout, extrairLinks, extrairTags]);
+    cyRef.current.on('tap', 'node', evt => {
+      const nota = notas.find(n => n.id === evt.target.id());
+      if (nota) setNotaSelecionada(nota);
+    });
+
+    return () => { if (cyRef.current) cyRef.current.destroy(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [elementos]);
+
+  // Apply filter + search via CSS class toggle — no graph rebuild needed
+  useEffect(() => {
+    const cy = cyRef.current;
+    if (!cy) return;
+    const buscaLower = busca.toLowerCase();
+    cy.batch(() => {
+      cy.nodes().forEach(node => {
+        const visible =
+          filtros[node.data('tipo')] !== false &&
+          (buscaLower === '' || node.data('label').toLowerCase().includes(buscaLower));
+        node.toggleClass('hidden', !visible);
+      });
+      cy.edges().forEach(edge => {
+        edge.toggleClass('hidden', edge.source().hasClass('hidden') || edge.target().hasClass('hidden'));
+      });
+    });
+  }, [filtros, busca]);
+
+  // Re-run layout without rebuilding Cytoscape
+  useEffect(() => {
+    const cy = cyRef.current;
+    if (!cy) return;
+    cy.layout({ name: layout, animate: true, animationDuration: 400 }).run();
+  }, [layout]);
 
   const zoomIn = () => cyRef.current?.zoom(cyRef.current.zoom() * 1.2);
   const zoomOut = () => cyRef.current?.zoom(cyRef.current.zoom() / 1.2);
   const reset = () => cyRef.current?.fit();
+
+  const notasVisiveis = useMemo(
+    () => notas.filter(n => filtros[n.tipo] !== false).length,
+    [notas, filtros]
+  );
 
   return (
     <div className="h-full flex flex-col">
       <div className="p-4 border-b border-border-subtle flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-text-primary">Grafo</h1>
-          <p className="text-text-secondary">{notas.length} notas • {notas.filter(n => extrairLinks(n.conteudo).length)} conexões</p>
+          <p className="text-text-secondary">
+            {notasVisiveis}/{notas.length} notas • {totalConexoes} conexões
+          </p>
         </div>
-        
+
         <div className="flex items-center gap-2">
+          <div className="relative">
+            <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-text-muted" />
+            <input
+              type="text"
+              value={busca}
+              onChange={e => setBusca(e.target.value)}
+              placeholder="Buscar nó..."
+              aria-label="Buscar nó no grafo"
+              className="pl-7 pr-3 py-1 bg-bg-secondary border border-border-subtle rounded-lg text-sm w-40 focus:outline-none focus:border-accent-main"
+            />
+          </div>
           <button onClick={zoomIn} aria-label="Aumentar zoom" title="Aumentar zoom" className="p-2 bg-bg-secondary border border-border-subtle rounded-lg hover:border-accent-main">
             <ZoomIn size={20} />
           </button>
@@ -226,10 +260,10 @@ export default function Graph() {
         </div>
       </div>
 
-      <div className="p-4 border-b border-border-subtle flex gap-2">
-        <select 
-          value={layout} 
-          onChange={(e) => setLayout(e.target.value)}
+      <div className="p-4 border-b border-border-subtle flex gap-2 flex-wrap items-center">
+        <select
+          value={layout}
+          onChange={e => setLayout(e.target.value)}
           aria-label="Layout do grafo"
           className="px-3 py-1 bg-bg-secondary border border-border-subtle rounded-lg text-sm"
         >
@@ -239,20 +273,16 @@ export default function Graph() {
           <option value="concentric">Concêntrico</option>
           <option value="breadthfirst">Árvore</option>
         </select>
-        
+
         <Filter size={16} className="text-text-muted" />
         {Object.keys(filtros).map(tipo => (
           <button
             key={tipo}
             onClick={() => setFiltros(f => ({ ...f, [tipo]: !f[tipo] }))}
-            className={`px-3 py-1 rounded-lg text-sm flex items-center gap-1 ${
-              filtros[tipo] 
-                ? '' 
-                : 'opacity-50'
-            }`}
-            style={{ 
+            className={`px-3 py-1 rounded-lg text-sm flex items-center gap-1 ${!filtros[tipo] ? 'opacity-50' : ''}`}
+            style={{
               backgroundColor: filtros[tipo] ? tipoCores[tipo] || '#6C63FF' : '#252338',
-              border: `1px solid ${tipoCores[tipo] || '#6C63FF'}40`
+              border: `1px solid ${tipoCores[tipo] || '#6C63FF'}40`,
             }}
           >
             {tipo.charAt(0).toUpperCase() + tipo.slice(1)}

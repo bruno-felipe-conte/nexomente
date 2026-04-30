@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import PropTypes from 'prop-types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, MicOff, RotateCcw, X, CheckCircle2, Trophy, Star } from 'lucide-react';
+import { Mic, MicOff, RotateCcw, X, Trophy } from 'lucide-react';
 import { useVosk } from '../../hooks/useVosk';
 import { toast } from 'react-hot-toast';
 import './PoemaRecitacao.css';
@@ -63,23 +64,6 @@ const PoemaRecitacao = ({ poema, onFinish, onClose }) => {
     onError: (msg) => toast.error(msg)
   });
 
-  // Verifica se a linha terminou
-  useEffect(() => {
-    const todasCertas = palavrasPoema.length > 0 && 
-                       palavrasPoema.every((_, i) => palavrasStatus[i] === 'correta');
-    
-    // Se a maioria estiver correta ou o índice de palavras estourou a linha
-    if (todasCertas || (indicePalavraLocal >= palavrasPoema.length && palavrasPoema.length > 0)) {
-      setTimeout(() => {
-        if (currentLineIndex < lines.length - 1) {
-          handleNextLine();
-        } else {
-          finishDojo();
-        }
-      }, 1000);
-    }
-  }, [palavrasStatus, indicePalavraLocal, palavrasPoema]);
-
   const handleNextLine = () => {
     setTranscript('');
     setPartialTranscript('');
@@ -95,6 +79,23 @@ const PoemaRecitacao = ({ poema, onFinish, onClose }) => {
     terminateAudio();
     toast.success('Recitação concluída!');
   };
+
+  // Verifica se a linha terminou
+  useEffect(() => {
+    const todasCertas = palavrasPoema.length > 0 &&
+                       palavrasPoema.every((_, i) => palavrasStatus[i] === 'correta');
+
+    // Se a maioria estiver correta ou o índice de palavras estourou a linha
+    if (todasCertas || (indicePalavraLocal >= palavrasPoema.length && palavrasPoema.length > 0)) {
+      setTimeout(() => {
+        if (currentLineIndex < lines.length - 1) {
+          handleNextLine();
+        } else {
+          finishDojo();
+        }
+      }, 1000);
+    }
+  }, [palavrasStatus, indicePalavraLocal, palavrasPoema]);
 
   const resetDojo = () => {
     setCurrentLineIndex(0);
@@ -131,7 +132,7 @@ const PoemaRecitacao = ({ poema, onFinish, onClose }) => {
                 <Trophy size={48} className="text-yellow-500" />
               </div>
               <h2 className="text-4xl font-bold text-white">Excelente!</h2>
-              <p className="text-slate-400">Você concluiu a recitação de "{poema?.titulo}".</p>
+              <p className="text-slate-400">Você concluiu a recitação de &quot;{poema?.titulo}&quot;.</p>
               <div className="flex gap-4 justify-center pt-8">
                 <button onClick={onFinish} className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-indigo-500/20">
                   Coletar Recompensa
@@ -217,6 +218,15 @@ const PoemaRecitacao = ({ poema, onFinish, onClose }) => {
       </motion.div>
     </div>
   );
+};
+
+PoemaRecitacao.propTypes = {
+  poema: PropTypes.shape({
+    titulo: PropTypes.string,
+    corpo: PropTypes.string,
+  }),
+  onFinish: PropTypes.func,
+  onClose: PropTypes.func,
 };
 
 export default PoemaRecitacao;

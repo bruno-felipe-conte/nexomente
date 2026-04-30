@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { Zap, Star, Trophy } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -64,3 +65,7 @@ export default function LevelCard({ xp }) {
     </div>
   );
 }
+
+LevelCard.propTypes = {
+  xp: PropTypes.number,
+};

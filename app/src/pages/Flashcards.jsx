@@ -36,14 +36,18 @@ export default function FlashcardsPage() {
 
   useEffect(() => {
     if (modo === 'revisao' && paraRevisao.length > 0 && !cardAtual) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCardAtual(paraRevisao[0]);
+       
       setIdxRevisao(0);
+       
       setMostrandoFrente(true);
     }
   }, [modo]);
 
   useEffect(() => {
     if (!undoCard) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setUndoCountdown(5);
     const t = setInterval(() => {
       setUndoCountdown(c => {

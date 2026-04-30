@@ -44,7 +44,7 @@ class ErrorBoundary extends Component {
             <div className="space-y-2">
               <h2 className="text-nx-2xl font-display font-black tracking-tight uppercase">Falha na Matriz</h2>
               <p className="text-nx-dim text-nx-md">
-                Ocorreu um erro crítico em <span className="text-nx-error font-mono font-bold">"{this.props.context || 'App'}"</span>.
+                Ocorreu um erro crítico em <span className="text-nx-error font-mono font-bold">&quot;{this.props.context || 'App'}&quot;</span>.
               </p>
             </div>
 
