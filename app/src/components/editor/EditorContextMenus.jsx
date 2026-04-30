@@ -1,7 +1,8 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { BubbleMenu, FloatingMenu } from '@tiptap/react';
-import { 
-  Bold, Italic, Underline, Highlighter, Link, 
+import {
+  Bold, Italic, Underline, Highlighter,
   Heading1, Heading2, List, ListOrdered, Code, Quote, Sparkles
 } from 'lucide-react';
 
@@ -89,8 +90,8 @@ function ContextButton({ onClick, active, children, className = '' }) {
         onClick();
       }}
       className={`p-2 rounded-lg transition-all flex items-center justify-center ${
-        active 
-          ? 'bg-accent-main text-white' 
+        active
+          ? 'bg-accent-main text-white'
           : `text-text-lo hover:bg-white/5 hover:text-text-hi ${className}`
       }`}
     >
@@ -98,3 +99,15 @@ function ContextButton({ onClick, active, children, className = '' }) {
     </button>
   );
 }
+
+EditorContextMenus.propTypes = {
+  editor: PropTypes.any,
+  onAIAction: PropTypes.func,
+};
+
+ContextButton.propTypes = {
+  onClick: PropTypes.func,
+  active: PropTypes.bool,
+  children: PropTypes.node,
+  className: PropTypes.string,
+};

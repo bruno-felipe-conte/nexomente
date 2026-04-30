@@ -13,6 +13,7 @@ export function useSpeechRecognition({ onResult, onEnd, onError, language = 'pt-
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setError('Speech Recognition API not supported in this browser.');
       return;
     }

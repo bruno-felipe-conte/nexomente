@@ -1,5 +1,13 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { motion } from 'framer-motion';
+
+CircularTimer.propTypes = {
+  seconds: PropTypes.number,
+  totalSeconds: PropTypes.number,
+  isActive: PropTypes.bool,
+  color: PropTypes.string,
+};
 
 export default function CircularTimer({ seconds, totalSeconds, isActive, color = '#2DD4BF' }) {
   const radius = 90;

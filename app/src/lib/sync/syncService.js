@@ -12,7 +12,7 @@ export function startSyncWatcher(cofrePath, onChange) {
   console.log(`[Sync] Watching: ${cofrePath}`);
   
   watcher = chokidar.watch(cofrePath, {
-    ignored: /(^|[\/\\])\../,
+    ignored: /(^|[/\\])\../,
     persistent: true,
     ignoreInitial: true,
     awaitWriteFinish: {

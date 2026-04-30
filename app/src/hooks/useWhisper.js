@@ -22,6 +22,7 @@ export function useWhisper({ language = 'portuguese', onResult }) {
     )
     ...
     */
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setStatus('ready') // Simula que está pronto para não quebrar a UI
     return () => {}
   }, []) 

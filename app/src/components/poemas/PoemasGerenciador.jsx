@@ -40,7 +40,7 @@ export default function PoemasGerenciador({ onLeitura, onSelectPoema }) {
 
   const exportarSelecionados = (formato) => {
     const dados = poemas.filter(p => selecionados.includes(p.id));
-    let conteudo = '';
+    let conteudo;
     let fileName = `nexomente_poemas_${new Date().getTime()}`;
 
     if (formato === 'json') {
@@ -212,12 +212,10 @@ EXEMPLO DE FORMATO:
     }, 100);
   };
 
-  const poemasFiltrados = useMemo(() => {
-    return poemas.filter(p => 
-      p.titulo.toLowerCase().includes(busca.toLowerCase()) || 
-      (p.autor && p.autor.toLowerCase().includes(busca.toLowerCase()))
-    );
-  }, [poemas, busca]);
+  const poemasFiltrados = poemas.filter(p =>
+    p.titulo.toLowerCase().includes(busca.toLowerCase()) ||
+    (p.autor && p.autor.toLowerCase().includes(busca.toLowerCase()))
+  );
 
   return (
     <div className="flex flex-col h-full bg-bg-primary overflow-hidden">
