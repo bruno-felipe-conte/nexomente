@@ -67,7 +67,7 @@ vi.mock('../../src/store/useTamagotchiStore', async () => {
     registerStudySession: () => {},
     addXP: () => {},
   }));
-  return { useTamagotchiStore };
+  return { useTamagotchiStore, getLevelProgress: () => 0 };
 });
 
 import { useNotes } from '../../src/hooks/useNotes';
