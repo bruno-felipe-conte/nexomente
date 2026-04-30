@@ -53,7 +53,7 @@ export default function ActivityHeatmap({ sessoes }) {
 
   const totalSessions = sessoes.length;
   const activeDays    = Object.keys(countMap).length;
-  const DAY_LABELS    = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  const DAY_LABELS    = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
 
   return (
     <div className="p-5 rounded-nx-lg border border-nx-border" style={{ background: 'rgba(8,11,24,0.95)' }}>
