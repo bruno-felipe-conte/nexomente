@@ -1,18 +1,12 @@
-﻿import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('../../src/lib/ai/lmStudioService', () => ({
   checkLMStudioStatus: vi.fn().mockResolvedValue({
     status: 'online',
     models: [{ name: 'lmstudio-model-1', id: 'lmstudio-model-1' }],
   }),
-  generate: vi.fn().mockResolvedValue({
-    success: true,
-    response: '[MOCK_LMSTUDIO] resposta gerada',
-  }),
-  chat: vi.fn().mockResolvedValue({
-    success: true,
-    response: '[MOCK_LMSTUDIO] resposta do chat',
-  }),
+  generate: vi.fn().mockResolvedValue({ success: true, response: '[MOCK_LMSTUDIO] ok' }),
+  chat: vi.fn().mockResolvedValue({ success: true, response: '[MOCK_LMSTUDIO] ok' }),
   suggestTags: vi.fn().mockResolvedValue(['tag1', 'tag2']),
   setModel: vi.fn(),
   getModel: vi.fn().mockReturnValue('test-model'),
@@ -25,10 +19,7 @@ vi.mock('../../src/lib/ai/ollamaService', () => ({
     status: 'online',
     models: [{ name: 'llama3:latest' }, { name: 'mistral:latest' }],
   }),
-  generate: vi.fn().mockResolvedValue({
-    success: true,
-    response: '[MOCK_OLLAMA] resposta gerada',
-  }),
+  generate: vi.fn().mockResolvedValue({ success: true, response: '[MOCK_OLLAMA] ok' }),
 }));
 
 import * as LMStudio from '../../src/lib/ai/lmStudioService';
@@ -50,14 +41,14 @@ describe('AI Services Integration (MSW)', () => {
     });
 
     it('chat completa um historico com sucesso', async () => {
-      const msgs = [{ role: 'user', content: 'Ola IA' }];
+      const msgs = [{ role: 'user', content: 'Ola' }];
       const res = await LMStudio.chat(msgs, { model: 'test' });
       expect(res.success).toBe(true);
       expect(res.response).toContain('[MOCK_LMSTUDIO]');
     });
 
     it('suggestTags retorna lista de tags', async () => {
-      const tags = await LMStudio.suggestTags({ titulo: 'Test', conteudo: 'test content' });
+      const tags = await LMStudio.suggestTags({ titulo: 'T', conteudo: 'c' });
       expect(Array.isArray(tags)).toBe(true);
     });
   });
@@ -70,7 +61,7 @@ describe('AI Services Integration (MSW)', () => {
     });
 
     it('generate completa um prompt com sucesso', async () => {
-      const res = await Ollama.generate('Escreva um poema', { model: 'test' });
+      const res = await Ollama.generate('Escreva', { model: 'test' });
       expect(res.success).toBe(true);
       expect(res.response).toContain('[MOCK_OLLAMA]');
     });
