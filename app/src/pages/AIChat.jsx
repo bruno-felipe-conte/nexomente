@@ -96,11 +96,11 @@ export default function AIChatPage({ onNavigate }) {
   ).slice(0, 5);
 
   return (
-    <div className="flex flex-col h-full bg-bg-primary font-sans">
+    <div className="flex flex-col h-full bg-nx-void font-ui overflow-hidden">
       {/* Área Principal (Cabeçalho removido para integração com o Header global) */}
 
       {/* Área Principal */}
-      <div className="flex-1 overflow-auto flex flex-col scrollbar-none relative">
+      <div className="flex-1 overflow-auto flex flex-col chat-scroll-area relative">
         {mensagens.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center p-8 pb-32">
             {/* Saudação Claude */}
@@ -109,18 +109,18 @@ export default function AIChatPage({ onNavigate }) {
               animate={{ opacity: 1, y: 0 }}
               className="mb-6 md:mb-12 text-center w-full"
             >
-              <h1 className="text-2xl md:text-[44px] font-serif text-text-hi tracking-tight leading-tight mb-2 px-6">Boa noite, bruno</h1>
+              <h1 className="text-xl md:text-nx-2xl font-display text-nx-bright tracking-tight leading-tight mb-2 px-6">Boa noite, bruno</h1>
             </motion.div>
 
             <div className="w-full max-w-2xl relative px-4 md:px-0">
               {/* Hub de Input Alta Fidelidade */}
-              <div className="bg-bg-secondary/30 border border-white/5 rounded-[1.2rem] md:rounded-[1.5rem] p-3 md:p-4 pb-2 md:pb-3 shadow-2xl transition-all focus-within:bg-bg-secondary/50">
+              <div className="bg-nx-surface/30 border border-nx-border rounded-nx-md p-3 md:p-4 pb-2 md:pb-3 shadow-2xl transition-all focus-within:bg-nx-surface/50">
                 <textarea
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(); } }}
                   placeholder="Como posso ajudar você hoje?"
-                  className="w-full bg-transparent border-none p-2 text-base md:text-lg text-text-hi placeholder-text-lo/20 focus:outline-none focus:ring-0 resize-none min-h-[40px] md:min-h-[50px] leading-relaxed"
+                  className="w-full bg-transparent border-none p-2 text-sm md:text-nx-base text-nx-bright placeholder-nx-dim/20 focus:outline-none focus:ring-0 resize-none min-h-[40px] md:min-h-[50px] leading-relaxed"
                 />
                 
                 <div className="flex items-center justify-between mt-2">
@@ -140,7 +140,7 @@ export default function AIChatPage({ onNavigate }) {
                             initial={{ opacity: 0, y: 10, scale: 0.95 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                            className="absolute bottom-full left-0 mb-3 w-[90vw] max-w-[320px] max-h-[200px] bg-bg-secondary border border-white/10 rounded-2xl shadow-2xl p-2 z-50 overflow-y-auto"
+                             className="absolute bottom-full left-0 mb-3 w-[90vw] max-w-[320px] max-h-[200px] bg-nx-surface border border-nx-border rounded-nx-md shadow-2xl p-2 z-50 overflow-y-auto"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <div className="p-2 relative">
@@ -200,7 +200,7 @@ export default function AIChatPage({ onNavigate }) {
                             initial={{ opacity: 0, y: 10, scale: 0.95 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                            className="absolute bottom-full left-0 mb-2 w-fit min-w-[200px] max-w-[calc(100vw-40px)] bg-bg-secondary border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden flex flex-col"
+                             className="absolute bottom-full left-0 mb-2 w-fit min-w-[200px] max-w-[calc(100vw-40px)] bg-nx-overlay border border-nx-border rounded-nx-md shadow-2xl z-50 overflow-hidden flex flex-col"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <div className="px-4 py-3 border-b border-white/5 bg-bg-secondary/80 backdrop-blur-md sticky top-0 z-10 whitespace-nowrap">
@@ -249,8 +249,8 @@ export default function AIChatPage({ onNavigate }) {
                     <button 
                       onClick={() => enviar()} 
                       disabled={loading || !input.trim()}
-                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
-                        input.trim() ? 'bg-accent-main text-white' : 'text-text-lo/10 cursor-not-allowed'
+                       className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                        input.trim() ? 'bg-nx-primary text-white' : 'text-nx-dim/10 cursor-not-allowed'
                       }`}
                     >
                       <Send size={16} />
@@ -304,9 +304,9 @@ export default function AIChatPage({ onNavigate }) {
 
       {/* Input Flutuante Integrado ao Fluxo */}
       {mensagens.length > 0 && (
-        <div className="w-full bg-bg-primary/80 backdrop-blur-md border-t border-white/5 p-2 sm:p-3 md:p-6 lg:p-8 z-30">
+        <div className="w-full bg-nx-void/80 backdrop-blur-md border-t border-nx-border p-2 sm:p-3 md:p-4 z-30">
           <div className="max-w-3xl mx-auto w-full flex flex-col gap-3">
-            <div className="bg-bg-secondary/95 backdrop-blur-xl border border-white/10 rounded-2xl md:rounded-[1.5rem] p-2 md:p-3 shadow-2xl flex flex-col gap-2">
+            <div className="bg-nx-surface/95 backdrop-blur-xl border border-nx-border rounded-nx-md p-2 md:p-3 shadow-2xl flex flex-col gap-2">
               <div className="flex items-end gap-2 md:gap-3">
                 <textarea
                   value={input}

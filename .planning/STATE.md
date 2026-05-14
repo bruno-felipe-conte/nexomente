@@ -1,23 +1,23 @@
 # 📍 Project State
 
-**Última Atualização:** 2026-04-28
+**Última Atualização:** 2026-04-29
 **Foco Atual:** Estabilização da IA Offline e Documentação de Elite.
 
 ## 🟢 Concluído Recentemente
+- **Codebase Mapping**: Todos os 7 documentos de mapeamento criados em `.planning/codebase/`.
+- **CodeGraph Sync**: Grafo de conhecimento sincronizado com `codegraph sync`.
 - **Whisper AI Integration**: Motor de voz funcionando em Web Workers.
 - **Dojo UI**: Interface de recitação integrada com feedback visual.
-- **Git LFS Setup**: Modelos de IA pesados versionados corretamente no GitHub.
-- **README Upgrade**: Documentação visual de impacto para o repositório.
 
 ## 🟡 Em Andamento
-- **Context Frameworks**: Inicialização do GSD para gestão de longo prazo.
-- **CodeGraph Sync**: Sincronização do grafo de conhecimento após mudanças estruturais.
+- **GSD Intel Refresh**: Geração inicial dos arquivos de inteligência em `.planning/intel/`.
+- **Refatoração de Componentes**: Migração de estilos ad-hoc para o design system centralizado.
 
 ## 🔴 Bloqueios / Pendências
-- **Push GitHub**: O upload de 1.1GB pode falhar em conexões instáveis apesar do LFS.
-- **Refatoração de Componentes**: Alguns arquivos de estilo ad-hoc precisam ser movidos para o design system.
+- **Push GitHub**: O upload de arquivos grandes via LFS requer atenção em conexões instáveis.
 
 ## 🚀 Próximos Passos Imediatos
-1. Finalizar o mapeamento de código (`gsd-map-codebase`).
-2. Gerar o primeiro relatório `intel` completo.
-3. Testar a recuperação de modelos via `scripts/download-model.js` em ambiente limpo.
+1. Gerar o primeiro relatório `intel` completo (`/gsd-intel refresh`).
+2. Validar a arquitetura "Above the Fold" em diferentes resoluções.
+3. Iniciar o planejamento da próxima Milestone (Gamification V2).
+

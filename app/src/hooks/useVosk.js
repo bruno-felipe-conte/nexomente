@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 
 /**
  * Hook para reconhecimento de voz OFFLINE usando Vosk-browser.
- * Versão 1.20: Amplificador de Software (GainNode 8x).
+ * Versão 1.22: Latência Zero (Buffer 2048) e Fala Livre.
  */
 export function useVosk({ onResult, onPartialResult, onError }) {
   const [isListening, setIsListening] = useState(false);
@@ -54,16 +54,22 @@ export function useVosk({ onResult, onPartialResult, onError }) {
     if (!modelRef.current) return;
     const rate = sampleRate || currentSampleRateRef.current;
     currentSampleRateRef.current = rate;
+
+    console.log(`[VOSK] 🔄 Criando Recognizer Livre (${rate}Hz)`);
+    
+    // Voltamos ao modo livre para permitir fala conectada e natural
     const rec = new modelRef.current.KaldiRecognizer(rate);
     
     rec.on('result', (m) => {
       if (m.result?.text && isListeningRef.current) {
+        console.log('[VOSK] 🟢 Final:', m.result.text);
         onResultRef.current?.(m.result.text);
       }
     });
 
     rec.on('partialresult', (m) => {
       if (m.result?.partial && isListeningRef.current) {
+        // Não logamos parciais vazias para não poluir
         onPartialResultRef.current?.(m.result.partial);
       }
     });
@@ -105,8 +111,6 @@ export function useVosk({ onResult, onPartialResult, onError }) {
       const mics = devices.filter(d => d.kind === 'audioinput');
       const targetMic = mics.find(m => m.deviceId !== 'default' && m.deviceId !== 'communications') || mics[0];
       
-      console.log(`[VOSK] 🎯 Mic: ${targetMic.label}`);
-
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
       if (ctx.state === 'suspended') await ctx.resume();
       audioContextRef.current = ctx;
@@ -119,19 +123,18 @@ export function useVosk({ onResult, onPartialResult, onError }) {
           deviceId: { exact: targetMic.deviceId },
           echoCancellation: false,
           noiseSuppression: false,
-          autoGainControl: true, // Reativado para compensar volume baixo
+          autoGainControl: true,
           sampleRate: 48000
         } 
       });
       streamRef.current = stream;
 
       const source = ctx.createMediaStreamSource(stream);
-      
-      // NOVO: Amplificador de software (8x) para compensar o driver Intel SST
       const gainNode = ctx.createGain();
-      gainNode.gain.value = 8.0; 
+      gainNode.gain.value = 4.0; 
       
-      processorRef.current = ctx.createScriptProcessor(4096, 1, 1);
+      // Buffer reduzido para 2048 (Latência mínima)
+      processorRef.current = ctx.createScriptProcessor(2048, 1, 1);
       
       let pulseCount = 0;
       processorRef.current.onaudioprocess = (event) => {
@@ -146,11 +149,10 @@ export function useVosk({ onResult, onPartialResult, onError }) {
         if (pulseCount % 100 === 0) {
           let max = 0;
           for(let i=0; i<bufferCopy.length; i++) if(Math.abs(bufferCopy[i]) > max) max = Math.abs(bufferCopy[i]);
-          console.log(`[VOSK] 🌊 Volume (Amplificado 8x): ${max.toFixed(4)}`);
+          if (max > 0.95) console.warn('[VOSK] ⚠️ Clipping!');
         }
       };
 
-      // Conecta a cadeia: Mic -> Ganho -> Processador -> Destino
       source.connect(gainNode);
       gainNode.connect(processorRef.current);
       processorRef.current.connect(ctx.destination);

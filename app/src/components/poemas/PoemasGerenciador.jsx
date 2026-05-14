@@ -220,20 +220,20 @@ EXEMPLO DE FORMATO:
   }, [poemas, busca]);
 
   return (
-    <div className="flex flex-col h-full bg-bg-primary overflow-hidden">
+    <div className="flex flex-col h-full bg-nx-void overflow-hidden">
       {/* Header Fixo */}
-      <div className="px-8 py-6 border-b border-white/5 bg-bg-secondary/30 backdrop-blur-xl flex-none">
+      <div className="px-6 py-4 border-b border-nx-border bg-nx-surface/30 backdrop-blur-xl flex-none">
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-4">
             <button 
               onClick={onLeitura}
-              className="p-2 hover:bg-white/5 rounded-full text-text-lo transition-all"
+              className="p-2 hover:bg-white/5 rounded-full text-nx-dim transition-all"
             >
               <ChevronLeft size={20} />
             </button>
             <div>
-              <h1 className="text-2xl font-bold text-text-hi tracking-tight">Biblioteca Poética</h1>
-              <p className="text-[10px] text-text-lo/40 uppercase font-black tracking-widest mt-1">Gerenciamento e Importação Inteligente</p>
+              <h1 className="text-xl font-bold text-nx-bright tracking-tight">Biblioteca Poética</h1>
+              <p className="text-[10px] text-nx-dim/40 uppercase font-black tracking-widest mt-1">Gerenciamento e Importação Inteligente</p>
             </div>
           </div>
           
@@ -242,7 +242,7 @@ EXEMPLO DE FORMATO:
               <div className="flex items-center gap-2">
                 <button 
                   onClick={() => { setModoSelecao(!modoSelecao); setSelecionados([]); }}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${modoSelecao ? 'bg-accent-main text-white' : 'bg-bg-tertiary text-text-lo hover:bg-white/5'}`}
+                  className={`px-4 py-2 rounded-nx-sm text-xs font-bold transition-all flex items-center gap-2 ${modoSelecao ? 'bg-nx-primary text-white' : 'bg-nx-depth text-nx-dim hover:bg-white/5'}`}
                 >
                   {modoSelecao ? <X size={14} /> : <CheckSquare size={14} />} 
                   {modoSelecao ? 'Cancelar' : 'Seleção Múltipla'}
@@ -251,7 +251,7 @@ EXEMPLO DE FORMATO:
             )}
             <button 
               onClick={() => setAbaAtiva('gerenciador')}
-              className={`p-2 rounded-xl transition-all ${abaAtiva === 'gerenciador' ? 'text-accent-main bg-accent-main/10' : 'text-text-lo hover:text-text-hi'}`}
+              className={`p-2 rounded-nx-sm transition-all ${abaAtiva === 'gerenciador' ? 'text-nx-primary bg-nx-primary/10' : 'text-nx-dim hover:text-nx-bright'}`}
               title="Ver Lista"
             >
               <List size={20} />
@@ -262,25 +262,25 @@ EXEMPLO DE FORMATO:
         {abaAtiva === 'gerenciador' && (
           <div className="flex items-center gap-4">
             <div className="relative flex-1 max-w-xl">
-              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-lo/40" />
+              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-nx-dim/40" />
               <input 
                 value={busca}
                 onChange={e => setBusca(e.target.value)}
                 placeholder="Buscar poemas, autores, temas..."
-                className="w-full bg-bg-secondary/50 border border-white/5 rounded-2xl py-3 pl-12 pr-4 text-sm text-text-hi placeholder-text-lo/30 focus:ring-1 focus:ring-accent-main outline-none transition-all shadow-xl"
+                className="w-full bg-nx-surface/50 border border-nx-border rounded-nx-md py-2 pl-10 pr-4 text-sm text-nx-bright placeholder-nx-dim/30 focus:ring-1 focus:ring-nx-primary outline-none transition-all shadow-xl"
               />
             </div>
             
             <div className="flex gap-2">
                <button 
                 onClick={() => { setEditForm({ id: null, titulo: '', autor: '', corpo: '', tema: [], forma: '' }); setAbaAtiva('editar'); }}
-                className="px-6 py-3 bg-accent-main text-white rounded-xl text-xs font-bold flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-accent-main/20"
+                className="px-4 py-2 bg-nx-primary text-white rounded-nx-sm text-xs font-bold flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-nx-primary/20"
               >
                 <Plus size={16} /> Novo Poema
               </button>
               <button 
                 onClick={() => { setAbaAtiva('processador'); setPoemasDetectados([]); }}
-                className="px-6 py-3 bg-bg-tertiary text-text-hi rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-white/5 transition-all"
+                className="px-4 py-2 bg-nx-depth text-nx-bright rounded-nx-sm text-xs font-bold flex items-center gap-2 hover:bg-white/5 transition-all"
               >
                 <Sparkles size={16} className="text-accent-main" /> Importar com IA
               </button>
@@ -290,7 +290,7 @@ EXEMPLO DE FORMATO:
       </div>
 
       {/* Conteúdo Principal com Scroll Interno */}
-      <div className="flex-1 overflow-y-auto p-8">
+      <div className="flex-1 overflow-hidden p-6">
         <AnimatePresence mode="wait">
           {abaAtiva === 'gerenciador' && (
             <motion.div 
@@ -298,13 +298,13 @@ EXEMPLO DE FORMATO:
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="max-w-6xl mx-auto w-full"
+              className="max-w-6xl mx-auto w-full h-full flex flex-col"
             >
               {modoSelecao && selecionados.length > 0 && (
-                <motion.div 
+               <motion.div 
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
-                  className="mb-8 bg-accent-main p-4 rounded-2xl flex items-center justify-between shadow-2xl"
+                  className="mb-8 bg-nx-primary p-4 rounded-nx-md flex items-center justify-between shadow-2xl"
                 >
                   <span className="text-xs font-black text-white ml-2">{selecionados.length} ITENS SELECIONADOS</span>
                   <div className="flex gap-2">
@@ -314,7 +314,7 @@ EXEMPLO DE FORMATO:
                     <button onClick={() => exportarSelecionados('md')} className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-[10px] font-bold text-white flex items-center gap-2">
                       <Download size={14} /> MD
                     </button>
-                    <button onClick={excluirSelecionados} className="px-3 py-1.5 bg-danger/20 hover:bg-danger/40 rounded-lg text-[10px] font-bold text-white flex items-center gap-2">
+                    <button onClick={excluirSelecionados} className="px-3 py-1.5 bg-nx-error/20 hover:bg-nx-error/40 rounded-nx-sm text-[10px] font-bold text-white flex items-center gap-2">
                       <Trash size={14} /> EXCLUIR
                     </button>
                   </div>
@@ -328,7 +328,7 @@ EXEMPLO DE FORMATO:
                   <p className="text-sm">Tente mudar sua busca ou adicione novos poemas.</p>
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-1 overflow-y-auto flex-1 pr-2 custom-scrollbar">
                   {/* Cabeçalho da Lista */}
                   <div className="grid grid-cols-12 gap-4 px-6 py-3 text-[10px] font-black uppercase tracking-widest text-text-lo/30">
                     <div className="col-span-1 flex items-center justify-center">#</div>
@@ -339,24 +339,24 @@ EXEMPLO DE FORMATO:
                   </div>
 
                   {poemasFiltrados.map((p, idx) => (
-                    <motion.div 
+                  <motion.div 
                       key={p.id}
                       onClick={() => modoSelecao && toggleSelecao(p.id)}
-                      className={`grid grid-cols-12 gap-4 items-center px-6 py-4 bg-bg-secondary/40 border rounded-2xl transition-all cursor-pointer group ${selecionados.includes(p.id) ? 'border-accent-main bg-accent-main/5' : 'border-white/5 hover:border-white/10 hover:bg-bg-secondary'}`}
+                      className={`grid grid-cols-12 gap-4 items-center px-6 py-4 bg-nx-surface/40 border rounded-nx-md transition-all cursor-pointer group ${selecionados.includes(p.id) ? 'border-nx-primary bg-nx-primary/5' : 'border-nx-border hover:border-nx-primary/20 hover:bg-nx-surface'}`}
                     >
                       <div className="col-span-1 flex items-center justify-center">
                         {modoSelecao ? (
-                          selecionados.includes(p.id) ? <CheckSquare size={16} className="text-accent-main" /> : <Square size={16} className="text-text-lo/20" />
+                          selecionados.includes(p.id) ? <CheckSquare size={16} className="text-nx-primary" /> : <Square size={16} className="text-nx-dim/20" />
                         ) : (
-                          <span className="text-xs font-mono text-text-lo/20">{idx + 1}</span>
+                          <span className="text-xs font-mono text-nx-dim/20">{idx + 1}</span>
                         )}
                       </div>
                       
                       <div className="col-span-4 min-w-0">
-                        <h4 className="text-sm font-bold text-text-hi truncate">{p.titulo}</h4>
+                        <h4 className="text-sm font-bold text-nx-bright truncate">{p.titulo}</h4>
                         <div className="flex gap-1 mt-1">
                           {p.tema?.slice(0, 2).map(t => (
-                            <span key={t} className="text-[9px] text-text-lo/40">#{t}</span>
+                            <span key={t} className="text-[9px] text-nx-dim/40">#{t}</span>
                           ))}
                         </div>
                       </div>
@@ -435,7 +435,7 @@ EXEMPLO DE FORMATO:
                   value={textoParaProcessar}
                   onChange={e => setTextoParaProcessar(e.target.value)}
                   placeholder="Cole aqui poemas soltos, antologias ou páginas de livros..."
-                  className="w-full h-56 bg-bg-tertiary/50 border border-white/5 rounded-3xl p-6 text-sm text-text-hi placeholder-text-lo/20 focus:ring-2 focus:ring-accent-main outline-none resize-none font-serif leading-relaxed"
+                  className="w-full h-56 bg-nx-depth/50 border border-nx-border rounded-nx-md p-6 text-sm text-nx-bright placeholder-nx-dim/20 focus:ring-1 focus:ring-nx-primary outline-none resize-none font-ui leading-relaxed"
                 />
               </div>
 
@@ -454,7 +454,7 @@ EXEMPLO DE FORMATO:
                     </button>
                   </div>
 
-                  <div className="flex-1 overflow-y-auto space-y-3 pb-10 pr-2">
+                  <div className="flex-1 overflow-y-auto space-y-3 pb-24 pr-2">
                     {poemasDetectados.map((p, i) => (
                       <motion.div 
                         initial={{ opacity: 0, x: -10 }}
@@ -489,7 +489,7 @@ EXEMPLO DE FORMATO:
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
-              className="max-w-4xl mx-auto w-full pb-20"
+              className="max-w-4xl mx-auto w-full pb-32"
             >
               <div className="bg-bg-secondary border border-white/5 rounded-[2.5rem] p-8 shadow-2xl">
                 <div className="flex justify-between items-center mb-8">
@@ -498,20 +498,20 @@ EXEMPLO DE FORMATO:
                 </div>
 
                 <div className="grid grid-cols-2 gap-6 mb-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-text-lo/40 ml-1">Título</label>
+                  <div className="space-y-1 pr-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-nx-dim/40 ml-1">Título</label>
                     <input 
                       value={editForm.titulo}
                       onChange={e => setEditForm({...editForm, titulo: e.target.value})}
-                      className="w-full bg-bg-tertiary border border-white/5 rounded-2xl py-4 px-6 text-text-hi focus:ring-2 focus:ring-accent-main outline-none"
+                      className="w-full bg-nx-depth border border-nx-border rounded-nx-md py-4 px-6 text-nx-bright focus:ring-1 focus:ring-nx-primary outline-none"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-text-lo/40 ml-1">Autor</label>
+                  <div className="space-y-1 pr-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-nx-dim/40 ml-1">Autor</label>
                     <input 
                       value={editForm.autor}
                       onChange={e => setEditForm({...editForm, autor: e.target.value})}
-                      className="w-full bg-bg-tertiary border border-white/5 rounded-2xl py-4 px-6 text-text-hi focus:ring-2 focus:ring-accent-main outline-none"
+                      className="w-full bg-nx-depth border border-nx-border rounded-nx-md py-4 px-6 text-nx-bright focus:ring-1 focus:ring-nx-primary outline-none"
                     />
                   </div>
                 </div>

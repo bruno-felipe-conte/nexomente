@@ -183,7 +183,7 @@ function App() {
         className="z-[100]"
       />
 
-      <div className="flex flex-col flex-1 min-w-0 relative h-full">
+      <div className="flex flex-col flex-1 min-w-0 relative h-full overflow-hidden">
         {/* LINHA DE HORIZONTE v1.0 */}
         <div className="absolute top-20 left-0 right-0 h-[1px] bg-nx-border/30 z-0 pointer-events-none" />
         
@@ -195,7 +195,7 @@ function App() {
 
         <main
           id="main-content"
-          className="main-content flex-1 overflow-auto focus:outline-none relative z-10 custom-scrollbar pb-16 lg:pb-0 w-full"
+          className="main-content flex-1 overflow-hidden focus:outline-none relative z-10 w-full min-h-0"
           tabIndex="-1"
         >
           <ErrorBoundary context={currentPage} key={currentPage}>
@@ -213,8 +213,9 @@ function App() {
             </Suspense>
           </ErrorBoundary>
         </main>
+        
+        <BottomNav currentPage={currentPage} onNavigate={setCurrentPage} />
       </div>
-      <BottomNav currentPage={currentPage} onNavigate={setCurrentPage} />
     </div>
   );
 }

@@ -1,12 +1,14 @@
 import PropTypes from 'prop-types';
-import { useMemo } from 'react';
-import { format, subMonths, startOfMonth, endOfMonth, addDays, isToday, startOfWeek, eachWeekOfInterval } from 'date-fns';
+import { useMemo, useRef, useEffect, forwardRef } from 'react';
+import {
+  format, subMonths, startOfMonth, addMonths,
+  addDays, isToday, getDay, getDaysInMonth,
+} from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-const MONTHS_BACK = 9;
-const CELL = 13;   // px — cell width & height
-const GAP  = 2;    // px — gap between cells
-const MONTH_GAP = CELL + GAP; // one full cell gap between months
+const CELL = 13;
+const GAP = 2;
+const MONTH_GAP = CELL + GAP;
 
 const COLORS = [
   'rgba(255,255,255,0.05)',
@@ -19,149 +21,335 @@ const GLOWS = [null, null, null, '0 0 5px rgba(34,211,238,0.45)', '0 0 9px rgba(
 
 function lvl(n) { return n === 0 ? 0 : n === 1 ? 1 : n === 2 ? 2 : n === 3 ? 3 : 4; }
 
-// Build an array of weeks (each week = array of 7 Date) that cover [start, end]
-function buildWeeks(start, end) {
-  const firstMonday = startOfWeek(start, { weekStartsOn: 1 });
-  return eachWeekOfInterval({ start: firstMonday, end }, { weekStartsOn: 1 })
-    .map(monday => Array.from({ length: 7 }, (_, d) => addDays(monday, d)));
+function weekdayMon(date) {
+  const d = getDay(date);
+  return d === 0 ? 6 : d - 1;
 }
 
-export default function ActivityHeatmap({ sessoes }) {
-  const today = useMemo(() => new Date(), []);
+function buildMonthColumns(mStart) {
+  const daysInMonth = getDaysInMonth(mStart);
+  const startOffset = weekdayMon(mStart);
+  const totalCols = Math.ceil((startOffset + daysInMonth) / 7);
+  const columns = [];
 
-  // Group weeks by month — each entry: { label, weeks[] }
-  const monthGroups = useMemo(() => {
-    const groups = [];
-    for (let m = MONTHS_BACK; m >= 0; m--) {
-      const mDate  = subMonths(today, m);
-      const mStart = startOfMonth(mDate);
-      const mEnd   = m === 0 ? today : endOfMonth(mDate);
-      const weeks  = buildWeeks(mStart, mEnd);
-      const label  = format(mDate, "MMM ''yy", { locale: ptBR });
-      groups.push({ label, weeks, mStart });
+  for (let c = 0; c < totalCols; c++) {
+    const col = [];
+    for (let r = 0; r < 7; r++) {
+      const dayIdx = c * 7 + r - startOffset;
+      col.push(dayIdx >= 0 && dayIdx < daysInMonth ? addDays(mStart, dayIdx) : null);
     }
-    return groups;
-  }, [today]);
+    columns.push(col);
+  }
+  return columns;
+}
+
+const DAY_LABELS = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
+
+function DayCell({ day, today, countMap, isTodayCol }) {
+  const key = format(day, 'yyyy-MM-dd');
+  const count = countMap[key] || 0;
+  const lv_ = lvl(count);
+
+  // ✅ FIX 1: Comparar apenas a data (sem horas) para evitar falso positivo em "future"
+  const dayStart = new Date(day.getFullYear(), day.getMonth(), day.getDate());
+  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const future = dayStart > todayStart;
+
+  const today_ = isToday(day);
+
+  return (
+    <div
+      title={
+        format(day, 'dd/MM/yyyy', { locale: ptBR }) +
+        (count ? ' - ' + count + ' sessao(es)' : '')
+      }
+      style={{
+        width: CELL,
+        height: CELL,
+        borderRadius: 2,
+        flexShrink: 0,
+        // ✅ FIX 2: Células futuras agora têm fundo visível (mesmo nível 0 do passado)
+        // Antes: rgba(255,255,255,0.02) — quase invisível
+        // Agora: mesmo COLORS[0] do passado, garantindo que a grade apareça
+        background: COLORS[future ? 0 : lv_],
+        boxShadow: !future && GLOWS[lv_] ? GLOWS[lv_] : undefined,
+        border: today_
+          ? '1px solid rgba(34,211,238,0.9)'          // dia atual: borda ciano
+          : future
+            ? '1px solid rgba(255,255,255,0.10)'       // futuro: borda levemente mais clara
+            : isTodayCol
+              ? '1px solid rgba(255,255,255,0.10)'
+              : '1px solid rgba(255,255,255,0.04)',
+        // ✅ FIX 3: Removido opacity:0.2 para células futuras — eram invisíveis no tema escuro
+        // Agora usamos apenas a diferença de cor/borda para distinguir passado × futuro
+        opacity: future ? 0.45 : 1,
+        transition: 'transform 80ms',
+        cursor: count > 0 ? 'pointer' : 'default',
+      }}
+      onMouseEnter={e => {
+        if (!future) {
+          e.currentTarget.style.transform = 'scale(1.5)';
+          e.currentTarget.style.position = 'relative';
+          e.currentTarget.style.zIndex = '20';
+        }
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.transform = '';
+        e.currentTarget.style.position = '';
+        e.currentTarget.style.zIndex = '';
+      }}
+    />
+  );
+}
+
+// ✅ FIX 4: forwardRef para expor o elemento DOM do mês atual ao pai (usado no scroll)
+const MonthView = forwardRef(function MonthView({ monthDate, today, countMap }, ref) {
+  const columns = buildMonthColumns(startOfMonth(monthDate));
+  const cellWidth = CELL + GAP;
+
+  const todayColIdx = useMemo(() => {
+    for (let c = 0; c < columns.length; c++) {
+      for (let r = 0; r < columns[c].length; r++) {
+        if (columns[c][r] && isToday(columns[c][r])) return c;
+      }
+    }
+    return null;
+  }, [columns]);
+
+  return (
+    <div ref={ref} className="flex flex-col" style={{ marginRight: MONTH_GAP }}>
+      <div style={{ height: 16, width: columns.length * cellWidth, marginBottom: 4 }}>
+        <span
+          style={{
+            fontSize: 9,
+            fontFamily: 'var(--nx-font-mono)',
+            color: 'rgba(125,134,158,0.85)',
+            textTransform: 'capitalize',
+          }}
+        >
+          {format(monthDate, "MMM ''yy", { locale: ptBR })}
+        </span>
+      </div>
+
+      <div className="flex" style={{ gap: GAP }}>
+        {columns.map((col, ci) => (
+          <div key={ci} className="flex flex-col" style={{ gap: GAP }}>
+            {col.map((day, ri) => {
+              if (!day) {
+                return (
+                  <div
+                    key={ri}
+                    style={{
+                      width: CELL,
+                      height: CELL,
+                      borderRadius: 2,
+                      flexShrink: 0,
+                      background: 'transparent',
+                    }}
+                  />
+                );
+              }
+              return (
+                <DayCell
+                  key={ri}
+                  day={day}
+                  today={today}
+                  countMap={countMap}
+                  isTodayCol={todayColIdx === ci}
+                />
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+});
+
+export default function ActivityHeatmap({ sessoes }) {
+  const today = new Date();
+  const scrollRef = useRef(null);
+
+  // ✅ FIX 5: Ref que aponta para o elemento DOM do mês atual
+  const currentMonthRef = useRef(null);
 
   const countMap = useMemo(() => {
     const m = {};
     sessoes.forEach(s => {
-      if (s.started_at) { const k = s.started_at.slice(0, 10); m[k] = (m[k] || 0) + 1; }
+      if (s.started_at) {
+        const k = s.started_at.slice(0, 10);
+        m[k] = (m[k] || 0) + 1;
+      }
     });
     return m;
   }, [sessoes]);
 
-  const totalSessions = sessoes.length;
-  const activeDays    = Object.keys(countMap).length;
-  const DAY_LABELS    = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
+  const months = useMemo(() => {
+    const arr = [];
+    for (let i = 0; i <= 12; i++) {
+      arr.push(subMonths(today, i));
+    }
+    for (let i = 1; i <= 5; i++) {
+      arr.push(addMonths(today, i));
+    }
+    // Ordem final após reverse: [+5, +4, +3, +2, +1, hoje, -1, ..., -12]
+    // Renderizado da esquerda para a direita no scroll
+    return arr.reverse();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ✅ FIX 6: Centralizar scroll no mês atual ao montar o componente
+  useEffect(() => {
+    if (!scrollRef.current || !currentMonthRef.current) return;
+
+    const container = scrollRef.current;
+    const monthEl = currentMonthRef.current;
+
+    // Calcula o centro do mês atual em relação ao container
+    const containerWidth = container.offsetWidth;
+    const monthLeft = monthEl.offsetLeft;
+    const monthWidth = monthEl.offsetWidth;
+
+    container.scrollLeft = monthLeft - containerWidth / 2 + monthWidth / 2;
+  }, []); // roda uma única vez após a montagem
+
+  const stats = useMemo(() => {
+    const mStart = subMonths(today, 12);
+    const activeDays = Object.keys(countMap).filter(k => {
+      const d = new Date(k + 'T00:00:00'); // evita problema de fuso ao comparar datas
+      return d >= mStart && d <= today;
+    }).length;
+    return {
+      totalSessions: sessoes.length,
+      activeDays,
+    };
+  }, [sessoes, countMap, today]);
+
+  const scroll = dir => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({ left: dir * 400, behavior: 'smooth' });
+    }
+  };
+
+  // Identifica qual índice do array é o mês atual
+  const currentMonthKey = format(today, 'yyyy-MM');
 
   return (
-    <div className="p-5 rounded-nx-lg border border-nx-border" style={{ background: 'rgba(8,11,24,0.95)' }}>
-      {/* Header */}
+    <div
+      className="p-5 rounded-nx-lg border border-nx-border"
+      style={{ background: 'rgba(8,11,24,0.95)' }}
+    >
       <div className="flex items-center justify-between mb-3">
         <div>
-          <h3 className="text-[13px] font-display font-bold text-nx-bright">Frequencia de Estudo</h3>
-          <p className="text-[10px] font-mono text-nx-dim mt-0.5">{totalSessions} sessoes em {activeDays} dias</p>
+          <h3 className="text-[13px] font-display font-bold text-nx-bright">
+            Frequencia de Estudo
+          </h3>
+          <p className="text-[10px] font-mono text-nx-dim mt-0.5">
+            {stats.totalSessions} sessoes em {stats.activeDays} dias
+          </p>
         </div>
         <div className="flex items-center gap-1.5">
           <span className="text-[9px] font-mono text-nx-dim">Menos</span>
           {COLORS.map((c, i) => (
-            <div key={i} style={{ width: 10, height: 10, borderRadius: 2, background: c, border: '1px solid rgba(255,255,255,0.06)' }} />
+            <div
+              key={i}
+              style={{
+                width: 10,
+                height: 10,
+                borderRadius: 2,
+                background: c,
+                border: '1px solid rgba(255,255,255,0.06)',
+              }}
+            />
           ))}
           <span className="text-[9px] font-mono text-nx-dim">Mais</span>
         </div>
       </div>
 
-      {/* Scrollable grid */}
-      <div className="overflow-x-auto pb-1" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(33,38,61,0.8) transparent' }}>
-        <div className="flex" style={{ width: 'max-content' }}>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => scroll(-1)}
+          className="w-6 h-6 flex items-center justify-center rounded text-nx-dim hover:text-nx-bright transition-colors"
+          style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.08)' }}
+        >
+          ‹
+        </button>
 
-          {/* Day-of-week label column */}
-          <div className="flex flex-col shrink-0" style={{ marginTop: 20, marginRight: 6 }}>
-            {DAY_LABELS.map((d, i) => (
-              <div key={i} style={{
-                height: CELL, marginBottom: GAP,
-                width: 10, lineHeight: CELL + 'px',
-                fontSize: 9, textAlign: 'center',
-                color: 'rgba(125,134,158,0.7)',
-                fontFamily: 'var(--nx-font-mono)',
-              }}>
-                {d}
-              </div>
-            ))}
+        <div ref={scrollRef} className="flex overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+          <div className="flex" style={{ width: 'max-content' }}>
+            {/* Labels de dia da semana */}
+            <div className="flex flex-col shrink-0" style={{ marginTop: 20, marginRight: 6 }}>
+              {DAY_LABELS.map((d, i) => (
+                <div
+                  key={i}
+                  style={{
+                    height: CELL,
+                    marginBottom: GAP,
+                    width: 10,
+                    lineHeight: CELL + 'px',
+                    fontSize: 9,
+                    textAlign: 'center',
+                    color: 'rgba(125,134,158,0.7)',
+                    fontFamily: 'var(--nx-font-mono)',
+                  }}
+                >
+                  {d}
+                </div>
+              ))}
+            </div>
+
+            {/* ✅ FIX 7: Passa ref apenas para o MonthView do mês atual */}
+            {months.map((m, i) => {
+              const isCurrentMonth = format(m, 'yyyy-MM') === currentMonthKey;
+              return (
+                <MonthView
+                  key={i}
+                  ref={isCurrentMonth ? currentMonthRef : null}
+                  monthDate={m}
+                  today={today}
+                  countMap={countMap}
+                />
+              );
+            })}
           </div>
-
-          {/* Month groups */}
-          {monthGroups.map((group, gi) => {
-            const groupWidth = group.weeks.length * (CELL + GAP) - GAP;
-            return (
-              <div key={gi} className="flex flex-col" style={{ marginRight: gi < monthGroups.length - 1 ? MONTH_GAP : 0 }}>
-                {/* Month label */}
-                <div style={{ height: 16, width: groupWidth, position: 'relative', marginBottom: 4 }}>
-                  <span style={{
-                    position: 'absolute', left: 0, top: 0,
-                    fontSize: 9, fontFamily: 'var(--nx-font-mono)',
-                    color: 'rgba(125,134,158,0.85)',
-                    whiteSpace: 'nowrap', textTransform: 'capitalize',
-                  }}>
-                    {group.label}
-                  </span>
-                </div>
-
-                {/* Week columns for this month */}
-                <div className="flex" style={{ gap: GAP }}>
-                  {group.weeks.map((week, wi) => (
-                    <div key={wi} className="flex flex-col" style={{ gap: GAP }}>
-                      {week.map((day, di) => {
-                        const key    = format(day, 'yyyy-MM-dd');
-                        const count  = countMap[key] || 0;
-                        const lv_    = lvl(count);
-                        const future = day > today;
-                        const today_ = isToday(day);
-                        const currentWeek = week.some(d => isToday(d));
-                        return (
-                          <div
-                            key={di}
-                            title={format(day, 'dd/MM/yyyy', { locale: ptBR }) + (count ? ' - ' + count + ' sessao(es)' : '')}
-                            style={{
-                              width: CELL, height: CELL,
-                              borderRadius: 2, flexShrink: 0,
-                              background: future ? 'rgba(255,255,255,0.02)' : COLORS[lv_],
-                              boxShadow: !future && GLOWS[lv_] ? GLOWS[lv_] : undefined,
-                              border: today_
-                                ? '1px solid rgba(34,211,238,0.9)'
-                                : currentWeek
-                                  ? '1px solid rgba(255,255,255,0.10)'
-                                  : '1px solid rgba(255,255,255,0.04)',
-                              opacity: future ? 0.2 : 1,
-                              transition: 'transform 80ms',
-                              cursor: count > 0 ? 'pointer' : 'default',
-                            }}
-                            onMouseEnter={e => { if (!future) { e.currentTarget.style.transform = 'scale(1.5)'; e.currentTarget.style.position = 'relative'; e.currentTarget.style.zIndex = '20'; }}}
-                            onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.position = ''; e.currentTarget.style.zIndex = ''; }}
-                          />
-                        );
-                      })}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
         </div>
+
+        <button
+          onClick={() => scroll(1)}
+          className="w-6 h-6 flex items-center justify-center rounded text-nx-dim hover:text-nx-bright transition-colors"
+          style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.08)' }}
+        >
+          ›
+        </button>
       </div>
 
-      {/* Bottom range */}
       <div className="flex justify-between mt-2">
-        <span style={{ fontSize: 9, color: 'rgba(125,134,158,0.5)', fontFamily: 'var(--nx-font-mono)', textTransform: 'capitalize' }}>
-          {format(subMonths(today, MONTHS_BACK), "MMM ''yy", { locale: ptBR })}
+        <span
+          style={{
+            fontSize: 9,
+            color: 'rgba(125,134,158,0.5)',
+            fontFamily: 'var(--nx-font-mono)',
+            textTransform: 'capitalize',
+          }}
+        >
+          {format(subMonths(today, 12), "MMM ''yy", { locale: ptBR })}
         </span>
-        <span style={{ fontSize: 9, color: 'rgba(125,134,158,0.5)', fontFamily: 'var(--nx-font-mono)' }}>Hoje</span>
+        <span
+          style={{
+            fontSize: 9,
+            color: 'rgba(125,134,158,0.5)',
+            fontFamily: 'var(--nx-font-mono)',
+            textTransform: 'capitalize',
+          }}
+        >
+          {format(addMonths(today, 5), "MMM ''yy", { locale: ptBR })}
+        </span>
       </div>
     </div>
   );
 }
 
 ActivityHeatmap.propTypes = {
-  sessoes: PropTypes.arrayOf(PropTypes.shape({ started_at: PropTypes.string })).isRequired,
+  sessoes: PropTypes.arrayOf(
+    PropTypes.shape({ started_at: PropTypes.string })
+  ).isRequired,
 };

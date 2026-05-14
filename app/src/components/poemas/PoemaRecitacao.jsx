@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, MicOff, RotateCcw, X, CheckCircle2, Trophy, Star } from 'lucide-react';
 import { useVosk } from '../../hooks/useVosk';
@@ -13,25 +13,36 @@ const PoemaRecitacao = ({ poema, onFinish, onClose }) => {
   const [palavrasStatus, setPalavrasStatus] = useState({}); // { index: 'correta' | 'errada' }
   const [indicePalavraLocal, setIndicePalavraLocal] = useState(0);
 
-  const lines = useMemo(() => 
-    poema?.corpo?.split('\n').filter(l => l.trim().length > 0) || []
-  , [poema?.corpo]);
+  const lines = useMemo(() => {
+    if (!poema?.corpo) return [];
+    // Une as linhas para garantir frases completas e quebra apenas na pontuação
+    return poema.corpo
+      .replace(/\n/g, ' ')
+      .replace(/([.!?])\s*/g, "$1\n")
+      .split('\n')
+      .map(l => l.trim())
+      .filter(l => l.length > 0);
+  }, [poema?.corpo]);
 
   const currentLine = lines[currentLineIndex] || "";
   const palavrasPoema = useMemo(() => 
     currentLine.split(/\s+/).filter(w => w.length > 0)
   , [currentLine]);
 
-  const normalizar = (texto) => 
-    texto.toLowerCase()
+  const normalizar = (texto) => {
+    let n = texto.toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-z]/g, '');
+    // Neutraliza confusão comum de STT entre 'e' e 'i' no final de palavras
+    if (n.endsWith('e') && n.length > 2) return n.slice(0, -1) + 'i';
+    return n;
+  };
 
-  const processarTranscricao = useCallback((textoCompleto) => {
-    if (!textoCompleto || isFinished) return;
+  const processarTranscricao = useCallback((texto, isFinal = false) => {
+    if (!texto || isFinished) return;
     
-    const ouvidas = textoCompleto.trim().split(/\s+/).filter(Boolean);
+    const ouvidas = texto.trim().split(/\s+/).filter(Boolean);
     
     setPalavrasStatus(prev => {
       const novo = { ...prev };
@@ -42,43 +53,76 @@ const PoemaRecitacao = ({ poema, onFinish, onClose }) => {
         const target = normalizar(palavrasPoema[idxNoPoema]);
         const dita = normalizar(ouvida);
         
-        // Match amigável
+        // Match Inteligente (Fuzzy)
         const correta = dita === target || 
                        (dita.length > 3 && target.startsWith(dita)) ||
-                       (target.length > 3 && dita.startsWith(target));
+                       (target.length > 3 && dita.startsWith(target)) ||
+                       // Caso especial para palavras curtas como 'fui'
+                       (target.length <= 3 && dita.length >= 2 && target.includes(dita.slice(0, 2)));
         
-        novo[idxNoPoema] = correta ? 'correta' : 'errada';
+        // No modo parcial, só marcamos se for correto. 
+        // No modo final, marcamos erro se não bater.
+        if (correta) {
+          novo[idxNoPoema] = 'correta';
+        } else if (isFinal && !novo[idxNoPoema]) {
+          novo[idxNoPoema] = 'errada';
+        }
       });
       return novo;
     });
 
-    setIndicePalavraLocal(prev => prev + ouvidas.length);
-    setTranscript(textoCompleto);
-    setPartialTranscript('');
+    if (isFinal) {
+      setIndicePalavraLocal(prev => prev + ouvidas.length);
+      setPartialTranscript('');
+      setTranscript(texto);
+    } else {
+      setPartialTranscript(texto);
+    }
   }, [palavrasPoema, indicePalavraLocal, isFinished]);
 
   const { isListening, isReady, startListening, stopListening, nextVerse, terminateAudio } = useVosk({
-    onResult: (text) => processarTranscricao(text),
-    onPartialResult: (partial) => setPartialTranscript(partial),
+    onResult: (text) => processarTranscricao(text, true),
+    onPartialResult: (text) => processarTranscricao(text, false),
     onError: (msg) => toast.error(msg)
   });
+
+  const toggleListening = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      startListening(); // Modo livre (Sem gramática restrita)
+    }
+  };
+
+  const isTransitioningRef = useRef(false);
 
   // Verifica se a linha terminou
   useEffect(() => {
     const todasCertas = palavrasPoema.length > 0 && 
                        palavrasPoema.every((_, i) => palavrasStatus[i] === 'correta');
     
-    // Se a maioria estiver correta ou o índice de palavras estourou a linha
-    if (todasCertas || (indicePalavraLocal >= palavrasPoema.length && palavrasPoema.length > 0)) {
+    const linhaTerminou = todasCertas || (indicePalavraLocal >= palavrasPoema.length && palavrasPoema.length > 0);
+
+    if (linhaTerminou && !isTransitioningRef.current && !isFinished) {
+      isTransitioningRef.current = true;
+      
       setTimeout(() => {
         if (currentLineIndex < lines.length - 1) {
           handleNextLine();
+          isTransitioningRef.current = false;
         } else {
           finishDojo();
         }
-      }, 1000);
+      }, 400); // Transição snappier (400ms)
     }
-  }, [palavrasStatus, indicePalavraLocal, palavrasPoema]);
+  }, [palavrasStatus, indicePalavraLocal, palavrasPoema, isFinished]);
+
+  const handleClose = (e) => {
+    if (e) e.stopPropagation();
+    console.log('[DOJO] Encerrando sessão...');
+    terminateAudio();
+    onClose?.();
+  };
 
   const handleNextLine = () => {
     setTranscript('');
@@ -107,11 +151,15 @@ const PoemaRecitacao = ({ poema, onFinish, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-xl p-4">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xl p-4 cursor-pointer"
+      onClick={handleClose}
+    >
       <motion.div 
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="relative w-full max-w-4xl bg-slate-900/50 border border-white/10 rounded-3xl overflow-hidden shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-4xl bg-slate-900/90 border border-white/10 rounded-3xl overflow-hidden shadow-2xl cursor-default"
       >
         {/* Header */}
         <div className="p-6 flex justify-between items-center border-b border-white/5 bg-white/5">
@@ -119,7 +167,7 @@ const PoemaRecitacao = ({ poema, onFinish, onClose }) => {
             <h2 className="text-indigo-400 font-mono text-sm tracking-widest uppercase">Poetry Dojo v2.0</h2>
             <h3 className="text-2xl font-bold text-white">{poema?.titulo || 'Recitação'}</h3>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors text-white/50 hover:text-white">
+          <button onClick={handleClose} className="p-2 hover:bg-white/10 rounded-full transition-colors text-white/50 hover:text-white">
             <X size={24} />
           </button>
         </div>
@@ -185,7 +233,7 @@ const PoemaRecitacao = ({ poema, onFinish, onClose }) => {
                 </button>
 
                 <button 
-                  onClick={isListening ? stopListening : startListening}
+                  onClick={toggleListening}
                   disabled={!isReady}
                   className={`relative w-24 h-24 rounded-full flex items-center justify-center transition-all duration-500 ${
                     isListening 

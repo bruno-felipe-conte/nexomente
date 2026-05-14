@@ -35,10 +35,23 @@ app.whenReady().then(() => {
   });
 });
 
+async function waitForUrl(url, maxAttempts = 30) {
+  for (let i = 0; i < maxAttempts; i++) {
+    try {
+      const res = await fetch(url, { signal: AbortSignal.timeout(1000) });
+      if (res.ok || res.status) return true;
+    } catch (_) {}
+    await new Promise(r => setTimeout(r, 500));
+  }
+  return false;
+}
+
 function createWindow() {
+  console.log('[WINDOW] Creating main window...');
   const primaryDisplay = screen.getPrimaryDisplay();
   const { width: screenWidth } = primaryDisplay.workAreaSize;
-  const minAppWidth = Math.floor(screenWidth * 0.325); // Ajustado para 2.6 vezes a largura base (32.5% da tela)
+  console.log('[WINDOW] Screen width:', screenWidth);
+  const minAppWidth = Math.floor(screenWidth * 0.325);
 
   mainWindow = new BrowserWindow({
     width: 1280,
@@ -55,17 +68,26 @@ function createWindow() {
     backgroundColor: '#0F0E17',
   });
 
-  // FORÇAR BLOQUEIO MÍNIMO (32.5% da largura da tela)
-  mainWindow.setMinimumSize(Math.floor(screenWidth * 0.325), 500);
+  console.log('[WINDOW] BrowserWindow created. Loading URL...');
 
   if (isDev) {
-    mainWindow.loadURL('http://localhost:5173');
-    mainWindow.webContents.openDevTools();
+    mainWindow.loadURL('http://localhost:5173').then(async () => {
+      console.log('[WINDOW] Vite ready, URL loaded.');
+    }).catch(async (err) => {
+      console.log('[WINDOW] Vite not ready, waiting...');
+      const ok = await waitForUrl('http://localhost:5173');
+      if (ok) {
+        console.log('[WINDOW] Vite ready, reloading...');
+        await mainWindow.loadURL('http://localhost:5173');
+      } else {
+        console.error('[WINDOW] Vite never responded:', err);
+      }
+    });
   } else {
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
   }
 
-  mainWindow.on('closed', () => {
+mainWindow.once('closed', () => {
     mainWindow = null;
   });
 }
