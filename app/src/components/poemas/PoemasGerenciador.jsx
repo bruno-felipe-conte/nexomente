@@ -40,7 +40,7 @@ export default function PoemasGerenciador({ onLeitura, onSelectPoema }) {
 
   const exportarSelecionados = (formato) => {
     const dados = poemas.filter(p => selecionados.includes(p.id));
-    let conteudo = '';
+    let conteudo;
     let fileName = `nexomente_poemas_${new Date().getTime()}`;
 
     if (formato === 'json') {

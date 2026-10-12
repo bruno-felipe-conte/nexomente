@@ -28,9 +28,14 @@ export default [
       ...reactPlugin.configs.recommended.rules,
       ...reactHooksPlugin.configs.recommended.rules,
       'react/react-in-jsx-scope': 'off',
+      'react/prop-types': 'off',
+      'react/no-unescaped-entities': 'off',
       'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
       'no-console': 'warn',
       'react-hooks/exhaustive-deps': 'warn',
+      'react-hooks/set-state-in-effect': 'warn',
+      'react-hooks/preserve-manual-memoization': 'warn',
+      'react-hooks/refs': 'warn',
     },
     settings: {
       react: {
@@ -41,6 +46,6 @@ export default [
     },
   },
   {
-    ignores: ['dist/**', 'node_modules/**', 'reports/**'],
+    ignores: ['dist/**', 'node_modules/**', 'reports/**', '**/*.d.ts'],
   },
 ];

@@ -96,27 +96,6 @@ const PoemaRecitacao = ({ poema, onFinish, onClose }) => {
 
   const isTransitioningRef = useRef(false);
 
-  // Verifica se a linha terminou
-  useEffect(() => {
-    const todasCertas = palavrasPoema.length > 0 && 
-                       palavrasPoema.every((_, i) => palavrasStatus[i] === 'correta');
-    
-    const linhaTerminou = todasCertas || (indicePalavraLocal >= palavrasPoema.length && palavrasPoema.length > 0);
-
-    if (linhaTerminou && !isTransitioningRef.current && !isFinished) {
-      isTransitioningRef.current = true;
-      
-      setTimeout(() => {
-        if (currentLineIndex < lines.length - 1) {
-          handleNextLine();
-          isTransitioningRef.current = false;
-        } else {
-          finishDojo();
-        }
-      }, 400); // Transição snappier (400ms)
-    }
-  }, [palavrasStatus, indicePalavraLocal, palavrasPoema, isFinished]);
-
   const handleClose = (e) => {
     if (e) e.stopPropagation();
     console.log('[DOJO] Encerrando sessão...');
@@ -139,6 +118,27 @@ const PoemaRecitacao = ({ poema, onFinish, onClose }) => {
     terminateAudio();
     toast.success('Recitação concluída!');
   };
+
+  // Verifica se a linha terminou
+  useEffect(() => {
+    const todasCertas = palavrasPoema.length > 0 &&
+                       palavrasPoema.every((_, i) => palavrasStatus[i] === 'correta');
+
+    const linhaTerminou = todasCertas || (indicePalavraLocal >= palavrasPoema.length && palavrasPoema.length > 0);
+
+    if (linhaTerminou && !isTransitioningRef.current && !isFinished) {
+      isTransitioningRef.current = true;
+
+      setTimeout(() => {
+        if (currentLineIndex < lines.length - 1) {
+          handleNextLine();
+          isTransitioningRef.current = false;
+        } else {
+          finishDojo();
+        }
+      }, 400); // Transição snappier (400ms)
+    }
+  }, [palavrasStatus, indicePalavraLocal, palavrasPoema, isFinished]);
 
   const resetDojo = () => {
     setCurrentLineIndex(0);

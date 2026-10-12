@@ -103,6 +103,8 @@ describe('SMOKE — UI Renders', () => {
 
   it('Study renderiza e botão de iniciar Pomodoro funciona', () => {
     const { getByText } = render(<Study />);
+    const descansoTab = getByText(/Pausa Curta/i);
+    fireEvent.click(descansoTab);
     const btn = getByText(/Iniciar/i);
     expect(btn).toBeDefined();
     fireEvent.click(btn);

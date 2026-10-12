@@ -14,7 +14,7 @@
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "prepare": "husky",
-    "lint": "eslint app/src/ --max-warnings 999"
+    "lint": "eslint app/src/ electron/ --max-warnings 999"
   },
   "lint-staged": {
     "app/src/**/*.{js,jsx}": [

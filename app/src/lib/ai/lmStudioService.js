@@ -6,7 +6,7 @@
 // Dev Mode: Uses Vite proxy (/v1 → http://localhost:1234/v1)
 // Prod Mode: Direct connection to LM Studio endpoint
 
-const LMSTUDIO_HOST = import.meta.env.DEV ? '' : 'http://127.0.0.1:1234';
+const LMSTUDIO_HOST = import.meta.env.MODE === 'test' ? 'http://127.0.0.1:1234' : (import.meta.env.DEV ? '' : 'http://127.0.0.1:1234');
 const DEFAULT_MODEL = 'qwen/qwen3.5-9b'; // Optimized for Portuguese/English chat
 const DEFAULT_TEMP = 0.4; // Balanced creativity vs determinism
 

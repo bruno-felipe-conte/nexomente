@@ -43,7 +43,7 @@ function buildMonthColumns(mStart) {
   }
   return columns;
 }
-const DAY_ LABELS = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
+const DAY_LABELS = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
 /* ─── DayCell ─────────────���──────────────────────────────────── */
 function DayCell({ day, todayStart, countMap, isTodayCol }) {
   const key   = format(day, 'yyyy-MM-dd');
@@ -100,7 +100,7 @@ function MonthView({ monthDate, todayStart, countMap }) {
     return null;
   }, [columns]);
   return (
-    <div className="flex flex-col" style={{ marginRight: MONTH_ GAP, flexShrink: 0 }}>
+    <div className="flex flex-col" style={{ marginRight: MONTH_GAP, flexShrink: 0 }}>
       {/* Label do mês */}
       <div style={{ height: 16, width: columns.length * cellWidth, marginBottom: 4 }}>
         <span style={{
@@ -169,7 +169,7 @@ export default function ActivityHeatmap({ sessoes }) {
   const labelRight = format(months[VISIBLE - 1], "MMM ''yy", { locale: ptBR });
   return (
     <div
-      className="p-5 rounded- nx-lg border border-nx-border"
+      className="p-5 rounded-nx-lg border border-nx-border"
       style={{ background: 'rgba(8,11,24,0.95)' }}
     >
       {/* ── Cabeçalho ── */}
