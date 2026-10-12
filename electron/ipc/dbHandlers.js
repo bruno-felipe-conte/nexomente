@@ -406,7 +406,7 @@ export function registerDbHandlers() {
     try {
       const db = getDB();
       const info = db.prepare(`
-        INSERT INTO transacoes_xp (id, xp, motivo, source_type, source_id, criado_em)
+        INSERT INTO transacoes_xp (id, xp, motivo, source_type, source_id, created_at)
         VALUES (?, ?, ?, ?, ?, ?)
       `).run(
         `xp_${Date.now()}`,
