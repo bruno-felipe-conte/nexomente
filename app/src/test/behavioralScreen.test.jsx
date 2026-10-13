@@ -85,12 +85,54 @@ describe('Validação Comportamental de Tela (Study, Flashcards, Notas)', () => 
       // Ao zerar, timer para e botão volta para Iniciar
       expect(getByText(/Iniciar/i)).toBeDefined();
 
-      // Confirma que XP.add e SessoesEstudo.completar foram chamados EXATAMENTE UMA VEZ
+      // Confirma que XP.add e SessoesEstudo.completar foram chamados EXATAMENTE UMA VEZ na 1ª sessão
       expect(xpAddSpy).toHaveBeenCalledTimes(1);
       expect(completarSpy).toHaveBeenCalledTimes(1);
 
+      // 6. Inicia uma SEGUNDA sessão logo em seguida
+      act(() => {
+        fireEvent.click(getByText(/Iniciar/i));
+      });
+      expect(getByText(/Pausar/i)).toBeDefined();
+
+      // Avança a 2ª sessão até o fim
+      act(() => {
+        vi.advanceTimersByTime(300000);
+      });
+      act(() => {
+        vi.runOnlyPendingTimers();
+      });
+
+      // Confirma que a 2ª sessão também concedeu XP com sucesso
+      expect(xpAddSpy).toHaveBeenCalledTimes(2);
+      expect(completarSpy).toHaveBeenCalledTimes(2);
+
       xpAddSpy.mockRestore();
       completarSpy.mockRestore();
+    });
+
+    it('marca sessão ativa como abandonada ao desmontar a tela antes da conclusão', async () => {
+      vi.useFakeTimers();
+      const { SessoesEstudo } = useDBStore.getState();
+      const abandonarSpy = vi.spyOn(SessoesEstudo, 'abandonar');
+
+      let utils;
+      await act(async () => {
+        utils = render(<Study />);
+      });
+
+      // Inicia sessão no modo descanso
+      fireEvent.click(utils.getByText(/Pausa Curta/i));
+      act(() => {
+        fireEvent.click(utils.getByText(/Iniciar/i));
+      });
+
+      // Desmonta o componente com o timer ainda em andamento
+      utils.unmount();
+
+      // Deve ter chamado abandonar() para a sessão órfã
+      expect(abandonarSpy).toHaveBeenCalledTimes(1);
+      abandonarSpy.mockRestore();
     });
   });
 

@@ -35,6 +35,13 @@ export function createSessoesRepository(get, saveDB) {
       saveDB();
     },
 
+    abandonar: (id) => {
+      const db = get().db;
+      if (!db) return;
+      db.run("UPDATE sessoes_estudo SET concluida = -1, ended_at = datetime('now') WHERE id = ?", [id]);
+      saveDB();
+    },
+
     delete: (id) => {
       const db = get().db;
       if (!db) return;

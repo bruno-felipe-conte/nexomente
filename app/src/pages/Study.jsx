@@ -66,7 +66,7 @@ export default function Study() {
 
     const interval = setInterval(() => {
       if (!targetEndTimeRef.current) return;
-      const restante = Math.max(0, Math.round((targetEndTimeRef.current - Date.now()) / 1000));
+      const restante = Math.max(0, Math.ceil((targetEndTimeRef.current - Date.now()) / 1000));
       setTimer(restante);
     }, 1000);
 
@@ -79,23 +79,36 @@ export default function Study() {
     }
   }, [rodando, timer, handleComplete]);
 
+  // Limpeza de sessão órfã ao desmontar a tela
+  useEffect(() => {
+    return () => {
+      if (sessaoIdRef.current && !completedRef.current) {
+        SessoesEstudo.abandonar?.(sessaoIdRef.current);
+      }
+    };
+  }, [SessoesEstudo]);
+
   const iniciar = () => {
     if (!materiaAtiva && modo !== 'descanso') {
       toast.error('Selecione uma matéria antes de começar!');
       return;
     }
     completedRef.current = false;
+    const initialTime = timer <= 0 ? currentModo.minutos * 60 : timer;
+    if (timer <= 0) {
+      setTimer(initialTime);
+    }
     if (!sessaoId) {
       const id = SessoesEstudo.create({ materia_id: materiaAtiva, tipo: modo, duracao_minutos: currentModo.minutos });
       setSessaoId(id);
     }
-    targetEndTimeRef.current = Date.now() + timer * 1000;
+    targetEndTimeRef.current = Date.now() + initialTime * 1000;
     setRodando(true);
   };
 
   const trocarModo = (m) => {
     if (sessaoId) {
-      SessoesEstudo.delete?.(sessaoId);
+      SessoesEstudo.abandonar?.(sessaoId);
     }
     completedRef.current = false;
     targetEndTimeRef.current = null;
