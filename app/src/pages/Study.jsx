@@ -7,11 +7,12 @@ import CircularTimer from '../components/study/CircularTimer';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import toast from 'react-hot-toast';
+import confetti from 'canvas-confetti';
 
 const MODOS = [
-  { id: 'pomodoro', label: 'Pomodoro', minutos: 25, color: '#2DD4BF' },
-  { id: 'foco', label: 'Foco Profundo', minutos: 50, color: '#6C63FF' },
-  { id: 'descanso', label: 'Pausa Curta', minutos: 5, color: '#F59E0B' },
+  { id: 'pomodoro', label: 'Pomodoro', minutos: 25, color: '#2DD4BF', xp: 15 },
+  { id: 'foco', label: 'Foco Profundo', minutos: 50, color: '#6C63FF', xp: 30 },
+  { id: 'descanso', label: 'Pausa Curta', minutos: 5, color: '#F59E0B', xp: 5 },
 ];
 
 export default function Study() {
@@ -44,10 +45,20 @@ export default function Study() {
     if (activeId) {
       completedRef.current = true;
       SessoesEstudo.completar(activeId);
-      XP.add(15, 'Sessão concluída', 'sessao', activeId);
+      const xpGanho = currentModo.xp || 15;
+      XP.add(xpGanho, 'Sessão concluída', 'sessao', activeId);
       useTamagotchiStore.getState().registerStudySession(currentModo.minutos);
       setSessoesList(SessoesEstudo.getAll());
-      toast.success('Sessão finalizada! Bom trabalho.');
+      try {
+        confetti({
+          particleCount: 90,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+      } catch {
+        // no-op if canvas is unavailable
+      }
+      toast.success(`Sessão finalizada! +${xpGanho} XP`);
     }
     setRodando(false);
     setSessaoId(null);
@@ -119,10 +130,14 @@ export default function Study() {
     setSessaoId(null);
   };
 
-  const sessoesHoje = sessoesList.filter(s =>
-    s.started_at && new Date(s.started_at).toDateString() === new Date().toDateString()
+  const sessoesConcluidasHoje = sessoesList.filter(s =>
+    Boolean(s.concluida) && s.started_at && new Date(s.started_at).toDateString() === new Date().toDateString()
   );
-  const minutosHoje = sessoesHoje.reduce((acc, s) => acc + (s.concluida ? s.duracao_minutos : 0), 0);
+  const minutosHoje = sessoesConcluidasHoje.reduce((acc, s) => acc + (s.duracao_minutos || 0), 0);
+  const xpDiarioCalculado = sessoesConcluidasHoje.reduce((acc, s) => {
+    const modoCfg = MODOS.find(m => m.id === s.tipo);
+    return acc + (modoCfg?.xp || 15);
+  }, 0);
 
   return (
     <div className="main-content p-4 md:p-8 space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -133,7 +148,7 @@ export default function Study() {
         </div>
         <div className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-2xl border border-white/5">
            <Zap size={16} className="text-xp" />
-           <span className="text-sm font-bold text-text-hi">XP Diário: +{sessoesHoje.length * 15}</span>
+           <span className="text-sm font-bold text-text-hi">XP Diário: +{xpDiarioCalculado}</span>
         </div>
       </header>
 
@@ -147,9 +162,12 @@ export default function Study() {
               <button
                 key={m.id}
                 onClick={() => trocarModo(m)}
-                className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${modo === m.id ? 'bg-white/10 text-white shadow-lg' : 'text-text-lo hover:text-text-hi'}`}
+                className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 ${modo === m.id ? 'bg-white/10 text-white shadow-lg' : 'text-text-lo hover:text-text-hi'}`}
               >
-                {m.label}
+                <span>{m.label}</span>
+                <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded-md ${modo === m.id ? 'bg-white/20 text-white font-black' : 'bg-white/5 text-text-lo'}`}>
+                  +{m.xp} XP
+                </span>
               </button>
             ))}
           </div>
@@ -242,7 +260,7 @@ export default function Study() {
              </Card>
              <Card className="glass-panel p-4 flex flex-col items-center text-center">
                 <Check size={20} className="text-success mb-2" />
-                <span className="text-xl font-black text-text-hi tabular-nums">{sessoesHoje.length}</span>
+                <span className="text-xl font-black text-text-hi tabular-nums">{sessoesConcluidasHoje.length}</span>
                 <span className="text-[10px] font-bold text-text-lo uppercase">Sessões</span>
              </Card>
           </div>
