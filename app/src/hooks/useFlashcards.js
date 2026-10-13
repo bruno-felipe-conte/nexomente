@@ -1,9 +1,12 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useDBStore } from '../store/useDBStore';
 
 export function useFlashcards() {
-  const { Flashcards, loading } = useDBStore();
-  const cards = Flashcards?.getAll() || [];
+  const { Flashcards, loading, version } = useDBStore();
+  const cards = useMemo(() => {
+    void version;
+    return Flashcards?.getAll() || [];
+  }, [Flashcards, version]);
 
   const create = useCallback((cardData) => {
     return Flashcards.create({
