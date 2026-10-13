@@ -3,7 +3,10 @@ import { useDBStore } from '../store/useDBStore';
 
 export function useMaterias() {
   const { Materias, loading, version } = useDBStore();
-  const materias = useMemo(() => Materias?.getAll() || [], [Materias, version]);
+  const materias = useMemo(() => {
+    void version;
+    return Materias?.getAll() || [];
+  }, [Materias, version]);
 
   const create = useCallback((data = {}) => {
     return Materias.create({
@@ -31,7 +34,10 @@ export function useMaterias() {
 
 export function usePoemas() {
   const { Poemas, loading, version } = useDBStore();
-  const poemas = useMemo(() => Poemas?.getAll() || [], [Poemas, version]);
+  const poemas = useMemo(() => {
+    void version;
+    return Poemas?.getAll() || [];
+  }, [Poemas, version]);
 
   const create = useCallback((data = {}) => {
     return Poemas.create(data);
