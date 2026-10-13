@@ -23,6 +23,8 @@ __pycache__/
 .codegraph/
 _bmad/
 .gemini/
+brain/
+scratch/
 .clinerules
 .cursorrules
 .config/
