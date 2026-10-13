@@ -17,12 +17,20 @@ describe('Validação Comportamental de Tela (Study, Flashcards, Notas)', () => 
   });
 
   describe('Fluxo 1 — Study.jsx (Timer de Contagem Regressiva e Sessões)', () => {
-    it('inicia contagem, decresce a cada segundo, pausa sem perder tempo e conclui aos 0 segundos', async () => {
+    it('inicia contagem, decresce a cada segundo, pausa sem perder tempo e conclui aos 0 segundos sob StrictMode', async () => {
       vi.useFakeTimers();
+
+      const { XP, SessoesEstudo } = useDBStore.getState();
+      const xpAddSpy = vi.spyOn(XP, 'add');
+      const completarSpy = vi.spyOn(SessoesEstudo, 'completar');
 
       let utils;
       await act(async () => {
-        utils = render(<Study />);
+        utils = render(
+          <React.StrictMode>
+            <Study />
+          </React.StrictMode>
+        );
       });
       const { getByText } = utils;
 
@@ -76,6 +84,13 @@ describe('Validação Comportamental de Tela (Study, Flashcards, Notas)', () => 
 
       // Ao zerar, timer para e botão volta para Iniciar
       expect(getByText(/Iniciar/i)).toBeDefined();
+
+      // Confirma que XP.add e SessoesEstudo.completar foram chamados EXATAMENTE UMA VEZ
+      expect(xpAddSpy).toHaveBeenCalledTimes(1);
+      expect(completarSpy).toHaveBeenCalledTimes(1);
+
+      xpAddSpy.mockRestore();
+      completarSpy.mockRestore();
     });
   });
 

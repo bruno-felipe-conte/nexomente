@@ -33,11 +33,16 @@ export default function Study() {
     sessaoIdRef.current = sessaoId;
   }, [sessaoId]);
 
+  const targetEndTimeRef = useRef(null);
+  const completedRef = useRef(false);
+
   const currentModo = MODOS.find(m => m.id === modo);
 
   const handleComplete = useCallback(() => {
+    if (completedRef.current) return;
     const activeId = sessaoIdRef.current;
     if (activeId) {
+      completedRef.current = true;
       SessoesEstudo.completar(activeId);
       XP.add(15, 'Sessão concluída', 'sessao', activeId);
       useTamagotchiStore.getState().registerStudySession(currentModo.minutos);
@@ -46,36 +51,54 @@ export default function Study() {
     }
     setRodando(false);
     setSessaoId(null);
+    targetEndTimeRef.current = null;
   }, [SessoesEstudo, XP, currentModo]);
 
   useEffect(() => {
-    if (!rodando) return;
+    if (!rodando) {
+      targetEndTimeRef.current = null;
+      return;
+    }
+
+    if (!targetEndTimeRef.current) {
+      targetEndTimeRef.current = Date.now() + timer * 1000;
+    }
+
     const interval = setInterval(() => {
-      setTimer(prev => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          setTimeout(handleComplete, 0);
-          return 0;
-        }
-        return prev - 1;
-      });
+      if (!targetEndTimeRef.current) return;
+      const restante = Math.max(0, Math.round((targetEndTimeRef.current - Date.now()) / 1000));
+      setTimer(restante);
     }, 1000);
+
     return () => clearInterval(interval);
-  }, [rodando, handleComplete]);
+  }, [rodando, timer]);
+
+  useEffect(() => {
+    if (rodando && timer === 0) {
+      handleComplete();
+    }
+  }, [rodando, timer, handleComplete]);
 
   const iniciar = () => {
     if (!materiaAtiva && modo !== 'descanso') {
       toast.error('Selecione uma matéria antes de começar!');
       return;
     }
+    completedRef.current = false;
     if (!sessaoId) {
       const id = SessoesEstudo.create({ materia_id: materiaAtiva, tipo: modo, duracao_minutos: currentModo.minutos });
       setSessaoId(id);
     }
+    targetEndTimeRef.current = Date.now() + timer * 1000;
     setRodando(true);
   };
 
   const trocarModo = (m) => {
+    if (sessaoId) {
+      SessoesEstudo.delete?.(sessaoId);
+    }
+    completedRef.current = false;
+    targetEndTimeRef.current = null;
     setModo(m.id);
     setTimer(m.minutos * 60);
     setTotalSeconds(m.minutos * 60);

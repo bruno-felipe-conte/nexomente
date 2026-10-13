@@ -34,5 +34,12 @@ export function createSessoesRepository(get, saveDB) {
       db.run("UPDATE sessoes_estudo SET concluida = 1, ended_at = datetime('now') WHERE id = ?", [id]);
       saveDB();
     },
+
+    delete: (id) => {
+      const db = get().db;
+      if (!db) return;
+      db.run("DELETE FROM sessoes_estudo WHERE id = ?", [id]);
+      saveDB();
+    },
   };
 }
