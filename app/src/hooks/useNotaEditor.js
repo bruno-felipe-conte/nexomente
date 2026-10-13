@@ -15,7 +15,7 @@
  *   salvarNota,
  * }}
  */
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -62,13 +62,23 @@ export function useNotaEditor({ notaSelecionada, editando, update, addTag, setNo
     },
   });
 
-  // Sincroniza conteúdo e modo edição quando a nota muda
+  const lastLoadedNoteIdRef = useRef(null);
+
+  useEffect(() => {
+    if (!editor) return;
+    editor.setEditable(editando);
+  }, [editor, editando]);
+
   useEffect(() => {
     if (editor && notaSelecionada) {
-      editor.commands.setContent(notaSelecionada.conteudo || '');
-      editor.setEditable(editando);
+      if (lastLoadedNoteIdRef.current !== notaSelecionada.id) {
+        lastLoadedNoteIdRef.current = notaSelecionada.id;
+        editor.commands.setContent(notaSelecionada.conteudo || '');
+      }
+    } else if (!notaSelecionada) {
+      lastLoadedNoteIdRef.current = null;
     }
-  }, [editor, notaSelecionada?.id, editando]);
+  }, [editor, notaSelecionada]);
 
   const salvarNota = useCallback(() => {
     if (!notaSelecionada || !editor) return;
