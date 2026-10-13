@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import PropTypes from 'prop-types';
 import {
   FileText, BookOpen, Lightbulb,
@@ -16,10 +15,7 @@ const tipoIcons = {
   inbox: FileText,
 };
 
-export default function BibliotecaPanel({ _pastas, notas, notaSelecionada, _onMoverNota, _onCriarPasta }) {
-  const [_categoriaExpandida, setCategoriaExpandida] = useState('pasta_raiz');
-  const [_novaPasta, setNovaPasta] = useState('');
-
+export default function BibliotecaPanel({ notas, notaSelecionada }) {
   const categorias = [
     { id: 'pasta_raiz', nome: 'Todas', tipo: 'pasta_raiz' },
     { id: 'inbox', nome: 'Inbox', tipo: 'inbox' },
@@ -29,10 +25,6 @@ export default function BibliotecaPanel({ _pastas, notas, notaSelecionada, _onMo
     { id: 'estudo', nome: 'Estudo', tipo: 'estudo' },
     { id: 'biblia', nome: 'Bíblia', tipo: 'biblia' },
   ];
-
-  const toggleCategoria = (id) => {
-    setCategoriaExpandida(prev => prev === id ? null : id);
-  };
 
   const notasPorCategoria = (catId) => {
     const list = notas || [];
@@ -50,7 +42,6 @@ export default function BibliotecaPanel({ _pastas, notas, notaSelecionada, _onMo
       <div className="px-5 mb-6 flex items-center justify-between">
         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-text-lo/40">Bibliotecas</span>
         <button
-          onClick={() => setNovaPasta('__new__')}
           className="p-1 text-text-lo/40 hover:text-accent-main transition-colors cursor-pointer"
         >
           <Plus size={12} />
@@ -66,7 +57,6 @@ export default function BibliotecaPanel({ _pastas, notas, notaSelecionada, _onMo
           return (
             <button
               key={cat.id}
-              onClick={() => toggleCategoria(cat.id)}
               className={`w-full px-5 py-2.5 flex items-center gap-3 text-[12px] transition-all cursor-pointer relative group ${
                 isActive
                   ? 'bg-white/5 text-text-hi border-l-2 border-accent-main'

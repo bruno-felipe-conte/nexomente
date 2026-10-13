@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { getXP, useUIStore } from '../store/useDBStore'
 
 export default function XPTracker() {

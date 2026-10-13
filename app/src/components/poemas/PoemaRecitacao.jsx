@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, MicOff, RotateCcw, X, CheckCircle2, Trophy, Star } from 'lucide-react';
+import { Mic, MicOff, RotateCcw, X, Trophy } from 'lucide-react';
 import { useVosk } from '../../hooks/useVosk';
 import { toast } from 'react-hot-toast';
 import './PoemaRecitacao.css';
 
 const PoemaRecitacao = ({ poema, onFinish, onClose }) => {
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
-  const [transcript, setTranscript] = useState('');
   const [partialTranscript, setPartialTranscript] = useState('');
   const [isFinished, setIsFinished] = useState(false);
   const [palavrasStatus, setPalavrasStatus] = useState({}); // { index: 'correta' | 'errada' }
@@ -74,7 +73,6 @@ const PoemaRecitacao = ({ poema, onFinish, onClose }) => {
     if (isFinal) {
       setIndicePalavraLocal(prev => prev + ouvidas.length);
       setPartialTranscript('');
-      setTranscript(texto);
     } else {
       setPartialTranscript(texto);
     }
@@ -104,7 +102,6 @@ const PoemaRecitacao = ({ poema, onFinish, onClose }) => {
   };
 
   const handleNextLine = () => {
-    setTranscript('');
     setPartialTranscript('');
     setPalavrasStatus({});
     setIndicePalavraLocal(0);
@@ -142,7 +139,6 @@ const PoemaRecitacao = ({ poema, onFinish, onClose }) => {
 
   const resetDojo = () => {
     setCurrentLineIndex(0);
-    setTranscript('');
     setPartialTranscript('');
     setPalavrasStatus({});
     setIndicePalavraLocal(0);

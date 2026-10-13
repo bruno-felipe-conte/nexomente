@@ -1,6 +1,5 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 
 export default function Card({
   children,

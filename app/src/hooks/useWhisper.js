@@ -1,9 +1,9 @@
 // src/hooks/useWhisper.js
 import { useState, useRef, useEffect, useCallback } from 'react'
 
-export function useWhisper({ language = 'portuguese', onResult }) {
+export function useWhisper({ language = 'portuguese', _onResult }) {
   const [status, setStatus]           = useState('idle')
-  const [downloadProgress, setDownloadProgress] = useState({})
+  const [downloadProgress] = useState({})
   const workerRef   = useRef(null)
   const recorderRef = useRef(null)
   const chunksRef   = useRef([])

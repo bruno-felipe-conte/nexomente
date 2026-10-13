@@ -33,7 +33,7 @@ export function useSpeechRecognition({ onResult, onEnd, onError, language = 'pt-
         try {
           recognition.start();
           console.log('── AUTO-RESTARTING SPEECH ──');
-        } catch (err) {
+        } catch {
           setIsListening(false);
           if (onEnd) onEnd();
         }

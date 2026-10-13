@@ -3,9 +3,7 @@ import { Book, Mic, ChevronLeft, ChevronRight, Settings, Brain, ArrowLeft } from
 import { useEffect, useState } from 'react';
 import { usePoemas } from '../../hooks/useMaterias';
 import PoemaRecitacao from './PoemaRecitacao';
-import { useTamagotchiStore } from '../../store/useTamagotchiStore';
 import PropTypes from 'prop-types';
-import toast from 'react-hot-toast';
 
 export default function PoemaLeitura({ onManage, poemaSelecionado, setPoemaSelecionado }) {
   const { poemas, registrarRecitacao, proximoPoema, poemaAnterior } = usePoemas();
