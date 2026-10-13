@@ -191,7 +191,7 @@ export default function NotasPage() {
                 <Button
                   onClick={() => excluirNota(notaSelecionada.id)}
                   variant="ghost"
-                  size="icon-only"
+                  size="none"
                   aria-label="Excluir nota"
                   title="Excluir nota"
                   className="text-text-muted hover:text-danger hover:bg-danger/10"
