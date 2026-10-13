@@ -8,8 +8,7 @@ import React from 'react';
 import { useNotes } from '../../src/hooks/useNotes';
 import { getErrorMessage, ERROR_MESSAGES } from '../../src/constants/errorMessages';
 import { formatarData, calcularTempoDecorrido } from '../../src/utils/dateUtils';
-import { useUIStore } from '../../src/store/useUIStore';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, fireEvent } from '@testing-library/react';
 import App from '../../src/App';
 import Study from '../../src/pages/Study';
 

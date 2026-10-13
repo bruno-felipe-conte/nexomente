@@ -2,7 +2,7 @@
  * Testes do algoritmo SM-2 (Spaced Repetition).
  * sm2.js é puro (zero deps de browser) — cobertura alta é fácil.
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import sm2, { isParaRevisao, isDominado, SM2_DEFAULTS } from '../../src/hooks/sm2';
 
 describe('SM-2 — defaults', () => {
