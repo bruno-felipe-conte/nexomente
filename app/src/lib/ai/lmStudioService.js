@@ -114,15 +114,15 @@ export async function generate(prompt, options = {}) {
       try {
         const errorData = await response.json();
         errDetalhes = errorData.error?.message || JSON.stringify(errorData.error);
-      } catch (e) {
+      } catch {
         errDetalhes = await response.text();
       }
       return { success: false, error: `Erro HTTP ${response.status}: ${errDetalhes}` };
     }
 
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content || 
-                    data.choices?.[0]?.text || 
+    const content = data.choices?.[0]?.message?.content ||
+                    data.choices?.[0]?.text ||
                     data.response || '';
     return { success: true, response: content.trim() };
   } catch (error) {
@@ -162,7 +162,7 @@ export async function chat(messages, options = {}) {
       try {
         const errorData = await response.json();
         errDetalhes = errorData.error?.message || JSON.stringify(errorData.error);
-      } catch (e) {
+      } catch {
         errDetalhes = await response.text();
       }
       console.error('LM Studio HTTP Error:', response.status, errDetalhes);
@@ -170,10 +170,10 @@ export async function chat(messages, options = {}) {
     }
 
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content || 
-                    data.choices?.[0]?.text || 
+    const content = data.choices?.[0]?.message?.content ||
+                    data.choices?.[0]?.text ||
                     data.response || '';
-    
+
     console.log('[LM-STUDIO] Resposta recebida com sucesso.');
     return { success: true, response: content.trim() };
   } catch (error) {
@@ -208,7 +208,7 @@ Conteúdo: ${(nota.conteudo || '').replace(/<[^>]*>/g, '').substring(0, 1500)}`;
     if (match) {
       try {
         return JSON.parse(match[0]).slice(0, maxTags);
-      } catch (_ignored) { /* fallback: parse falhou, tenta regex abaixo */ }
+      } catch { /* fallback: parse falhou, tenta regex abaixo */ }
     }
     const quotes = [...result.response.matchAll(/"([^"]+)"/g)].map(m => m[1]);
     if (quotes.length > 0) return quotes.slice(0, maxTags);
@@ -218,7 +218,7 @@ Conteúdo: ${(nota.conteudo || '').replace(/<[^>]*>/g, '').substring(0, 1500)}`;
 
 /**
  * Gera um resumo conciso do conteúdo de uma nota
- * @param {string} content - Conteúdo da nota para ser resumido  
+ * @param {string} content - Conteúdo da nota para ser resumido
  * @param {number} maxTokens - Limite máximo de tokens no resumo (default: 256)
  */
 export async function summarizeContent(content, maxTokens = 256) {

@@ -56,7 +56,7 @@ export function parseTextoSimples(texto) {
     if (matchOpcao && atual) {
       const letra = matchOpcao[1].toUpperCase();
       const textoOp = matchOpcao[2].trim();
-      
+
       // Checar se o texto já diz que é a correta
       const ehCorreta = /[\s(]correta[)\s]?$/i.test(textoOp);
       const textoLimpo = textoOp.replace(/[\s(]correta[)\s]?$/i, '').trim();
@@ -68,7 +68,7 @@ export function parseTextoSimples(texto) {
         justificativa_correta: ehCorreta ? 'Identificada na fonte.' : '',
         justificativa_errada: ''
       });
-      
+
       if (ehCorreta) atual.resposta_correta = letra;
       continue;
     }
@@ -86,16 +86,16 @@ export function parseTextoSimples(texto) {
 // --- INTEGRAÇÃO COM IA ---
 
 export async function gerarQuestoesComIA(texto, config) {
-  const { 
-    quantidade = 5, 
-    materia = 'Geral', 
-    topico = '', 
-    banca = 'Geral', 
+  const {
+    quantidade = 5,
+    materia = 'Geral',
+    topico = '',
+    banca = 'Geral',
     nivel = 'Médio',
     provider = null,
     modelo = null
   } = config;
-  
+
   const prompt = `
 [SISTEMA: RESPONDA APENAS EM JSON VÁLIDO. SEM TEXTO EXTRA.]
 Gere ${quantidade} questões de múltipla escolha sobre o conteúdo abaixo.
@@ -122,7 +122,7 @@ ${texto.slice(0, 4000)}
   try {
     console.log(`[GERADOR] Chamando IA via ${provider || 'Global'}`);
     const resposta = await aiChat([{ role: 'user', content: prompt }], { provider, model: modelo });
-    
+
     if (!resposta.success) {
       return { success: false, erro: resposta.error || 'Falha na conexão com a IA', code: 'ERR-GEN-001' };
     }
@@ -133,14 +133,14 @@ ${texto.slice(0, 4000)}
     // Tentar extrair JSON
     let extraidas = [];
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    
+
     if (jsonMatch) {
       try {
         const parsed = JSON.parse(jsonMatch[0]);
         if (parsed.questoes && Array.isArray(parsed.questoes)) {
           extraidas = parsed.questoes;
         }
-      } catch (e) {
+      } catch {
         console.warn('[GERADOR] JSON quebrado, tentando fallback...');
       }
     }
@@ -186,15 +186,15 @@ ${texto.slice(0, 4000)}
 
 // --- PARSER GERAL DE ARQUIVO ---
 
-export async function parseArquivo(textoEntrada, tipoArquivo = 'txt') {
+export async function parseArquivo(textoEntrada, _tipoArquivo = 'txt') {
   if (!textoEntrada) return { success: false, erro: 'Texto vazio' };
-  
+
   const banca = detectarBanca(textoEntrada);
   const ano = detectarAno(textoEntrada);
   const materia = detectarMateria(textoEntrada);
-  
+
   const puras = parseTextoSimples(textoEntrada);
-  
+
   if (puras.length === 0) {
     return { success: false, erro: 'Nenhuma questão identificada no texto.', code: 'ERR-GEN-003' };
   }

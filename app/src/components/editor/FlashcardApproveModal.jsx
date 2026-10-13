@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, ChevronLeft, ChevronRight, Plus, Check, Loader2, RotateCcw } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Plus, Check, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useFlashcards } from '../../hooks/useFlashcards';
 import PropTypes from 'prop-types';
@@ -12,9 +12,6 @@ export default function FlashcardApproveModal({ cards, loading, onCancel, modelo
   const [manualVerso, setManualVerso] = useState('');
   const [salvos, setSalvos] = useState(0);
   const [pulados, setPulados] = useState(0);
-  const [total, setTotal] = useState(cards?.length || 0);
-
-  const restantes = total - idx;
   const card = cards?.[idx];
 
   const handleSalvar = () => {

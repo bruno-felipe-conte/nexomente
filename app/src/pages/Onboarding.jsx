@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUIStore } from '../store/useUIStore';
 import { Brain, BookOpen, Calendar, Zap, ArrowRight, Check } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 const steps = [
   {
@@ -68,7 +68,7 @@ export function Onboarding() {
           exit={{ opacity: 0, y: -20 }}
           className="text-center"
         >
-          <div 
+          <div
             className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6"
             style={{ backgroundColor: step.color + '20' }}
           >
@@ -88,8 +88,8 @@ export function Onboarding() {
               <div
                 key={i}
                 className={`w-2 h-2 rounded-full transition-colors ${
-                  i === currentStep 
-                    ? 'bg-[var(--accent-main)]' 
+                  i === currentStep
+                    ? 'bg-[var(--accent-main)]'
                     : 'bg-[var(--border-subtle)]'
                 }`}
               />

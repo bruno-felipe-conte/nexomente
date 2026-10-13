@@ -26,7 +26,7 @@ export async function initDB() {
     try {
       const sqlModule = await import('sql.js');
       initSql = sqlModule.default || sqlModule;
-    } catch (_err) {
+    } catch {
       // Ignora falha de import dinamico se indisponivel no bundle
     }
   }

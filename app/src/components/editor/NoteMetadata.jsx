@@ -23,13 +23,11 @@ const statusLista = [
 export default function NoteMetadata({ nota, onUpdate, onClose, editor }) {
   if (!nota) return null;
 
-  const tipoAtual = tipos.find(t => t.id === nota.tipo) || tipos[0];
-
   return (
     <div className="w-64 border-l border-border-subtle flex flex-col bg-bg-secondary overflow-auto">
       <div className="p-3 border-b border-border-subtle flex items-center justify-between">
         <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">Metadados</span>
-        <button 
+        <button
           onClick={onClose}
           className="p-1 hover:bg-bg-tertiary rounded-full text-text-muted hover:text-text-primary transition-colors cursor-pointer"
           title="Fechar"

@@ -50,9 +50,9 @@ function getLevelProgress(xp) {
   const current = getLevelData(xp);
   const nextIdx = TAMAGOTCHI_LEVELS.indexOf(current) + 1;
   const next = TAMAGOTCHI_LEVELS[nextIdx];
-  
+
   if (!next) return 100; // Nível máximo
-  
+
   const range = next.xp - current.xp;
   const currentProgress = xp - current.xp;
   return Math.min(100, Math.max(0, (currentProgress / range) * 100));
@@ -171,7 +171,7 @@ export const useTamagotchiStore = create(
         const { player } = get();
         const todayStr = new Date().toISOString();
         const diff = player.last_study_date ? calculateDaysDifference(player.last_study_date, todayStr) : 1;
-        
+
         let newStreak = player.streak;
         let isFirstOfDay = false;
 
@@ -182,7 +182,7 @@ export const useTamagotchiStore = create(
             newStreak += 1;
           } else {
             // Se diff > 1 e nível >= 29 (Entidade), streak não cai abaixo de x2 (14 dias eq.)
-            if (player.level >= 29 && newStreak > 14) newStreak = 14; 
+            if (player.level >= 29 && newStreak > 14) newStreak = 14;
             else newStreak = 1;
           }
         }
@@ -213,14 +213,12 @@ export const useTamagotchiStore = create(
         if (player.level >= 6) hpGained += 2; // Coelho
 
         let newHp = player.hp + hpGained;
-        let isReviving = false;
-        
+
         if (player.hibernating) {
-           isReviving = true;
            // Fênix (Nível 24) revive com 40 HP
            newHp = player.level >= 24 ? 40 : 20;
         }
-        
+
         // Aplica passiva de Max HP
         let currentHpMax = getLevelData(player.xp + xpGained).hp_max;
         if (player.level >= 8 && newStreak >= 5 && currentHpMax < 100) currentHpMax = 100; // Gato Radiante

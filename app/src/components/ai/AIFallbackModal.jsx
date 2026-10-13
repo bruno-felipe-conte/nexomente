@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertTriangle, Cpu, Globe, Zap, X } from 'lucide-react';
+import { AlertTriangle, Cpu, Zap, X } from 'lucide-react';
 import PropTypes from 'prop-types';
 
 export default function AIFallbackModal({ isOpen, error, onRetry, onSwitchProvider, onClose }) {

@@ -5,7 +5,7 @@
  *   - useNotaEditor  → editor TipTap + ações de IA
  *   - NotaLista      → painel lateral de busca/listagem
  */
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { EditorContent } from '@tiptap/react';
 import { FileText, Trash2 } from 'lucide-react';
 import { useNotes } from '../hooks/useNotes';
@@ -29,7 +29,6 @@ export default function NotasPage() {
 
   const [notaSelecionada, setNotaSelecionada] = useState(null);
   const [editando, setEditando] = useState(false);
-  const [criando, setCriando] = useState(false);
   const [busca, setBusca] = useState('');
   const [focoMode, setFocoMode] = useState(false);
   const [mostrandoTags, setMostrandoTags] = useState(false);
@@ -38,12 +37,11 @@ export default function NotasPage() {
 
   const {
     editor,
-    aiLoadingTags, aiLoadingResumo, aiLoadingCards,
-    tagsSugeridas, cardsSugeridos,
-    showTagPicker, showCardApprove,
-    setShowTagPicker, setShowCardApprove,
+    aiLoadingCards,
+    cardsSugeridos,
+    showCardApprove,
+    setShowCardApprove,
     handleTagsOpen, handleResumoOpen, handleCardsOpen, handleChatOpen,
-    handleTagsConfirm, handleCardsConfirm,
     salvarNota: _salvarNota,
   } = useNotaEditor({ notaSelecionada, editando, update, addTag, setNotaSelecionada });
 
@@ -52,18 +50,16 @@ export default function NotasPage() {
     [notas, busca, search]
   );
 
-  const criarNota = (tipo = 'nota') => {
+  const criarNota = useCallback((tipo = 'nota') => {
     const id = create({ titulo: 'Nova Nota', tipo, pasta_id: 'inbox', status: 'inbox' });
     const nova = getById(id);
     setNotaSelecionada(nova);
     setEditando(true);
-    setCriando(true);
-  };
+  }, [create, getById]);
 
   const salvarNota = () => {
     _salvarNota();
     setEditando(false);
-    setCriando(false);
   };
 
   // Atalhos de teclado
@@ -83,7 +79,7 @@ export default function NotasPage() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [criarNota]);
 
   const excluirNota = (id) => {
     remove(id);
@@ -173,8 +169,8 @@ export default function NotasPage() {
                       ? () => setMostrandoMeta(p => !p)
                       : () => setMostrandoTags(p => !p);
                   return (
-                    <Button 
-                      key={label} 
+                    <Button
+                      key={label}
                       onClick={toggle}
                       variant={show ? 'primary' : 'secondary'}
                       size="sm"
@@ -192,11 +188,11 @@ export default function NotasPage() {
                     Editar
                   </Button>
                 )}
-                <Button 
+                <Button
                   onClick={() => excluirNota(notaSelecionada.id)}
-                  variant="ghost" 
+                  variant="ghost"
                   size="icon-only"
-                  aria-label="Excluir nota" 
+                  aria-label="Excluir nota"
                   title="Excluir nota"
                   className="text-text-muted hover:text-danger hover:bg-danger/10"
                 >
@@ -223,7 +219,7 @@ export default function NotasPage() {
             )}
 
             <EditorToolbar editor={editor} focusMode={focoMode} onToggleFocus={() => setFocoMode(p => !p)} />
-            
+
             {!focoMode && (
               <AIBar nota={notaSelecionada}
                 onTagsOpen={handleTagsOpen} onResumoOpen={handleResumoOpen}

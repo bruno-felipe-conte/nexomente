@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { BrainCircuit } from 'lucide-react';
 
 export default function AIMemoryIndicator({ activeTokens, maxTokens }) {
   if (!activeTokens || !maxTokens) return null;
 
   const usagePercent = Math.min((activeTokens / maxTokens) * 100, 100);
-  
+
   // Cores dinâmicas baseadas no uso
   const getColor = () => {
     if (usagePercent > 85) return 'bg-rose-500';
@@ -32,14 +32,14 @@ export default function AIMemoryIndicator({ activeTokens, maxTokens }) {
           {Math.round(usagePercent)}%
         </span>
       </div>
-      
+
       <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-        <div 
+        <div
           className={`h-full ${getColor()} ${getGlow()} transition-all duration-500 ease-out rounded-full`}
           style={{ width: `${usagePercent}%` }}
         />
       </div>
-      
+
       <div className="flex justify-between text-[8px] font-medium text-text-lo/40 uppercase tracking-tighter">
         <span>{activeTokens.toLocaleString()} tokens</span>
         <span>Limite: {maxTokens.toLocaleString()}</span>

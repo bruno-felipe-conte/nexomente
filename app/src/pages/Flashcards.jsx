@@ -9,17 +9,18 @@ import { useFlashcards } from '../hooks/useFlashcards';
 import FlashcardViewer from '../components/flashcards/FlashcardViewer';
 
 export default function FlashcardsPage() {
-  const { cards, create, update, remove, revisar, getParaRevisao, getDominados, stats } = useFlashcards();
+  const { cards, create, update, remove, revisar, getParaRevisao, stats } = useFlashcards();
 
   const [modo, setModo] = useState('revisao');
-  const [cardAtual, setCardAtual] = useState(null);
+  const paraRevisao = getParaRevisao();
+  const [cardAtual, setCardAtual] = useState(() => (paraRevisao.length > 0 ? paraRevisao[0] : null));
   const [mostrandoFrente, setMostrandoFrente] = useState(true);
   const [idxRevisao, setIdxRevisao] = useState(0);
 
   const [showCriar, setShowCriar] = useState(false);
   const [novaFrente, setNovaFrente] = useState('');
   const [novoVerso, setNovoVerso] = useState('');
-  const [novoMateria, _setNovoMateria] = useState('geral'); // setNovoMateria reservado para seletor futuro
+  const [novoMateria] = useState('geral');
 
   const [editandoId, setEditandoId] = useState(null);
   const [editFrente, setEditFrente] = useState('');
@@ -31,20 +32,8 @@ export default function FlashcardsPage() {
   const [filtro, setFiltro] = useState('todos');
   const [busca, setBusca] = useState('');
 
-  const paraRevisao = getParaRevisao();
-  const dominados = getDominados();
-
-  useEffect(() => {
-    if (modo === 'revisao' && paraRevisao.length > 0 && !cardAtual) {
-      setCardAtual(paraRevisao[0]);
-      setIdxRevisao(0);
-      setMostrandoFrente(true);
-    }
-  }, [modo]);
-
   useEffect(() => {
     if (!undoCard) return;
-    setUndoCountdown(5);
     const t = setInterval(() => {
       setUndoCountdown(c => {
         if (c <= 1) { clearInterval(t); setUndoCard(null); return 0; }
@@ -63,6 +52,7 @@ export default function FlashcardsPage() {
   const handleRevisar = (qualidade) => {
     if (!cardAtual) return;
     setUndoCard({ ...cards.find(c => c.id === cardAtual.id), _q: qualidade });
+    setUndoCountdown(5);
     revisar(cardAtual.id, qualidade);
     avancar();
   };
@@ -105,7 +95,17 @@ export default function FlashcardsPage() {
           <div className="flex gap-2">
             {['revisao', 'todos', 'editar'].map(m => (
               <button key={m}
-                onClick={() => { setModo(m); setCardAtual(null); setEditandoId(null); }}
+                onClick={() => {
+                  setModo(m);
+                  setEditandoId(null);
+                  if (m === 'revisao') {
+                    setCardAtual(paraRevisao[0] || null);
+                    setIdxRevisao(0);
+                    setMostrandoFrente(true);
+                  } else {
+                    setCardAtual(null);
+                  }
+                }}
                 className={`px-3 py-1.5 rounded text-xs font-medium transition-colors cursor-pointer ${modo === m ? 'bg-accent-main text-white' : 'bg-bg-tertiary text-text-secondary hover:text-text-primary'}`}>
                 {m === 'revisao' ? 'Revisar' : m === 'todos' ? 'Ver Todos' : 'Gerenciar'}
               </button>

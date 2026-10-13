@@ -1,14 +1,13 @@
 /**
  * @module App
- * @description Ponto de entrada do frontend do NexoMente. 
- * Responsável por orquestrar o layout principal (Sidebar + Header + Main), 
- * gerenciar atalhos globais de teclado (ex: navegação de abas), 
+ * @description Ponto de entrada do frontend do NexoMente.
+ * Responsável por orquestrar o layout principal (Sidebar + Header + Main),
+ * gerenciar atalhos globais de teclado (ex: navegação de abas),
  * e prover Code Splitting nativo através de `React.lazy` e `<Suspense>`.
  * Todo o roteamento é baseado em estado (`currentPage`) e ouvintes de eventos customizados (`navigate`).
  */
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import { Toaster } from 'react-hot-toast';
-import { AnimatePresence, motion } from 'framer-motion';
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
 import { useUIStore } from './store/useUIStore';
@@ -28,6 +27,8 @@ const Poemas       = lazy(() => import('./pages/Poemas'));
 const AIChat       = lazy(() => import('./pages/AIChat'));
 const Gerador      = lazy(() => import('./pages/Gerador'));
 
+const PAGES = ['dashboard', 'notes', 'study', 'flashcards', 'poemas', 'gerador', 'ai', 'graph', 'statistics', 'settings'];
+
 // Fallback enquanto o chunk carrega
 function PageLoader() {
   return (
@@ -38,9 +39,9 @@ function PageLoader() {
 }
 
 function App() {
-  const { 
-    sidebarOpen, toggleSidebar, loadingGlobal, 
-    activeTab: currentPage, setActiveTab: setCurrentPage 
+  const {
+    sidebarOpen, toggleSidebar, loadingGlobal,
+    activeTab: currentPage, setActiveTab: setCurrentPage
   } = useUIStore();
 
   useEffect(() => {
@@ -76,21 +77,6 @@ function App() {
     document.documentElement.classList.add(savedTema);
   }, []);
 
-  // ── Sincronização de XP DB -> Tamagotchi ──
-  useEffect(() => {
-    const unsub = import('./store/useDBStore').then(m => {
-      return m.useDBStore.subscribe(
-        state => state.totalXP,
-        totalXP => {
-          import('./store/useTamagotchiStore').then(t => {
-             // O tamagotchi já calcula o progresso baseado no XP
-          });
-        }
-      );
-    });
-    return () => unsub.then(u => u && u());
-  }, []);
-
   useEffect(() => {
     const handleNavigate = (e) => {
       if (['dashboard', 'notes', 'study', 'flashcards', 'graph', 'statistics', 'settings', 'poemas', 'ai', 'gerador'].includes(e.detail)) {
@@ -99,10 +85,9 @@ function App() {
     };
     window.addEventListener('navigate', handleNavigate);
     return () => window.removeEventListener('navigate', handleNavigate);
-  }, []);
+  }, [setCurrentPage]);
 
   // ── Atalhos de teclado globais (Tarefa 6.1) ──────────────────────────────
-  const PAGES = ['dashboard', 'notes', 'study', 'flashcards', 'poemas', 'gerador', 'ai', 'graph', 'statistics', 'settings'];
   const pageIndex = PAGES.indexOf(currentPage);
 
   useEffect(() => {
@@ -136,7 +121,7 @@ function App() {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [toggleSidebar, currentPage, pageIndex]);
+  }, [toggleSidebar, setCurrentPage, pageIndex]);
 
 
   if (loadingGlobal) {
@@ -153,8 +138,8 @@ function App() {
   return (
     <div className="flex h-full w-full bg-nx-void relative overflow-hidden text-nx-text selection:bg-nx-primary/30">
       <LevelUpOverlay />
-      <a 
-        href="#main-content" 
+      <a
+        href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-nx-surface focus:text-nx-primary focus:rounded-br-lg"
       >
         Pular para o conteúdo principal
@@ -186,7 +171,7 @@ function App() {
       <div className="flex flex-col flex-1 min-w-0 relative h-full overflow-hidden">
         {/* LINHA DE HORIZONTE v1.0 */}
         <div className="absolute top-20 left-0 right-0 h-[1px] bg-nx-border/30 z-0 pointer-events-none" />
-        
+
         <Header
           title={currentPage}
           onToggleSidebar={toggleSidebar}
@@ -213,7 +198,7 @@ function App() {
             </Suspense>
           </ErrorBoundary>
         </main>
-        
+
         <BottomNav currentPage={currentPage} onNavigate={setCurrentPage} />
       </div>
     </div>

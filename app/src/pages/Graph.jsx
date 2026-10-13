@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useUIStore } from '../store/useUIStore';
 import cytoscape from 'cytoscape';
-import { GitBranch, ZoomIn, ZoomOut, Maximize2, Filter, Layout, Eye, EyeOff, X } from 'lucide-react';
+import { GitBranch, ZoomIn, ZoomOut, Maximize2, Filter, X } from 'lucide-react';
 
 const tipoCores = {
   nota: '#6C63FF',
@@ -16,10 +16,9 @@ const tipoCores = {
 export default function Graph() {
   const uiState = useUIStore();
   const Notas = uiState.Notas;
-  const Pastas = uiState.Pastas;
   const containerRef = useRef(null);
   const cyRef = useRef(null);
-  const [notas, setNotas] = useState([]);
+  const notas = useMemo(() => (Notas ? Notas.getAll() : []), [Notas]);
   const [notaSelecionada, setNotaSelecionada] = useState(null);
   const [layout, setLayout] = useState('cose');
   const [filtros, setFiltros] = useState({
@@ -48,11 +47,6 @@ export default function Graph() {
   }, []);
 
   useEffect(() => {
-    if (!Notas) return;
-    setNotas(Notas.getAll());
-  }, [Notas]);
-
-  useEffect(() => {
     if (!containerRef.current || notas.length === 0) return;
 
     if (cyRef.current) {
@@ -63,11 +57,11 @@ export default function Graph() {
 
     notas.forEach(nota => {
       if (!filtros[nota.tipo]) return;
-      
+
       elementos.push({
-        data: { 
-          id: nota.id, 
-          label: nota.titulo || 'Sem título', 
+        data: {
+          id: nota.id,
+          label: nota.titulo || 'Sem título',
           tipo: nota.tipo || 'nota',
           conteudo: nota.conteudo,
           tags: extrairTags(nota),
@@ -101,7 +95,7 @@ export default function Graph() {
     notas.forEach(nota => {
       const links = extrairLinks(nota.conteudo);
       links.forEach(linkTexto => {
-        const notaDestino = notas.find(n => 
+        const notaDestino = notas.find(n =>
           n.titulo?.toLowerCase() === linkTexto.toLowerCase()
         );
         if (notaDestino && notaDestino.id !== nota.id) {
@@ -140,7 +134,7 @@ export default function Graph() {
         },
         ...Object.entries(tipoCores).map(([tipo, cor]) => ({
           selector: `node[tipo="${tipo}"]`,
-          style: { 
+          style: {
             'background-color': cor,
             'shadow-blur': 15,
             'shadow-color': cor,
@@ -212,7 +206,7 @@ export default function Graph() {
           <h1 className="text-3xl font-bold text-text-primary">Grafo</h1>
           <p className="text-text-secondary">{notas.length} notas • {notas.filter(n => extrairLinks(n.conteudo).length)} conexões</p>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <button onClick={zoomIn} aria-label="Aumentar zoom" title="Aumentar zoom" className="p-2 bg-bg-secondary border border-border-subtle rounded-lg hover:border-accent-main">
             <ZoomIn size={20} />
@@ -227,8 +221,8 @@ export default function Graph() {
       </div>
 
       <div className="p-4 border-b border-border-subtle flex gap-2">
-        <select 
-          value={layout} 
+        <select
+          value={layout}
           onChange={(e) => setLayout(e.target.value)}
           aria-label="Layout do grafo"
           className="px-3 py-1 bg-bg-secondary border border-border-subtle rounded-lg text-sm"
@@ -239,18 +233,18 @@ export default function Graph() {
           <option value="concentric">Concêntrico</option>
           <option value="breadthfirst">Árvore</option>
         </select>
-        
+
         <Filter size={16} className="text-text-muted" />
         {Object.keys(filtros).map(tipo => (
           <button
             key={tipo}
             onClick={() => setFiltros(f => ({ ...f, [tipo]: !f[tipo] }))}
             className={`px-3 py-1 rounded-lg text-sm flex items-center gap-1 ${
-              filtros[tipo] 
-                ? '' 
+              filtros[tipo]
+                ? ''
                 : 'opacity-50'
             }`}
-            style={{ 
+            style={{
               backgroundColor: filtros[tipo] ? tipoCores[tipo] || '#6C63FF' : '#252338',
               border: `1px solid ${tipoCores[tipo] || '#6C63FF'}40`
             }}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useDBStore } from '../store/useDBStore';
 import { useTamagotchiStore } from '../store/useTamagotchiStore';
 import { useMaterias } from '../hooks/useMaterias';
@@ -43,7 +43,7 @@ const handleComplete = useCallback(() => {
   }, [sessaoId, SessoesEstudo, XP, currentModo]);
 
   useEffect(() => {
-    if (!rodando || timer <= 0) return;
+    if (!rodando) return;
     const interval = setInterval(() => {
       setTimer(prev => {
         if (prev <= 1) {
@@ -73,7 +73,7 @@ const handleComplete = useCallback(() => {
     setRodando(false);
   };
 
-  const sessoesHoje = sessoesList.filter(s => 
+  const sessoesHoje = sessoesList.filter(s =>
     s.started_at && new Date(s.started_at).toDateString() === new Date().toDateString()
   );
   const minutosHoje = sessoesHoje.reduce((acc, s) => acc + (s.concluida ? s.duracao_minutos : 0), 0);
@@ -92,13 +92,13 @@ const handleComplete = useCallback(() => {
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
+
         {/* Central: Timer */}
         <div className="lg:col-span-8 flex flex-col items-center justify-center space-y-8">
-          
+
           <div className="flex gap-2 p-1.5 bg-white/5 rounded-2xl border border-white/5">
             {MODOS.map(m => (
-              <button 
+              <button
                 key={m.id}
                 onClick={() => trocarModo(m)}
                 className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${modo === m.id ? 'bg-white/10 text-white shadow-lg' : 'text-text-lo hover:text-text-hi'}`}
@@ -108,24 +108,24 @@ const handleComplete = useCallback(() => {
             ))}
           </div>
 
-          <CircularTimer 
-            seconds={timer} 
-            totalSeconds={totalSeconds} 
-            isActive={rodando} 
+          <CircularTimer
+            seconds={timer}
+            totalSeconds={totalSeconds}
+            isActive={rodando}
             color={currentModo.color}
           />
 
           <div className="flex items-center gap-4">
-            <Button 
-              size="lg" 
-              variant="primary" 
+            <Button
+              size="lg"
+              variant="primary"
               className={`min-w-[160px] h-14 rounded-2xl shadow-xl transition-all active:scale-95 ${rodando ? 'bg-warning hover:bg-warning/90' : 'bg-success hover:bg-success/90'}`}
               onClick={rodando ? () => setRodando(false) : iniciar}
             >
               {rodando ? <><Pause className="mr-2" size={20} /> Pausar</> : <><Play className="mr-2" size={20} /> Iniciar</>}
             </Button>
-            
-            <button 
+
+            <button
               onClick={() => trocarModo(currentModo)}
               className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-text-lo hover:text-text-hi hover:bg-white/10 transition-all"
             >
@@ -144,7 +144,7 @@ const handleComplete = useCallback(() => {
 
         {/* Lateral: Matérias & Stats */}
         <div className="lg:col-span-4 space-y-6">
-          
+
           <Card className="glass-panel p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-sm font-bold text-text-hi font-display">Suas Matérias</h3>
@@ -155,7 +155,7 @@ const handleComplete = useCallback(() => {
 
             {showCriar && (
               <div className="mb-6 p-3 bg-white/5 rounded-xl border border-white/5 space-y-3 animate-in fade-in slide-in-from-top-2">
-                 <input 
+                 <input
                    autoFocus
                    placeholder="Nome da matéria..."
                    className="w-full bg-transparent border-none text-sm text-text-hi placeholder:text-text-lo focus:ring-0"
@@ -171,7 +171,7 @@ const handleComplete = useCallback(() => {
 
             <div className="space-y-3">
               {materias.map(m => (
-                <button 
+                <button
                   key={m.id}
                   onClick={() => setMateriaAtiva(m.id)}
                   className={`w-full group flex items-center justify-between p-3 rounded-xl border transition-all ${materiaAtiva === m.id ? 'bg-white/10 border-white/20 shadow-lg' : 'bg-transparent border-transparent hover:bg-white/5'}`}

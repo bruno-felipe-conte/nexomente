@@ -1,4 +1,3 @@
-import { Editor } from '@tiptap/react';
 import PropTypes from 'prop-types';
 import {
   Bold, Italic, Underline, Strikethrough, Code, Heading1, Heading2, Heading3,

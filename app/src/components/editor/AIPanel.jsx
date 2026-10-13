@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
-import { Sparkles, Loader2, Tag, FileText, Layers, RefreshCw, Check, X, Zap } from 'lucide-react';
-import { checkLMStudioStatus, generate, setModel, getModel, suggestTags, summarizeContent, generateFlashcards } from '../../lib/ai/lmStudioService';
+import { Sparkles, Loader2, Tag, FileText, Layers, RefreshCw, Check, X } from 'lucide-react';
+import { checkLMStudioStatus, getModel, suggestTags, summarizeContent, generateFlashcards } from '../../lib/ai/lmStudioService';
 import PropTypes from 'prop-types';
 
 export default function AIPanel({ nota, onTagsUpdate, onResumoUpdate, onFlashcardsCreate }) {
@@ -8,7 +8,7 @@ export default function AIPanel({ nota, onTagsUpdate, onResumoUpdate, onFlashcar
   const [loading, setLoading] = useState(null);
   const [resultado, setResultado] = useState(null);
   const [error, setError] = useState(null);
-  const [modelo, setModelo] = useState(getModel());
+  const [modelo] = useState(getModel());
 
   const verificarStatus = useCallback(async () => {
     setStatus('checking');
@@ -56,12 +56,6 @@ export default function AIPanel({ nota, onTagsUpdate, onResumoUpdate, onFlashcar
       setError('Não foi possível gerar flashcards');
     }
     setLoading(null);
-  };
-
-  const handleUsarModelo = async (modeloId) => {
-    setModel(modeloId);
-    setModelo(modeloId);
-    await verificarStatus();
   };
 
   return (

@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import PropTypes from 'prop-types';
 import AIPerformancePanel from '../components/ai/AIPerformancePanel';
 import Card from '../components/ui/Card';
-import { 
-  Settings as SettingsIcon, Bell, Shield, User, 
-  Database, Trash2, Cpu, Globe, RefreshCcw, 
-  AlertTriangle, Sparkles, Key, Save, Download, Mic
+import {
+  Settings as SettingsIcon, Bell, Shield, User,
+  Database, Trash2, Cpu, Globe,
+  AlertTriangle, Sparkles, Key, Download, Mic
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAIModel } from '../hooks/useAIModel';
@@ -25,7 +24,7 @@ export default function Settings() {
   const [userName, setUserName] = useState(() => globalUserName);
   const [notifStudy, setNotifStudy] = useState(localStorage.getItem('nexomente_notif_study') === 'true');
 
-  const saveConfig = (key, value, setter) => {
+  const saveConfig = (key, value) => {
     if (key === 'nexomente_gemini_key') {
       setApiKey(value);
     } else {
@@ -44,7 +43,7 @@ export default function Settings() {
       a.download = `nexomente_backup_${new Date().toISOString().slice(0,10)}.json`;
       a.click();
       toast.success('Backup gerado com sucesso');
-    } catch (e) {
+    } catch {
       toast.error('Erro ao gerar backup');
     }
   };
@@ -74,7 +73,7 @@ export default function Settings() {
 
   return (
     <div className="main-content min-h-screen p-6 md:p-10 space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 bg-bg-primary">
-      
+
       {/* Header */}
       <header className="flex items-center gap-6 mb-12 max-w-5xl mx-auto w-full">
         <div className="w-16 h-16 rounded-3xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-text-hi shadow-2xl">
@@ -87,11 +86,11 @@ export default function Settings() {
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 max-w-6xl mx-auto w-full">
-        
+
         {/* Sidebar */}
         <div className="lg:col-span-3 space-y-2">
            {TABS.map(item => (
-             <button 
+             <button
                key={item.id}
                onClick={() => setActiveTab(item.id)}
                className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all text-left border ${activeTab === item.id ? 'bg-white/5 text-text-hi border-white/10 shadow-lg' : 'text-text-lo/40 border-transparent hover:bg-white/[0.02] hover:text-text-hi'}`}
@@ -104,7 +103,7 @@ export default function Settings() {
 
         {/* Conteúdo Dinâmico */}
         <div className="lg:col-span-9 space-y-12">
-          
+
           {activeTab === 'perf' && (
             <div className="space-y-10 animate-in fade-in duration-500">
               {/* Painel Unificado de IA */}
@@ -123,13 +122,13 @@ export default function Settings() {
                     {[
                       { id: 'cloud', label: 'Gemini Pro', icon: Globe, desc: 'Alta Performance (Cloud)', color: 'text-blue-400' },
                       { id: 'local', label: 'LM Studio', icon: Cpu, desc: 'Privacidade Total (Local)', color: 'text-accent-main' },
-                      { 
-                        id: 'embedded', 
-                        label: 'Interno', 
-                        icon: Sparkles, 
-                        desc: window.electronAPI ? 'Nativo NexoMente' : 'Apenas Desktop', 
+                      {
+                        id: 'embedded',
+                        label: 'Interno',
+                        icon: Sparkles,
+                        desc: window.electronAPI ? 'Nativo NexoMente' : 'Apenas Desktop',
                         color: window.electronAPI ? 'text-purple-400' : 'text-text-lo/20',
-                        disabled: !window.electronAPI 
+                        disabled: !window.electronAPI
                       },
                     ].map(opt => (
                       <button
@@ -156,14 +155,14 @@ export default function Settings() {
                         <span className="text-[10px] font-bold uppercase tracking-widest">Configuração de Chave</span>
                       </div>
                       <div className="flex gap-2">
-                        <input 
+                        <input
                           type="password"
                           value={localApiKey}
                           onChange={e => setLocalApiKey(e.target.value)}
                           placeholder="Gemini API Key..."
                           className="flex-1 bg-bg-secondary border border-white/5 rounded-xl px-4 py-2.5 text-sm text-text-hi focus:border-blue-400 focus:outline-none"
                         />
-                        <button 
+                        <button
                           onClick={() => saveConfig('nexomente_gemini_key', localApiKey)}
                           className="px-6 py-2.5 bg-blue-500 text-white rounded-xl font-bold text-xs hover:bg-blue-600 transition-all flex items-center gap-2"
                         >
@@ -239,14 +238,14 @@ export default function Settings() {
                 <div className="p-8 bg-white/[0.02] border border-white/5 rounded-3xl space-y-6">
                   <div className="flex flex-col gap-2">
                     <label className="text-[10px] font-bold text-text-lo uppercase tracking-widest">Seu Nome</label>
-                    <input 
+                    <input
                       type="text"
                       value={userName}
                       onChange={e => setUserName(e.target.value)}
                       className="bg-bg-secondary border border-white/5 rounded-xl px-4 py-3 text-sm text-text-hi focus:border-accent-main focus:outline-none"
                     />
                   </div>
-                  <button 
+                  <button
                     onClick={() => {
                       setGlobalUserName(userName);
                       toast.success('Perfil atualizado com sucesso');
@@ -274,7 +273,7 @@ export default function Settings() {
                       <span className="text-sm font-bold text-text-hi">Lembretes de Revisão</span>
                       <span className="text-[10px] text-text-lo/40 uppercase tracking-widest">Notificar quando houver cards para estudar</span>
                     </div>
-                    <button 
+                    <button
                       onClick={() => { const v = !notifStudy; setNotifStudy(v); saveConfig('nexomente_notif_study', String(v)); }}
                       className={`w-12 h-6 rounded-full p-1 transition-colors ${notifStudy ? 'bg-accent-main' : 'bg-white/10'}`}
                     >
@@ -293,7 +292,7 @@ export default function Settings() {
       <AnimatePresence>
         {showDeleteModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-6 backdrop-blur-xl bg-black/60">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}

@@ -1,20 +1,23 @@
-import { useState, useEffect } from 'react';
-import { X, Plus, Check, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { X, Plus, Check, Loader2, Tag } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Tag } from 'lucide-react';
 import PropTypes from 'prop-types';
 
-export default function TagPickerModal({ tagsSugeridas, loading, onConfirm, onCancel, modelo }) {
-  const [selecionadas, setSelecionadas] = useState({});
+export default function TagPickerModal({ tagsSugeridas = [], loading, onConfirm, onCancel, modelo }) {
+  const [selecionadas, setSelecionadas] = useState(() => {
+    const init = {};
+    tagsSugeridas.forEach(t => { init[t] = true; });
+    return init;
+  });
+  const [prevTags, setPrevTags] = useState(tagsSugeridas);
   const [tagManual, setTagManual] = useState('');
 
-  useEffect(() => {
-    if (tagsSugeridas.length > 0) {
-      const init = {};
-      tagsSugeridas.forEach(t => { init[t] = true; });
-      setSelecionadas(init);
-    }
-  }, [tagsSugeridas]);
+  if (tagsSugeridas !== prevTags) {
+    setPrevTags(tagsSugeridas);
+    const init = {};
+    tagsSugeridas.forEach(t => { init[t] = true; });
+    setSelecionadas(init);
+  }
 
   const toggle = (tag) => {
     setSelecionadas(prev => ({ ...prev, [tag]: !prev[tag] }));

@@ -1,7 +1,5 @@
-import { TurboQuantEngine } from './turboQuant/turboQuantEngine.js';
-
 /**
- * Gerencia o contexto da conversa, comprimindo o histórico antigo 
+ * Gerencia o contexto da conversa, comprimindo o histórico antigo
  * usando TurboQuant quando o limite de tokens é atingido.
  */
 export class SmartContextManager {
@@ -9,7 +7,7 @@ export class SmartContextManager {
     this.context = llamaContext;
     this.hardware = hardware;
     this.conversationHistory = [];
-    
+
     // Configurações adaptativas baseadas no tier do hardware
     this.maxActiveTokens = hardware.ramGB >= 16 ? 6000 : 3000;
   }
@@ -30,11 +28,11 @@ export class SmartContextManager {
     if (toCompressCount < 2) return;
 
     const oldMessages = this.conversationHistory.splice(0, toCompressCount);
-    
-    // Aqui poderíamos usar o TurboQuant para comprimir vetores KV reais se tivéssemos 
+
+    // Aqui poderíamos usar o TurboQuant para comprimir vetores KV reais se tivéssemos
     // acesso direto aos buffers do llama.cpp, mas como usamos a lib node-llama-cpp,
     // implementamos a compressão via Sumarização Inteligente (Fase 2.4 do Guia).
-    
+
     const textToSummarize = oldMessages.map(m => `${m.role}: ${m.content}`).join('\n');
     const summary = await this.generateSummary(textToSummarize);
 
@@ -52,13 +50,13 @@ export class SmartContextManager {
     try {
       const session = this.context.getSequence();
       const prompt = `Resuma de forma extremamente concisa os pontos principais desta conversa para preservar o contexto essencial:\n\n${text}\n\nRESUMO:`;
-      
+
       let summary = '';
       await session.prompt(prompt, {
         maxTokens: 150,
         onTextChunk: (chunk) => { summary += chunk; }
       });
-      
+
       return summary.trim() || "Histórico anterior processado.";
     } catch (e) {
       console.error("[SmartContext] Erro ao gerar sumário:", e);
@@ -68,7 +66,7 @@ export class SmartContextManager {
 
   buildOptimizedPrompt() {
     if (this.conversationHistory.length === 0) return "";
-    
+
     // Constrói o prompt a partir do histórico já atualizado
     const prompt = this.conversationHistory
       .map(m => {
@@ -76,7 +74,7 @@ export class SmartContextManager {
         return `${roleName}: ${m.content}`;
       })
       .join('\n\n');
-    
+
     return `${prompt}\n\nAssistant:`;
   }
 }

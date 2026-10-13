@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Tag, FileText, Layers, MoreHorizontal, Loader2, WifiOff } from 'lucide-react';
 import { useAIModel } from '../../hooks/useAIModel';
-import { checkLMStudioStatus, getModel } from '../../lib/ai/lmStudioService';
 import PropTypes from 'prop-types';
 
 export default function AIBar({ nota, onTagsOpen, onResumoOpen, onCardsOpen, onChatOpen }) {

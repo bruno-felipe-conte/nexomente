@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { usePoemas } from '../hooks/useMaterias';
 import PoemaLeitura from '../components/poemas/PoemaLeitura';
 import PoemasGerenciador from '../components/poemas/PoemasGerenciador';
@@ -8,19 +8,14 @@ export default function PoemasPage() {
   const [tela, setTela] = useState('gerenciar'); // Default agora é gerenciar
   const [poemaSelecionado, setPoemaSelecionado] = useState(null);
 
-  // Garante que se houve edição o poema selecionado seja atualizado
-  useEffect(() => {
-    if (poemaSelecionado && tela === 'leitura') {
-      const p = getById(poemaSelecionado.id);
-      if (p) {
-        setPoemaSelecionado(p);
-      }
-    }
-  }, [tela, getById]);
+  // Se houve edição recente, obtém a versão atualizada do banco
+  const poemaAtual = (poemaSelecionado && tela === 'leitura')
+    ? (getById(poemaSelecionado.id) || poemaSelecionado)
+    : poemaSelecionado;
 
   if (tela === 'gerenciar') {
     return (
-      <PoemasGerenciador 
+      <PoemasGerenciador
         onLeitura={() => setTela('leitura')}
         onSelectPoema={(p) => {
           setPoemaSelecionado(p);
@@ -31,9 +26,9 @@ export default function PoemasPage() {
   }
 
   return (
-    <PoemaLeitura 
+    <PoemaLeitura
       onManage={() => setTela('gerenciar')}
-      poemaSelecionado={poemaSelecionado}
+      poemaSelecionado={poemaAtual}
       setPoemaSelecionado={setPoemaSelecionado}
     />
   );
