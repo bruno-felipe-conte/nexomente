@@ -1,12 +1,14 @@
 import { useCallback, useMemo } from 'react';
 import { useDBStore } from '../store/useDBStore';
 
+const selectMaterias = (repo, v) => (v >= 0 ? repo?.getAll() || [] : []);
+const selectPoemas = (repo, v) => (v >= 0 ? repo?.getAll() || [] : []);
+
 export function useMaterias() {
-  const { Materias, loading, version } = useDBStore();
-  const materias = useMemo(() => {
-    void version;
-    return Materias?.getAll() || [];
-  }, [Materias, version]);
+  const Materias = useDBStore(state => state.Materias);
+  const loading = useDBStore(state => state.loading);
+  const version = useDBStore(state => state.version);
+  const materias = useMemo(() => selectMaterias(Materias, version), [Materias, version]);
 
   const create = useCallback((data = {}) => {
     return Materias.create({
@@ -33,11 +35,10 @@ export function useMaterias() {
 }
 
 export function usePoemas() {
-  const { Poemas, loading, version } = useDBStore();
-  const poemas = useMemo(() => {
-    void version;
-    return Poemas?.getAll() || [];
-  }, [Poemas, version]);
+  const Poemas = useDBStore(state => state.Poemas);
+  const loading = useDBStore(state => state.loading);
+  const version = useDBStore(state => state.version);
+  const poemas = useMemo(() => selectPoemas(Poemas, version), [Poemas, version]);
 
   const create = useCallback((data = {}) => {
     return Poemas.create(data);

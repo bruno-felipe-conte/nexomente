@@ -1,12 +1,13 @@
 import { useCallback, useMemo } from 'react';
 import { useDBStore } from '../store/useDBStore';
 
+const selectCards = (repo, v) => (v >= 0 ? repo?.getAll() || [] : []);
+
 export function useFlashcards() {
-  const { Flashcards, loading, version } = useDBStore();
-  const cards = useMemo(() => {
-    void version;
-    return Flashcards?.getAll() || [];
-  }, [Flashcards, version]);
+  const Flashcards = useDBStore(state => state.Flashcards);
+  const loading = useDBStore(state => state.loading);
+  const version = useDBStore(state => state.version);
+  const cards = useMemo(() => selectCards(Flashcards, version), [Flashcards, version]);
 
   const create = useCallback((cardData) => {
     return Flashcards.create({
@@ -59,4 +60,4 @@ export function useFlashcards() {
     getById,
     stats,
   };
-}
+}
