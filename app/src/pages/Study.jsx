@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useDBStore } from '../store/useDBStore';
 import { useTamagotchiStore } from '../store/useTamagotchiStore';
 import { useMaterias } from '../hooks/useMaterias';
@@ -28,26 +28,33 @@ export default function Study() {
   const [novaMateria, setNovaMateria] = useState('');
   const [sessoesList, setSessoesList] = useState(() => SessoesEstudo?.getAll() || []);
 
+  const sessaoIdRef = useRef(sessaoId);
+  useEffect(() => {
+    sessaoIdRef.current = sessaoId;
+  }, [sessaoId]);
+
   const currentModo = MODOS.find(m => m.id === modo);
 
-const handleComplete = useCallback(() => {
-    if (sessaoId) {
-      SessoesEstudo.completar(sessaoId);
-      XP.add(15, 'Sessão concluída', 'sessao', sessaoId);
+  const handleComplete = useCallback(() => {
+    const activeId = sessaoIdRef.current;
+    if (activeId) {
+      SessoesEstudo.completar(activeId);
+      XP.add(15, 'Sessão concluída', 'sessao', activeId);
       useTamagotchiStore.getState().registerStudySession(currentModo.minutos);
       setSessoesList(SessoesEstudo.getAll());
       toast.success('Sessão finalizada! Bom trabalho.');
     }
     setRodando(false);
     setSessaoId(null);
-  }, [sessaoId, SessoesEstudo, XP, currentModo]);
+  }, [SessoesEstudo, XP, currentModo]);
 
   useEffect(() => {
     if (!rodando) return;
     const interval = setInterval(() => {
       setTimer(prev => {
         if (prev <= 1) {
-          handleComplete();
+          clearInterval(interval);
+          setTimeout(handleComplete, 0);
           return 0;
         }
         return prev - 1;
@@ -61,8 +68,10 @@ const handleComplete = useCallback(() => {
       toast.error('Selecione uma matéria antes de começar!');
       return;
     }
-    const id = SessoesEstudo.create({ materia_id: materiaAtiva, tipo: modo, duracao_minutos: currentModo.minutos });
-    setSessaoId(id);
+    if (!sessaoId) {
+      const id = SessoesEstudo.create({ materia_id: materiaAtiva, tipo: modo, duracao_minutos: currentModo.minutos });
+      setSessaoId(id);
+    }
     setRodando(true);
   };
 
@@ -71,6 +80,7 @@ const handleComplete = useCallback(() => {
     setTimer(m.minutos * 60);
     setTotalSeconds(m.minutos * 60);
     setRodando(false);
+    setSessaoId(null);
   };
 
   const sessoesHoje = sessoesList.filter(s =>
