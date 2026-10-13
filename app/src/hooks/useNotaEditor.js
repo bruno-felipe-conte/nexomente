@@ -63,6 +63,7 @@ export function useNotaEditor({ notaSelecionada, editando, update, addTag, setNo
   });
 
   const lastLoadedNoteIdRef = useRef(null);
+  const lastLoadedContentRef = useRef(null);
 
   useEffect(() => {
     if (!editor) return;
@@ -71,12 +72,21 @@ export function useNotaEditor({ notaSelecionada, editando, update, addTag, setNo
 
   useEffect(() => {
     if (editor && notaSelecionada) {
-      if (lastLoadedNoteIdRef.current !== notaSelecionada.id) {
+      const isNewNote = lastLoadedNoteIdRef.current !== notaSelecionada.id;
+      if (isNewNote) {
         lastLoadedNoteIdRef.current = notaSelecionada.id;
+        lastLoadedContentRef.current = notaSelecionada.conteudo || '';
+        editor.commands.setContent(notaSelecionada.conteudo || '');
+      } else if (
+        notaSelecionada.conteudo !== lastLoadedContentRef.current &&
+        (notaSelecionada.isExternalUpdate || !editor.isFocused)
+      ) {
+        lastLoadedContentRef.current = notaSelecionada.conteudo || '';
         editor.commands.setContent(notaSelecionada.conteudo || '');
       }
     } else if (!notaSelecionada) {
       lastLoadedNoteIdRef.current = null;
+      lastLoadedContentRef.current = null;
     }
   }, [editor, notaSelecionada]);
 

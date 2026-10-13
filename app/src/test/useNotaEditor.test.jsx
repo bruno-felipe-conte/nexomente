@@ -72,4 +72,41 @@ describe('useNotaEditor — Preservação de Digitação e Cursor durante Autosa
 
     expect(result.current.editor.getText()).toBe('Conteúdo da nota dois');
   });
+
+  it('reflete atualização externa da mesma nota (sync ou IA) quando não em foco ou com flag isExternalUpdate', () => {
+    const updateMock = vi.fn();
+    const initialNota = {
+      id: 'nota_ext_1',
+      titulo: 'Nota Sync',
+      conteudo: '<p>Versão 1</p>',
+    };
+
+    const { result, rerender } = renderHook(
+      ({ nota, editando }) =>
+        useNotaEditor({
+          notaSelecionada: nota,
+          editando,
+          update: updateMock,
+        }),
+      {
+        initialProps: { nota: initialNota, editando: true },
+      }
+    );
+
+    expect(result.current.editor.getText()).toBe('Versão 1');
+
+    // Atualização externa recebida (ex: sincronização remota ou IA)
+    rerender({
+      nota: {
+        id: 'nota_ext_1',
+        titulo: 'Nota Sync',
+        conteudo: '<p>Versão 2 gerada pela IA</p>',
+        isExternalUpdate: true,
+      },
+      editando: true,
+    });
+
+    // O editor reflete a nova versão externa com sucesso
+    expect(result.current.editor.getText()).toBe('Versão 2 gerada pela IA');
+  });
 });
