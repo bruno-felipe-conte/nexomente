@@ -39,6 +39,19 @@ export function useNotaEditor({ notaSelecionada, editando, update, addTag, setNo
   const [tagsSugeridas, setTagsSugeridas] = useState([]);
   const [cardsSugeridos, setCardsSugeridos] = useState([]);
   const [resumoPreview, setResumoPreview] = useState(null);
+  const [saveStatus, setSaveStatus] = useState('saved'); // 'saved' | 'saving'
+
+  const lastLoadedNoteIdRef = useRef(null);
+  const lastLoadedContentRef = useRef(null);
+  const debounceTimerRef = useRef(null);
+
+  // Refs com os valores mais recentes: o callback do editor é criado uma única vez
+  const notaRef = useRef(notaSelecionada);
+  const updateRef = useRef(update);
+  useEffect(() => {
+    notaRef.current = notaSelecionada;
+    updateRef.current = update;
+  }, [notaSelecionada, update]);
 
   const editor = useEditor({
     extensions: [
@@ -60,10 +73,31 @@ export function useNotaEditor({ notaSelecionada, editando, update, addTag, setNo
         class: 'prose prose-invert max-w-none focus:outline-none min-h-[300px] p-6 leading-relaxed',
       },
     },
+    onUpdate: ({ editor: ed }) => {
+      const nota = notaRef.current;
+      if (!nota) return;
+      const conteudo = ed.getHTML();
+      // Ignora updates programáticos (carga da nota / sync externo) sem edição real
+      if (conteudo === lastLoadedContentRef.current) return;
+      setSaveStatus('saving');
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = setTimeout(() => {
+        const atual = notaRef.current;
+        if (!atual) return;
+        const html = ed.getHTML();
+        updateRef.current(atual.id, { titulo: atual.titulo, conteudo: html });
+        lastLoadedContentRef.current = html;
+        setSaveStatus('saved');
+      }, 1000);
+    },
   });
 
-  const lastLoadedNoteIdRef = useRef(null);
-  const lastLoadedContentRef = useRef(null);
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    };
+  }, []);
+
 
   useEffect(() => {
     if (!editor) return;
@@ -144,6 +178,7 @@ export function useNotaEditor({ notaSelecionada, editando, update, addTag, setNo
 
   return {
     editor,
+    saveStatus,
     aiLoadingTags, aiLoadingResumo, aiLoadingCards,
     tagsSugeridas, cardsSugeridos, resumoPreview,
     showTagPicker, showCardApprove,

@@ -109,4 +109,29 @@ describe('useNotaEditor — Preservação de Digitação e Cursor durante Autosa
     // O editor reflete a nova versão externa com sucesso
     expect(result.current.editor.getText()).toBe('Versão 2 gerada pela IA');
   });
+
+  it('autosave com debounce: salva uma única vez após pausa na digitação e mantém o cursor', () => {
+    vi.useFakeTimers();
+    const updateMock = vi.fn();
+    const nota = { id: 'nota_auto', titulo: 'Auto', conteudo: '<p>Base</p>' };
+
+    const { result } = renderHook(() =>
+      useNotaEditor({ notaSelecionada: nota, editando: true, update: updateMock })
+    );
+
+    act(() => { result.current.editor.commands.insertContent(' a'); });
+    act(() => { vi.advanceTimersByTime(400); });
+    act(() => { result.current.editor.commands.insertContent('b'); });
+    expect(updateMock).not.toHaveBeenCalled();
+    expect(result.current.saveStatus).toBe('saving');
+
+    const pos = result.current.editor.state.selection.from;
+    act(() => { vi.advanceTimersByTime(1100); });
+
+    expect(updateMock).toHaveBeenCalledTimes(1);
+    expect(updateMock.mock.calls[0][1].conteudo).toContain('Base ab');
+    expect(result.current.saveStatus).toBe('saved');
+    expect(result.current.editor.state.selection.from).toBe(pos);
+    vi.useRealTimers();
+  });
 });

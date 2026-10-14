@@ -38,6 +38,7 @@ export default function NotasPage() {
 
   const {
     editor,
+    saveStatus,
     aiLoadingCards,
     cardsSugeridos,
     showCardApprove,
@@ -173,6 +174,12 @@ export default function NotasPage() {
                 <span className="text-text-hi">{notaSelecionada.titulo}</span>
               </div>
               <div className="flex items-center gap-4">
+                <span
+                  data-testid="save-status"
+                  className={`text-[10px] font-mono uppercase tracking-widest ${saveStatus === 'saving' ? 'text-warning' : 'text-text-lo/50'}`}
+                >
+                  {saveStatus === 'saving' ? 'Salvando…' : 'Salvo'}
+                </span>
                 {['IA', 'Info', 'Tags'].map(label => {
                   const show = label === 'IA' ? mostrandoAI : label === 'Info' ? mostrandoMeta : mostrandoTags;
                   return (
