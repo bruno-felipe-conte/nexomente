@@ -1,5 +1,6 @@
-import { Sparkles, Settings, Cloud, Upload, Wand2 } from 'lucide-react';
+import { Sparkles, Settings, Cloud, Upload, Wand2, BookOpen } from 'lucide-react';
 import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
 import QuestaoCard from './QuestaoCard';
 
 export default function GeradorForjaTab({
@@ -181,9 +182,36 @@ export default function GeradorForjaTab({
       {/* STEP 4: REVISAR */}
       {step === 4 && (
         <div className="h-full flex flex-col space-y-6 overflow-hidden">
-          <div className="flex items-center justify-between shrink-0">
-            <h2 className="font-display text-2xl font-black text-text-hi uppercase tracking-tighter">Revisão do Lote</h2>
-            <button onClick={() => { setAba('banco'); setStep(1); }} className="px-8 py-4 bg-color-gerador text-surface-base rounded-2xl font-black uppercase tracking-widest text-[10px]">Concluir e Salvar</button>
+          <div className="flex items-center justify-between shrink-0 flex-wrap gap-4">
+            <div>
+              <h2 className="font-display text-2xl font-black text-text-hi uppercase tracking-tighter">Revisão do Lote</h2>
+              <p className="text-[10px] text-text-lo/60 font-mono uppercase tracking-wider mt-0.5">
+                {Math.min(questoes.length, configIA.quantidade)} questões forjadas prontas para uso
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => {
+                  const lote = questoes.slice(0, configIA.quantidade);
+                  let criados = 0;
+                  lote.forEach(q => {
+                    handleCriarFlashcard(q.id);
+                    criados++;
+                  });
+                  toast.success(`${criados} flashcards adicionados ao baralho!`);
+                }}
+                className="px-6 py-4 bg-surface-card border border-white/10 hover:border-accent-main/30 text-text-hi rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center gap-2 hover:bg-white/5 transition-all cursor-pointer"
+              >
+                <BookOpen size={14} className="text-accent-main" />
+                Converter Todas em Cards
+              </button>
+              <button
+                onClick={() => { setAba('banco'); setStep(1); }}
+                className="px-8 py-4 bg-color-gerador text-surface-base rounded-2xl font-black uppercase tracking-widest text-[10px] hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-lg shadow-color-gerador/20"
+              >
+                Concluir e Salvar
+              </button>
+            </div>
           </div>
           <div className="flex-1 overflow-y-auto pr-4 scrollbar-thin scrollbar-thumb-surface-border scrollbar-track-transparent space-y-6">
             {questoes.slice(0, configIA.quantidade).map((q) => (

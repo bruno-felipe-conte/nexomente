@@ -49,7 +49,7 @@ export default function GeradorPage() {
   });
 
   const [filtroMateria, setFiltroMateria] = useState('');
-  const [filtroBanca] = useState('');
+  const [filtroBanca, setFiltroBanca] = useState('');
   const [busca, setBusca] = useState('');
   const [novaBancaNome, setNovaBancaNome] = useState('');
   const [novaMateriaNome, setNovaMateriaNome] = useState('');
@@ -125,23 +125,29 @@ export default function GeradorPage() {
     if (cardId) toast.success('Flashcard criado!');
   };
 
-  const handleExportar = (tipo) => {
-    const questoesParaExportar = filtroMateria
-      ? getQuestoesFiltradas({ materia: filtroMateria })
-      : questoes;
+  const handleExportar = (tipo, incluirGabarito = true) => {
+    const questoesParaExportar = questoesExibir.length > 0 ? questoesExibir : questoes;
+    const sufixo = incluirGabarito ? 'com_gabarito' : 'caderno_aluno';
+
     if (tipo === 'doc') {
-      exportarDOC(questoesParaExportar, { titulo: 'Banco de Questões' });
+      exportarDOC(questoesParaExportar, {
+        titulo: incluirGabarito ? 'Banco de Questões — Gabarito Comentado' : 'Caderno de Questões (Simulado)',
+        incluirJustificativas: incluirGabarito
+      });
       toast.success('DOC exportado!');
     } else if (tipo === 'txt') {
-      const texto = exportarParaTexto(questoesParaExportar, { titulo: 'Banco de Questões' });
+      const texto = exportarParaTexto(questoesParaExportar, {
+        titulo: incluirGabarito ? 'Banco de Questões — Gabarito Comentado' : 'Caderno de Questões (Simulado)',
+        incluirGabarito
+      });
       const blob = new Blob([texto], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `questoes_${new Date().toISOString().split('T')[0]}.txt`;
+      a.download = `questoes_${sufixo}_${new Date().toISOString().split('T')[0]}.txt`;
       a.click();
       URL.revokeObjectURL(url);
-      toast.success('TXT exportado!');
+      toast.success(incluirGabarito ? 'Gabarito exportado em TXT!' : 'Caderno do Aluno exportado em TXT!');
     } else if (tipo === 'json') {
       const json = exportarParaJSON(questoesParaExportar);
       const blob = new Blob([json], { type: 'application/json' });
@@ -246,7 +252,10 @@ export default function GeradorPage() {
             setBusca={setBusca}
             filtroMateria={filtroMateria}
             setFiltroMateria={setFiltroMateria}
+            filtroBanca={filtroBanca}
+            setFiltroBanca={setFiltroBanca}
             materias={materias}
+            bancas={bancas}
             handleExportar={handleExportar}
             questoesExibir={questoesExibir}
             atualizarQuestao={atualizarQuestao}
