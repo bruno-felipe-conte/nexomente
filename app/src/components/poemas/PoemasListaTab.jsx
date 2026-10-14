@@ -1,4 +1,4 @@
-import { Book, Edit3, ExternalLink, Trash, Download, CheckSquare, Square } from 'lucide-react';
+import { Book, Edit3, ExternalLink, Trash, Download, CheckSquare, Square, Star } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function PoemasListaTab({
@@ -9,7 +9,9 @@ export default function PoemasListaTab({
   poemasFiltrados,
   toggleSelecao,
   iniciarEdicao,
-  onSelectPoema
+  onSelectPoema,
+  favoritos = [],
+  onToggleFavorito
 }) {
   return (
     <motion.div
@@ -89,16 +91,27 @@ export default function PoemasListaTab({
                 <span className="text-[9px] text-text-lo/30 font-medium truncate">{p.epoca || '—'}</span>
               </div>
 
-              <div className="col-span-2 flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="col-span-2 flex justify-end gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
+                {onToggleFavorito && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onToggleFavorito(p.id); }}
+                    title={favoritos.includes(p.id) ? 'Remover dos favoritos' : 'Favoritar'}
+                    className={`p-2 rounded-lg transition-all ${favoritos.includes(p.id) ? 'text-warning hover:bg-warning/10' : 'text-text-lo/40 hover:text-warning hover:bg-warning/10'}`}
+                  >
+                    <Star size={14} fill={favoritos.includes(p.id) ? 'currentColor' : 'none'} />
+                  </button>
+                )}
                 <button
                   onClick={(e) => { e.stopPropagation(); iniciarEdicao(p); }}
-                  className="p-2 hover:bg-accent-main/10 rounded-lg text-text-lo hover:text-accent-main transition-all"
+                  title="Editar poema"
+                  className="p-2 hover:bg-accent-main/10 rounded-lg text-text-lo hover:text-accent-main transition-all cursor-pointer"
                 >
                   <Edit3 size={14} />
                 </button>
                 <button
                   onClick={(e) => { e.stopPropagation(); onSelectPoema(p); }}
-                  className="p-2 hover:bg-success/10 rounded-lg text-text-lo hover:text-success transition-all"
+                  title="Ler poema"
+                  className="p-2 hover:bg-success/10 rounded-lg text-text-lo hover:text-success transition-all cursor-pointer"
                 >
                   <ExternalLink size={14} />
                 </button>

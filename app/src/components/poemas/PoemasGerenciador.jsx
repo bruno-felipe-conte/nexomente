@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Search, Plus, Sparkles, List, ChevronLeft, CheckSquare, X } from 'lucide-react';
+import { Search, Plus, Sparkles, List, ChevronLeft, CheckSquare, X, Star } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import { usePoemas } from '../../hooks/useMaterias';
 import * as aiProvider from '../../lib/ai/aiProvider';
@@ -17,6 +17,27 @@ export default function PoemasGerenciador({ onLeitura, onSelectPoema }) {
   const [processando, setProcessando] = useState(false);
   const [poemasDetectados, setPoemasDetectados] = useState([]);
   const [busca, setBusca] = useState('');
+  const [apenasFavoritos, setApenasFavoritos] = useState(false);
+  const [favoritos, setFavoritos] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('nexomente_poemas_favs') || '[]');
+    } catch {
+      return [];
+    }
+  });
+
+  const toggleFavorito = (id) => {
+    setFavoritos(prev => {
+      const novo = prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id];
+      try {
+        localStorage.setItem('nexomente_poemas_favs', JSON.stringify(novo));
+      } catch {
+        // Silencioso se localstorage falhar
+      }
+      return novo;
+    });
+  };
+
   const [selecionados, setSelecionados] = useState([]);
   const [modoSelecao, setModoSelecao] = useState(false);
 
@@ -187,11 +208,20 @@ EXEMPLO DE FORMATO:
   };
 
   const poemasFiltrados = useMemo(() => {
-    return poemas.filter(p =>
-      p.titulo.toLowerCase().includes(busca.toLowerCase()) ||
-      (p.autor && p.autor.toLowerCase().includes(busca.toLowerCase()))
-    );
-  }, [poemas, busca]);
+    let lista = poemas;
+    if (apenasFavoritos) {
+      lista = lista.filter(p => favoritos.includes(p.id));
+    }
+    if (busca.trim()) {
+      const q = busca.toLowerCase();
+      lista = lista.filter(p =>
+        p.titulo.toLowerCase().includes(q) ||
+        (p.autor && p.autor.toLowerCase().includes(q)) ||
+        (p.tema && p.tema.some(t => t.toLowerCase().includes(q)))
+      );
+    }
+    return lista;
+  }, [poemas, busca, apenasFavoritos, favoritos]);
 
   return (
     <div className="flex flex-col h-full bg-nx-void overflow-hidden">
@@ -234,7 +264,7 @@ EXEMPLO DE FORMATO:
         </div>
 
         {abaAtiva === 'gerenciador' && (
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <div className="relative flex-1 max-w-xl">
               <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-nx-dim/40" />
               <input
@@ -244,6 +274,19 @@ EXEMPLO DE FORMATO:
                 className="w-full bg-nx-surface/50 border border-nx-border rounded-nx-md py-2 pl-10 pr-4 text-sm text-nx-bright placeholder-nx-dim/30 focus:ring-1 focus:ring-nx-primary outline-none transition-all shadow-xl"
               />
             </div>
+
+            <button
+              onClick={() => setApenasFavoritos(prev => !prev)}
+              title={apenasFavoritos ? 'Mostrar todos os poemas' : 'Filtrar apenas favoritos'}
+              className={`px-3 py-2 rounded-nx-sm text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                apenasFavoritos
+                  ? 'bg-warning/20 border border-warning text-warning'
+                  : 'bg-nx-depth text-nx-dim hover:text-nx-bright border border-transparent'
+              }`}
+            >
+              <Star size={14} fill={apenasFavoritos ? 'currentColor' : 'none'} />
+              <span>Favoritos</span>
+            </button>
 
             <div className="flex gap-2">
               <button
@@ -276,6 +319,8 @@ EXEMPLO DE FORMATO:
               toggleSelecao={toggleSelecao}
               iniciarEdicao={iniciarEdicao}
               onSelectPoema={onSelectPoema}
+              favoritos={favoritos}
+              onToggleFavorito={toggleFavorito}
             />
           )}
 

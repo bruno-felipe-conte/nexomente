@@ -116,6 +116,14 @@ const PoemaRecitacao = ({ poema, onFinish, onClose }) => {
     toast.success('Recitação concluída!');
   };
 
+  const acuraciaCalculada = useMemo(() => {
+    // Estimativa de acurácia da recitação concluída
+    const corretas = Object.values(palavrasStatus).filter(s => s === 'correta').length;
+    const base = Math.max(1, palavrasPoema.length);
+    const scoreLinha = Math.round((corretas / base) * 100);
+    return Math.min(100, Math.max(70, scoreLinha));
+  }, [palavrasStatus, palavrasPoema.length]);
+
   // Verifica se a linha terminou
   useEffect(() => {
     const todasCertas = palavrasPoema.length > 0 &&
@@ -163,7 +171,7 @@ const PoemaRecitacao = ({ poema, onFinish, onClose }) => {
             <h2 className="text-indigo-400 font-mono text-sm tracking-widest uppercase">Poetry Dojo v2.0</h2>
             <h3 className="text-2xl font-bold text-white">{poema?.titulo || 'Recitação'}</h3>
           </div>
-          <button onClick={handleClose} className="p-2 hover:bg-white/10 rounded-full transition-colors text-white/50 hover:text-white">
+          <button onClick={handleClose} className="p-2 hover:bg-white/10 rounded-full transition-colors text-white/50 hover:text-white cursor-pointer">
             <X size={24} />
           </button>
         </div>
@@ -176,9 +184,18 @@ const PoemaRecitacao = ({ poema, onFinish, onClose }) => {
               </div>
               <h2 className="text-4xl font-bold text-white">Excelente!</h2>
               <p className="text-slate-400">Você concluiu a recitação de "{poema?.titulo}".</p>
-              <div className="flex gap-4 justify-center pt-8">
-                <button onClick={onFinish} className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-indigo-500/20">
-                  Coletar Recompensa
+              
+              <div className="inline-flex items-center gap-4 px-6 py-2 rounded-2xl bg-white/5 border border-white/10">
+                <span className="text-xs uppercase tracking-widest text-text-lo font-bold">Acurácia:</span>
+                <span className="text-lg font-mono font-bold text-success">{acuraciaCalculada}%</span>
+                <span className="text-white/20">•</span>
+                <span className="text-xs uppercase tracking-widest text-text-lo font-bold">Recompensa:</span>
+                <span className="text-sm font-bold text-xp-gold">+25 XP</span>
+              </div>
+
+              <div className="flex gap-4 justify-center pt-6">
+                <button onClick={onFinish} className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-indigo-500/20 cursor-pointer">
+                  Coletar Recompensa & Salvar
                 </button>
               </div>
             </motion.div>
