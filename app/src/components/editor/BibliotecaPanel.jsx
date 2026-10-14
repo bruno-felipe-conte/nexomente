@@ -15,7 +15,13 @@ const tipoIcons = {
   inbox: FileText,
 };
 
-export default function BibliotecaPanel({ notas, notaSelecionada }) {
+export default function BibliotecaPanel({
+  notas,
+  notaSelecionada,
+  categoriaAtiva = 'pasta_raiz',
+  onSelectCategoria,
+  onCriarPasta
+}) {
   const categorias = [
     { id: 'pasta_raiz', nome: 'Todas', tipo: 'pasta_raiz' },
     { id: 'inbox', nome: 'Inbox', tipo: 'inbox' },
@@ -42,6 +48,9 @@ export default function BibliotecaPanel({ notas, notaSelecionada }) {
       <div className="px-5 mb-6 flex items-center justify-between">
         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-text-lo/40">Bibliotecas</span>
         <button
+          onClick={onCriarPasta}
+          title="Nova pasta ou categoria"
+          aria-label="Nova pasta ou categoria"
           className="p-1 text-text-lo/40 hover:text-accent-main transition-colors cursor-pointer"
         >
           <Plus size={12} />
@@ -52,19 +61,22 @@ export default function BibliotecaPanel({ notas, notaSelecionada }) {
         {categorias.map(cat => {
           const Icon = tipoIcons[cat.id] || FileText;
           const count = countCategoria(cat.id);
-          const isActive = notaSelecionada?.tipo === cat.id || (cat.id === 'pasta_raiz' && !notaSelecionada?.tipo);
+          const isActive = categoriaAtiva
+            ? categoriaAtiva === cat.id
+            : (notaSelecionada?.tipo === cat.id || (cat.id === 'pasta_raiz' && !notaSelecionada?.tipo));
 
           return (
             <button
               key={cat.id}
+              onClick={() => onSelectCategoria?.(cat.id)}
               className={`w-full px-5 py-2.5 flex items-center gap-3 text-[12px] transition-all cursor-pointer relative group ${
                 isActive
-                  ? 'bg-white/5 text-text-hi border-l-2 border-accent-main'
+                  ? 'bg-white/5 text-text-hi border-l-2 border-accent-main font-bold'
                   : 'text-text-lo/60 hover:text-text-hi hover:bg-white/[0.02] border-l-2 border-transparent'
               }`}
             >
               <Icon size={14} className={isActive ? 'text-accent-main' : 'opacity-40 group-hover:opacity-100'} />
-              <span className={`flex-1 text-left truncate font-medium ${isActive ? 'font-bold' : ''}`}>
+              <span className="flex-1 text-left truncate font-medium">
                 {cat.nome}
               </span>
               <span className="text-[9px] font-mono opacity-20 group-hover:opacity-60">{count}</span>
@@ -80,6 +92,8 @@ BibliotecaPanel.propTypes = {
   pastas: PropTypes.array,
   notas: PropTypes.array,
   notaSelecionada: PropTypes.object,
+  categoriaAtiva: PropTypes.string,
+  onSelectCategoria: PropTypes.func,
   onMoverNota: PropTypes.func,
   onCriarPasta: PropTypes.func,
 };

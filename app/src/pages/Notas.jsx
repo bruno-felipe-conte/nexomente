@@ -28,6 +28,7 @@ export default function NotasPage() {
   const { notas, create, update, remove, search, getById, addTag, removeTag } = useNotes();
   const { create: createCard } = useFlashcards();
 
+  const [categoriaAtiva, setCategoriaAtiva] = useState('pasta_raiz');
   const [notaSelecionada, setNotaSelecionada] = useState(null);
   const [editando, setEditando] = useState(false);
   const [busca, setBusca] = useState('');
@@ -39,38 +40,60 @@ export default function NotasPage() {
   const {
     editor,
     saveStatus,
+    lastSavedAt,
     aiLoadingCards,
     cardsSugeridos,
     showCardApprove,
     setShowCardApprove,
     handleTagsOpen, handleResumoOpen, handleCardsOpen, handleChatOpen,
-    salvarNota: _salvarNota,
+    salvarImediato,
   } = useNotaEditor({ notaSelecionada, editando, update, addTag, setNotaSelecionada });
 
-  const notasFiltradas = useMemo(
-    () => (busca ? search(busca) : notas),
-    [notas, busca, search]
-  );
+  const notasFiltradas = useMemo(() => {
+    let base = busca ? search(busca) : (notas || []);
+    if (categoriaAtiva && categoriaAtiva !== 'pasta_raiz') {
+      if (categoriaAtiva === 'inbox') {
+        base = base.filter(n => !n.pasta_id || n.pasta_id === 'inbox');
+      } else {
+        base = base.filter(n => n.tipo === categoriaAtiva);
+      }
+    }
+    return base;
+  }, [notas, busca, search, categoriaAtiva]);
 
-  const criarNota = useCallback((tipo = 'nota') => {
+  const criarNota = useCallback((tipoCustom) => {
+    const defaultTipo = categoriaAtiva !== 'pasta_raiz' && categoriaAtiva !== 'inbox'
+      ? categoriaAtiva
+      : 'nota';
+    const tipo = tipoCustom || defaultTipo;
     const id = create({ titulo: 'Nova Nota', tipo, pasta_id: 'inbox', status: 'inbox' });
     const nova = getById(id);
     setNotaSelecionada(nova);
     setEditando(true);
-  }, [create, getById]);
+  }, [create, getById, categoriaAtiva]);
 
-  const salvarNota = () => {
-    _salvarNota();
+  const salvarNota = useCallback(() => {
+    salvarImediato();
     setEditando(false);
-  };
+  }, [salvarImediato]);
 
   // Atalhos de teclado
   useEffect(() => {
     const handleKeyDown = (e) => {
+      // Ctrl+S / Cmd+S: Salvar Nota Imediatamente
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        salvarImediato();
+      }
       // Ctrl+Shift+N: Nova Nota
       if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'n') {
         e.preventDefault();
-        criarNota('nota');
+        criarNota();
+      }
+      // Ctrl+Shift+F: Alternar Modo Foco
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'f') {
+        e.preventDefault();
+        setFocoMode(prev => !prev);
       }
       // Esc: Fechar painéis/modais
       if (e.key === 'Escape') {
@@ -81,7 +104,7 @@ export default function NotasPage() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [criarNota]);
+  }, [criarNota, salvarImediato]);
 
   const pendingNoteAction = useUIStore((s) => s.pendingNoteAction);
   const setPendingNoteAction = useUIStore((s) => s.setPendingNoteAction);
@@ -141,8 +164,10 @@ export default function NotasPage() {
             pastas={[]}
             notas={notas}
             notaSelecionada={notaSelecionada}
+            categoriaAtiva={categoriaAtiva}
+            onSelectCategoria={(catId) => setCategoriaAtiva(catId)}
             onMoverNota={update}
-            onCriarPasta={() => {}}
+            onCriarPasta={() => criarNota()}
           />
         </div>
       )}
@@ -279,6 +304,35 @@ export default function NotasPage() {
             <div className={`flex-1 overflow-auto relative ${focoMode ? 'max-w-3xl mx-auto w-full px-8 py-12' : ''}`}>
               <EditorContextMenus editor={editor} onAIAction={(action) => action === 'summarize' && handleResumoOpen()} />
               <EditorContent editor={editor} className="h-full" />
+            </div>
+
+            {/* Barra de Status Inferior (Palavras, Leitura, Salvamento) */}
+            <div className="h-7 px-4 border-t border-white/5 bg-bg-primary/20 flex items-center justify-between text-[11px] text-text-lo/60 font-mono select-none">
+              <div className="flex items-center gap-3">
+                {(() => {
+                  const texto = editor?.getText() || '';
+                  const palavras = texto.trim() ? texto.trim().split(/\s+/).filter(Boolean).length : 0;
+                  const tempoMin = Math.max(1, Math.ceil(palavras / 200));
+                  return (
+                    <>
+                      <span>{palavras} {palavras === 1 ? 'palavra' : 'palavras'}</span>
+                      <span className="opacity-30">•</span>
+                      <span>~{tempoMin} min de leitura</span>
+                    </>
+                  );
+                })()}
+              </div>
+              <div className="flex items-center gap-2">
+                <span>
+                  {saveStatus === 'saving'
+                    ? 'Salvando alterações…'
+                    : lastSavedAt
+                      ? `Salvo às ${lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`
+                      : 'Todas as alterações salvas'}
+                </span>
+                <span className="opacity-30">•</span>
+                <span className="text-[10px] uppercase tracking-wider text-text-lo/40">Ctrl+S salva</span>
+              </div>
             </div>
           </>
         ) : (

@@ -40,6 +40,7 @@ export function useNotaEditor({ notaSelecionada, editando, update, addTag, setNo
   const [cardsSugeridos, setCardsSugeridos] = useState([]);
   const [resumoPreview, setResumoPreview] = useState(null);
   const [saveStatus, setSaveStatus] = useState('saved'); // 'saved' | 'saving'
+  const [lastSavedAt, setLastSavedAt] = useState(null);
 
   const lastLoadedNoteIdRef = useRef(null);
   const lastLoadedContentRef = useRef(null);
@@ -88,6 +89,7 @@ export function useNotaEditor({ notaSelecionada, editando, update, addTag, setNo
         updateRef.current(atual.id, { titulo: atual.titulo, conteudo: html });
         lastLoadedContentRef.current = html;
         setSaveStatus('saved');
+        setLastSavedAt(new Date());
       }, 1000);
     },
   });
@@ -128,7 +130,18 @@ export function useNotaEditor({ notaSelecionada, editando, update, addTag, setNo
     if (!notaSelecionada || !editor) return;
     const conteudo = editor.getHTML();
     update(notaSelecionada.id, { titulo: notaSelecionada.titulo, conteudo });
+    lastLoadedContentRef.current = conteudo;
+    setSaveStatus('saved');
+    setLastSavedAt(new Date());
   }, [notaSelecionada, editor, update]);
+
+  const salvarImediato = useCallback(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+    salvarNota();
+  }, [salvarNota]);
 
   const handleTagsOpen = useCallback(async () => {
     if (!notaSelecionada) return;
@@ -179,6 +192,7 @@ export function useNotaEditor({ notaSelecionada, editando, update, addTag, setNo
   return {
     editor,
     saveStatus,
+    lastSavedAt,
     aiLoadingTags, aiLoadingResumo, aiLoadingCards,
     tagsSugeridas, cardsSugeridos, resumoPreview,
     showTagPicker, showCardApprove,
@@ -186,5 +200,6 @@ export function useNotaEditor({ notaSelecionada, editando, update, addTag, setNo
     handleTagsOpen, handleResumoOpen, handleCardsOpen, handleChatOpen,
     handleTagsConfirm, handleCardsConfirm,
     salvarNota,
+    salvarImediato,
   };
 }
