@@ -422,4 +422,129 @@ export function registerDbHandlers() {
       throw error;
     }
   });
+
+  // ==========================================
+  // POEMAS HANDLERS
+  // ==========================================
+  ipcMain.handle('db-poemas:getAll', () => {
+    try {
+      const db = getDB();
+      const rows = db.prepare('SELECT * FROM poemas ORDER BY created_at DESC').all();
+      return rows.map(row => ({
+        ...row,
+        tema: row.tema ? JSON.parse(row.tema) : [],
+        tags: row.tags ? JSON.parse(row.tags) : []
+      }));
+    } catch (error) {
+      console.error('[DB] Erro ao buscar poemas:', error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle('db-poemas:getById', (event, id) => {
+    try {
+      const db = getDB();
+      const row = db.prepare('SELECT * FROM poemas WHERE id = ?').get(id);
+      if (!row) return null;
+      return {
+        ...row,
+        tema: row.tema ? JSON.parse(row.tema) : [],
+        tags: row.tags ? JSON.parse(row.tags) : []
+      };
+    } catch (error) {
+      console.error('[DB] Erro ao buscar poema por id:', error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle('db-poemas:create', (event, poema) => {
+    try {
+      const db = getDB();
+      const id = poema.id || `poema_${Date.now()}`;
+      const now = new Date().toISOString();
+      db.prepare(`
+        INSERT INTO poemas (id, titulo, autor, corpo, epoca, tema, forma, tags, notas_usuario, ano, streak_recitacao, ultima_recitacao, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        id,
+        poema.titulo || 'Sem título',
+        poema.autor || '',
+        poema.corpo || '',
+        poema.epoca || null,
+        JSON.stringify(poema.tema || []),
+        poema.forma || null,
+        JSON.stringify(poema.tags || []),
+        poema.notas_usuario || null,
+        poema.ano || null,
+        poema.streak_recitacao || 0,
+        poema.ultima_recitacao || null,
+        now,
+        now
+      );
+      return id;
+    } catch (error) {
+      console.error('[DB] Erro ao criar poema:', error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle('db-poemas:update', (event, { id, updates }) => {
+    try {
+      const db = getDB();
+      const current = db.prepare('SELECT * FROM poemas WHERE id = ?').get(id);
+      if (!current) return false;
+
+      const merged = { ...current, ...updates, updated_at: new Date().toISOString() };
+      const info = db.prepare(`
+        UPDATE poemas
+        SET titulo = ?, autor = ?, corpo = ?, epoca = ?, tema = ?, forma = ?, tags = ?, notas_usuario = ?, ano = ?, streak_recitacao = ?, ultima_recitacao = ?, updated_at = ?
+        WHERE id = ?
+      `).run(
+        merged.titulo,
+        merged.autor,
+        merged.corpo,
+        merged.epoca,
+        Array.isArray(merged.tema) ? JSON.stringify(merged.tema) : merged.tema,
+        merged.forma,
+        Array.isArray(merged.tags) ? JSON.stringify(merged.tags) : merged.tags,
+        merged.notas_usuario,
+        merged.ano,
+        merged.streak_recitacao,
+        merged.ultima_recitacao,
+        merged.updated_at,
+        id
+      );
+      return info.changes > 0;
+    } catch (error) {
+      console.error('[DB] Erro ao atualizar poema:', error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle('db-poemas:delete', (event, id) => {
+    try {
+      const db = getDB();
+      const info = db.prepare('DELETE FROM poemas WHERE id = ?').run(id);
+      return info.changes > 0;
+    } catch (error) {
+      console.error('[DB] Erro ao deletar poema:', error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle('db-poemas:recordRecitacao', (event, id) => {
+    try {
+      const db = getDB();
+      const current = db.prepare('SELECT streak_recitacao FROM poemas WHERE id = ?').get(id);
+      if (!current) return false;
+      const novoStreak = (current.streak_recitacao || 0) + 1;
+      const now = new Date().toISOString();
+      const info = db.prepare('UPDATE poemas SET streak_recitacao = ?, ultima_recitacao = ?, updated_at = ? WHERE id = ?')
+        .run(novoStreak, now, now, id);
+      return info.changes > 0;
+    } catch (error) {
+      console.error('[DB] Erro ao registrar recitação de poema:', error);
+      throw error;
+    }
+  });
 }

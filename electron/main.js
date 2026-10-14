@@ -1,10 +1,18 @@
 import { app, BrowserWindow, session, screen } from 'electron';
 import path, { dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { initDB } from './db/database.js';
+import { initDB, closeDB } from './db/database.js';
 import { registerWindowHandlers } from './ipc/windowHandlers.js';
 import { registerDbHandlers } from './ipc/dbHandlers.js';
 import { registerAiHandlers } from './ipc/aiHandlers.js';
+
+// Tratamento global de exceções não capturadas no processo principal
+process.on('uncaughtException', (err) => {
+  console.error('[MAIN] Excecao nao capturada:', err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[MAIN] Rejeicao de promise nao tratada:', reason);
+});
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -121,4 +129,9 @@ app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }
+});
+
+app.on('before-quit', () => {
+  console.log('[MAIN] Encerrando aplicacao e liberando recursos...');
+  closeDB();
 });

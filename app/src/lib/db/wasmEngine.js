@@ -210,11 +210,11 @@ export function saveDB() {
   if (!dbInstance || typeof localStorage === 'undefined') return;
   try {
     const data = dbInstance.export();
-    let binary = '';
     const bytes = new Uint8Array(data);
-    const len = bytes.byteLength;
-    for (let i = 0; i < len; i++) {
-      binary += String.fromCharCode(bytes[i]);
+    const chunkSize = 0x8000; // 32KB chunks para evitar estouro da pilha de chamadas
+    let binary = '';
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
     }
     const base64 = btoa(binary);
     localStorage.setItem('nexomente_db', base64);
@@ -226,7 +226,7 @@ export function saveDB() {
     }, 0);
   } catch (err) {
     console.error('Erro crítico ao salvar banco de dados:', err);
-    if (err.name === 'QuotaExceededError' && typeof alert === 'function') {
+    if (err?.name === 'QuotaExceededError' && typeof alert === 'function') {
       alert('Aviso: Espaço de armazenamento cheio. Remova alguns itens para continuar salvando.');
     }
   }

@@ -45,6 +45,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Database - XP
   dbXpGetTotal: () => ipcRenderer.invoke('db-xp:getTotal'),
   dbXpAdd: (xp, motivo, source_type, source_id) => ipcRenderer.invoke('db-xp:add', { xp, motivo, source_type, source_id }),
+
+  // Database - Poemas
+  dbPoemasGetAll: () => ipcRenderer.invoke('db-poemas:getAll'),
+  dbPoemasGetById: (id) => ipcRenderer.invoke('db-poemas:getById', id),
+  dbPoemasCreate: (poema) => ipcRenderer.invoke('db-poemas:create', poema),
+  dbPoemasUpdate: (id, updates) => ipcRenderer.invoke('db-poemas:update', { id, updates }),
+  dbPoemasDelete: (id) => ipcRenderer.invoke('db-poemas:delete', id),
+  dbPoemasRecordRecitacao: (id) => ipcRenderer.invoke('db-poemas:recordRecitacao', id),
   
   // App
   getPath: (name) => ipcRenderer.invoke('app:getPath', name),
