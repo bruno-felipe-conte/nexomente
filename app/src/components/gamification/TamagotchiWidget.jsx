@@ -1,10 +1,13 @@
 import { useEffect, useState, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Shield, Play } from 'lucide-react';
 import { useTamagotchiStore, getLevelData, getLevelProgress } from '../../store/useTamagotchiStore';
+import { useUIStore } from '../../store/useUIStore';
 
 export default function TamagotchiWidget({ className = '' }) {
   const { player, checkDailyStatus } = useTamagotchiStore();
+  const setActiveTab = useUIStore((s) => s.setActiveTab);
   const levelData = getLevelData(player.xp);
 
   const [speech, setSpeech] = useState(null);
@@ -200,7 +203,18 @@ export default function TamagotchiWidget({ className = '' }) {
             </div>
             <div className="text-right">
               <span className="text-[9px] font-mono text-nx-muted uppercase tracking-widest">Streak</span>
-              <p className="text-[13px] font-mono font-bold text-nx-accent leading-none">🔥 {player.streak}d</p>
+              <div className="flex items-center gap-1.5 justify-end">
+                <p className="text-[13px] font-mono font-bold text-nx-accent leading-none">🔥 {player.streak}d</p>
+                {(player.streak_freezes || 0) > 0 && (
+                  <span
+                    title={`${player.streak_freezes} Escudo(s) de Gelo ativos`}
+                    className="flex items-center text-[10px] text-cyan-300 font-bold bg-cyan-500/10 px-1 py-0.5 rounded border border-cyan-500/20"
+                  >
+                    <Shield size={10} className="mr-0.5" />
+                    {player.streak_freezes}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
           <div className="space-y-1">
@@ -218,6 +232,17 @@ export default function TamagotchiWidget({ className = '' }) {
             </div>
           </div>
         </div>
+
+        {/* Botão de Resgate de Emergência caso HP esteja crítico ou hibernando */}
+        {(hpPercent <= 20 || player.hibernating) && (
+          <button
+            onClick={() => setActiveTab('study')}
+            className="mt-3 w-full py-2 px-3 rounded-xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-red-900/30 transition-all cursor-pointer animate-pulse"
+          >
+            <Play size={12} fill="currentColor" />
+            <span>{player.hibernating ? 'Despertar Pet (Estudar Agora)' : 'Salvar Pet (Estudar Agora)'}</span>
+          </button>
+        )}
       </div>
     </div>
   );

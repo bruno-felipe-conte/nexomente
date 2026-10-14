@@ -91,6 +91,7 @@ export const useTamagotchiStore = create(
         level: 1,
         streak: 0,
         streak_max: 0,
+        streak_freezes: 1,
         last_study_date: null,
         total_study_days: 0,
         total_sessions: 0,
@@ -130,10 +131,20 @@ export const useTamagotchiStore = create(
             if (player.level >= 14 && diff === 2) finalHpLoss = 0; // Panda (um dia off)
             if (player.level >= 7 && finalHpLoss > 0) finalHpLoss -= 2; // Gato passiva
 
+            let streak = player.streak;
+            let streakFreezes = player.streak_freezes ?? 0;
+
+            // Se diff >= 2 e tiver Streak Freeze disponível, consome o escudo e preserva o streak!
+            if (diff >= 2 && streakFreezes > 0) {
+              streakFreezes -= 1;
+              finalHpLoss = Math.floor(finalHpLoss * 0.5); // Amortece 50% do dano
+            } else if (diff >= 2) {
+              streak = 0; // Perdeu o streak
+            }
+
             let newHp = player.hp - finalHpLoss;
             let hibernating = player.hibernating;
             let hibernations = player.hibernations;
-            let streak = player.streak;
 
             if (newHp <= 0) {
               if (player.level >= 12 && player.hp > 0 && finalHpLoss > 0 && !player.hibernating) {
@@ -152,15 +163,14 @@ export const useTamagotchiStore = create(
                hibernating = false;
             }
 
-            if (diff >= 2) streak = 0; // Perdeu o streak
-
             set({
               player: {
                 ...player,
                 hp: newHp,
                 hibernating,
                 hibernations,
-                streak
+                streak,
+                streak_freezes: streakFreezes
               }
             });
           }
@@ -268,6 +278,43 @@ export const useTamagotchiStore = create(
 
       setPetName: (name) => {
         set((state) => ({ player: { ...state.player, pet_name: name } }));
+      },
+
+      addBonusXp: (amount) => {
+        const { player } = get();
+        const bonus = Math.max(0, Math.floor(amount || 0));
+        if (bonus === 0) return;
+
+        const newXp = player.xp + bonus;
+        const oldLevel = player.level;
+        const newLevelData = getLevelData(newXp);
+
+        if (newLevelData.level > oldLevel) {
+          get().queueAnimation(newLevelData.level);
+        }
+
+        const currentHpMax = newLevelData.hp_max;
+        const newHp = Math.min(currentHpMax, player.hp + Math.floor(bonus * 0.2));
+
+        set({
+          player: {
+            ...player,
+            xp: newXp,
+            level: newLevelData.level,
+            hp: newHp,
+            hp_max: Math.max(player.hp_max, currentHpMax),
+            hibernating: false
+          }
+        });
+      },
+
+      addStreakFreeze: (count = 1) => {
+        set((state) => ({
+          player: {
+            ...state.player,
+            streak_freezes: (state.player.streak_freezes || 0) + count
+          }
+        }));
       }
     }),
     {
