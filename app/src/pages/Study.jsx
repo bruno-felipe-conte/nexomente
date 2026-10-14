@@ -1,134 +1,51 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDBStore } from '../store/useDBStore';
-import { useTamagotchiStore } from '../store/useTamagotchiStore';
 import { useMaterias } from '../hooks/useMaterias';
+import { useStudyTimerStore, MODOS_ESTUDO } from '../store/useStudyTimerStore';
 import { Play, Pause, RotateCcw, Clock, Check, Plus, Trash2, Zap, AlertCircle } from 'lucide-react';
 import CircularTimer from '../components/study/CircularTimer';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import toast from 'react-hot-toast';
-import confetti from 'canvas-confetti';
 
-const MODOS = [
-  { id: 'pomodoro', label: 'Pomodoro', minutos: 25, color: '#2DD4BF', xp: 15 },
-  { id: 'foco', label: 'Foco Profundo', minutos: 50, color: '#6C63FF', xp: 30 },
-  { id: 'descanso', label: 'Pausa Curta', minutos: 5, color: '#F59E0B', xp: 5 },
-];
+const MODOS = MODOS_ESTUDO;
 
 export default function Study() {
   const { materias, create, remove } = useMaterias();
-  const { SessoesEstudo, XP } = useDBStore();
+  const { SessoesEstudo } = useDBStore();
 
-  const [timer, setTimer] = useState(25 * 60);
-  const [totalSeconds, setTotalSeconds] = useState(25 * 60);
-  const [rodando, setRodando] = useState(false);
-  const [materiaAtiva, setMateriaAtiva] = useState(null);
-  const [sessaoId, setSessaoId] = useState(null);
-  const [modo, setModo] = useState('pomodoro');
+  const {
+    timer,
+    totalSeconds,
+    rodando,
+    modo,
+    materiaAtiva,
+    iniciar,
+    pausar,
+    trocarModo,
+    setMateriaAtiva,
+    setIsMiniaturized
+  } = useStudyTimerStore();
+
   const [showCriar, setShowCriar] = useState(false);
   const [novaMateria, setNovaMateria] = useState('');
-  const [sessoesList, setSessoesList] = useState(() => SessoesEstudo?.getAll() || []);
 
-  const sessaoIdRef = useRef(sessaoId);
-  useEffect(() => {
-    sessaoIdRef.current = sessaoId;
-  }, [sessaoId]);
+  const currentModo = MODOS.find(m => m.id === modo) || MODOS[0];
 
-  const targetEndTimeRef = useRef(null);
-  const completedRef = useRef(false);
-
-  const currentModo = MODOS.find(m => m.id === modo);
-
-  const handleComplete = useCallback(() => {
-    if (completedRef.current) return;
-    const activeId = sessaoIdRef.current;
-    if (activeId) {
-      completedRef.current = true;
-      SessoesEstudo.completar(activeId);
-      const xpGanho = currentModo.xp || 15;
-      XP.add(xpGanho, 'Sessão concluída', 'sessao', activeId);
-      useTamagotchiStore.getState().registerStudySession(currentModo.minutos);
-      setSessoesList(SessoesEstudo.getAll());
-      try {
-        confetti({
-          particleCount: 90,
-          spread: 70,
-          origin: { y: 0.6 }
-        });
-      } catch {
-        // no-op if canvas is unavailable
-      }
-      toast.success(`Sessão finalizada! +${xpGanho} XP`);
-    }
-    setRodando(false);
-    setSessaoId(null);
-    targetEndTimeRef.current = null;
-  }, [SessoesEstudo, XP, currentModo]);
-
-  useEffect(() => {
-    if (!rodando) {
-      targetEndTimeRef.current = null;
-      return;
-    }
-
-    if (!targetEndTimeRef.current) {
-      targetEndTimeRef.current = Date.now() + timer * 1000;
-    }
-
-    const interval = setInterval(() => {
-      if (!targetEndTimeRef.current) return;
-      const restante = Math.max(0, Math.ceil((targetEndTimeRef.current - Date.now()) / 1000));
-      setTimer(restante);
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [rodando, timer]);
-
-  useEffect(() => {
-    if (rodando && timer === 0) {
-      handleComplete();
-    }
-  }, [rodando, timer, handleComplete]);
-
-  // Limpeza de sessão órfã ao desmontar a tela
-  useEffect(() => {
-    return () => {
-      if (sessaoIdRef.current && !completedRef.current) {
-        SessoesEstudo.abandonar?.(sessaoIdRef.current);
-      }
-    };
+  // Sincroniza a lista de sessões quando uma sessão for iniciada/concluída
+  const sessoesList = React.useMemo(() => {
+    return SessoesEstudo?.getAll?.() || [];
   }, [SessoesEstudo]);
 
-  const iniciar = () => {
-    if (!materiaAtiva && modo !== 'descanso') {
-      toast.error('Selecione uma matéria antes de começar!');
-      return;
-    }
-    completedRef.current = false;
-    const initialTime = timer <= 0 ? currentModo.minutos * 60 : timer;
-    if (timer <= 0) {
-      setTimer(initialTime);
-    }
-    if (!sessaoId) {
-      const id = SessoesEstudo.create({ materia_id: materiaAtiva, tipo: modo, duracao_minutos: currentModo.minutos });
-      setSessaoId(id);
-    }
-    targetEndTimeRef.current = Date.now() + initialTime * 1000;
-    setRodando(true);
-  };
-
-  const trocarModo = (m) => {
-    if (sessaoId) {
-      SessoesEstudo.abandonar?.(sessaoId);
-    }
-    completedRef.current = false;
-    targetEndTimeRef.current = null;
-    setModo(m.id);
-    setTimer(m.minutos * 60);
-    setTotalSeconds(m.minutos * 60);
-    setRodando(false);
-    setSessaoId(null);
-  };
+  // Ao montar na aba Study, desativa miniatura. Ao desmontar em teste ou fechamento isolado, abandona
+  useEffect(() => {
+    setIsMiniaturized(false);
+    return () => {
+      const state = useStudyTimerStore.getState();
+      if (state.sessaoId && !state.completed && !state.isMiniaturized) {
+        SessoesEstudo?.abandonar?.(state.sessaoId);
+      }
+    };
+  }, [setIsMiniaturized, SessoesEstudo]);
 
   const sessoesConcluidasHoje = sessoesList.filter(s =>
     Boolean(s.concluida) && s.started_at && new Date(s.started_at).toDateString() === new Date().toDateString()
@@ -184,7 +101,7 @@ export default function Study() {
               size="lg"
               variant="primary"
               className={`min-w-[160px] h-14 rounded-2xl shadow-xl transition-all active:scale-95 ${rodando ? 'bg-warning hover:bg-warning/90' : 'bg-success hover:bg-success/90'}`}
-              onClick={rodando ? () => setRodando(false) : iniciar}
+              onClick={rodando ? pausar : () => iniciar()}
             >
               {rodando ? <><Pause className="mr-2" size={20} /> Pausar</> : <><Play className="mr-2" size={20} /> Iniciar</>}
             </Button>

@@ -14,6 +14,8 @@ import { useUIStore } from './store/useUIStore';
 import ErrorBoundary from './components/ErrorBoundary';
 import LevelUpOverlay from './components/gamification/LevelUpOverlay';
 import BottomNav from './components/layout/BottomNav';
+import MiniTimerWidget from './components/study/MiniTimerWidget';
+import { useStudyTimerStore } from './store/useStudyTimerStore';
 
 // ─── Code Splitting — cada página carrega só quando necessária (Tarefa 5.1) ───
 const Dashboard    = lazy(() => import('./pages/Dashboard'));
@@ -43,6 +45,19 @@ function App() {
     sidebarOpen, toggleSidebar, loadingGlobal,
     activeTab: currentPage, setActiveTab: setCurrentPage
   } = useUIStore();
+
+  const studyRodando = useStudyTimerStore((s) => s.rodando);
+  const studySessaoId = useStudyTimerStore((s) => s.sessaoId);
+  const setIsMiniaturized = useStudyTimerStore((s) => s.setIsMiniaturized);
+
+  // Sincroniza flag de miniatura quando sair da aba Study com sessão ativa
+  useEffect(() => {
+    if (currentPage !== 'study' && (studyRodando || studySessaoId)) {
+      setIsMiniaturized(true);
+    } else if (currentPage === 'study') {
+      setIsMiniaturized(false);
+    }
+  }, [currentPage, studyRodando, studySessaoId, setIsMiniaturized]);
 
   useEffect(() => {
     // ─── Configurações Padrão de Inicialização (GitHub/Fresh Install) ───
@@ -201,6 +216,11 @@ function App() {
 
         <BottomNav currentPage={currentPage} onNavigate={setCurrentPage} />
       </div>
+
+      {/* Mini Timer Flutuante (PiP) quando fora da Sala de Estudos */}
+      {currentPage !== 'study' && (studyRodando || studySessaoId) && (
+        <MiniTimerWidget onExpand={() => setCurrentPage('study')} />
+      )}
     </div>
   );
 }
