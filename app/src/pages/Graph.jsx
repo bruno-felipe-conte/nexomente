@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useUIStore } from '../store/useUIStore';
+import { useNotes } from '../hooks/useNotes';
 import cytoscape from 'cytoscape';
-import { GitBranch, ZoomIn, ZoomOut, Maximize2, Filter, X } from 'lucide-react';
+import { GitBranch, ZoomIn, ZoomOut, Maximize2, Filter, X, Search, ExternalLink } from 'lucide-react';
 
 const tipoCores = {
   nota: '#6C63FF',
@@ -14,13 +15,16 @@ const tipoCores = {
 };
 
 export default function Graph() {
-  const uiState = useUIStore();
-  const Notas = uiState.Notas;
+  const { notas } = useNotes();
+  const setActiveTab = useUIStore((s) => s.setActiveTab);
+  const setPendingNoteAction = useUIStore((s) => s.setPendingNoteAction);
+
   const containerRef = useRef(null);
   const cyRef = useRef(null);
-  const notas = useMemo(() => (Notas ? Notas.getAll() : []), [Notas]);
   const [notaSelecionada, setNotaSelecionada] = useState(null);
   const [layout, setLayout] = useState('cose');
+  const [buscaNo, setBuscaNo] = useState('');
+  const [totalArestas, setTotalArestas] = useState(0);
   const [filtros, setFiltros] = useState({
     nota: true,
     livro: true,
@@ -54,6 +58,7 @@ export default function Graph() {
     }
 
     const elementos = [];
+    let arestasCount = 0;
 
     notas.forEach(nota => {
       if (!filtros[nota.tipo]) return;
@@ -88,6 +93,7 @@ export default function Graph() {
               tipo: 'tag',
             },
           });
+          arestasCount++;
         }
       }
     });
@@ -106,9 +112,12 @@ export default function Graph() {
               tipo: 'wikilink',
             },
           });
+          arestasCount++;
         }
       });
     });
+
+    setTotalArestas(arestasCount);
 
     cyRef.current = cytoscape({
       container: containerRef.current,
@@ -156,7 +165,7 @@ export default function Graph() {
             'width': 2,
             'line-color': '#7C6DFA',
             'line-style': 'solid',
-            'opacity': 0.4,
+            'opacity': 0.6,
             'curve-style': 'bezier',
             'target-arrow-shape': 'vee',
             'target-arrow-color': '#7C6DFA'
@@ -199,50 +208,97 @@ export default function Graph() {
   const zoomOut = () => cyRef.current?.zoom(cyRef.current.zoom() / 1.2);
   const reset = () => cyRef.current?.fit();
 
+  const handleBuscarNo = (termo) => {
+    setBuscaNo(termo);
+    if (!cyRef.current || !termo.trim()) return;
+
+    const lower = termo.toLowerCase();
+    const targetNode = cyRef.current.nodes().find(node =>
+      node.data('label')?.toLowerCase().includes(lower)
+    );
+
+    if (targetNode) {
+      cyRef.current.nodes().unselect();
+      targetNode.select();
+      cyRef.current.animate({
+        center: { eles: targetNode },
+        zoom: 1.5,
+        duration: 400
+      });
+      const nota = notas.find(n => n.id === targetNode.id());
+      if (nota) setNotaSelecionada(nota);
+    }
+  };
+
+  const abrirNoEditor = (nota) => {
+    if (!nota) return;
+    setPendingNoteAction({ noteId: nota.id });
+    setActiveTab('notes');
+  };
+
+  const totalNotas = useMemo(() => {
+    return notas.filter(n => filtros[n.tipo]).length;
+  }, [notas, filtros]);
+
   return (
-    <div className="h-full flex flex-col">
-      <div className="p-4 border-b border-border-subtle flex items-center justify-between">
+    <div className="h-full flex flex-col font-ui">
+      <div className="p-4 border-b border-border-subtle flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-text-primary">Grafo</h1>
-          <p className="text-text-secondary">{notas.length} notas • {notas.filter(n => extrairLinks(n.conteudo).length)} conexões</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-text-primary">Grafo de Conhecimento</h1>
+          <p className="text-xs md:text-sm text-text-secondary">
+            {totalNotas} notas visíveis • {totalArestas} conexões ativas
+          </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <button onClick={zoomIn} aria-label="Aumentar zoom" title="Aumentar zoom" className="p-2 bg-bg-secondary border border-border-subtle rounded-lg hover:border-accent-main">
-            <ZoomIn size={20} />
+          <div className="relative">
+            <Search size={14} className="absolute left-2.5 top-2.5 text-text-muted" />
+            <input
+              type="text"
+              placeholder="Buscar nó..."
+              value={buscaNo}
+              onChange={(e) => handleBuscarNo(e.target.value)}
+              className="pl-8 pr-3 py-1.5 bg-bg-secondary border border-border-subtle rounded-lg text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-accent-main w-36 md:w-48 transition-all"
+            />
+          </div>
+
+          <button onClick={zoomIn} aria-label="Aumentar zoom" title="Aumentar zoom" className="p-2 bg-bg-secondary border border-border-subtle rounded-lg hover:border-accent-main transition-all cursor-pointer">
+            <ZoomIn size={18} />
           </button>
-          <button onClick={zoomOut} aria-label="Diminuir zoom" title="Diminuir zoom" className="p-2 bg-bg-secondary border border-border-subtle rounded-lg hover:border-accent-main">
-            <ZoomOut size={20} />
+          <button onClick={zoomOut} aria-label="Diminuir zoom" title="Diminuir zoom" className="p-2 bg-bg-secondary border border-border-subtle rounded-lg hover:border-accent-main transition-all cursor-pointer">
+            <ZoomOut size={18} />
           </button>
-          <button onClick={reset} aria-label="Centralizar visão" title="Centralizar visão" className="p-2 bg-bg-secondary border border-border-subtle rounded-lg hover:border-accent-main">
-            <Maximize2 size={20} />
+          <button onClick={reset} aria-label="Centralizar visão" title="Centralizar visão" className="p-2 bg-bg-secondary border border-border-subtle rounded-lg hover:border-accent-main transition-all cursor-pointer">
+            <Maximize2 size={18} />
           </button>
         </div>
       </div>
 
-      <div className="p-4 border-b border-border-subtle flex gap-2">
+      <div className="p-3 border-b border-border-subtle flex flex-wrap items-center gap-2 bg-bg-secondary/40">
         <select
           value={layout}
           onChange={(e) => setLayout(e.target.value)}
           aria-label="Layout do grafo"
-          className="px-3 py-1 bg-bg-secondary border border-border-subtle rounded-lg text-sm"
+          className="px-3 py-1 bg-bg-secondary border border-border-subtle rounded-lg text-xs text-text-primary focus:outline-none cursor-pointer"
         >
-          <option value="cose">COSE (automático)</option>
+          <option value="cose">COSE (Força Gravitacional)</option>
           <option value="circle">Círculo</option>
           <option value="grid">Grade</option>
           <option value="concentric">Concêntrico</option>
-          <option value="breadthfirst">Árvore</option>
+          <option value="breadthfirst">Hierarquia (Árvore)</option>
         </select>
 
-        <Filter size={16} className="text-text-muted" />
+        <div className="h-4 w-[1px] bg-border-subtle mx-1" />
+
+        <Filter size={14} className="text-text-muted" />
         {Object.keys(filtros).map(tipo => (
           <button
             key={tipo}
             onClick={() => setFiltros(f => ({ ...f, [tipo]: !f[tipo] }))}
-            className={`px-3 py-1 rounded-lg text-sm flex items-center gap-1 ${
+            className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer ${
               filtros[tipo]
-                ? ''
-                : 'opacity-50'
+                ? 'text-white'
+                : 'opacity-40 text-text-muted hover:opacity-70'
             }`}
             style={{
               backgroundColor: filtros[tipo] ? tipoCores[tipo] || '#6C63FF' : '#252338',
@@ -255,38 +311,53 @@ export default function Graph() {
       </div>
 
       {notaSelecionada && (
-        <div className="absolute top-20 right-4 w-80 bg-bg-secondary border border-border-subtle rounded-xl p-4 shadow-xl z-10">
+        <div className="absolute top-24 right-4 w-80 bg-bg-secondary/95 backdrop-blur-md border border-border-subtle rounded-2xl p-4 shadow-2xl z-20 animate-fadeIn">
           <div className="flex justify-between items-start mb-2">
-            <h3 className="font-bold">{notaSelecionada.titulo}</h3>
-            <button onClick={() => setNotaSelecionada(null)} aria-label="Fechar detalhes da nota" title="Fechar">
+            <div>
+              <span
+                className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider text-white"
+                style={{ backgroundColor: tipoCores[notaSelecionada.tipo] || '#6C63FF' }}
+              >
+                {notaSelecionada.tipo || 'nota'}
+              </span>
+              <h3 className="font-bold text-sm text-text-primary mt-1">{notaSelecionada.titulo}</h3>
+            </div>
+            <button onClick={() => setNotaSelecionada(null)} aria-label="Fechar detalhes da nota" title="Fechar" className="text-text-muted hover:text-text-primary">
               <X size={16} />
             </button>
           </div>
-          <p className="text-sm text-text-secondary line-clamp-4">
-            {notaSelecionada.conteudo?.substring(0, 200)}
+          <p className="text-xs text-text-secondary line-clamp-3 mb-3 leading-relaxed">
+            {(notaSelecionada.conteudo || '').replace(/<[^>]*>/g, '').substring(0, 180) || 'Nota sem conteúdo...'}
           </p>
           {extrairTags(notaSelecionada).length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-2">
+            <div className="flex flex-wrap gap-1 mb-3">
               {extrairTags(notaSelecionada).map(tag => (
-                <span key={tag} className="px-2 py-0.5 bg-accent-main/20 text-accent-main rounded text-xs">
-                  {tag}
+                <span key={tag} className="px-2 py-0.5 bg-accent-main/20 text-accent-main rounded-md text-[10px] font-mono">
+                  #{tag}
                 </span>
               ))}
             </div>
           )}
+          <button
+            onClick={() => abrirNoEditor(notaSelecionada)}
+            className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-accent-main hover:bg-accent-main/90 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer"
+          >
+            <ExternalLink size={13} />
+            Abrir no Editor
+          </button>
         </div>
       )}
 
       {notas.length === 0 ? (
         <div className="flex-1 flex items-center justify-center text-text-muted">
           <div className="text-center">
-            <GitBranch size={48} className="mx-auto mb-4 opacity-30" />
-            <p className="text-lg">Nenhuma nota ainda</p>
-            <p className="text-sm">Crie notas para ver as conexões</p>
+            <GitBranch size={48} className="mx-auto mb-4 opacity-30 text-accent-main" />
+            <p className="text-lg font-bold text-text-primary">Nenhuma nota ainda</p>
+            <p className="text-sm text-text-muted">Crie notas para ver suas conexões no grafo</p>
           </div>
         </div>
       ) : (
-        <div ref={containerRef} className="flex-1 bg-bg-primary" />
+        <div ref={containerRef} className="flex-1 bg-nx-void" />
       )}
     </div>
   );
