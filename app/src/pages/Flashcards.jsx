@@ -2,7 +2,7 @@
  * FlashcardsPage — revisão espaçada SM-2.
  * Refatorado (Tarefa 4.1): FlashcardViewer extraído para componente próprio.
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Plus, RotateCcw, Trash2, Edit, Save } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useFlashcards } from '../hooks/useFlashcards';
@@ -30,6 +30,7 @@ export default function FlashcardsPage() {
   const [undoCountdown, setUndoCountdown] = useState(0);
 
   const [filtro, setFiltro] = useState('todos');
+  const [filtroMateria, setFiltroMateria] = useState('todas');
   const [busca, setBusca] = useState('');
 
   useEffect(() => {
@@ -43,6 +44,45 @@ export default function FlashcardsPage() {
     return () => clearInterval(t);
   }, [undoCard]);
 
+  const handleUndo = useCallback(() => {
+    if (!undoCard) return;
+    create({ frente: undoCard.frente, verso: undoCard.verso, materia: undoCard.materia });
+    remove(undoCard.id);
+    setUndoCard(null);
+  }, [undoCard, create, remove]);
+
+  // Atalho de teclado 'z' ou 'Ctrl+Z' para desfazer avaliação rápida
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+      if (undoCard && (e.key.toLowerCase() === 'z')) {
+        e.preventDefault();
+        handleUndo();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [undoCard, handleUndo]);
+
+  const exportarCardsJSON = () => {
+    const dados = JSON.stringify(cards, null, 2);
+    const blob = new Blob([dados], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `flashcards_nexomente_${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const materiasDisponiveis = useMemo(() => {
+    const mats = new Set();
+    cards.forEach(c => {
+      if (c.materia) mats.add(c.materia);
+    });
+    return Array.from(mats);
+  }, [cards]);
+
   const avancar = () => {
     const proximo = paraRevisao[idxRevisao + 1];
     if (proximo) { setCardAtual(proximo); setIdxRevisao(i => i + 1); setMostrandoFrente(true); }
@@ -55,13 +95,6 @@ export default function FlashcardsPage() {
     setUndoCountdown(5);
     revisar(cardAtual.id, qualidade);
     avancar();
-  };
-
-  const handleUndo = () => {
-    if (!undoCard) return;
-    create({ frente: undoCard.frente, verso: undoCard.verso, materia: undoCard.materia });
-    remove(undoCard.id);
-    setUndoCard(null);
   };
 
   const criarCard = () => {
@@ -78,6 +111,7 @@ export default function FlashcardsPage() {
 
   const cardsFiltrados = cards.filter(c => {
     if (busca && !c.frente.toLowerCase().includes(busca.toLowerCase()) && !c.verso.toLowerCase().includes(busca.toLowerCase())) return false;
+    if (filtroMateria !== 'todas' && c.materia !== filtroMateria) return false;
     if (filtro === 'dominados') return c.ef >= 2.5 && c.repetitions >= 3;
     if (filtro === 'revisar') return paraRevisao.some(p => p.id === c.id);
     return true;
@@ -167,15 +201,31 @@ export default function FlashcardsPage() {
         {/* Modo todos / gerenciar */}
         {(modo === 'todos' || modo === 'editar') && (
           <div className="space-y-3">
-            <div className="flex gap-2 items-center">
+            <div className="flex gap-2 items-center flex-wrap">
               <input value={busca} onChange={e => setBusca(e.target.value)} aria-label="Buscar flashcards" placeholder="Buscar cards..."
-                className="flex-1 bg-bg-secondary border border-border-subtle rounded px-3 py-1.5 text-sm focus:border-accent-main focus:outline-none" />
+                className="flex-1 min-w-[160px] bg-bg-secondary border border-border-subtle rounded px-3 py-1.5 text-sm focus:border-accent-main focus:outline-none" />
               <select value={filtro} onChange={e => setFiltro(e.target.value)}
                 className="bg-bg-secondary border border-border-subtle rounded px-2 py-1.5 text-sm cursor-pointer">
-                <option value="todos">Todos</option>
+                <option value="todos">Todos os status</option>
                 <option value="revisar">Para revisar</option>
                 <option value="dominados">Dominados</option>
               </select>
+              {materiasDisponiveis.length > 0 && (
+                <select value={filtroMateria} onChange={e => setFiltroMateria(e.target.value)}
+                  className="bg-bg-secondary border border-border-subtle rounded px-2 py-1.5 text-sm cursor-pointer">
+                  <option value="todas">Todas as matérias</option>
+                  {materiasDisponiveis.map(m => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+              )}
+              <button
+                onClick={exportarCardsJSON}
+                title="Exportar baralho em JSON"
+                className="px-2.5 py-1.5 bg-bg-secondary border border-border-subtle rounded text-xs text-text-secondary hover:text-text-primary hover:border-white/20 transition-colors cursor-pointer"
+              >
+                Exportar JSON
+              </button>
             </div>
 
             {cardsFiltrados.length === 0 ? (

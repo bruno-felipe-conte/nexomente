@@ -53,3 +53,27 @@ export function isDominado(card) {
   const reps = card.repetitions ?? card.repeticoes ?? 0;
   return ef >= 2.5 && reps >= 3;
 }
+
+export function previewIntervalo(card, qualidade) {
+  if (!card) return '-';
+  const ef = card.ef ?? card.ease_factor ?? 2.5;
+  const intervalo = card.intervalo ?? 0;
+  const repetitions = card.repetitions ?? card.repeticoes ?? 0;
+
+  if (qualidade < 3) {
+    return '< 10 min';
+  }
+
+  const newEf = Math.max(1.3, ef + (0.1 - (5 - qualidade) * (0.08 + (5 - qualidade) * 0.02)));
+  let newInterval;
+  if (repetitions === 0) {
+    newInterval = 1;
+  } else if (repetitions === 1) {
+    newInterval = 6;
+  } else {
+    newInterval = Math.round(intervalo * newEf);
+  }
+
+  if (newInterval <= 1) return '1 dia';
+  return `${newInterval} dias`;
+}

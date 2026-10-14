@@ -10,6 +10,7 @@ import PropTypes from 'prop-types';
 
 import Button from '../ui/Button';
 import Card from '../ui/Card';
+import { previewIntervalo } from '../../hooks/sm2';
 
 const QUALITY_LABELS = {
   1: { label: 'Errei', cor: 'var(--color-error)' },
@@ -28,7 +29,12 @@ export default function FlashcardViewer({
       if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
       if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); onViraCard(); }
       else if (mostrandoFrente) return;
-      else if (['1', '2', '3', '4'].includes(e.key)) { e.preventDefault(); onRevisar(parseInt(e.key)); }
+      else if (['1', '2', '3', '4'].includes(e.key)) {
+        e.preventDefault();
+        const numKey = parseInt(e.key);
+        const sm2Q = numKey === 1 ? 1 : numKey === 2 ? 3 : numKey === 3 ? 4 : 5;
+        onRevisar(sm2Q);
+      }
       else if (e.key === 'ArrowLeft') { e.preventDefault(); onAnterior(); }
       else if (e.key === 'ArrowRight') { e.preventDefault(); onProximo(); }
     };
@@ -129,26 +135,36 @@ export default function FlashcardViewer({
           >
             <p className="text-center text-[10px] font-black text-text-lo uppercase tracking-[0.3em]">Como foi seu desempenho?</p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
-              {Object.entries(QUALITY_LABELS).map(([q, info]) => (
-                <button
-                  key={q}
-                  onClick={(e) => { e.stopPropagation(); onRevisar(parseInt(q)); }}
-                  className="group relative flex flex-col items-center justify-center p-6 rounded-2xl border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer overflow-hidden"
-                  style={{
-                    backgroundColor: 'rgba(255,255,255,0.02)',
-                    borderColor: 'rgba(255,255,255,0.05)',
-                  }}
-                >
-                  <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity" style={{ backgroundColor: info.cor }} />
-                  <span className="font-black text-lg mb-1 transition-colors" style={{ color: info.cor }}>
-                    {info.label}
-                  </span>
-                  <div className="flex items-center gap-1.5 mt-1 opacity-40 group-hover:opacity-100 transition-all">
-                     <span className="text-[9px] font-bold uppercase tracking-tighter">Tecla</span>
-                     <span className="px-1.5 py-0.5 rounded bg-white/10 text-[9px] font-mono text-text-hi">{q}</span>
-                  </div>
-                </button>
-              ))}
+              {Object.entries(QUALITY_LABELS).map(([q, info]) => {
+                const numQ = parseInt(q);
+                // Mapeia botões 1..4 para escala SM-2: 1=1 (falha), 2=3 (difícil), 3=4 (bom), 4=5 (fácil)
+                const sm2Qualidade = numQ === 1 ? 1 : numQ === 2 ? 3 : numQ === 3 ? 4 : 5;
+                const intervaloEstimado = previewIntervalo(cardAtual, sm2Qualidade);
+
+                return (
+                  <button
+                    key={q}
+                    onClick={(e) => { e.stopPropagation(); onRevisar(sm2Qualidade); }}
+                    className="group relative flex flex-col items-center justify-center p-5 rounded-2xl border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer overflow-hidden"
+                    style={{
+                      backgroundColor: 'rgba(255,255,255,0.02)',
+                      borderColor: 'rgba(255,255,255,0.05)',
+                    }}
+                  >
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity" style={{ backgroundColor: info.cor }} />
+                    <span className="font-black text-lg mb-0.5 transition-colors" style={{ color: info.cor }}>
+                      {info.label}
+                    </span>
+                    <span className="text-[11px] font-mono text-text-lo/80 mb-2 font-semibold">
+                      {intervaloEstimado}
+                    </span>
+                    <div className="flex items-center gap-1.5 opacity-40 group-hover:opacity-100 transition-all">
+                       <span className="text-[9px] font-bold uppercase tracking-tighter">Tecla</span>
+                       <span className="px-1.5 py-0.5 rounded bg-white/10 text-[9px] font-mono text-text-hi">{q}</span>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </motion.div>
         )}
