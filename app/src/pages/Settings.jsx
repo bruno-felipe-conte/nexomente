@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import AIPerformancePanel from '../components/ai/AIPerformancePanel';
 import Card from '../components/ui/Card';
 import {
   Settings as SettingsIcon, Bell, Shield, User,
   Database, Trash2, Cpu, Globe,
-  AlertTriangle, Sparkles, Key, Download, Mic
+  AlertTriangle, Sparkles, Key, Download, Upload, Mic,
+  Eye, EyeOff, CheckCircle2, XCircle, Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAIModel } from '../hooks/useAIModel';
 import { useUIStore } from '../store/useUIStore';
+import * as geminiService from '../lib/ai/geminiService';
 import toast from 'react-hot-toast';
 import RecitacaoSettings from '../components/settings/RecitacaoSettings';
 
@@ -18,11 +20,16 @@ export default function Settings() {
   const [activeTab, setActiveTab] = useState('perf');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteType, setDeleteType] = useState(null);
+  const [confirmText, setConfirmText] = useState('');
 
   // Estados Locais de UI (Não globais)
   const [localApiKey, setLocalApiKey] = useState(() => apiKey || '');
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [testandoKey, setTestandoKey] = useState(false);
+  const [statusKey, setStatusKey] = useState(null);
   const [userName, setUserName] = useState(() => globalUserName);
   const [notifStudy, setNotifStudy] = useState(localStorage.getItem('nexomente_notif_study') === 'true');
+  const fileInputRef = useRef(null);
 
   const saveConfig = (key, value) => {
     if (key === 'nexomente_gemini_key') {
@@ -31,6 +38,32 @@ export default function Settings() {
       localStorage.setItem(key, value);
     }
     toast.success('Configuração salva');
+  };
+
+  const handleTestarApiKey = async () => {
+    if (!localApiKey.trim()) {
+      toast.error('Insira uma chave API para testar');
+      return;
+    }
+    setTestandoKey(true);
+    setStatusKey(null);
+    try {
+      localStorage.setItem('nexomente_gemini_key', localApiKey.trim());
+      const res = await geminiService.checkStatus();
+      if (res.status === 'online') {
+        setStatusKey({ ok: true, msg: 'Chave válida e conectada!' });
+        toast.success('Conexão com Gemini estabelecida com sucesso!');
+        setApiKey(localApiKey.trim());
+      } else {
+        setStatusKey({ ok: false, msg: res.error || 'Falha ao autenticar com a API.' });
+        toast.error('Erro na chave API do Gemini');
+      }
+    } catch (err) {
+      setStatusKey({ ok: false, msg: err.message || 'Erro de conexão' });
+      toast.error('Erro ao conectar com a API');
+    } finally {
+      setTestandoKey(false);
+    }
   };
 
   const handleBackup = async () => {
@@ -48,7 +81,38 @@ export default function Settings() {
     }
   };
 
+  const handleRestaurarBackup = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const content = event.target?.result;
+        if (!content || typeof content !== 'string') {
+          throw new Error('Arquivo vazio ou inválido');
+        }
+
+        // Tenta detectar se é o base64 do SQLite serializado
+        const cleanContent = content.trim().replace(/^"|"$/g, '');
+        localStorage.setItem('nexomente_db', cleanContent);
+        toast.success('Backup restaurado com sucesso! Recarregando sistema...');
+        setTimeout(() => {
+          window.location.reload();
+        }, 1200);
+      } catch {
+        toast.error('Falha ao restaurar backup: arquivo corrompido');
+      }
+    };
+    reader.readAsText(file);
+  };
+
   const handleReset = (type) => {
+    if (confirmText !== 'CONFIRMAR') {
+      toast.error('Digite CONFIRMAR para autorizar a exclusão');
+      return;
+    }
+
     if (type === 'all') {
       localStorage.clear();
       window.location.reload();
@@ -150,24 +214,54 @@ export default function Settings() {
 
                   {provider === 'cloud' && (
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl space-y-4">
-                      <div className="flex items-center gap-2 text-text-hi">
-                        <Key size={14} className="text-blue-400" />
-                        <span className="text-[10px] font-bold uppercase tracking-widest">Configuração de Chave</span>
+                      <div className="flex items-center justify-between text-text-hi">
+                        <div className="flex items-center gap-2">
+                          <Key size={14} className="text-blue-400" />
+                          <span className="text-[10px] font-bold uppercase tracking-widest">Configuração de Chave</span>
+                        </div>
+                        {statusKey && (
+                          <div className={`flex items-center gap-1.5 text-xs font-semibold ${statusKey.ok ? 'text-emerald-400' : 'text-red-400'}`}>
+                            {statusKey.ok ? <CheckCircle2 size={13} /> : <XCircle size={13} />}
+                            <span>{statusKey.msg}</span>
+                          </div>
+                        )}
                       </div>
-                      <div className="flex gap-2">
-                        <input
-                          type="password"
-                          value={localApiKey}
-                          onChange={e => setLocalApiKey(e.target.value)}
-                          placeholder="Gemini API Key..."
-                          className="flex-1 bg-bg-secondary border border-white/5 rounded-xl px-4 py-2.5 text-sm text-text-hi focus:border-blue-400 focus:outline-none"
-                        />
-                        <button
-                          onClick={() => saveConfig('nexomente_gemini_key', localApiKey)}
-                          className="px-6 py-2.5 bg-blue-500 text-white rounded-xl font-bold text-xs hover:bg-blue-600 transition-all flex items-center gap-2"
-                        >
-                          Salvar
-                        </button>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <div className="relative flex-1">
+                          <input
+                            type={showApiKey ? 'text' : 'password'}
+                            value={localApiKey}
+                            onChange={e => setLocalApiKey(e.target.value)}
+                            placeholder="Gemini API Key..."
+                            className="w-full bg-bg-secondary border border-white/5 rounded-xl pl-4 pr-10 py-2.5 text-sm text-text-hi focus:border-blue-400 focus:outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowApiKey(!showApiKey)}
+                            className="absolute right-3 top-3 text-text-lo/40 hover:text-text-hi transition-colors cursor-pointer"
+                            title={showApiKey ? 'Ocultar chave' : 'Exibir chave'}
+                          >
+                            {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                          </button>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={handleTestarApiKey}
+                            disabled={testandoKey || !localApiKey.trim()}
+                            className="px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl font-bold text-xs text-text-hi transition-all flex items-center gap-2 disabled:opacity-40 cursor-pointer"
+                          >
+                            {testandoKey && <Loader2 size={13} className="animate-spin text-blue-400" />}
+                            Testar Conexão
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => saveConfig('nexomente_gemini_key', localApiKey)}
+                            className="px-6 py-2.5 bg-blue-500 text-white rounded-xl font-bold text-xs hover:bg-blue-600 transition-all flex items-center gap-2 cursor-pointer"
+                          >
+                            Salvar
+                          </button>
+                        </div>
                       </div>
                     </motion.div>
                   )}
@@ -202,9 +296,24 @@ export default function Settings() {
                       <p className="text-base font-bold text-text-hi">Exportar Backup</p>
                       <p className="text-xs text-text-lo/40 mt-1">Gera um arquivo JSON com todas as suas notas e flashcards.</p>
                     </div>
-                    <button onClick={handleBackup} className="w-fit flex items-center gap-2 px-6 py-3 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold text-text-hi transition-all">
-                      <Download size={14} /> Baixar Backup
-                    </button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button onClick={handleBackup} className="flex items-center gap-2 px-5 py-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold text-text-hi transition-all cursor-pointer">
+                        <Download size={14} /> Baixar Backup
+                      </button>
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold text-text-hi transition-all cursor-pointer"
+                      >
+                        <Upload size={14} /> Restaurar Backup
+                      </button>
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleRestaurarBackup}
+                        accept=".json"
+                        className="hidden"
+                      />
+                    </div>
                   </Card>
 
                   <Card className="bg-transparent border-white/5 p-8 flex flex-col gap-4">
@@ -302,10 +411,33 @@ export default function Settings() {
                 <AlertTriangle size={40} />
               </div>
               <h2 className="text-2xl font-serif font-bold text-text-hi">Ação Crítica</h2>
-              <p className="text-sm text-text-lo/40">Esta ação irá apagar seus dados permanentemente. Continuar?</p>
+              <p className="text-sm text-text-lo/40">
+                Esta ação irá apagar seus dados permanentemente. Digite <strong className="text-danger font-mono font-black">CONFIRMAR</strong> para prosseguir.
+              </p>
+              <input
+                type="text"
+                value={confirmText}
+                onChange={e => setConfirmText(e.target.value)}
+                placeholder="Digite CONFIRMAR..."
+                className="w-full bg-black/40 border border-danger/30 rounded-xl px-4 py-2.5 text-center text-sm font-mono text-danger font-bold uppercase tracking-widest focus:outline-none focus:border-danger"
+              />
               <div className="flex flex-col gap-3">
-                <button onClick={() => handleReset(deleteType)} className="w-full py-4 bg-danger text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-danger/80 transition-all">Sim, Confirmar</button>
-                <button onClick={() => setShowDeleteModal(false)} className="w-full py-4 bg-white/5 text-text-lo rounded-2xl font-black text-[11px] uppercase tracking-widest">Cancelar</button>
+                <button
+                  disabled={confirmText !== 'CONFIRMAR'}
+                  onClick={() => handleReset(deleteType)}
+                  className="w-full py-4 bg-danger text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-danger/80 transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  Sim, Confirmar Exclusão
+                </button>
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setConfirmText('');
+                  }}
+                  className="w-full py-4 bg-white/5 text-text-lo rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-white/10 transition-all cursor-pointer"
+                >
+                  Cancelar
+                </button>
               </div>
             </motion.div>
           </div>
