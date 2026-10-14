@@ -4,7 +4,7 @@
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import { Send, Loader2 } from 'lucide-react';
+import { Send, Loader2, RotateCcw, Share2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useAIModel, useAIChat } from '../hooks/useAIModel';
 import { useNotes } from '../hooks/useNotes';
@@ -35,9 +35,25 @@ export default function AIChatPage({ onNavigate }) {
   const [buscaNota, setBuscaNota] = useState('');
   const [copiadoIdx, setCopiadoIdx] = useState(null);
 
-  const { mensagens, adicionar } = useAIChat(notaId);
+  const { mensagens, adicionar, limpar } = useAIChat(notaId);
   const notaAtual = notaId ? notas.find(n => n.id === notaId) : null;
   const bottomRef = useRef(null);
+  const inputRef = useRef(null);
+
+  const handleLimpar = () => {
+    if (mensagens.length === 0) return;
+    limpar();
+    toast.success('Conversa limpa com sucesso');
+  };
+
+  const handleExportar = () => {
+    if (mensagens.length === 0) return;
+    const markdown = mensagens
+      .map(m => `**${m.role === 'user' ? 'Você' : 'Assistente NexoMente'}**:\n${m.texto}\n`)
+      .join('\n---\n\n');
+    navigator.clipboard.writeText(markdown);
+    toast.success('Transcrição copiada em Markdown!');
+  };
 
   useEffect(() => {
     const handleClickOutside = () => {
@@ -88,6 +104,9 @@ export default function AIChatPage({ onNavigate }) {
       adicionar('assistant', e.message, 'ERROR');
     }
     setLoading(false);
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 100);
   };
 
   const notasFiltradas = notas.filter(n =>
@@ -96,6 +115,31 @@ export default function AIChatPage({ onNavigate }) {
 
   return (
     <div className="flex flex-col h-full bg-nx-void font-ui overflow-hidden">
+      {mensagens.length > 0 && (
+        <div className="px-4 py-2 border-b border-nx-border bg-nx-surface/40 flex items-center justify-between text-xs text-text-lo shrink-0">
+          <span className="font-medium text-text-lo/60">
+            {notaAtual ? `Contexto: ${notaAtual.titulo}` : 'Conversa Livre'}
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleExportar}
+              title="Copiar conversa em Markdown"
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 hover:text-text-hi text-text-lo/70 transition-all cursor-pointer"
+            >
+              <Share2 size={12} />
+              <span className="text-[11px]">Exportar</span>
+            </button>
+            <button
+              onClick={handleLimpar}
+              title="Limpar histórico"
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-red-500/10 hover:text-red-400 text-text-lo/70 transition-all cursor-pointer"
+            >
+              <RotateCcw size={12} />
+              <span className="text-[11px]">Limpar</span>
+            </button>
+          </div>
+        </div>
+      )}
       <div className="flex-1 overflow-auto flex flex-col chat-scroll-area relative">
         {mensagens.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center p-8 pb-32">
@@ -205,6 +249,7 @@ export default function AIChatPage({ onNavigate }) {
             <div className="bg-nx-surface/95 backdrop-blur-xl border border-nx-border rounded-nx-md p-2 md:p-3 shadow-2xl flex flex-col gap-2">
               <div className="flex items-end gap-2 md:gap-3">
                 <textarea
+                  ref={inputRef}
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(); } }}
