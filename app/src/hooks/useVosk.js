@@ -118,15 +118,22 @@ export function useVosk({ onResult, onPartialResult, onError }) {
       const rate = ctx.sampleRate;
       resetRecognizer(rate);
 
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: {
-          deviceId: { exact: targetMic.deviceId },
-          echoCancellation: false,
-          noiseSuppression: false,
-          autoGainControl: true,
-          sampleRate: 48000
-        } 
-      });
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ 
+          audio: {
+            deviceId: targetMic.deviceId ? { ideal: targetMic.deviceId } : undefined,
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: true,
+            sampleRate: { ideal: 48000 }
+          } 
+        });
+      } catch (audioErr) {
+        // Fallback resiliente se o dispositivo ou taxa ideal forem rejeitados
+        console.warn('[useVosk] Fallback para constraints de áudio padrão:', audioErr?.message);
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      }
       streamRef.current = stream;
 
       const source = ctx.createMediaStreamSource(stream);

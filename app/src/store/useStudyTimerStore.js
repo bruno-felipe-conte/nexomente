@@ -213,3 +213,15 @@ export const useStudyTimerStore = create((set, get) => ({
     toast('Sessão cancelada.', { icon: '⏹️' });
   }
 }));
+
+// Graceful cleanup: se o usuário fechar a aba/janela enquanto o cronômetro está rodando
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => {
+    const state = useStudyTimerStore.getState();
+    if (state.sessaoId && !state.completed) {
+      const { SessoesEstudo } = useDBStore.getState();
+      SessoesEstudo?.abandonar?.(state.sessaoId);
+    }
+  });
+}
+

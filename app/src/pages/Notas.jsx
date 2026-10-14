@@ -93,12 +93,16 @@ export default function NotasPage() {
     if (pendingNoteAction.noteId) {
       const target = getById(pendingNoteAction.noteId);
       if (target) {
-        setNotaSelecionada(target);
-        setEditando(false);
+        queueMicrotask(() => {
+          setNotaSelecionada(target);
+          setEditando(false);
+        });
       }
       setPendingNoteAction(null);
     } else if (pendingNoteAction.action === 'create') {
-      criarNota('nota');
+      queueMicrotask(() => {
+        criarNota('nota');
+      });
       setPendingNoteAction(null);
     }
   }, [pendingNoteAction, getById, criarNota, setPendingNoteAction]);

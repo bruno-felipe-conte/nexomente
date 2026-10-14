@@ -145,26 +145,34 @@ export default function Study() {
                    onKeyDown={e => e.key === 'Enter' && create({ nome: novaMateria, cor: '#2DD4BF' }) && setNovaMateria('') && setShowCriar(false)}
                  />
                  <div className="flex justify-end">
-                    <Button size="xs" onClick={() => { create({ nome: novaMateria, cor: '#2DD4BF' }); setNovaMateria(''); setShowCriar(false); }}>Criar</Button>
+                    <Button size="sm" onClick={() => { create({ nome: novaMateria, cor: '#2DD4BF' }); setNovaMateria(''); setShowCriar(false); }}>Criar</Button>
                  </div>
               </div>
             )}
 
             <div className="space-y-3">
               {materias.map(m => (
-                <button
+                <div
                   key={m.id}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setMateriaAtiva(m.id)}
-                  className={`w-full group flex items-center justify-between p-3 rounded-xl border transition-all ${materiaAtiva === m.id ? 'bg-white/10 border-white/20 shadow-lg' : 'bg-transparent border-transparent hover:bg-white/5'}`}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMateriaAtiva(m.id); } }}
+                  className={`w-full group flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer ${materiaAtiva === m.id ? 'bg-white/10 border-white/20 shadow-lg' : 'bg-transparent border-transparent hover:bg-white/5'}`}
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: m.cor }} />
                     <span className={`text-sm font-bold ${materiaAtiva === m.id ? 'text-text-hi' : 'text-text-lo group-hover:text-text-mid'}`}>{m.nome}</span>
                   </div>
-                  <button onClick={(e) => { e.stopPropagation(); remove(m.id); }} className="opacity-0 group-hover:opacity-100 p-1 text-text-lo hover:text-danger transition-all">
+                  <button 
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); remove(m.id); }} 
+                    className="opacity-0 group-hover:opacity-100 p-1 text-text-lo hover:text-danger transition-all cursor-pointer"
+                    title="Excluir matéria"
+                  >
                     <Trash2 size={12} />
                   </button>
-                </button>
+                </div>
               ))}
             </div>
           </Card>
