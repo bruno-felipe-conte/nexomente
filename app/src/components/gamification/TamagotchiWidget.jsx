@@ -1,11 +1,14 @@
-import { useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import PropTypes from 'prop-types';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useTamagotchiStore, getLevelData, getLevelProgress } from '../../store/useTamagotchiStore';
 
 export default function TamagotchiWidget({ className = '' }) {
   const { player, checkDailyStatus } = useTamagotchiStore();
   const levelData = getLevelData(player.xp);
+
+  const [speech, setSpeech] = useState(null);
+  const speechTimeoutRef = useRef(null);
 
   useEffect(() => {
     checkDailyStatus();
@@ -75,6 +78,34 @@ export default function TamagotchiWidget({ className = '' }) {
   else if (isSpinning) currentVariant = "spinning";
   else if (isBouncing) currentVariant = "bouncing";
 
+  const handlePetClick = () => {
+    const quotesHigh = [
+      "Você está voando hoje! Que tal mais um Pomodoro?",
+      "Sua mente está afiada! Vamos continuar!",
+      "Excelente disciplina! Sinto a energia subindo!",
+      "Cada minuto focado me deixa mais forte!",
+    ];
+    const quotesMid = [
+      "Continuo com você em cada página e flashcard!",
+      "Que tal estudarmos mais um pouco hoje?",
+      "Persistência diária é a chave da maestria.",
+      "Estou pronto para a próxima matéria!",
+    ];
+    const quotesLow = [
+      "Preciso de energia... um Pomodoro agora me recupera!",
+      "Não me deixe hibernar! Vamos revisar um card?",
+      "Só você pode recarregar minhas forças estudando!",
+      "Um pequeno esforço hoje evita o cansaço amanhã.",
+    ];
+
+    const pool = hpPercent >= 70 ? quotesHigh : hpPercent >= 35 ? quotesMid : quotesLow;
+    const quote = pool[Math.floor(Math.random() * pool.length)];
+
+    setSpeech(quote);
+    if (speechTimeoutRef.current) clearTimeout(speechTimeoutRef.current);
+    speechTimeoutRef.current = setTimeout(() => setSpeech(null), 4000);
+  };
+
   return (
     <div className={`relative overflow-hidden group ${className}`}>
       {/* Dynamic Background Glow */}
@@ -90,7 +121,25 @@ export default function TamagotchiWidget({ className = '' }) {
         </header>
 
         {/* Pet + info side by side on mobile, stacked on larger */}
-        <div className="flex items-center gap-5 mb-4">
+        <div className="flex items-center gap-5 mb-4 relative">
+          {/* Speech bubble */}
+          <AnimatePresence>
+            {speech && (
+              <motion.div
+                initial={{ opacity: 0, y: 8, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -6, scale: 0.9 }}
+                className="absolute -top-12 left-0 right-0 z-30 bg-nx-depth border border-nx-primary/50 text-nx-bright text-[11px] font-ui px-3 py-1.5 rounded-xl shadow-xl shadow-nx-primary/10 cursor-pointer pointer-events-auto"
+                onClick={() => setSpeech(null)}
+              >
+                <div className="relative">
+                  <p className="leading-tight font-medium">{speech}</p>
+                  <div className="absolute -bottom-2.5 left-8 w-2 h-2 bg-nx-depth border-r border-b border-nx-primary/50 transform rotate-45" />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Pet figure */}
           <div className="relative shrink-0">
             <div className="absolute inset-0 bg-nx-primary/10 blur-2xl rounded-full scale-150 animate-pulse" />
@@ -99,12 +148,14 @@ export default function TamagotchiWidget({ className = '' }) {
               variants={idleVariants}
               animate={currentVariant}
               whileHover={{ scale: 1.1, rotate: 5 }}
-              title={`Nível ${player.level} - ${levelData.title}`}
+              whileTap={{ scale: 0.92 }}
+              onClick={handlePetClick}
+              title={`Nível ${player.level} - ${levelData.title} (${levelData.name})\nClique para interagir!`}
             >
               {levelData.form}
             </motion.div>
             <motion.div
-              className="absolute -bottom-1 -right-3 text-xl bg-nx-surface rounded-full w-8 h-8 flex items-center justify-center shadow-glow-primary border border-nx-border"
+              className="absolute -bottom-1 -right-3 text-xl bg-nx-surface rounded-full w-8 h-8 flex items-center justify-center shadow-glow-primary border border-nx-border pointer-events-none"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.5, type: 'spring' }}

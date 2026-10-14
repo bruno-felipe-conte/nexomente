@@ -22,6 +22,7 @@ import FlashcardApproveModal from '../components/editor/FlashcardApproveModal';
 import EditorContextMenus from '../components/editor/EditorContextMenus';
 import { getModel } from '../lib/ai/lmStudioService';
 import Button from '../components/ui/Button';
+import { useUIStore } from '../store/useUIStore';
 
 export default function NotasPage() {
   const { notas, create, update, remove, search, getById, addTag, removeTag } = useNotes();
@@ -80,6 +81,43 @@ export default function NotasPage() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [criarNota]);
+
+  const pendingNoteAction = useUIStore((s) => s.pendingNoteAction);
+  const setPendingNoteAction = useUIStore((s) => s.setPendingNoteAction);
+
+  // Consome ação pendente vinda do useUIStore (Dashboard, navegação direta)
+  useEffect(() => {
+    if (!pendingNoteAction) return;
+
+    if (pendingNoteAction.noteId) {
+      const target = getById(pendingNoteAction.noteId);
+      if (target) {
+        setNotaSelecionada(target);
+        setEditando(false);
+      }
+      setPendingNoteAction(null);
+    } else if (pendingNoteAction.action === 'create') {
+      criarNota('nota');
+      setPendingNoteAction(null);
+    }
+  }, [pendingNoteAction, getById, criarNota, setPendingNoteAction]);
+
+  // Listener fallback para abrir nota via evento customizado
+  useEffect(() => {
+    const handleOpenNoteEvent = (e) => {
+      if (e.detail?.noteId) {
+        const target = getById(e.detail.noteId);
+        if (target) {
+          setNotaSelecionada(target);
+          setEditando(false);
+        }
+      } else if (e.detail?.action === 'create') {
+        criarNota('nota');
+      }
+    };
+    window.addEventListener('open-note', handleOpenNoteEvent);
+    return () => window.removeEventListener('open-note', handleOpenNoteEvent);
+  }, [getById, criarNota]);
 
   const excluirNota = (id) => {
     remove(id);

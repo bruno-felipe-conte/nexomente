@@ -19,7 +19,11 @@ export const useUIStore = create((set) => ({
   // Identidade do Usuário
   userName: localStorage.getItem('nexomente_user_name') || 'Visitante',
 
+  // Ações pendentes de navegação cruzada
+  pendingNoteAction: null,
+
   // Actions
+  setPendingNoteAction: (action) => set({ pendingNoteAction: action }),
   setLoading: (loading) => set({ loadingGlobal: loading }),
   
   setUserName: (name) => {

@@ -45,4 +45,15 @@ describe('useUIStore', () => {
     expect(useUIStore.getState().onboardingCompleted).toBe(true);
     expect(localStorage.getItem('nexomente_onboarding_done')).toBe('true');
   });
+
+  it('gerencia pendingNoteAction para acoes de notas entre telas', () => {
+    useUIStore.getState().setPendingNoteAction({ action: 'create' });
+    expect(useUIStore.getState().pendingNoteAction).toEqual({ action: 'create' });
+
+    useUIStore.getState().setPendingNoteAction({ noteId: 42 });
+    expect(useUIStore.getState().pendingNoteAction).toEqual({ noteId: 42 });
+
+    useUIStore.getState().setPendingNoteAction(null);
+    expect(useUIStore.getState().pendingNoteAction).toBeNull();
+  });
 });
