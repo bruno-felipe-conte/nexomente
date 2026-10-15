@@ -1,0 +1,374 @@
+{
+  "versao": "1.0.0",
+  "data_atualizacao": "2026-10-15",
+  "descricao": "Grafo estruturado de conexões, dependências e canais IPC do NexoMente",
+  "hubs": [
+    {
+      "id": "db-store",
+      "nome": "WASM Engine & Repositórios Zustand",
+      "arquivo": "app/src/store/useDBStore.js",
+      "linha": 13,
+      "implementacao": "app/src/lib/db/wasmEngine.js",
+      "usado_por": [
+        "app/src/hooks/useNotes.js",
+        "app/src/hooks/useMaterias.js",
+        "app/src/hooks/useFlashcards.js",
+        "app/src/store/useStudyTimerStore.js",
+        "app/src/pages/Study.jsx",
+        "app/src/pages/Statistics.jsx"
+      ],
+      "impacto_falha": "Leitura e escrita de dados de notas, matérias, cards, poemas e sessões de estudo quebram completamente."
+    },
+    {
+      "id": "ai-provider",
+      "nome": "Abstração Multiprovedor de IA",
+      "arquivo": "app/src/lib/ai/aiProvider.js",
+      "linha": 38,
+      "implementacao": [
+        "app/src/lib/ai/lmStudioService.js",
+        "app/src/lib/ai/geminiService.js",
+        "app/src/lib/ai/embeddedService.js"
+      ],
+      "usado_por": [
+        "app/src/store/useAIStore.js",
+        "app/src/hooks/useAIModel.js",
+        "app/src/lib/parser.js",
+        "app/src/pages/AIChat.jsx",
+        "app/src/pages/Settings.jsx"
+      ],
+      "impacto_falha": "Chat neural, geração de simulados, sugestão de tags e resumos deixam de responder."
+    },
+    {
+      "id": "tamagotchi-engine",
+      "nome": "Gamificação, Níveis e HP",
+      "arquivo": "app/src/store/useTamagotchiStore.js",
+      "linha": 84,
+      "implementacao": "app/src/store/useTamagotchiStore.js",
+      "usado_por": [
+        "app/src/components/gamification/TamagotchiWidget.jsx",
+        "app/src/components/layout/Header.jsx",
+        "app/src/store/useStudyTimerStore.js",
+        "app/src/pages/Dashboard.jsx",
+        "app/src/pages/Statistics.jsx"
+      ],
+      "impacto_falha": "Progressão de níveis congela, XP de estudos e cards não é computado e widgets do pet quebram."
+    },
+    {
+      "id": "study-timer-engine",
+      "nome": "Timer de Estudos & MiniTimer PiP",
+      "arquivo": "app/src/store/useStudyTimerStore.js",
+      "linha": 39,
+      "implementacao": "app/src/store/useStudyTimerStore.js",
+      "usado_por": [
+        "app/src/pages/Study.jsx",
+        "app/src/components/study/MiniTimerWidget.jsx",
+        "app/src/components/study/CircularTimer.jsx",
+        "app/src/App.jsx"
+      ],
+      "impacto_falha": "Cronômetro de estudo para de contar, sessões não são salvas no banco e o PiP não abre."
+    },
+    {
+      "id": "ui-store",
+      "nome": "Navegação Global & Ações Cruzadas",
+      "arquivo": "app/src/store/useUIStore.jsx",
+      "linha": 8,
+      "implementacao": "app/src/store/useUIStore.jsx",
+      "usado_por": [
+        "app/src/App.jsx",
+        "app/src/components/layout/Sidebar.jsx",
+        "app/src/components/layout/Header.jsx",
+        "app/src/components/layout/BottomNav.jsx",
+        "app/src/pages/Dashboard.jsx",
+        "app/src/pages/Notas.jsx",
+        "app/src/pages/Graph.jsx",
+        "app/src/pages/Statistics.jsx",
+        "app/src/pages/Settings.jsx",
+        "app/src/pages/Onboarding.jsx"
+      ],
+      "impacto_falha": "O roteamento do app para de responder, atalhos de navegação e deep links entre telas falham."
+    },
+    {
+      "id": "electron-ipc-bridge",
+      "nome": "Barramento Nativo Desktop",
+      "arquivo": "electron/preload.js",
+      "linha": 3,
+      "implementacao": [
+        "electron/main.js",
+        "electron/ipc/aiHandlers.js",
+        "electron/ipc/dbHandlers.js",
+        "electron/ipc/windowHandlers.js",
+        "electron/db/database.js"
+      ],
+      "usado_por": [
+        "app/src/components/layout/Header.jsx",
+        "app/src/lib/ai/embeddedService.js",
+        "app/src/lib/ai/geminiService.js",
+        "app/src/pages/Settings.jsx"
+      ],
+      "impacto_falha": "Modo desktop perde controle de janela, aceleração nativa de IA fica desativada e chamadas nativas falham."
+    }
+  ],
+  "nos": [
+    {
+      "id": "dashboard-edit-name",
+      "nome": "Dashboard - Edição de Nome do Jogador",
+      "arquivo": "app/src/pages/Dashboard.jsx",
+      "linha": 48,
+      "fluxo": "Clique no nome (startEditName) -> input inline -> Enter / Check (saveEditName) -> useUIStore.setUserName(nome) -> localStorage('nexomente_user_name') -> toast",
+      "usa": ["ui-store"],
+      "afeta": ["Dashboard", "Header", "Settings"]
+    },
+    {
+      "id": "dashboard-pet-speech",
+      "nome": "Dashboard - Balão de Fala do Pet",
+      "arquivo": "app/src/components/gamification/TamagotchiWidget.jsx",
+      "linha": 52,
+      "fluxo": "Clique no avatar do pet -> handlePetClick -> sorteio de fala situacional baseada em HP e streak -> Framer Motion -> auto-dismiss 4000ms",
+      "usa": ["tamagotchi-engine"],
+      "afeta": ["TamagotchiWidget"]
+    },
+    {
+      "id": "dashboard-quick-note",
+      "nome": "Dashboard - Botão Rápido Criar Nota",
+      "arquivo": "app/src/pages/Dashboard.jsx",
+      "linha": 134,
+      "fluxo": "Clique em NOTA -> setPendingNoteAction({ action: 'create' }) -> setActiveTab('notes') -> Notas.jsx:125 captura acao -> criarNota('nota') -> foca novo documento",
+      "usa": ["ui-store", "db-store"],
+      "afeta": ["Notas"]
+    },
+    {
+      "id": "dashboard-recent-note-link",
+      "nome": "Dashboard - Deep Link de Notas Recentes",
+      "arquivo": "app/src/pages/Dashboard.jsx",
+      "linha": 217,
+      "fluxo": "Clique no card da nota recente -> setPendingNoteAction({ noteId }) -> setActiveTab('notes') -> Notas.jsx:116 busca nota por ID -> define notaSelecionada -> TipTap",
+      "usa": ["ui-store", "db-store"],
+      "afeta": ["Notas"]
+    },
+    {
+      "id": "dashboard-dojo-modal",
+      "nome": "Dashboard - Curadoria Poética & Modal Dojo",
+      "arquivo": "app/src/pages/Dashboard.jsx",
+      "linha": 282,
+      "fluxo": "Clique em Recitar no Dojo -> setModalDojoAberto(true) -> PoemaRecitacao.jsx -> useVosk inicializa reconhecimento de voz offline",
+      "usa": ["db-store"],
+      "afeta": ["PoemaRecitacao", "TamagotchiWidget"]
+    },
+    {
+      "id": "study-start-timer",
+      "nome": "Sala de Estudos - Seletor de Modo & Início de Timer",
+      "arquivo": "app/src/pages/Study.jsx",
+      "linha": 79,
+      "fluxo": "Clique no modo -> trocarModo(id) -> clique em Iniciar -> useDBStore.SessoesEstudo.create() -> setInterval decrementa timer",
+      "usa": ["study-timer-engine", "db-store", "tamagotchi-engine"],
+      "afeta": ["Study", "CircularTimer", "MiniTimerWidget"]
+    },
+    {
+      "id": "study-session-complete",
+      "nome": "Sala de Estudos - Conclusão de Sessão & Crédito de XP",
+      "arquivo": "app/src/store/useStudyTimerStore.js",
+      "linha": 139,
+      "fluxo": "Timer atinge 0s -> concluirSessao() -> SessoesEstudo.completar(sessaoId) -> XP.add(xpGanho) -> useTamagotchiStore.addBonusXp(xpGanho) -> playCompletionChime() -> confetti",
+      "usa": ["study-timer-engine", "db-store", "tamagotchi-engine"],
+      "afeta": ["Study", "TamagotchiWidget", "Statistics"]
+    },
+    {
+      "id": "study-minitimer-pip",
+      "nome": "Sala de Estudos - MiniTimer PiP Flutuante",
+      "arquivo": "app/src/components/study/MiniTimerWidget.jsx",
+      "linha": 59,
+      "fluxo": "Saída da aba study com sessão ativa -> App.jsx ativa isMiniaturized(true) -> MiniTimerWidget renderiza -> Play/Pause/Abandonar -> clique restaura tela cheia",
+      "usa": ["study-timer-engine", "ui-store"],
+      "afeta": ["App", "Study"]
+    },
+    {
+      "id": "notas-autosave",
+      "nome": "Editor de Notas - Autosalvamento com Debounce",
+      "arquivo": "app/src/hooks/useNotaEditor.js",
+      "linha": 85,
+      "fluxo": "Digitação no TipTap -> onUpdate -> setSaveStatus('saving') -> debounce 1000ms -> NotasRepo.update(id, { conteudo, titulo }) -> setSaveStatus('saved')",
+      "usa": ["db-store"],
+      "afeta": ["Notas", "Graph", "Dashboard"]
+    },
+    {
+      "id": "notas-ai-tags",
+      "nome": "Editor de Notas - Botão AI Tag#",
+      "arquivo": "app/src/components/editor/AIBar.jsx",
+      "linha": 15,
+      "fluxo": "Clique em Tag# -> useNotaEditor.handleTagsOpen() -> lmStudioService.suggestTags(nota) -> TagPickerModal -> addTag(id, tag)",
+      "usa": ["ai-provider", "db-store"],
+      "afeta": ["Notas", "Graph"]
+    },
+    {
+      "id": "notas-ai-resumir",
+      "nome": "Editor de Notas - Botão AI Resumir",
+      "arquivo": "app/src/components/editor/AIBar.jsx",
+      "linha": 25,
+      "fluxo": "Clique em Resumir -> useNotaEditor.handleResumoOpen() -> lmStudioService.summarizeContent(conteudo) -> confirmação insere blockquote no topo do TipTap -> salvarNota()",
+      "usa": ["ai-provider", "db-store"],
+      "afeta": ["Notas"]
+    },
+    {
+      "id": "notas-ai-cards",
+      "nome": "Editor de Notas - Botão AI Cards",
+      "arquivo": "app/src/components/editor/AIBar.jsx",
+      "linha": 35,
+      "fluxo": "Clique em Cards -> useNotaEditor.handleCardsOpen() -> lmStudioService.generateFlashcards(nota) -> FlashcardApproveModal -> useFlashcards.create()",
+      "usa": ["ai-provider", "db-store"],
+      "afeta": ["Notas", "Flashcards", "Statistics"]
+    },
+    {
+      "id": "flashcards-review-sm2",
+      "nome": "Central de Flashcards - Avaliação SM-2 & Atalhos",
+      "arquivo": "app/src/components/flashcards/FlashcardViewer.jsx",
+      "linha": 131,
+      "fluxo": "Clique no card ou Space/Enter -> Flip 3D -> clique na qualidade ou teclas 1-4 -> revisar(card.id, qualidade) -> sm2.js calcula intervalo/ease -> atualiza SQLite",
+      "usa": ["db-store"],
+      "afeta": ["Flashcards", "Statistics"]
+    },
+    {
+      "id": "flashcards-undo",
+      "nome": "Central de Flashcards - Desfazer Imediato (Undo)",
+      "arquivo": "app/src/pages/Flashcards.jsx",
+      "linha": 47,
+      "fluxo": "Avaliação recente inicia countdown de 5s -> clique em Desfazer ou tecla Z -> handleUndo() -> rollback do card",
+      "usa": ["db-store"],
+      "afeta": ["Flashcards"]
+    },
+    {
+      "id": "poemas-favorite",
+      "nome": "Biblioteca Poética - Favoritar Poema",
+      "arquivo": "app/src/components/poemas/PoemasListaTab.jsx",
+      "linha": 119,
+      "fluxo": "Clique no ícone de estrela -> alternância no localStorage('nexomente_poemas_favs') -> atualização do filtro de favoritos",
+      "usa": ["db-store"],
+      "afeta": ["Poemas"]
+    },
+    {
+      "id": "poemas-dojo-voice",
+      "nome": "Biblioteca Poética - Dojo de Recitação com IA de Voz",
+      "arquivo": "app/src/components/poemas/PoemaRecitacao.jsx",
+      "linha": 87,
+      "fluxo": "Clique em Iniciar Recitação -> useVosk transcreve fala em tempo real -> cálculo de acurácia com estrofe original -> conclusão concede XP ao jogador",
+      "usa": ["db-store", "tamagotchi-engine"],
+      "afeta": ["Poemas", "TamagotchiWidget"]
+    },
+    {
+      "id": "gerador-forja-simulado",
+      "nome": "Forja de Questões - Geração de Simulado por IA",
+      "arquivo": "app/src/components/gerador/GeradorForjaTab.jsx",
+      "linha": 106,
+      "fluxo": "Seleção de disciplina/banca -> Forjar Questões -> useGerador.gerarComIA(config) -> aiProvider -> parser JSON extrai questões -> salva no banco",
+      "usa": ["ai-provider", "db-store"],
+      "afeta": ["Gerador", "Flashcards"]
+    },
+    {
+      "id": "aichat-send-message",
+      "nome": "Chat Neural - Envio de Mensagem",
+      "arquivo": "app/src/pages/AIChat.jsx",
+      "linha": 95,
+      "fluxo": "Digitação do prompt -> Enviar / Enter -> useAIChat adiciona mensagem -> histórico enviado a aiProvider.chat() -> renderização com blocos de código",
+      "usa": ["ai-provider", "db-store"],
+      "afeta": ["AIChat"]
+    },
+    {
+      "id": "graph-open-in-editor",
+      "nome": "Grafo de Conhecimento - Câmera Cytoscape & Deep Link",
+      "arquivo": "app/src/pages/Graph.jsx",
+      "linha": 195,
+      "fluxo": "Grafo monta nós de notas e arestas de links/tags -> clique no nó foca câmera -> clique em Abrir no Editor -> setPendingNoteAction({ noteId }) -> setActiveTab('notes')",
+      "usa": ["db-store", "ui-store"],
+      "afeta": ["Notas"]
+    },
+    {
+      "id": "stats-category-navigate",
+      "nome": "Métricas - Navegação por Categoria de Foco",
+      "arquivo": "app/src/pages/Statistics.jsx",
+      "linha": 218,
+      "fluxo": "Exibição de notas por categoria -> clique na barra -> setActiveTab('notes') -> editor abre filtrado",
+      "usa": ["ui-store", "db-store"],
+      "afeta": ["Notas"]
+    },
+    {
+      "id": "settings-test-api-key",
+      "nome": "Configurações - Testar Chave API do Gemini",
+      "arquivo": "app/src/pages/Settings.jsx",
+      "linha": 43,
+      "fluxo": "Entrada da chave -> Testar Conexão -> geminiService.checkStatus() -> feedback visual de status",
+      "usa": ["ai-provider"],
+      "afeta": ["Settings"]
+    },
+    {
+      "id": "settings-reset-factory",
+      "nome": "Configurações - Reset de Fábrica com Confirmação Dupla",
+      "arquivo": "app/src/pages/Settings.jsx",
+      "linha": 110,
+      "fluxo": "Clique em Apagar Tudo -> modal exige digitar CONFIRMAR -> limpeza de localStorage -> reinicialização do SQLite -> reload",
+      "usa": ["db-store"],
+      "afeta": ["Notas", "Flashcards", "Study", "Settings", "Dashboard"]
+    }
+  ],
+  "ipc_canais": [
+    { "canal": "ai:geminiChat", "chama": "app/src/lib/ai/geminiService.js", "trata": "electron/ipc/aiHandlers.js", "retorno": "{ ok: boolean, status: number, data: object }" },
+    { "canal": "ai:embeddedChat", "chama": "app/src/lib/ai/embeddedService.js", "trata": "electron/ipc/aiHandlers.js", "retorno": "{ success: boolean, response: string, tokens: number }" },
+    { "canal": "ai:getHardwareInfo", "chama": "electron/preload.js", "trata": "electron/ipc/aiHandlers.js", "retorno": "{ cpu: string, ram: number, gpu: string, vram: number }" },
+    { "canal": "ai:getContextStats", "chama": "electron/preload.js", "trata": "electron/ipc/aiHandlers.js", "retorno": "{ activeTokens: number, maxTokens: number }" },
+    { "canal": "db-notas:getAll", "chama": "electron/preload.js", "trata": "electron/ipc/dbHandlers.js", "retorno": "Array<Nota>" },
+    { "canal": "db-notas:getById", "chama": "electron/preload.js", "trata": "electron/ipc/dbHandlers.js", "retorno": "Nota | null" },
+    { "canal": "db-notas:create", "chama": "electron/preload.js", "trata": "electron/ipc/dbHandlers.js", "retorno": "string" },
+    { "canal": "db-notas:update", "chama": "electron/preload.js", "trata": "electron/ipc/dbHandlers.js", "retorno": "boolean" },
+    { "canal": "db-notas:delete", "chama": "electron/preload.js", "trata": "electron/ipc/dbHandlers.js", "retorno": "boolean" },
+    { "canal": "db-pastas:getAll", "chama": "electron/preload.js", "trata": "electron/ipc/dbHandlers.js", "retorno": "Array<Pasta>" },
+    { "canal": "db-pastas:create", "chama": "electron/preload.js", "trata": "electron/ipc/dbHandlers.js", "retorno": "string" },
+    { "canal": "db-materias:getAll", "chama": "electron/preload.js", "trata": "electron/ipc/dbHandlers.js", "retorno": "Array<Materia>" },
+    { "canal": "db-materias:create", "chama": "electron/preload.js", "trata": "electron/ipc/dbHandlers.js", "retorno": "string" },
+    { "canal": "db-sessoes:getAll", "chama": "electron/preload.js", "trata": "electron/ipc/dbHandlers.js", "retorno": "Array<SessaoEstudo>" },
+    { "canal": "db-sessoes:create", "chama": "electron/preload.js", "trata": "electron/ipc/dbHandlers.js", "retorno": "string" },
+    { "canal": "db-sessoes:completar", "chama": "electron/preload.js", "trata": "electron/ipc/dbHandlers.js", "retorno": "boolean" },
+    { "canal": "db-flashcards:getAll", "chama": "electron/preload.js", "trata": "electron/ipc/dbHandlers.js", "retorno": "Array<Flashcard>" },
+    { "canal": "db-flashcards:getParaRevisao", "chama": "electron/preload.js", "trata": "electron/ipc/dbHandlers.js", "retorno": "Array<Flashcard>" },
+    { "canal": "db-flashcards:create", "chama": "electron/preload.js", "trata": "electron/ipc/dbHandlers.js", "retorno": "string" },
+    { "canal": "db-flashcards:revisar", "chama": "electron/preload.js", "trata": "electron/ipc/dbHandlers.js", "retorno": "boolean" },
+    { "canal": "db-flashcards:update", "chama": "electron/preload.js", "trata": "electron/ipc/dbHandlers.js", "retorno": "boolean" },
+    { "canal": "db-flashcards:delete", "chama": "electron/preload.js", "trata": "electron/ipc/dbHandlers.js", "retorno": "boolean" },
+    { "canal": "db-xp:getTotal", "chama": "electron/preload.js", "trata": "electron/ipc/dbHandlers.js", "retorno": "number" },
+    { "canal": "db-xp:add", "chama": "electron/preload.js", "trata": "electron/ipc/dbHandlers.js", "retorno": "boolean" },
+    { "canal": "db-poemas:getAll", "chama": "electron/preload.js", "trata": "electron/ipc/dbHandlers.js", "retorno": "Array<Poema>" },
+    { "canal": "db-poemas:getById", "chama": "electron/preload.js", "trata": "electron/ipc/dbHandlers.js", "retorno": "Poema | null" },
+    { "canal": "db-poemas:create", "chama": "electron/preload.js", "trata": "electron/ipc/dbHandlers.js", "retorno": "string" },
+    { "canal": "db-poemas:update", "chama": "electron/preload.js", "trata": "electron/ipc/dbHandlers.js", "retorno": "boolean" },
+    { "canal": "db-poemas:delete", "chama": "electron/preload.js", "trata": "electron/ipc/dbHandlers.js", "retorno": "boolean" },
+    { "canal": "db-poemas:recordRecitacao", "chama": "electron/preload.js", "trata": "electron/ipc/dbHandlers.js", "retorno": "boolean" },
+    { "canal": "window:minimize", "chama": "app/src/components/layout/Header.jsx", "trata": "electron/ipc/windowHandlers.js", "retorno": "void" },
+    { "canal": "window:maximize", "chama": "app/src/components/layout/Header.jsx", "trata": "electron/ipc/windowHandlers.js", "retorno": "void" },
+    { "canal": "window:close", "chama": "app/src/components/layout/Header.jsx", "trata": "electron/ipc/windowHandlers.js", "retorno": "void" },
+    { "canal": "window:isMaximized", "chama": "electron/preload.js", "trata": "electron/ipc/windowHandlers.js", "retorno": "boolean" },
+    { "canal": "config:get", "chama": "electron/preload.js", "trata": "electron/ipc/windowHandlers.js", "retorno": "any" },
+    { "canal": "config:set", "chama": "electron/preload.js", "trata": "electron/ipc/windowHandlers.js", "retorno": "boolean" },
+    { "canal": "dialog:selectFolder", "chama": "electron/preload.js", "trata": "electron/ipc/windowHandlers.js", "retorno": "string | null" },
+    { "canal": "db:getPath", "chama": "electron/preload.js", "trata": "electron/ipc/windowHandlers.js", "retorno": "string" },
+    { "canal": "app:getPath", "chama": "electron/preload.js", "trata": "electron/ipc/windowHandlers.js", "retorno": "string" }
+  ],
+  "pontos_orfaos": [
+    {
+      "item": "app/src/lib/db.js",
+      "tipo": "arquivo_legado_sem_import",
+      "detalhe": "Módulo legado que usa ipcRenderer.sendSync síncrono. Não é importado por nenhum arquivo ativo."
+    },
+    {
+      "item": "Header.jsx:102 (Botão Notificações)",
+      "tipo": "botao_sem_onClick",
+      "detalhe": "Ícone de sino com badge decorativo sem handler de clique anexado."
+    },
+    {
+      "item": "Header.jsx:79 (Input de Busca Global)",
+      "tipo": "input_sem_omnibar",
+      "detalhe": "Campo de pesquisa rápido não possui dispatch para filtro de notas ou modal conectado."
+    },
+    {
+      "item": "scripts/*.py (fix-graph, inspect-graph, nextfix, remove-bad-edges)",
+      "tipo": "scripts_legados",
+      "detalhe": "Scripts utilitários da migração antiga do graphify para codegraph referenciando diretório inexistente."
+    }
+  ]
+}

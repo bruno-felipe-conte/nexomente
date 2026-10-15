@@ -59,3 +59,13 @@ Use as skills gstack para fluxos de trabalho estruturados. Skills disponíveis:
 - /careful, /freeze, /guard — rails de segurança
 
 Para carregar: Load gstack. Run /<skill>
+
+---
+
+## Regra Permanente: Mapa de Conexões (NexoMente)
+
+> **Regra Obrigatória para Todo Agente de Código:**
+> 
+> "Antes de alterar qualquer função: leia `docs/MAPA.md` e liste os nós afetados.
+> Depois de alterar: atualize `docs/MAPA.md` e `docs/mapa.json` e rode `npm run mapa:check` (ou `node scripts/verificar-mapa.js`).
+> A tarefa só está concluída se o mapa estiver em dia."
