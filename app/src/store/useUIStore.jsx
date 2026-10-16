@@ -21,9 +21,13 @@ export const useUIStore = create((set) => ({
 
   // Ações pendentes de navegação cruzada
   pendingNoteAction: null,
+  pendingNoteCategory: null,
+  pendingChatNoteId: null,
 
   // Actions
   setPendingNoteAction: (action) => set({ pendingNoteAction: action }),
+  setPendingNoteCategory: (cat) => set({ pendingNoteCategory: cat }),
+  setPendingChatNoteId: (noteId) => set({ pendingChatNoteId: noteId }),
   setLoading: (loading) => set({ loadingGlobal: loading }),
   
   setUserName: (name) => {

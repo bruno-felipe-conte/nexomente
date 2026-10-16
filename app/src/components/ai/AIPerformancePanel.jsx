@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Card from '../ui/Card';
 import Badge from '../ui/Badge';
 import { Cpu, Zap, Activity, Info } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const QUALITY_PRESETS = {
   quality: {
@@ -41,7 +42,14 @@ const QUALITY_PRESETS = {
 
 export default function AIPerformancePanel() {
   const [hardware, setHardware] = useState(null);
-  const [selectedPreset, setSelectedPreset] = useState('balanced');
+  const [selectedPreset, setSelectedPreset] = useState(() => localStorage.getItem('nexomente_ai_preset') || 'balanced');
+
+  const handleSelectPreset = (preset) => {
+    setSelectedPreset(preset.id);
+    localStorage.setItem('nexomente_ai_preset', preset.id);
+    localStorage.setItem('nexomente_ai_max_tokens', String(Math.min(4096, Math.round(preset.contextSize / 2))));
+    toast.success(`Perfil "${preset.label.replace(/^[^\s]+\s/, '')}" ativado!`);
+  };
 
   useEffect(() => {
     const fetchHardware = async () => {
@@ -50,10 +58,11 @@ export default function AIPerformancePanel() {
         const info = await window.electronAPI.getHardwareInfo();
         if (info) {
           setHardware(info);
-          // Auto-selecionar baseado no hardware
-          if (info.ramGB >= 32) setSelectedPreset('quality');
-          else if (info.ramGB >= 16) setSelectedPreset('balanced');
-          else setSelectedPreset('performance');
+          if (!localStorage.getItem('nexomente_ai_preset')) {
+            if (info.ramGB >= 32) setSelectedPreset('quality');
+            else if (info.ramGB >= 16) setSelectedPreset('balanced');
+            else setSelectedPreset('performance');
+          }
         }
       } catch (err) {
         console.error('Falha ao obter hardware:', err);
@@ -93,7 +102,7 @@ export default function AIPerformancePanel() {
               key={preset.id}
               interactive={isCompatible}
               className={`glass-panel p-5 transition-all ${isSelected ? `border-2 ${preset.borderColor} bg-white/[0.03]` : 'border-white/5 opacity-60 hover:opacity-100'} ${!isCompatible ? 'grayscale cursor-not-allowed' : ''}`}
-              onClick={() => isCompatible && setSelectedPreset(preset.id)}
+              onClick={() => isCompatible && handleSelectPreset(preset)}
             >
               <div className="flex items-center justify-between mb-4">
                  <div className={`text-sm font-bold ${preset.color}`}>{preset.label}</div>

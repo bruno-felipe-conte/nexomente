@@ -123,39 +123,49 @@ export function useGerador() {
     }
   }, [persist]);
   
-  const gerarComIA = useCallback(async (texto, config = {}) => {
+  const gerarComIA = useCallback(async (textoOuConfig, configOpt = {}) => {
     setCarregando(true);
     setErro(null);
-    setProgresso(10);
-    
+    setProgresso(15);
+
+    // Indicador progressivo suave enquanto a IA local/remota processa
+    const progressInterval = setInterval(() => {
+      setProgresso(prev => (prev < 85 ? prev + 5 : prev));
+    }, 500);
+
     try {
-      const resultado = await gerarQuestoesComIA(texto, config);
-      
+      const resultado = await gerarQuestoesComIA(textoOuConfig, configOpt);
+      clearInterval(progressInterval);
+
       if (!resultado.success) {
         setErro(resultado.erro || 'Falha na geração');
+        setProgresso(0);
         return resultado;
       }
 
-      setProgresso(90);
-      
+      setProgresso(95);
+
       const novasQuestoes = resultado.questoes.map(q => ({
         ...q,
         id: generateId(),
       }));
-      
+
       setQuestoes(prev => {
         const atualizadas = [...novasQuestoes, ...prev];
         persist(atualizadas);
         return atualizadas;
       });
-      
+
       setProgresso(100);
       return { success: true, total: novasQuestoes.length };
     } catch (e) {
+      clearInterval(progressInterval);
       console.error('[GERADOR] Erro fatal:', e);
       setErro(`Erro inesperado: ${e.message}`);
+      setProgresso(0);
       return { success: false, erro: e.message };
     } finally {
+      clearInterval(progressInterval);
       setCarregando(false);
     }
   }, [persist]);

@@ -42,7 +42,7 @@ describe('Refactored UI Pages & Components (Gerador, AIChat, PoemasGerenciador)'
     expect(getByPlaceholderText(/Buscar nota para anexo/i)).toBeDefined();
 
     // Abre ModelSelectorPopover
-    fireEvent.click(getByText(/gemini-1\.5-flash|Auto/i));
+    fireEvent.click(getByText(/gemma-4-E2B-it|gemini-1\.5-flash|Auto/i));
     expect(getByText(/Modelos Disponíveis/i)).toBeDefined();
   });
 

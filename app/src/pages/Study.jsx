@@ -142,10 +142,29 @@ export default function Study() {
                    className="w-full bg-transparent border-none text-sm text-text-hi placeholder:text-text-lo focus:ring-0"
                    value={novaMateria}
                    onChange={e => setNovaMateria(e.target.value)}
-                   onKeyDown={e => e.key === 'Enter' && create({ nome: novaMateria, cor: '#2DD4BF' }) && setNovaMateria('') && setShowCriar(false)}
+                   onKeyDown={e => {
+                     if (e.key === 'Enter' && novaMateria.trim()) {
+                       create({ nome: novaMateria.trim(), cor: '#2DD4BF' });
+                       setNovaMateria('');
+                       setShowCriar(false);
+                     } else if (e.key === 'Escape') {
+                       setShowCriar(false);
+                     }
+                   }}
                  />
                  <div className="flex justify-end">
-                    <Button size="sm" onClick={() => { create({ nome: novaMateria, cor: '#2DD4BF' }); setNovaMateria(''); setShowCriar(false); }}>Criar</Button>
+                    <Button
+                      size="sm"
+                      disabled={!novaMateria.trim()}
+                      onClick={() => {
+                        if (!novaMateria.trim()) return;
+                        create({ nome: novaMateria.trim(), cor: '#2DD4BF' });
+                        setNovaMateria('');
+                        setShowCriar(false);
+                      }}
+                    >
+                      Criar
+                    </Button>
                  </div>
               </div>
             )}

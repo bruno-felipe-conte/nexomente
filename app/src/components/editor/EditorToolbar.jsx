@@ -142,16 +142,15 @@ export default function EditorToolbar({ editor, focusMode, onToggleFocus }) {
         <Code size={16} className="rotate-45" />
       </ToolbarButton>
       <ToolbarButton
-        onClick={() => editor.chain().focus().insertContent('$ ').run()}
-        title="Fórmula inline ($)"
+        onClick={() => {
+          const formula = window.prompt('Digite a fórmula matemática (LaTeX):', 'E = mc^2');
+          if (formula && formula.trim()) {
+            editor.chain().focus().insertContent(`$${formula.trim()}$ `).run();
+          }
+        }}
+        title="Inserir Fórmula Matemática (LaTeX)"
       >
         <Sigma size={16} />
-      </ToolbarButton>
-      <ToolbarButton
-        onClick={() => editor.chain().focus().insertContent('$$\n\n$$').run()}
-        title="Fórmula bloco ($$)"
-      >
-        <Sigma size={16} className="rotate-180" />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().setHorizontalRule().run()}
@@ -163,10 +162,24 @@ export default function EditorToolbar({ editor, focusMode, onToggleFocus }) {
       <Divider />
 
       <ToolbarButton
-        onClick={() => editor.chain().focus().unsetLink().run()}
+        onClick={() => {
+          if (editor.isActive('link')) {
+            editor.chain().focus().unsetLink().run();
+            return;
+          }
+          const previousUrl = editor.getAttributes('link').href || 'https://';
+          const url = window.prompt('Informe a URL do link:', previousUrl);
+          if (!url || !url.trim() || url.trim() === 'https://') return;
+          const cleanUrl = url.trim();
+          const { empty } = editor.state.selection;
+          if (empty) {
+            editor.chain().focus().insertContent(`<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer">${cleanUrl}</a> `).run();
+          } else {
+            editor.chain().focus().extendMarkRange('link').setLink({ href: cleanUrl }).run();
+          }
+        }}
         active={editor.isActive('link')}
-        title="Remover link"
-        disabled={!editor.isActive('link')}
+        title={editor.isActive('link') ? 'Remover link' : 'Inserir link'}
       >
         <Link size={16} />
       </ToolbarButton>

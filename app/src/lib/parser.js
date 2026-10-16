@@ -83,99 +83,204 @@ export function parseTextoSimples(texto) {
   return questoes;
 }
 
+// --- EXTRATOR RESILIENTE DE QUESTÕES (JSON E STREAM TRUNCADO) ---
+
+export function extrairQuestoesDeResposta(raw) {
+  if (!raw || typeof raw !== 'string') return [];
+
+  // 1. Limpar blocos de código Markdown
+  let limpo = raw.trim();
+  limpo = limpo.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
+
+  // 2. Tentar parse direto de JSON completo
+  try {
+    const parsed = JSON.parse(limpo);
+    const lista = Array.isArray(parsed) ? parsed : (parsed.questoes || parsed.questions || parsed.itens || []);
+    if (Array.isArray(lista) && lista.length > 0) return lista;
+  } catch (err) {
+    void err;
+  }
+
+  // 3. Tentar substring entre o primeiro { e o último }
+  const firstBrace = limpo.indexOf('{');
+  const lastBrace = limpo.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace > firstBrace) {
+    try {
+      const parsed = JSON.parse(limpo.substring(firstBrace, lastBrace + 1));
+      const lista = Array.isArray(parsed) ? parsed : (parsed.questoes || parsed.questions || parsed.itens || []);
+      if (Array.isArray(lista) && lista.length > 0) return lista;
+    } catch (err) {
+      void err;
+    }
+  }
+
+  // 4. Tentar substring entre o primeiro [ e o último ]
+  const firstBracket = limpo.indexOf('[');
+  const lastBracket = limpo.lastIndexOf(']');
+  if (firstBracket !== -1 && lastBracket > firstBracket) {
+    try {
+      const parsed = JSON.parse(limpo.substring(firstBracket, lastBracket + 1));
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    } catch (err) {
+      void err;
+    }
+  }
+
+  // 5. Recuperação de objetos individuais de JSON truncado (quando o modelo atinge o limite de tokens)
+  const regexObjetos = /\{\s*"pergunta"\s*:\s*"[\s\S]*?"\s*,\s*"resposta_correta"[\s\S]*?"opcoes"\s*:\s*\[[\s\S]*?\]\s*\}/g;
+  const encontrados = [];
+  let matchObj;
+  while ((matchObj = regexObjetos.exec(raw)) !== null) {
+    try {
+      const q = JSON.parse(matchObj[0]);
+      if (q.pergunta && Array.isArray(q.opcoes)) {
+        encontrados.push(q);
+      }
+    } catch (err) {
+      void err;
+    }
+  }
+  if (encontrados.length > 0) return encontrados;
+
+  // 6. Fallback para parser de texto simples
+  return parseTextoSimples(raw);
+}
+
 // --- INTEGRAÇÃO COM IA ---
 
-export async function gerarQuestoesComIA(texto, config) {
+export async function gerarQuestoesComIA(textoOuConfig, configOpt = {}) {
+  // Suporte a chamada com (texto, config) ou (config)
+  let texto = typeof textoOuConfig === 'string'
+    ? textoOuConfig
+    : (textoOuConfig?.texto || textoOuConfig?.conteudo || '');
+  let config = typeof textoOuConfig === 'object' && !Array.isArray(textoOuConfig) && !configOpt.quantidade
+    ? { ...textoOuConfig, ...configOpt }
+    : configOpt;
+
   const {
     quantidade = 5,
     materia = 'Geral',
     topico = '',
     banca = 'Geral',
-    nivel = 'Médio',
+    tipo = 'multipla-escolha',
     provider = null,
     modelo = null
   } = config;
 
-  const prompt = `
-[SISTEMA: RESPONDA APENAS EM JSON VÁLIDO. SEM TEXTO EXTRA.]
-Gere ${quantidade} questões de múltipla escolha sobre o conteúdo abaixo.
-Banca: ${banca}, Nível: ${nivel}, Matéria: ${materia}.
+  const nivel = config.nivel || config.dificuldade || 'Médio';
+  const textoLimpo = (texto || '').slice(0, 4500);
 
-Formato JSON:
+  if (!textoLimpo.trim()) {
+    return { success: false, erro: 'Texto de entrada vazio para geração de questões.', code: 'ERR-GEN-000' };
+  }
+
+  const instrucaoTipo = tipo === 'v-f'
+    ? 'questões de Verdadeiro ou Falso (onde cada questão possui duas opções: "V" e "F")'
+    : tipo === 'discursiva'
+    ? 'questões discursivas com critérios e resposta esperada na justificativa'
+    : 'questões objetivas de múltipla escolha com 4 opções (A, B, C, D)';
+
+  const prompt = `Gere exatamente ${quantidade} ${instrucaoTipo} baseadas estritamente no texto fornecido.
+Banca: ${banca}
+Nível de Dificuldade: ${nivel}
+Matéria: ${materia}
+
+Você DEVE responder exclusivamente no seguinte formato JSON estrito:
 {
   "questoes": [
     {
-      "pergunta": "...",
+      "pergunta": "Enunciado claro e contextualizado da questão...",
       "resposta_correta": "A",
       "opcoes": [
-        { "letra": "A", "texto": "...", "correta": true, "justificativa_correta": "...", "justificativa_errada": "" },
-        { "letra": "B", "texto": "...", "correta": false, "justificativa_correta": "", "justificativa_errada": "..." }
+        { "letra": "A", "texto": "Opção A", "correta": true, "justificativa_correta": "Por que esta opção é a correta...", "justificativa_errada": "" },
+        { "letra": "B", "texto": "Opção B", "correta": false, "justificativa_correta": "", "justificativa_errada": "Por que esta opção está incorreta..." },
+        { "letra": "C", "texto": "Opção C", "correta": false, "justificativa_correta": "", "justificativa_errada": "Por que esta opção está incorreta..." },
+        { "letra": "D", "texto": "Opção D", "correta": false, "justificativa_correta": "", "justificativa_errada": "Por que esta opção está incorreta..." }
       ]
     }
   ]
 }
 
-Conteúdo:
-${texto.slice(0, 4000)}
-`.trim();
+Texto Base:
+${textoLimpo}`;
 
   try {
-    console.log(`[GERADOR] Chamando IA via ${provider || 'Global'}`);
-    const resposta = await aiChat([{ role: 'user', content: prompt }], { provider, model: modelo });
+    console.log(`[GERADOR] Chamando IA via ${provider || 'Global'} (${quantidade} questões, tipo: ${tipo})`);
+    
+    // Aloca tokens suficientes para o número solicitado de questões em JSON
+    const tokensNecessarios = Math.max(1600, Number(quantidade || 5) * 450);
+
+    const resposta = await aiChat([
+      {
+        role: 'system',
+        content: 'Você é um examinador e gerador sênior de questões de concursos e exames acadêmicos. Responda ESTRITAMENTE em formato JSON puro, sem comentários fora do JSON, sem saudações e sem explicações externas.'
+      },
+      {
+        role: 'user',
+        content: prompt
+      }
+    ], {
+      provider,
+      model: modelo,
+      max_tokens: tokensNecessarios,
+      temperature: 0.25
+    });
 
     if (!resposta.success) {
       return { success: false, erro: resposta.error || 'Falha na conexão com a IA', code: 'ERR-GEN-001' };
     }
 
-    const raw = (resposta.content || '').trim();
+    const raw = (resposta.content || resposta.response || '').trim();
     if (!raw) return { success: false, erro: 'IA retornou resposta vazia', code: 'ERR-GEN-002' };
 
-    // Tentar extrair JSON
-    let extraidas = [];
-    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    const extraidas = extrairQuestoesDeResposta(raw);
 
-    if (jsonMatch) {
-      try {
-        const parsed = JSON.parse(jsonMatch[0]);
-        if (parsed.questoes && Array.isArray(parsed.questoes)) {
-          extraidas = parsed.questoes;
-        }
-      } catch {
-        console.warn('[GERADOR] JSON quebrado, tentando fallback...');
-      }
-    }
-
-    // Se falhar o JSON, usa o motor de leitura de texto
-    if (extraidas.length === 0) {
-      extraidas = parseTextoSimples(raw);
-    }
-
-    if (extraidas.length === 0) {
+    if (!extraidas || extraidas.length === 0) {
+      console.warn('[GERADOR] Nenhuma questão extraída da resposta bruta:\n', raw);
       return { success: false, erro: 'Não foi possível identificar questões na resposta da IA.', code: 'ERR-GEN-003' };
     }
 
-    // Processar para o formato do app
-    const processadas = extraidas.map((q, idx) => ({
-      id: `q_${Date.now()}_${idx}_${Math.random().toString(36).slice(2,5)}`,
-      pergunta: q.pergunta || 'Questão sem enunciado',
-      opcoes: (q.opcoes || []).map(o => ({
-        letra: o.letra || '?',
-        texto: o.texto || 'Opção vazia',
-        correta: o.correta || false,
-        justificativa_correta: o.justificativa_correta || '',
-        justificativa_errada: o.justificativa_errada || ''
-      })),
-      resposta_correta: q.resposta_correta || (q.opcoes?.find(o => o.correta)?.letra) || 'A',
-      tipo: 'multipla-escolha',
-      materia,
-      topico,
-      banca,
-      nivel,
-      fonte: 'Gerado por IA',
-      dispositivo_legal: '',
-      tags: [],
-      created_at: new Date().toISOString()
-    }));
+    // Processar e normalizar para o formato oficial do NexoMente
+    const processadas = extraidas.map((q, idx) => {
+      const opcoesNormalizadas = (q.opcoes || []).map((o, oIdx) => {
+        const letraPadrao = ['A', 'B', 'C', 'D', 'E'][oIdx] || String.fromCharCode(65 + oIdx);
+        return {
+          letra: (o.letra || letraPadrao).toUpperCase(),
+          texto: o.texto || o.opcao || 'Opção sem texto',
+          correta: Boolean(o.correta),
+          justificativa_correta: o.justificativa_correta || '',
+          justificativa_errada: o.justificativa_errada || ''
+        };
+      });
+
+      // Garante que a resposta correta corresponda a uma opção válida
+      let corretaDefinida = (q.resposta_correta || '').toUpperCase();
+      if (!corretaDefinida && opcoesNormalizadas.length > 0) {
+        const achada = opcoesNormalizadas.find(o => o.correta);
+        corretaDefinida = achada ? achada.letra : opcoesNormalizadas[0].letra;
+      }
+
+      // Garante flag correta: true na opção correspondente
+      opcoesNormalizadas.forEach(o => {
+        if (o.letra === corretaDefinida) o.correta = true;
+      });
+
+      return {
+        id: `q_${Date.now()}_${idx}_${Math.random().toString(36).slice(2, 6)}`,
+        pergunta: q.pergunta || q.enunciado || 'Questão sem enunciado',
+        opcoes: opcoesNormalizadas,
+        resposta_correta: corretaDefinida || 'A',
+        tipo,
+        materia,
+        topico,
+        banca,
+        nivel,
+        fonte: 'Gerado por IA',
+        dispositivo_legal: q.dispositivo_legal || '',
+        tags: Array.isArray(q.tags) ? q.tags : [],
+        created_at: new Date().toISOString()
+      };
+    });
 
     return { success: true, total: processadas.length, questoes: processadas };
 

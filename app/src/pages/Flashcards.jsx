@@ -46,10 +46,20 @@ export default function FlashcardsPage() {
 
   const handleUndo = useCallback(() => {
     if (!undoCard) return;
-    create({ frente: undoCard.frente, verso: undoCard.verso, materia: undoCard.materia });
-    remove(undoCard.id);
+    update(undoCard.id, {
+      frente: undoCard.frente,
+      verso: undoCard.verso,
+      materia_id: undoCard.materia_id || undoCard.materia || 'geral',
+      nota_id: undoCard.nota_id ?? null,
+      intervalo: undoCard.intervalo ?? 1,
+      repeticoes: undoCard.repeticoes ?? 0,
+      ease_factor: undoCard.ease_factor ?? 2.5,
+      next_review: undoCard.next_review ?? null,
+    });
+    setCardAtual(undoCard);
+    setMostrandoFrente(true);
     setUndoCard(null);
-  }, [undoCard, create, remove]);
+  }, [undoCard, update]);
 
   // Atalho de teclado 'z' ou 'Ctrl+Z' para desfazer avaliação rápida
   useEffect(() => {
@@ -260,11 +270,9 @@ export default function FlashcardsPage() {
                     </div>
                   </div>
                   <div className="flex gap-1 flex-shrink-0">
-                    {modo === 'editar' && (
-                      <button onClick={() => { setEditandoId(card.id); setEditFrente(card.frente); setEditVerso(card.verso); }}
-                        aria-label="Editar flashcard" title="Editar flashcard"
-                        className="p-1.5 text-text-muted hover:text-text-primary cursor-pointer"><Edit size={14} /></button>
-                    )}
+                    <button onClick={() => { setEditandoId(card.id); setEditFrente(card.frente); setEditVerso(card.verso); }}
+                      aria-label="Editar flashcard" title="Editar flashcard"
+                      className="p-1.5 text-text-muted hover:text-text-primary cursor-pointer"><Edit size={14} /></button>
                     <button onClick={() => remove(card.id)} aria-label="Excluir flashcard" title="Excluir flashcard" className="p-1.5 text-text-muted hover:text-danger cursor-pointer"><Trash2 size={14} /></button>
                   </div>
                 </div>

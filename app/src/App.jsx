@@ -29,7 +29,7 @@ const Poemas       = lazy(() => import('./pages/Poemas'));
 const AIChat       = lazy(() => import('./pages/AIChat'));
 const Gerador      = lazy(() => import('./pages/Gerador'));
 
-const PAGES = ['dashboard', 'notes', 'study', 'flashcards', 'poemas', 'gerador', 'ai', 'graph', 'statistics', 'settings'];
+const PAGES = ['dashboard', 'notes', 'study', 'flashcards', 'gerador', 'poemas', 'ai', 'graph', 'statistics', 'settings'];
 
 // Fallback enquanto o chunk carrega
 function PageLoader() {
@@ -43,7 +43,8 @@ function PageLoader() {
 function App() {
   const {
     sidebarOpen, toggleSidebar, loadingGlobal,
-    activeTab: currentPage, setActiveTab: setCurrentPage
+    activeTab: currentPage, setActiveTab: setCurrentPage,
+    setPendingNoteAction
   } = useUIStore();
 
   const studyRodando = useStudyTimerStore((s) => s.rodando);
@@ -62,12 +63,12 @@ function App() {
   useEffect(() => {
     // ─── Configurações Padrão de Inicialização (GitHub/Fresh Install) ───
     const defaults = {
-      'nexomente_ai_provider': window.electronAPI ? 'embedded' : 'cloud',
+      'nexomente_ai_provider': 'embedded',
       'nexomente_ai_language': 'Português Brasileiro',
       'nexomente_tema': 'dark',
       'nexomente_ai_temp': '0.7',
       'nexomente_ai_max_tokens': '1024',
-      'nexomente_embedded_path': './electron/models/llama-3-8b-instruct.gguf',
+      'nexomente_embedded_path': './electron/models/gemma-4-E2B-it-GGUF/gemma-4-E2B-it-Q4_K_M.gguf',
       'nexomente_ai_system_prompt': 'Você é o NexoMente, um assistente de estudos de alto desempenho. Responda de forma lógica, profunda e estruturada.'
     };
 
@@ -76,6 +77,19 @@ function App() {
         localStorage.setItem(key, val);
       }
     });
+
+    // Atualiza caminhos legados ou externos para a pasta própria do Gemma 4 dentro do projeto
+    const currentEmbeddedPath = localStorage.getItem('nexomente_embedded_path');
+    if (
+      currentEmbeddedPath === './electron/models/llama-3-8b-instruct.gguf' ||
+      currentEmbeddedPath === './electron/models/llama-3.2-1b.gguf' ||
+      currentEmbeddedPath?.includes('.lmstudio')
+    ) {
+      localStorage.setItem(
+        'nexomente_embedded_path',
+        './electron/models/gemma-4-E2B-it-GGUF/gemma-4-E2B-it-Q4_K_M.gguf'
+      );
+    }
 
     try {
       import('./store/useDBStore').then(m => {
@@ -107,36 +121,44 @@ function App() {
 
   useEffect(() => {
     const ATALHOS = {
-      '1': 'dashboard', '2': 'notes',      '3': 'study',
-      '4': 'flashcards','5': 'gerador',    '6': 'ai',
-      '7': 'graph',     '8': 'statistics', '9': 'settings',
+      '1': 'dashboard',  '2': 'notes',      '3': 'study',
+      '4': 'flashcards', '5': 'gerador',    '6': 'poemas',
+      '7': 'ai',         '8': 'graph',      '9': 'statistics',
+      '0': 'settings',
     };
     const handler = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'n') {
+        e.preventDefault();
+        setPendingNoteAction({ action: 'create' });
+        setCurrentPage('notes');
+        return;
+      }
+
       const tag = document.activeElement?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.isContentEditable) return;
 
-      if ((e.ctrlKey || e.metaKey) && ATALHOS[e.key]) {
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && ATALHOS[e.key]) {
         e.preventDefault();
         setCurrentPage(ATALHOS[e.key]);
         return;
       }
-      if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
         e.preventDefault();
         toggleSidebar();
         return;
       }
-      // Arrow keys for page navigation
-      if (e.key === 'ArrowLeft' && pageIndex > 0) {
+      // Alt+ArrowLeft / Alt+ArrowRight para navegação global entre abas sem conflitar com Flashcards/Poemas
+      if (e.altKey && e.key === 'ArrowLeft' && pageIndex > 0) {
         e.preventDefault();
         setCurrentPage(PAGES[pageIndex - 1]);
-      } else if (e.key === 'ArrowRight' && pageIndex < PAGES.length - 1) {
+      } else if (e.altKey && e.key === 'ArrowRight' && pageIndex < PAGES.length - 1) {
         e.preventDefault();
         setCurrentPage(PAGES[pageIndex + 1]);
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [toggleSidebar, setCurrentPage, pageIndex]);
+  }, [toggleSidebar, setCurrentPage, setPendingNoteAction, pageIndex]);
 
 
   if (loadingGlobal) {
@@ -180,6 +202,7 @@ function App() {
         isOpen={sidebarOpen}
         currentPage={currentPage}
         onNavigate={setCurrentPage}
+        onCloseMobile={toggleSidebar}
         className="z-[100]"
       />
 

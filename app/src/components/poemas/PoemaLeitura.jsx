@@ -34,6 +34,11 @@ export default function PoemaLeitura({ onManage, poemaSelecionado, setPoemaSelec
   useEffect(() => {
     if (poemas.length > 0 && !poemaSelecionado) {
       setPoemaSelecionado(poemas[0]);
+    } else if (poemas.length > 0 && poemaSelecionado) {
+      const atualizado = poemas.find(p => p.id === poemaSelecionado.id);
+      if (atualizado && atualizado !== poemaSelecionado) {
+        setPoemaSelecionado(atualizado);
+      }
     }
   }, [poemas, poemaSelecionado, setPoemaSelecionado]);
 
@@ -192,10 +197,18 @@ export default function PoemaLeitura({ onManage, poemaSelecionado, setPoemaSelec
               className="w-full"
             >
               <PoemaRecitacao 
-                poema={poemaSelecionado} 
+                poema={poemaSelecionado || {
+                  id: 'classico_fallback',
+                  titulo: 'Mar Português',
+                  autor: 'Fernando Pessoa',
+                  corpo: 'Ó mar salgado, quanto do teu sal\nSão lágrimas de Portugal!\nPor te cruzarmos, quantas mães choraram,\nQuantos filhos em vão rezaram!'
+                }} 
+                onClose={() => setIsDojoMode(false)}
                 onFinish={() => {
                   setIsDojoMode(false);
-                  registrarRecitacao(poemaSelecionado.id);
+                  if (poemaSelecionado?.id) {
+                    registrarRecitacao(poemaSelecionado.id);
+                  }
                 }} 
               />
             </motion.div>
@@ -259,7 +272,7 @@ export default function PoemaLeitura({ onManage, poemaSelecionado, setPoemaSelec
                   <div className="flex flex-col items-center gap-4">
                     <div className="flex gap-4">
                       <button
-                        onClick={() => registrarRecitacao(poemaSelecionado.id)}
+                        onClick={() => poemaSelecionado?.id && registrarRecitacao(poemaSelecionado.id)}
                         className="px-8 py-4 bg-success rounded-3xl text-base font-bold hover:bg-success/80 transition-all cursor-pointer shadow-lg flex items-center gap-3 text-white"
                       >
                         <Mic size={20} /> Recitei!

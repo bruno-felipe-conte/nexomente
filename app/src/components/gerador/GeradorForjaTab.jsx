@@ -11,6 +11,8 @@ export default function GeradorForjaTab({
   fileInputRef,
   configIA,
   setConfigIA,
+  materias = [],
+  bancas = [],
   handleGerarIA,
   progresso,
   questoes,
@@ -153,6 +155,36 @@ export default function GeradorForjaTab({
             </div>
           </div>
 
+          {/* Seletores de Matéria e Banca */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="p-5 bg-surface-card/40 border border-surface-border rounded-3xl flex items-center justify-between gap-4">
+              <span className="text-xs font-bold uppercase tracking-widest text-text-lo shrink-0">Matéria</span>
+              <select
+                value={configIA.materia || ''}
+                onChange={(e) => setConfigIA(prev => ({ ...prev, materia: e.target.value }))}
+                className="flex-1 bg-surface-elevated border border-surface-border rounded-xl px-4 py-2.5 text-xs font-bold text-text-hi outline-none focus:border-color-gerador/50 cursor-pointer"
+              >
+                <option value="">Geral / Automática</option>
+                {materias.map(m => (
+                  <option key={m.id || m.nome} value={m.nome}>{m.nome}</option>
+                ))}
+              </select>
+            </div>
+            <div className="p-5 bg-surface-card/40 border border-surface-border rounded-3xl flex items-center justify-between gap-4">
+              <span className="text-xs font-bold uppercase tracking-widest text-text-lo shrink-0">Banca Examinadora</span>
+              <select
+                value={configIA.banca || 'Geral'}
+                onChange={(e) => setConfigIA(prev => ({ ...prev, banca: e.target.value }))}
+                className="flex-1 bg-surface-elevated border border-surface-border rounded-xl px-4 py-2.5 text-xs font-bold text-text-hi outline-none focus:border-color-gerador/50 cursor-pointer"
+              >
+                <option value="Geral">Geral</option>
+                {bancas.map(b => (
+                  <option key={b.key || b.nome} value={b.nome}>{b.nome}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           <div className="flex flex-col items-center gap-6">
             <div className="flex gap-4">
               <button onClick={() => setStep(1)} className="px-10 py-5 bg-surface-elevated text-text-mid rounded-2xl font-black uppercase tracking-widest text-[10px] hover:text-text-hi transition-all">Voltar</button>
@@ -195,8 +227,7 @@ export default function GeradorForjaTab({
                   const lote = questoes.slice(0, configIA.quantidade);
                   let criados = 0;
                   lote.forEach(q => {
-                    handleCriarFlashcard(q.id);
-                    criados++;
+                    if (handleCriarFlashcard(q.id, true)) criados++;
                   });
                   toast.success(`${criados} flashcards adicionados ao baralho!`);
                 }}

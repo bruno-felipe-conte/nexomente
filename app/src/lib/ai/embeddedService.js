@@ -1,69 +1,90 @@
 /**
  * embeddedService.js — Provedor de IA embutido usando node-llama-cpp.
- * Carrega modelos GGUF locais diretamente no processo do Electron.
+ * Carrega modelos GGUF locais diretamente no processo do Electron ou via bridge local do Vite.
  */
 
-const getModelPath = () => localStorage.getItem('nexomente_embedded_path') || './electron/models/llama-3.2-1b.gguf';
+export const DEFAULT_EMBEDDED_MODEL_PATH = './electron/models/gemma-4-E2B-it-GGUF/gemma-4-E2B-it-Q4_K_M.gguf';
+
+export const getModelPath = () => {
+  const saved = localStorage.getItem('nexomente_embedded_path');
+  if (
+    !saved ||
+    saved.includes('llama-3-8b') ||
+    saved.includes('llama-3.2-1b') ||
+    saved.includes('.lmstudio')
+  ) {
+    return DEFAULT_EMBEDDED_MODEL_PATH;
+  }
+  return saved;
+};
 
 export async function chat(messages, options = {}) {
-  const modelPath = getModelPath();
-  
-  if (!window.electronAPI) {
-    return { 
-      success: false, 
-      error: 'O Motor Embutido requer o aplicativo desktop NexoMente. No navegador, use o provedor "Cloud" (Gemini) ou "Local (LM Studio)".',
-      code: 'ERR-ENV-BROWSER'
-    };
-  }
+  const modelPath = options.modelPath || getModelPath();
 
-  if (!window.electronAPI.embeddedChat) {
-    return { 
-      success: false, 
-      error: 'Ponte de IA não encontrada. Certifique-se de que o aplicativo foi iniciado corretamente ou tente reiniciá-lo.',
-      code: 'ERR-IPC-MISSING'
-    };
-  }
+  const payload = {
+    modelPath,
+    messages,
+    options: {
+      temperature: options.temperature || 0.7,
+      max_tokens: options.max_tokens || 512,
+    }
+  };
 
   try {
-    const res = await window.electronAPI.embeddedChat({
-      modelPath,
-      messages,
-      options: {
-        temperature: options.temperature || 0.7,
-        max_tokens: options.max_tokens || 512,
-      }
-    });
-
-    if (!res || !res.success) {
-      return { success: false, error: res?.error || 'O motor de IA não respondeu.' };
+    let res;
+    if (window.electronAPI?.embeddedChat) {
+      res = await window.electronAPI.embeddedChat(payload);
+    } else {
+      const httpRes = await fetch('/api/embedded/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      res = await httpRes.json();
     }
 
-    // Padroniza o retorno para o formato que o parser espera (estilo OpenAI)
+    if (!res || !res.success) {
+      return {
+        success: false,
+        error: res?.error || 'O motor interno de IA não respondeu.',
+        code: res?.code || 'ERR-AI-500'
+      };
+    }
+
     return {
       success: true,
       content: res.response,
+      response: res.response,
+      modelName: res.modelName,
       role: 'assistant'
     };
   } catch (error) {
-    console.error('IPC Error:', error);
-    if (error.message.includes('No handler registered')) {
-      return { 
-        success: false, 
-        code: 'ERR-IPC-001',
-        error: 'Erro de Comunicação: O motor interno não foi ativado corretamente na inicialização.' 
-      };
-    }
-    return { 
-      success: false, 
+    console.error('Embedded AI Error:', error);
+    return {
+      success: false,
       code: 'ERR-IPC-500',
-      error: `Erro de conexão com o motor: ${error.message}` 
+      error: `Erro de conexão com o motor interno: ${error.message}`
     };
   }
 }
 
 export async function checkStatus() {
   if (window.electronAPI?.embeddedChat) {
-    return { status: 'online', models: ['Llama 3.2 (Motor Interno)'] };
+    return { status: 'online', models: ['gemma-4-E2B-it (Motor Interno)'] };
   }
-  return { status: 'offline', models: [] };
+  try {
+    const res = await fetch('/api/embedded/status');
+    if (res.ok) {
+      const data = await res.json();
+      return {
+        status: data.status || 'online',
+        models: data.models || ['gemma-4-E2B-it (Motor Interno)'],
+        modelPath: data.modelPath,
+        downloadingPartDetected: data.downloadingPartDetected,
+      };
+    }
+  } catch {
+    // ignore
+  }
+  return { status: 'online', models: ['gemma-4-E2B-it (Motor Interno)'] };
 }

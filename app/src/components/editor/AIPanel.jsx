@@ -1,6 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Sparkles, Loader2, Tag, FileText, Layers, RefreshCw, Check, X } from 'lucide-react';
-import { checkLMStudioStatus, getModel, suggestTags, summarizeContent, generateFlashcards } from '../../lib/ai/lmStudioService';
+import { getModel, suggestTags, summarizeContent, generateFlashcards } from '../../lib/ai/lmStudioService';
+import { checkStatus as checkAIStatus } from '../../lib/ai/aiProvider';
 import PropTypes from 'prop-types';
 
 export default function AIPanel({ nota, onTagsUpdate, onResumoUpdate, onFlashcardsCreate }) {
@@ -12,9 +13,13 @@ export default function AIPanel({ nota, onTagsUpdate, onResumoUpdate, onFlashcar
 
   const verificarStatus = useCallback(async () => {
     setStatus('checking');
-    const res = await checkLMStudioStatus();
+    const res = await checkAIStatus();
     setStatus(res.status);
   }, []);
+
+  useEffect(() => {
+    verificarStatus();
+  }, [verificarStatus]);
 
   const handleGerarTags = async () => {
     if (!nota) return;

@@ -11,7 +11,8 @@ export default function PoemasListaTab({
   iniciarEdicao,
   onSelectPoema,
   favoritos = [],
-  onToggleFavorito
+  onToggleFavorito,
+  onExcluir
 }) {
   return (
     <motion.div
@@ -34,6 +35,9 @@ export default function PoemasListaTab({
             </button>
             <button onClick={() => exportarSelecionados('md')} className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-[10px] font-bold text-white flex items-center gap-2">
               <Download size={14} /> MD
+            </button>
+            <button onClick={() => exportarSelecionados('txt')} className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-[10px] font-bold text-white flex items-center gap-2">
+              <Download size={14} /> TXT
             </button>
             <button onClick={excluirSelecionados} className="px-3 py-1.5 bg-nx-error/20 hover:bg-nx-error/40 rounded-nx-sm text-[10px] font-bold text-white flex items-center gap-2">
               <Trash size={14} /> EXCLUIR
@@ -115,6 +119,15 @@ export default function PoemasListaTab({
                 >
                   <ExternalLink size={14} />
                 </button>
+                {onExcluir && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onExcluir(p); }}
+                    title="Excluir poema"
+                    className="p-2 hover:bg-nx-error/10 rounded-lg text-text-lo hover:text-nx-error transition-all cursor-pointer"
+                  >
+                    <Trash size={14} />
+                  </button>
+                )}
               </div>
             </motion.div>
           ))}

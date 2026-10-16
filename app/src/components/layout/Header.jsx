@@ -1,9 +1,11 @@
-import { Menu, Search, Minus, Square, X, Bell, Edit2, Zap } from 'lucide-react';
-import { useState } from 'react';
+import { Menu, Search, Minus, Square, X, Bell, Edit2, Zap, FileText, Brain, Flame } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import PropTypes from 'prop-types';
 import { useUIStore } from '../../store/useUIStore';
 import { useTamagotchiStore, getLevelProgress } from '../../store/useTamagotchiStore';
+import { useNotes } from '../../hooks/useNotes';
+import { useFlashcards } from '../../hooks/useFlashcards';
 
 const pageTitles = {
   dashboard:  'Dashboard',
@@ -33,11 +35,52 @@ const pageColors = {
 
 export default function Header({ title, onToggleSidebar, onNavigate }) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const { userName } = useUIStore();
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const searchInputRef = useRef(null);
+
+  const { userName, setPendingNoteAction } = useUIStore();
   const { player } = useTamagotchiStore();
+  const { notas } = useNotes();
+  const { cards, getParaRevisao } = useFlashcards();
+
   const userInitial = userName ? userName.charAt(0).toUpperCase() : '?';
   const xpProgress = getLevelProgress(player.xp);
   const accent = pageColors[title] || '#7C6FFA';
+
+  const cardsPendentes = getParaRevisao();
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        setIsSearchOpen(true);
+      }
+      if (e.key === 'Escape') {
+        setIsSearchOpen(false);
+        setIsNotifOpen(false);
+        setIsProfileOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const searchResultsNotas = searchQuery.trim()
+    ? (notas || []).filter(n =>
+        (n.titulo || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (n.conteudo || '').toLowerCase().includes(searchQuery.toLowerCase())
+      ).slice(0, 4)
+    : [];
+
+  const searchResultsCards = searchQuery.trim()
+    ? (cards || []).filter(c =>
+        (c.frente || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (c.verso || '').toLowerCase().includes(searchQuery.toLowerCase())
+      ).slice(0, 3)
+    : [];
 
   return (
     <header
@@ -72,19 +115,90 @@ export default function Header({ title, onToggleSidebar, onNavigate }) {
           </div>
         </div>
 
-        {/* Search */}
-        <div className="hidden md:flex flex-1 max-w-md mx-8">
+        {/* Search (Omnibar Ctrl+K) */}
+        <div className="hidden md:flex flex-1 max-w-md mx-8 relative">
           <div className="relative group w-full">
             <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-nx-muted group-focus-within:text-nx-primary transition-colors duration-nx-fast" />
             <input
+              ref={searchInputRef}
               type="text"
+              value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); setIsSearchOpen(true); }}
               placeholder="Pesquisar notas, flashcards... (Ctrl+K)"
               className="w-full pl-10 pr-4 py-2 bg-nx-depth border border-nx-border rounded-nx-md text-nx-text placeholder-nx-muted text-nx-sm font-ui focus:outline-none transition-all duration-nx-fast"
               style={{ fontSize: '13px' }}
-              onFocus={e => { e.currentTarget.style.borderColor = 'rgba(124,111,250,0.50)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(124,111,250,0.10)'; }}
-              onBlur={e =>  { e.currentTarget.style.borderColor = ''; e.currentTarget.style.boxShadow = ''; }}
+              onFocus={e => {
+                setIsSearchOpen(true);
+                e.currentTarget.style.borderColor = 'rgba(124,111,250,0.50)';
+                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(124,111,250,0.10)';
+              }}
+              onBlur={e => {
+                e.currentTarget.style.borderColor = '';
+                e.currentTarget.style.boxShadow = '';
+              }}
             />
           </div>
+
+          <AnimatePresence>
+            {isSearchOpen && searchQuery.trim().length > 0 && (
+              <>
+                <div className="fixed inset-0 z-[105]" onClick={() => setIsSearchOpen(false)} />
+                <motion.div
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 6 }}
+                  className="absolute top-12 left-0 right-0 rounded-nx-lg border border-nx-border shadow-2xl z-[120] p-3 space-y-2"
+                  style={{ background: '#0E1122' }}
+                >
+                  {searchResultsNotas.length === 0 && searchResultsCards.length === 0 ? (
+                    <p className="text-xs text-nx-dim text-center py-3">Nenhum resultado encontrado para "{searchQuery}"</p>
+                  ) : (
+                    <>
+                      {searchResultsNotas.length > 0 && (
+                        <div>
+                          <span className="text-[9px] font-mono uppercase tracking-widest text-nx-muted px-2">Notas</span>
+                          {searchResultsNotas.map(n => (
+                            <button
+                              key={n.id}
+                              onClick={() => {
+                                setPendingNoteAction({ noteId: n.id });
+                                onNavigate('notes');
+                                setIsSearchOpen(false);
+                                setSearchQuery('');
+                              }}
+                              className="w-full flex items-center gap-2 px-2 py-1.5 rounded hover:bg-white/5 text-left transition-colors"
+                            >
+                              <FileText size={13} className="text-nx-primary shrink-0" />
+                              <span className="text-xs text-nx-bright truncate">{n.titulo}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {searchResultsCards.length > 0 && (
+                        <div>
+                          <span className="text-[9px] font-mono uppercase tracking-widest text-nx-muted px-2">Flashcards</span>
+                          {searchResultsCards.map(c => (
+                            <button
+                              key={c.id}
+                              onClick={() => {
+                                onNavigate('flashcards');
+                                setIsSearchOpen(false);
+                                setSearchQuery('');
+                              }}
+                              className="w-full flex items-center gap-2 px-2 py-1.5 rounded hover:bg-white/5 text-left transition-colors"
+                            >
+                              <Brain size={13} className="text-pink-400 shrink-0" />
+                              <span className="text-xs text-nx-bright truncate">{c.frente}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Right actions */}
@@ -99,13 +213,67 @@ export default function Header({ title, onToggleSidebar, onNavigate }) {
           </button>
 
           {/* Notifications */}
-          <button className="relative p-1.5 text-nx-dim hover:text-nx-bright transition-colors duration-nx-fast">
-            <Bell size={17} />
-            <span
-              className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full border border-nx-depth"
-              style={{ background: '#7C6FFA', boxShadow: '0 0 6px rgba(124,111,250,0.7)' }}
-            />
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => { setIsNotifOpen(!isNotifOpen); setIsProfileOpen(false); }}
+              aria-label="Notificações"
+              title="Central de Alertas"
+              className="relative p-1.5 text-nx-dim hover:text-nx-bright transition-colors duration-nx-fast"
+            >
+              <Bell size={17} />
+              {(cardsPendentes.length > 0 || player.hp < 50) && (
+                <span
+                  className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full border border-nx-depth"
+                  style={{ background: '#7C6FFA', boxShadow: '0 0 6px rgba(124,111,250,0.7)' }}
+                />
+              )}
+            </button>
+
+            <AnimatePresence>
+              {isNotifOpen && (
+                <>
+                  <div className="fixed inset-0 z-[110]" onClick={() => setIsNotifOpen(false)} />
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute top-11 right-0 w-72 rounded-nx-lg border border-nx-border shadow-2xl z-[120] p-4 space-y-3"
+                    style={{ background: '#0E1122', backdropFilter: 'blur(20px)' }}
+                  >
+                    <div className="flex items-center justify-between border-b border-nx-border pb-2">
+                      <span className="text-[10px] font-mono font-black uppercase tracking-widest text-nx-bright">Notificações</span>
+                      <span className="text-[10px] font-mono text-nx-primary">{cardsPendentes.length} pendentes</span>
+                    </div>
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => { onNavigate('flashcards'); setIsNotifOpen(false); }}
+                        className="w-full flex items-center gap-3 p-2 rounded-nx-sm bg-white/[0.03] hover:bg-white/[0.07] transition-colors text-left"
+                      >
+                        <Brain size={15} className="text-pink-400 shrink-0" />
+                        <div>
+                          <p className="text-xs font-bold text-nx-bright">
+                            {cardsPendentes.length > 0 ? `${cardsPendentes.length} cards para revisar` : 'Revisões em dia!'}
+                          </p>
+                          <p className="text-[10px] text-nx-dim">Algoritmo SM-2 pronto</p>
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => { onNavigate('study'); setIsNotifOpen(false); }}
+                        className="w-full flex items-center gap-3 p-2 rounded-nx-sm bg-white/[0.03] hover:bg-white/[0.07] transition-colors text-left"
+                      >
+                        <Flame size={15} className="text-amber-400 shrink-0" />
+                        <div>
+                          <p className="text-xs font-bold text-nx-bright">Streak: {player.streak || 0} dias</p>
+                          <p className="text-[10px] text-nx-dim">HP do Pet: {player.hp}/{player.maxHp}</p>
+                        </div>
+                      </button>
+                    </div>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
 
           {/* Avatar */}
           <div className="relative">

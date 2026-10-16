@@ -1,6 +1,6 @@
 {
-  "versao": "1.0.0",
-  "data_atualizacao": "2026-10-15",
+  "versao": "1.1.0",
+  "data_atualizacao": "2026-10-16",
   "descricao": "Grafo estruturado de conexões, dependências e canais IPC do NexoMente",
   "hubs": [
     {
@@ -27,7 +27,9 @@
       "implementacao": [
         "app/src/lib/ai/lmStudioService.js",
         "app/src/lib/ai/geminiService.js",
-        "app/src/lib/ai/embeddedService.js"
+        "app/src/lib/ai/embeddedService.js",
+        "electron/ipc/aiHandlers.js",
+        "vite.config.js"
       ],
       "usado_por": [
         "app/src/store/useAIStore.js",
@@ -132,7 +134,7 @@
       "nome": "Dashboard - Botão Rápido Criar Nota",
       "arquivo": "app/src/pages/Dashboard.jsx",
       "linha": 134,
-      "fluxo": "Clique em NOTA -> setPendingNoteAction({ action: 'create' }) -> setActiveTab('notes') -> Notas.jsx:125 captura acao -> criarNota('nota') -> foca novo documento",
+      "fluxo": "Clique em NOTA -> setPendingNoteAction({ action: 'create' }) -> setActiveTab('notes') -> Notas.jsx:126 captura acao -> criarNota('nota') -> foca novo documento em modo de edicao",
       "usa": ["ui-store", "db-store"],
       "afeta": ["Notas"]
     },
@@ -141,7 +143,7 @@
       "nome": "Dashboard - Deep Link de Notas Recentes",
       "arquivo": "app/src/pages/Dashboard.jsx",
       "linha": 217,
-      "fluxo": "Clique no card da nota recente -> setPendingNoteAction({ noteId }) -> setActiveTab('notes') -> Notas.jsx:116 busca nota por ID -> define notaSelecionada -> TipTap",
+      "fluxo": "Clique no card da nota recente -> setPendingNoteAction({ noteId }) -> setActiveTab('notes') -> Notas.jsx:126 busca nota por ID -> define notaSelecionada e setEditando(true) -> TipTap",
       "usa": ["ui-store", "db-store"],
       "afeta": ["Notas"]
     },
@@ -150,8 +152,8 @@
       "nome": "Dashboard - Curadoria Poética & Modal Dojo",
       "arquivo": "app/src/pages/Dashboard.jsx",
       "linha": 282,
-      "fluxo": "Clique em Recitar no Dojo -> setModalDojoAberto(true) -> PoemaRecitacao.jsx -> useVosk inicializa reconhecimento de voz offline",
-      "usa": ["db-store"],
+      "fluxo": "Clique em Recitar no Dojo -> setModalDojoAberto(true) -> PoemaRecitacao.jsx com onClose/onFinish conectados -> useVosk inicializa voz offline e credita +25 XP",
+      "usa": ["db-store", "tamagotchi-engine"],
       "afeta": ["PoemaRecitacao", "TamagotchiWidget"]
     },
     {
@@ -185,16 +187,25 @@
       "id": "notas-autosave",
       "nome": "Editor de Notas - Autosalvamento com Debounce",
       "arquivo": "app/src/hooks/useNotaEditor.js",
-      "linha": 85,
-      "fluxo": "Digitação no TipTap -> onUpdate -> setSaveStatus('saving') -> debounce 1000ms -> NotasRepo.update(id, { conteudo, titulo }) -> setSaveStatus('saved')",
+      "linha": 77,
+      "fluxo": "Digitação no TipTap ou titulo -> onUpdate sincroniza notaSelecionada.conteudo e setSaveStatus('saving') -> debounce 600ms ou botão Salvar (Ctrl+S) -> NotasRepo.update(id, { conteudo, titulo }) -> setSaveStatus('saved')",
       "usa": ["db-store"],
       "afeta": ["Notas", "Graph", "Dashboard"]
+    },
+    {
+      "id": "notas-toolbar",
+      "nome": "Editor de Notas - Barra de Formatação (EditorToolbar)",
+      "arquivo": "app/src/components/editor/EditorToolbar.jsx",
+      "linha": 32,
+      "fluxo": "Clique nos controles -> editor.chain().focus()...run() (Negrito, Itálico, Sublinhado, Tachado, Highlight, Code, H1-H3, BulletList, OrderedList, TaskList, Blockquote, CodeBlock, Fórmula LaTeX, Link setLink/unsetLink, Undo/Redo, Modo Foco)",
+      "usa": ["db-store"],
+      "afeta": ["Notas"]
     },
     {
       "id": "notas-ai-tags",
       "nome": "Editor de Notas - Botão AI Tag#",
       "arquivo": "app/src/components/editor/AIBar.jsx",
-      "linha": 15,
+      "linha": 22,
       "fluxo": "Clique em Tag# -> useNotaEditor.handleTagsOpen() -> lmStudioService.suggestTags(nota) -> TagPickerModal -> addTag(id, tag)",
       "usa": ["ai-provider", "db-store"],
       "afeta": ["Notas", "Graph"]
@@ -203,19 +214,19 @@
       "id": "notas-ai-resumir",
       "nome": "Editor de Notas - Botão AI Resumir",
       "arquivo": "app/src/components/editor/AIBar.jsx",
-      "linha": 25,
+      "linha": 32,
       "fluxo": "Clique em Resumir -> useNotaEditor.handleResumoOpen() -> lmStudioService.summarizeContent(conteudo) -> confirmação insere blockquote no topo do TipTap -> salvarNota()",
       "usa": ["ai-provider", "db-store"],
       "afeta": ["Notas"]
     },
     {
       "id": "notas-ai-cards",
-      "nome": "Editor de Notas - Botão AI Cards",
+      "nome": "Editor de Notas - Botão AI Cards & Chat IA",
       "arquivo": "app/src/components/editor/AIBar.jsx",
-      "linha": 35,
-      "fluxo": "Clique em Cards -> useNotaEditor.handleCardsOpen() -> lmStudioService.generateFlashcards(nota) -> FlashcardApproveModal -> useFlashcards.create()",
-      "usa": ["ai-provider", "db-store"],
-      "afeta": ["Notas", "Flashcards", "Statistics"]
+      "linha": 42,
+      "fluxo": "Clique em Cards -> useNotaEditor.handleCardsOpen() salva a nota, define setPendingChatNoteId(nota.id) e navega para AIChat.jsx -> carrega nota como contexto do chat e grava resumo conciso da conversa no final da própria nota",
+      "usa": ["ui-store", "ai-provider", "db-store"],
+      "afeta": ["Notas", "AIChat"]
     },
     {
       "id": "flashcards-review-sm2",
@@ -231,7 +242,7 @@
       "nome": "Central de Flashcards - Desfazer Imediato (Undo)",
       "arquivo": "app/src/pages/Flashcards.jsx",
       "linha": 47,
-      "fluxo": "Avaliação recente inicia countdown de 5s -> clique em Desfazer ou tecla Z -> handleUndo() -> rollback do card",
+      "fluxo": "Avaliação recente inicia countdown de 5s -> clique em Desfazer ou tecla Z -> handleUndo() -> update(undoCard.id, ...) restaura estado SM-2 exato anterior",
       "usa": ["db-store"],
       "afeta": ["Flashcards"]
     },
@@ -249,7 +260,7 @@
       "nome": "Biblioteca Poética - Dojo de Recitação com IA de Voz",
       "arquivo": "app/src/components/poemas/PoemaRecitacao.jsx",
       "linha": 87,
-      "fluxo": "Clique em Iniciar Recitação -> useVosk transcreve fala em tempo real -> cálculo de acurácia com estrofe original -> conclusão concede XP ao jogador",
+      "fluxo": "Clique em Iniciar Recitação -> useVosk transcreve fala em tempo real -> cálculo de acurácia com estrofe original -> conclusão chama onFinish e concede +25 XP ao jogador",
       "usa": ["db-store", "tamagotchi-engine"],
       "afeta": ["Poemas", "TamagotchiWidget"]
     },
@@ -257,19 +268,19 @@
       "id": "gerador-forja-simulado",
       "nome": "Forja de Questões - Geração de Simulado por IA",
       "arquivo": "app/src/components/gerador/GeradorForjaTab.jsx",
-      "linha": 106,
-      "fluxo": "Seleção de disciplina/banca -> Forjar Questões -> useGerador.gerarComIA(config) -> aiProvider -> parser JSON extrai questões -> salva no banco",
+      "linha": 191,
+      "fluxo": "Depósito de material/arquivo -> seleção de disciplina, banca, rigor, formato e provider -> clique em Forjar Agora -> useGerador.gerarComIA(texto, config) -> parser.extrairQuestoesDeResposta decodifica JSON ou stream -> salva no banco",
       "usa": ["ai-provider", "db-store"],
       "afeta": ["Gerador", "Flashcards"]
     },
     {
       "id": "aichat-send-message",
-      "nome": "Chat Neural - Envio de Mensagem",
+      "nome": "Chat Neural - Envio de Mensagem & Resumo Automático na Nota",
       "arquivo": "app/src/pages/AIChat.jsx",
-      "linha": 95,
-      "fluxo": "Digitação do prompt -> Enviar / Enter -> useAIChat adiciona mensagem -> histórico enviado a aiProvider.chat() -> renderização com blocos de código",
-      "usa": ["ai-provider", "db-store"],
-      "afeta": ["AIChat"]
+      "linha": 180,
+      "fluxo": "Digitação do prompt -> Enviar / Enter -> useAIChat adiciona mensagem com nota conectada como contexto -> aiProvider.chat() -> gera e anexa resumo conciso da conversa no final da própria nota (gravarResumoConversaNaNota)",
+      "usa": ["ai-provider", "db-store", "ui-store"],
+      "afeta": ["AIChat", "Notas"]
     },
     {
       "id": "graph-open-in-editor",
@@ -284,19 +295,37 @@
       "id": "stats-category-navigate",
       "nome": "Métricas - Navegação por Categoria de Foco",
       "arquivo": "app/src/pages/Statistics.jsx",
-      "linha": 218,
-      "fluxo": "Exibição de notas por categoria -> clique na barra -> setActiveTab('notes') -> editor abre filtrado",
+      "linha": 186,
+      "fluxo": "Exibição de notas por categoria -> clique na barra -> setPendingNoteCategory(tipo) + setActiveTab('notes') -> editor abre filtrado",
       "usa": ["ui-store", "db-store"],
       "afeta": ["Notas"]
     },
     {
+      "id": "header-omnibar-search",
+      "nome": "Cabeçalho - Omnibar de Busca Global (Ctrl+K)",
+      "arquivo": "app/src/components/layout/Header.jsx",
+      "linha": 115,
+      "fluxo": "Ctrl+K ou digitação no input do Header -> filtra notas e flashcards -> clique no resultado -> setPendingNoteAction({ noteId }) + onNavigate",
+      "usa": ["ui-store", "db-store"],
+      "afeta": ["Notas", "Flashcards"]
+    },
+    {
+      "id": "header-notifications",
+      "nome": "Cabeçalho - Central de Notificações e Alertas",
+      "arquivo": "app/src/components/layout/Header.jsx",
+      "linha": 206,
+      "fluxo": "Clique no sino -> exibe cards pendentes (getParaRevisao) e status de Streak/HP -> clique redireciona para flashcards ou study",
+      "usa": ["db-store", "tamagotchi-engine"],
+      "afeta": ["Flashcards", "Study"]
+    },
+    {
       "id": "settings-test-api-key",
-      "nome": "Configurações - Testar Chave API do Gemini",
+      "nome": "Configurações - Testar Chave API do Gemini & Motor Interno GGUF",
       "arquivo": "app/src/pages/Settings.jsx",
       "linha": 43,
-      "fluxo": "Entrada da chave -> Testar Conexão -> geminiService.checkStatus() -> feedback visual de status",
+      "fluxo": "Seleção de provedor (embedded, cloud, local) -> para embedded, configura nexomente_embedded_path (padrão gemma-4-E2B-it-GGUF) validando via embeddedService.checkStatus() -> para cloud, Testar Conexão -> geminiService.checkStatus()",
       "usa": ["ai-provider"],
-      "afeta": ["Settings"]
+      "afeta": ["Settings", "AIChat"]
     },
     {
       "id": "settings-reset-factory",
@@ -354,16 +383,6 @@
       "item": "app/src/lib/db.js",
       "tipo": "arquivo_legado_sem_import",
       "detalhe": "Módulo legado que usa ipcRenderer.sendSync síncrono. Não é importado por nenhum arquivo ativo."
-    },
-    {
-      "item": "Header.jsx:102 (Botão Notificações)",
-      "tipo": "botao_sem_onClick",
-      "detalhe": "Ícone de sino com badge decorativo sem handler de clique anexado."
-    },
-    {
-      "item": "Header.jsx:79 (Input de Busca Global)",
-      "tipo": "input_sem_omnibar",
-      "detalhe": "Campo de pesquisa rápido não possui dispatch para filtro de notas ou modal conectado."
     },
     {
       "item": "scripts/*.py (fix-graph, inspect-graph, nextfix, remove-bad-edges)",

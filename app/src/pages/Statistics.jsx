@@ -16,6 +16,7 @@ export default function Statistics() {
   const { notas } = useNotes();
   const { cards: flashcards, getDominados } = useFlashcards();
   const setActiveTab = useUIStore((s) => s.setActiveTab);
+  const setPendingNoteCategory = useUIStore((s) => s.setPendingNoteCategory);
   
   const sessoes = useMemo(() => SessoesEstudo?.getAll() || [], [SessoesEstudo]);
   const xp = player.xp;
@@ -182,7 +183,10 @@ export default function Statistics() {
                 {Object.entries(porTipo).map(([tipo, count]) => (
                   <div
                     key={tipo}
-                    onClick={() => setActiveTab('notes')}
+                    onClick={() => {
+                      setPendingNoteCategory(tipo);
+                      setActiveTab('notes');
+                    }}
                     className="space-y-2 group cursor-pointer p-1.5 -mx-1.5 rounded-xl hover:bg-white/5 transition-all"
                   >
                     <div className="flex justify-between text-xs">

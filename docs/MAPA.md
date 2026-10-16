@@ -26,8 +26,8 @@
 
 ### HUB: ai-provider (Abstração Multiprovedor de IA)
 - **Arquivo**: `app/src/lib/ai/aiProvider.js:38`
-- **Implementação**: `app/src/lib/ai/lmStudioService.js`, `app/src/lib/ai/geminiService.js`, `app/src/lib/ai/embeddedService.js`
-- **Descrição**: Roteador agnóstico de requisições de inteligência artificial. Encaminha chats e gerações para Cloud (Gemini), Local (LM Studio na porta 1234) ou Embutido (via IPC `ai:embeddedChat`).
+- **Implementação**: `app/src/lib/ai/lmStudioService.js`, `app/src/lib/ai/geminiService.js`, `app/src/lib/ai/embeddedService.js`, `electron/ipc/aiHandlers.js`, `vite.config.js`
+- **Descrição**: Roteador agnóstico de requisições de inteligência artificial. Encaminha chats e gerações para Embutido (`node-llama-cpp@3.22.1` nativo apontando para a pasta própria `electron/models/gemma-4-E2B-it-GGUF/gemma-4-E2B-it-Q4_K_M.gguf` dentro do projeto, via IPC `ai:embeddedChat` no Electron ou middleware `/api/embedded/chat` no Vite), Cloud (Gemini) ou Local (LM Studio na porta 1234).
 - **Usado por**:
   - `store: useAIStore` (`app/src/store/useAIStore.js`)
   - `hook: useAIModel` (`app/src/hooks/useAIModel.js`)
@@ -105,21 +105,21 @@
 
 ### NÓ: Dashboard - Botão Rápido Criar Nota
 - **Arquivo**: `app/src/pages/Dashboard.jsx:134`
-- **Fluxo**: Clique em "NOTA" → `setPendingNoteAction({ action: 'create' })` → `setActiveTab('notes')` → `Notas.jsx:125` captura ação pendente → dispara `criarNota('nota')` → foca novo documento.
+- **Fluxo**: Clique em "NOTA" → `setPendingNoteAction({ action: 'create' })` → `setActiveTab('notes')` → `Notas.jsx:126` captura ação pendente → dispara `criarNota('nota')` → foca novo documento em modo de edição.
 - **Usa**: `ui-store`, `db-store` (repositório `Notas`)
 - **Afeta**: Navega para o Editor de Notas e cria novo registro instantaneamente.
 
 ### NÓ: Dashboard - Deep Link de Notas Recentes
 - **Arquivo**: `app/src/pages/Dashboard.jsx:217`
-- **Fluxo**: Clique no card da nota recente → `setPendingNoteAction({ noteId })` → `setActiveTab('notes')` → `Notas.jsx:116` busca nota por ID no `useNotes` → define `notaSelecionada` → exibe no TipTap.
+- **Fluxo**: Clique no card da nota recente → `setPendingNoteAction({ noteId })` → `setActiveTab('notes')` → `Notas.jsx:126` busca nota por ID no `useNotes` → define `notaSelecionada` e `setEditando(true)` → exibe no TipTap pronto para edição.
 - **Usa**: `ui-store`, `hook: useNotes`
 - **Afeta**: Transição de tela e seleção determinística no editor.
 
 ### NÓ: Dashboard - Curadoria Poética & Modal Dojo
 - **Arquivo**: `app/src/pages/Dashboard.jsx:282`
-- **Fluxo**: Clique em "Recitar no Dojo" → `setModalDojoAberto(true)` → renderiza overlay modal de `PoemaRecitacao.jsx` → inicializa reconhecimento de voz Vosk (`useVosk`).
-- **Usa**: `db-store` (repositório `Poemas`), Vosk Browser
-- **Afeta**: Executa sessão de oratória poética diretamente da home.
+- **Fluxo**: Clique em "Recitar no Dojo" → `setModalDojoAberto(true)` → renderiza overlay modal de `PoemaRecitacao.jsx` com `onClose` e `onFinish` conectados → inicializa reconhecimento de voz Vosk (`useVosk`) e credita `+25 XP` ao concluir.
+- **Usa**: `db-store` (repositório `Poemas`), `tamagotchi-engine`, Vosk Browser
+- **Afeta**: Executa sessão de oratória poética diretamente da home e concede XP.
 
 ### NÓ: Sala de Estudos - Seletor de Modo & Início de Timer
 - **Arquivo**: `app/src/pages/Study.jsx:79`
@@ -140,28 +140,34 @@
 - **Afeta**: Continuidade visual dos estudos durante multitarefa.
 
 ### NÓ: Editor de Notas - Autosalvamento com Debounce & Status
-- **Arquivo**: `app/src/hooks/useNotaEditor.js:85`
-- **Fluxo**: Digitação no TipTap → evento `onUpdate` aciona `setSaveStatus('saving')` → temporizador de debounce de 1000ms aguarda pausa do usuário → `NotasRepo.update(id, { conteudo, titulo })` grava no SQLite WASM → `setSaveStatus('saved')` → atualização refletida no grafo e na busca.
+- **Arquivo**: `app/src/hooks/useNotaEditor.js:77`
+- **Fluxo**: Digitação no TipTap ou alteração do título → `onUpdate` sincroniza imediatamente `notaSelecionada.conteudo` em memória e aciona `setSaveStatus('saving')` → temporizador de debounce de 600ms (ou clique no botão `Salvar` / `Ctrl+S`) grava `NotasRepo.update(id, { conteudo, titulo })` no SQLite WASM → `setSaveStatus('saved')`. Ao criar nota em uma Biblioteca (`Livros`, `Projetos`, `Ideias`, `Estudo`, `Bíblia`, `Inbox`), a nota herda o `tipo` e `pasta_id` da categoria ativa.
 - **Usa**: `db-store` (repositório `Notas`)
-- **Afeta**: Persistência do conteúdo das notas, contagem de caracteres e palavras no rodapé.
+- **Afeta**: Persistência do conteúdo, título, categoria da biblioteca e metadados das notas (`inbox`, `processado`, `referencia`, `arquivado`, `ativo`).
+
+### NÓ: Editor de Notas - Barra de Formatação (`EditorToolbar`)
+- **Arquivo**: `app/src/components/editor/EditorToolbar.jsx:32`
+- **Fluxo**: Clique nos botões de formatação → `editor.chain().focus()...run()` (Negrito, Itálico, Sublinhado, Tachado, Marca-texto, Código, H1/H2/H3, Lista com Marcadores, Lista Numerada com `.ProseMirror ol`, Lista de Tarefas, Citação, Bloco de Código, Fórmula LaTeX via prompt `$formula$`, Linha Divisória, Inserir/Remover Link via `setLink`/`unsetLink`, Desfazer/Refazer e Modo Foco).
+- **Usa**: TipTap Editor, `index.css` (`.ProseMirror`)
+- **Afeta**: Formatação visual em tempo real do documento e persistência HTML.
 
 ### NÓ: Editor de Notas - Botão AI Tag#
-- **Arquivo**: `app/src/components/editor/AIBar.jsx:15`
+- **Arquivo**: `app/src/components/editor/AIBar.jsx:22`
 - **Fluxo**: Clique em `Tag#` → `useNotaEditor.handleTagsOpen()` → `lmStudioService.suggestTags(nota)` → extração de palavras-chave com IA → abertura do modal `TagPickerModal` → confirmação adiciona tags via `useNotes.addTag()`.
 - **Usa**: `ai-provider`, `hook: useNotes`, `db-store`
 - **Afeta**: Metadados da nota, arestas semânticas no Grafo (`Graph.jsx`) e filtros por tags.
 
 ### NÓ: Editor de Notas - Botão AI Resumir
-- **Arquivo**: `app/src/components/editor/AIBar.jsx:25`
+- **Arquivo**: `app/src/components/editor/AIBar.jsx:32`
 - **Fluxo**: Clique em `Resumir` → `useNotaEditor.handleResumoOpen()` → `lmStudioService.summarizeContent(conteudo)` → prompt com resumo gerado → confirmação insere bloco `<blockquote class="ai-resumo">` no topo do editor TipTap e salva imediatamente.
 - **Usa**: `ai-provider`, TipTap Editor, `db-store`
-- **Afeta**: Corpo HTML da nota e resumo executivo do documento.
+- **Afeta**: Corpo HTML da nota e resumo executivo do documento (`resumo_ia`).
 
-### NÓ: Editor de Notas - Botão AI Cards
-- **Arquivo**: `app/src/components/editor/AIBar.jsx:35`
-- **Fluxo**: Clique em `Cards` → `useNotaEditor.handleCardsOpen()` → `lmStudioService.generateFlashcards(nota)` → IA gera array de pares pergunta/resposta → abertura de `FlashcardApproveModal` → confirmação grava flashcards vinculados à nota via `useFlashcards.create()`.
-- **Usa**: `ai-provider`, `hook: useFlashcards`, `db-store`
-- **Afeta**: Tabela de flashcards (`flashcards`), deck de revisão SM-2 e estatísticas.
+### NÓ: Editor de Notas - Botão AI Cards & Chat IA
+- **Arquivo**: `app/src/components/editor/AIBar.jsx:42`
+- **Fluxo**: Clique em `Cards` (ou `Chat IA`) → `useNotaEditor.handleCardsOpen()` salva a nota imediatamente (`salvarImediato()`), registra `useUIStore.setPendingChatNoteId(notaSelecionada.id)` e navega para `AIChat.jsx` → `AIChat.jsx` carrega automaticamente a nota atual como contexto principal da conversa e, ao final de cada interação (ou ao clicar em "Concluir & Salvar Resumo na Nota"), gera e adiciona um resumo conciso da conversa no próprio corpo da nota (`<blockquote class="ai-chat-summary">`) e em `resumo_ia`.
+- **Usa**: `ui-store`, `ai-provider`, `hook: useNotes`, `db-store`
+- **Afeta**: Conexão direta entre Nota e Chat Neural, enriquecimento automático da nota com o resumo conciso da conversa.
 
 ### NÓ: Central de Flashcards - Avaliação SM-2 & Atalhos
 - **Arquivo**: `app/src/components/flashcards/FlashcardViewer.jsx:131`
@@ -171,9 +177,9 @@
 
 ### NÓ: Central de Flashcards - Desfazer Imediato (Undo)
 - **Arquivo**: `app/src/pages/Flashcards.jsx:47`
-- **Fluxo**: Avaliação recente aciona contagem regressiva de 5 segundos de undo → clique em "Desfazer" ou tecla `Z` dispara `handleUndo()` → recriação do card e rollback do status no banco.
+- **Fluxo**: Avaliação recente aciona contagem regressiva de 5 segundos de undo → clique em "Desfazer" ou tecla `Z` dispara `handleUndo()` → `update(undoCard.id, ...)` restaura o estado SM-2 exato anterior do card (repetições, intervalo, ease_factor e próxima revisão) no banco.
 - **Usa**: `hook: useFlashcards`, `db-store`
-- **Afeta**: Previne classificações incorretas acidentais pelo teclado.
+- **Afeta**: Previne classificações incorretas acidentais pelo teclado preservando o histórico SM-2.
 
 ### NÓ: Biblioteca Poética - Favoritar Poema
 - **Arquivo**: `app/src/components/poemas/PoemasListaTab.jsx:119`
@@ -183,21 +189,21 @@
 
 ### NÓ: Biblioteca Poética - Dojo de Recitação com IA de Voz
 - **Arquivo**: `app/src/components/poemas/PoemaRecitacao.jsx:87`
-- **Fluxo**: Clique em "Iniciar Recitação" → `useVosk.startListening()` carrega modelo WASM offline do Vosk → microfone transcreve fala em tempo real → algoritmo compara texto falado com a estrofe original → cálculo de acurácia percentual → término concede XP gamificado ao jogador.
+- **Fluxo**: Clique em "Iniciar Recitação" → `useVosk.startListening()` carrega modelo WASM offline do Vosk → microfone transcreve fala em tempo real → algoritmo compara texto falado com a estrofe original → cálculo de acurácia percentual → término chama `onFinish(poema.id)` que registra recitação, concede `+25 XP` ao jogador (`useTamagotchiStore` e `XP.add`) e atualiza `streak_recitacao`.
 - **Usa**: Vosk Browser (modelo de fala local), `tamagotchi-engine`, `db-store`
 - **Afeta**: Streak de declamação do poema (`streak_recitacao`), ganho de XP e evolução do pet.
 
 ### NÓ: Forja de Questões - Geração de Simulado por IA
-- **Arquivo**: `app/src/components/gerador/GeradorForjaTab.jsx:106`
-- **Fluxo**: Seleção de disciplina, banca e quantidade → clique em "Forjar Questões" → `useGerador.gerarComIA(config)` → envio do prompt para `aiProvider` → parser JSON extrai alternativas, enunciado e gabarito comentado → inclusão das questões no banco de simulados.
-- **Usa**: `ai-provider`, `hook: useGerador`, `services/exportService`
-- **Afeta**: Banco de questões ativas, geração de simulados e conversão para flashcards.
+- **Arquivo**: `app/src/components/gerador/GeradorForjaTab.jsx:191`
+- **Fluxo**: Depósito de material/arquivo no Passo 1 → seleção de disciplina (`materia`), banca, rigor/dificuldade, tipo (múltipla escolha, V/F ou discursiva) e provider (interno, nuvem, local) no Passo 2 → clique em "Forjar Agora" → `useGerador.gerarComIA(texto, config)` → envio do prompt estrito para `aiProvider` com dimensionamento dinâmico de `max_tokens` → extrator resiliente `parser.extrairQuestoesDeResposta` decodifica JSON puro ou recupera questões em stream → inclusão das questões no banco de simulados.
+- **Usa**: `ai-provider`, `hook: useGerador`, `services/exportService`, `serviço: embeddedService`
+- **Afeta**: Banco de questões ativas, geração de simulados e conversão silenciosa em lote para flashcards.
 
-### NÓ: Chat Neural - Envio de Mensagem com Streaming/Resolução
-- **Arquivo**: `app/src/pages/AIChat.jsx:95`
-- **Fluxo**: Digitação no campo de prompt → clique em "Enviar" ou `Enter` → mensagem adicionada à conversa via `useAIChat` → histórico enviado para `aiProvider.chat()` (redirecionado conforme provedor ativo) → resposta formatada com suporte a blocos de código com botão de cópia isolado.
-- **Usa**: `ai-provider`, `hook: useAIModel`, `hook: useNotes`
-- **Afeta**: Histórico da sessão de chat neural e consumo de tokens.
+### NÓ: Chat Neural - Envio de Mensagem & Resumo Automático na Nota
+- **Arquivo**: `app/src/pages/AIChat.jsx:180`
+- **Fluxo**: Digitação no campo de prompt → clique em "Enviar" ou `Enter` → mensagem adicionada à conversa via `useAIChat` → histórico enviado para `aiProvider.chat()` com o contexto da nota conectada → resposta renderizada e um resumo conciso da conversa é anexado/atualizado automaticamente no final da própria nota (`gravarResumoConversaNaNota`).
+- **Usa**: `ai-provider`, `hook: useAIModel`, `hook: useNotes`, `ui-store`
+- **Afeta**: Histórico da sessão de chat neural, conteúdo HTML e `resumo_ia` da nota conectada.
 
 ### NÓ: Grafo de Conhecimento - Câmera Cytoscape & Deep Link
 - **Arquivo**: `app/src/pages/Graph.jsx:195`
@@ -206,16 +212,28 @@
 - **Afeta**: Navegação relacional entre notas interligadas.
 
 ### NÓ: Métricas - Navegação por Categoria de Foco
-- **Arquivo**: `app/src/pages/Statistics.jsx:218`
-- **Fluxo**: Exibição da distribuição de notas por tipo (*Ideias, Projetos, Livros, etc.*) → clique na barra de categoria dispara `setActiveTab('notes')` → editor de notas abre filtrado.
+- **Arquivo**: `app/src/pages/Statistics.jsx:186`
+- **Fluxo**: Exibição da distribuição de notas por tipo (*Ideias, Projetos, Livros, etc.*) → clique na barra de categoria dispara `setPendingNoteCategory(tipo)` e `setActiveTab('notes')` → `Notas.jsx` aplica `setCategoriaAtiva(tipo)` automaticamente.
 - **Usa**: `ui-store`, `hook: useNotes`
-- **Afeta**: Atalho contextual de produtividade das estatísticas para as notas.
+- **Afeta**: Atalho contextual de produtividade das estatísticas para as notas filtradas por categoria.
 
-### NÓ: Configurações - Testar Chave API do Gemini
+### NÓ: Cabeçalho - Omnibar de Busca Global (`Ctrl+K`)
+- **Arquivo**: `app/src/components/layout/Header.jsx:115`
+- **Fluxo**: Pressionar `Ctrl+K` ou digitar no campo de busca no cabeçalho → filtra notas e flashcards em tempo real → clique no resultado despacha `setPendingNoteAction({ noteId })` + `onNavigate('notes')` (ou `onNavigate('flashcards')`).
+- **Usa**: `ui-store`, `hook: useNotes`, `hook: useFlashcards`
+- **Afeta**: Navegação rápida universal a partir de qualquer tela.
+
+### NÓ: Cabeçalho - Central de Notificações e Alertas
+- **Arquivo**: `app/src/components/layout/Header.jsx:206`
+- **Fluxo**: Clique no ícone `Bell` → abre popover listando flashcards pendentes de revisão hoje (`getParaRevisao()`) e status de Streak/HP do Pet → clique redireciona para `flashcards` ou `study`.
+- **Usa**: `hook: useFlashcards`, `tamagotchi-engine`
+- **Afeta**: Engajamento diário e acesso imediato às revisões pendentes.
+
+### NÓ: Configurações - Testar Chave API do Gemini & Motor Interno GGUF
 - **Arquivo**: `app/src/pages/Settings.jsx:43`
-- **Fluxo**: Entrada da chave no input com toggle de visibilidade de senha → clique em "Testar Conexão" → chamada assíncrona para `geminiService.checkStatus()` → badge de feedback verde/vermelho com mensagem detalhada de status.
-- **Usa**: `serviço: geminiService`, `ai-provider`
-- **Afeta**: Validação de credencial antes do uso nas ferramentas de IA.
+- **Fluxo**: Seleção de provedor (`embedded`, `cloud`, `local`) → para `embedded`, permite configurar e salvar `nexomente_embedded_path` (padrão `./electron/models/gemma-4-E2B-it-GGUF/gemma-4-E2B-it-Q4_K_M.gguf`) validando via `embeddedService.checkStatus()` → para `cloud`, entrada da chave no input com toggle de visibilidade e botão "Testar Conexão" (`geminiService.checkStatus()`).
+- **Usa**: `serviço: embeddedService`, `serviço: geminiService`, `ai-provider`
+- **Afeta**: Seleção do motor ativo e validação de modelos locais/credenciais antes do uso nas ferramentas de IA.
 
 ### NÓ: Configurações - Reset de Fábrica com Confirmação Dupla
 - **Arquivo**: `app/src/pages/Settings.jsx:110`
@@ -229,10 +247,10 @@
 
 | Canal IPC | Quem Chama (Renderer) | Quem Trata (Electron Main) | Retorno / Tipo |
 |---|---|---|---|
-| `ai:geminiChat` | `geminiService.js:46` | `electron/ipc/aiHandlers.js:21` | `{ ok: boolean, status: number, data: object }` |
-| `ai:embeddedChat` | `embeddedService.js:28` | `electron/ipc/aiHandlers.js:36` | `{ success: boolean, response: string, tokens: number }` |
-| `ai:getHardwareInfo` | `electron/preload.js:63` *(Interface declarada)* | `electron/ipc/aiHandlers.js:155` | `{ cpu: string, ram: number, gpu: string, vram: number }` |
-| `ai:getContextStats` | `electron/preload.js:64` *(Interface declarada)* | `electron/ipc/aiHandlers.js:164` | `{ activeTokens: number, maxTokens: number }` |
+| `ai:geminiChat` | `geminiService.js:46` | `electron/ipc/aiHandlers.js:76` | `{ ok: boolean, status: number, data: object }` |
+| `ai:embeddedChat` | `embeddedService.js:24` | `electron/ipc/aiHandlers.js:92` | `{ success: boolean, response: string, tokens: number, modelFile: string }` |
+| `ai:getHardwareInfo` | `electron/preload.js:64` *(Interface declarada)* | `electron/ipc/aiHandlers.js:189` | `{ cpu: string, ram: number, gpu: string, vram: number }` |
+| `ai:getContextStats` | `electron/preload.js:65` *(Interface declarada)* | `electron/ipc/aiHandlers.js:198` | `{ activeTokens: number, maxTokens: number }` |
 | `db-notas:getAll` | `electron/preload.js:18` *(Interface nativa)* | `electron/ipc/dbHandlers.js:8` | `Array<Nota>` (com tags parsed) |
 | `db-notas:getById` | `electron/preload.js:19` *(Interface nativa)* | `electron/ipc/dbHandlers.js:29` | `Nota \| null` |
 | `db-notas:create` | `electron/preload.js:20` *(Interface nativa)* | `electron/ipc/dbHandlers.js:50` | `string` (ID da nota criada) |
@@ -259,14 +277,14 @@
 | `db-poemas:update` | `electron/preload.js:53` *(Interface nativa)* | `electron/ipc/dbHandlers.js:491` | `boolean` (atualizado) |
 | `db-poemas:delete` | `electron/preload.js:54` *(Interface nativa)* | `electron/ipc/dbHandlers.js:524` | `boolean` (removido) |
 | `db-poemas:recordRecitacao` | `electron/preload.js:55` *(Interface nativa)* | `electron/ipc/dbHandlers.js:535` | `boolean` (streak incrementado) |
-| `window:minimize` | `Header.jsx:199` | `electron/ipc/windowHandlers.js:7` | `void` (janela minimizada) |
-| `window:maximize` | `Header.jsx:200` | `electron/ipc/windowHandlers.js:11` | `void` (toggle maximizado) |
-| `window:close` | `Header.jsx:201` | `electron/ipc/windowHandlers.js:20` | `void` (janela fechada) |
+| `window:minimize` | `Header.jsx:292` | `electron/ipc/windowHandlers.js:7` | `void` (janela minimizada) |
+| `window:maximize` | `Header.jsx:293` | `electron/ipc/windowHandlers.js:11` | `void` (toggle maximizado) |
+| `window:close` | `Header.jsx:294` | `electron/ipc/windowHandlers.js:20` | `void` (janela fechada) |
 | `window:isMaximized` | `electron/preload.js:8` *(Interface nativa)* | `electron/ipc/windowHandlers.js:24` | `boolean` |
 | `config:get` | `electron/preload.js:11` *(Interface nativa)* | `electron/ipc/windowHandlers.js:29` | `any` (dado gravado em `config.json`) |
 | `config:set` | `electron/preload.js:12` *(Interface nativa)* | `electron/ipc/windowHandlers.js:42` | `boolean` |
 | `dialog:selectFolder`| `electron/preload.js:15` *(Interface nativa)* | `electron/ipc/windowHandlers.js:59` | `string \| null` (caminho da pasta selecionada) |
-| `db:getPath` | `electron/preload.js:69` *(Interface nativa)* | `electron/ipc/windowHandlers.js:69` | `string` (caminho para `nexomente.db`) |
+| `db:getPath` | `electron/preload.js:59` *(Interface nativa)* | `electron/ipc/windowHandlers.js:69` | `string` (caminho para `nexomente.db`) |
 | `app:getPath` | `electron/preload.js:58` *(Interface nativa)* | `electron/ipc/windowHandlers.js:73` | `string` (caminho especial do SO) |
 
 ---
@@ -276,12 +294,12 @@
 | Se alterar... | Componentes e Arquivos Afetados que Devem Ser Verificados |
 |---|---|
 | **`wasmEngine.js`** *(Schema SQLite / `saveDB`)* | `useDBStore.js`, todos os 7 repositórios em `app/src/lib/db/repositories/`, `useNotes.js`, `useFlashcards.js`, `useMaterias.js`, testes `useDBStore.test.js`, `integration.test.js`, `smoke.test.jsx`. |
-| **`aiProvider.js`** *(Contratos `chat` e `generate`)* | `useAIStore.js`, `useAIModel.js`, `lmStudioService.js`, `geminiService.js`, `embeddedService.js`, `AIChat.jsx`, `parser.js`, `useGerador.js`, `AIBar.jsx`, teste `aiService.test.js`. |
+| **`aiProvider.js`** *(Contratos `chat` e `generate`)* | `useAIStore.js`, `useAIModel.js`, `lmStudioService.js`, `geminiService.js`, `embeddedService.js`, `AIChat.jsx`, `parser.js`, `useGerador.js`, `AIBar.jsx`, `AIPanel.jsx`, teste `aiService.test.js`. |
 | **`useTamagotchiStore.js`** *(Níveis, XP, HP e Passivas)* | `TamagotchiWidget.jsx`, `LevelCard.jsx`, `Header.jsx`, `Dashboard.jsx`, `Statistics.jsx`, `useStudyTimerStore.js`. |
 | **`useStudyTimerStore.js`** *(Timer, Estados de Estudo e Sessões)* | `Study.jsx`, `MiniTimerWidget.jsx`, `CircularTimer.jsx`, `App.jsx`, `Statistics.jsx`, teste `miniTimer.test.jsx`, `behavioralScreen.test.jsx`. |
-| **`useUIStore.jsx`** *(Abas, Ações Pendentes, Nome)* | `App.jsx`, `Sidebar.jsx`, `Header.jsx`, `Dashboard.jsx`, `Notas.jsx`, `Graph.jsx`, `Statistics.jsx`, `Settings.jsx`, teste `useUIStore.test.js`. |
-| **`useNotes.js`** *(CRUD de Notas e Tags)* | `Notas.jsx`, `NotaLista.jsx`, `useNotaEditor.js`, `Graph.jsx`, `Statistics.jsx`, `Dashboard.jsx`, teste `useNotes.test.js`, `smoke.test.jsx`. |
-| **`useFlashcards.js`** / **`sm2.js`** *(Algoritmo SM-2)* | `Flashcards.jsx`, `FlashcardViewer.jsx`, `useGerador.js`, `Statistics.jsx`, teste `sm2.test.js`. |
+| **`useUIStore.jsx`** *(Abas, Ações Pendentes, Categorias, Nome)* | `App.jsx`, `Sidebar.jsx`, `Header.jsx`, `Dashboard.jsx`, `Notas.jsx`, `Graph.jsx`, `Statistics.jsx`, `Settings.jsx`, `AIChat.jsx`, `Onboarding.jsx`, teste `useUIStore.test.js`. |
+| **`useNotes.js`** *(CRUD de Notas e Tags)* | `Notas.jsx`, `NotaLista.jsx`, `BibliotecaPanel.jsx`, `useNotaEditor.js`, `Graph.jsx`, `Statistics.jsx`, `Dashboard.jsx`, `Header.jsx`, teste `useNotes.test.js`, `smoke.test.jsx`. |
+| **`useFlashcards.js`** / **`sm2.js`** *(Algoritmo SM-2)* | `Flashcards.jsx`, `FlashcardViewer.jsx`, `useGerador.js`, `Statistics.jsx`, `Header.jsx`, teste `sm2.test.js`. |
 | **`electron/preload.js`** / **Handlers IPC** | `electron/main.js`, `electron/ipc/dbHandlers.js`, `electron/ipc/aiHandlers.js`, `electron/ipc/windowHandlers.js`, `Header.jsx`, `embeddedService.js`, `geminiService.js`. |
 
 ---
@@ -291,16 +309,8 @@
 1. **`app/src/lib/db.js` (Módulo Legado Órfão)**:
    - **Diagnóstico**: Arquivo que tenta utilizar chamadas síncronas `ipcRenderer.sendSync('db-notas-getAll')` e script CDN obsoleto de `sql.js`.
    - **Status**: Nenhum arquivo da aplicação importa `app/src/lib/db.js` (toda a persistência utiliza `app/src/store/useDBStore.js` e `app/src/lib/db/wasmEngine.js`).
-   - **Recomendação**: Manter documentado como obsoleto ou remover em refatoração de limpeza.
+   - **Recomendação**: Mantido apenas como referência histórica; não é carregado pelo bundle.
 
-2. **Botão de Notificações no Cabeçalho (`Header.jsx:102`)**:
-   - **Diagnóstico**: O botão com o ícone `Bell` e badge pontilhado de notificação não possui listener `onClick` atribuído.
-   - **Status**: Elemento puramente visual no momento.
-
-3. **Input de Busca no Cabeçalho (`Header.jsx:79`)**:
-   - **Diagnóstico**: O campo de busca rápida (`Ctrl+K`) possui estilos e foco, porém não despacha filtro para a lista de notas nem possui modal de busca global (Omnibar) conectado.
-   - **Status**: Visual / Não operacional.
-
-4. **Scripts de Correção de Grafo Legados (`scripts/*.py`)**:
+2. **Scripts de Correção de Grafo Legados (`scripts/*.py`)**:
    - **Diagnóstico**: Os scripts `fix-graph.py`, `inspect-graph.py`, `nextfix.py` e `remove-bad-edges.py` faziam referência à pasta `graphify-out/` que já foi descontinuada e migrada para `.codegraph/`.
    - **Status**: Scripts arquivados da migração anterior.

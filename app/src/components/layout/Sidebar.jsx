@@ -112,25 +112,40 @@ NavButton.propTypes = {
   onNavigate: PropTypes.func.isRequired,
 };
 
-export default function Sidebar({ isOpen, currentPage, onNavigate, className = '' }) {
+export default function Sidebar({ isOpen, currentPage, onNavigate, onCloseMobile, className = '' }) {
   const { status } = useAIStore();
   const isOnline = status === 'online';
 
+  const handleNavigate = (pageId) => {
+    onNavigate(pageId);
+    if (typeof window !== 'undefined' && window.innerWidth < 1024 && onCloseMobile) {
+      onCloseMobile();
+    }
+  };
+
   return (
-    <aside
-      className={`hidden lg:flex flex-col border-r border-nx-border ${className}`}
-      style={{
-        background: 'linear-gradient(180deg, #080B18 0%, #060818 100%)',
-        width: isOpen ? 'var(--nx-sidebar-width)' : '72px',
-        transition: 'width 200ms cubic-bezier(0.4,0,0.2,1)',
-        overflow: 'hidden',
-        flexShrink: 0,
-      }}
-    >
+    <>
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[95] lg:hidden"
+          onClick={onCloseMobile}
+          aria-hidden="true"
+        />
+      )}
+      <aside
+        className={`${isOpen ? 'fixed inset-y-0 left-0 flex z-[100]' : 'hidden'} lg:relative lg:flex flex-col border-r border-nx-border ${className}`}
+        style={{
+          background: 'linear-gradient(180deg, #080B18 0%, #060818 100%)',
+          width: isOpen ? 'var(--nx-sidebar-width)' : '72px',
+          transition: 'width 200ms cubic-bezier(0.4,0,0.2,1)',
+          overflow: 'hidden',
+          flexShrink: 0,
+        }}
+      >
       {/* LOGO */}
       <div className="h-[72px] flex items-center shrink-0 px-3" style={{ justifyContent: isOpen ? 'flex-start' : 'center', paddingLeft: isOpen ? '20px' : '12px', transition: 'padding 200ms ease' }}>
         <button
-          onClick={() => onNavigate('dashboard')}
+          onClick={() => handleNavigate('dashboard')}
           className="flex items-center gap-3 group"
         >
           <div
@@ -167,7 +182,7 @@ export default function Sidebar({ isOpen, currentPage, onNavigate, className = '
             item={DASHBOARD_ITEM}
             isActive={currentPage === DASHBOARD_ITEM.id}
             isOpen={isOpen}
-            onNavigate={onNavigate}
+            onNavigate={handleNavigate}
           />
         </div>
 
@@ -196,7 +211,7 @@ export default function Sidebar({ isOpen, currentPage, onNavigate, className = '
                 item={item}
                 isActive={currentPage === item.id}
                 isOpen={isOpen}
-                onNavigate={onNavigate}
+                onNavigate={handleNavigate}
               />
             ))}
           </div>
@@ -235,10 +250,11 @@ export default function Sidebar({ isOpen, currentPage, onNavigate, className = '
           item={{ id: 'settings', label: 'Configurações', icon: Settings, color: '#7D869E' }}
           isActive={currentPage === 'settings'}
           isOpen={isOpen}
-          onNavigate={onNavigate}
+          onNavigate={handleNavigate}
         />
       </div>
     </aside>
+    </>
   );
 }
 
@@ -246,5 +262,6 @@ Sidebar.propTypes = {
   isOpen: PropTypes.bool,
   currentPage: PropTypes.any,
   onNavigate: PropTypes.func,
+  onCloseMobile: PropTypes.func,
   className: PropTypes.string,
 };

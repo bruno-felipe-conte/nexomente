@@ -161,3 +161,122 @@
   border-radius: 2px;
 }
 ::-webkit-scrollbar-thumb:hover { background: var(--nx-muted); }
+
+/* ── TIPTAP / PROSEMIRROR RICH TEXT STYLING ── */
+.ProseMirror {
+  color: var(--nx-text);
+  font-size: var(--nx-text-md);
+  line-height: 1.7;
+}
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--nx-subtle);
+  pointer-events: none;
+  height: 0;
+}
+.ProseMirror h1 {
+  font-size: var(--nx-text-3xl);
+  font-weight: 700;
+  line-height: 1.25;
+  margin-top: 1.25rem;
+  margin-bottom: 0.75rem;
+  color: var(--nx-bright);
+}
+.ProseMirror h2 {
+  font-size: var(--nx-text-2xl);
+  font-weight: 700;
+  line-height: 1.3;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  color: var(--nx-bright);
+}
+.ProseMirror h3 {
+  font-size: var(--nx-text-xl);
+  font-weight: 600;
+  line-height: 1.35;
+  margin-top: 0.85rem;
+  margin-bottom: 0.4rem;
+  color: var(--nx-bright);
+}
+.ProseMirror ul:not([data-type="taskList"]) {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin: 0.5rem 0;
+}
+.ProseMirror ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin: 0.5rem 0;
+}
+.ProseMirror li {
+  margin: 0.2rem 0;
+}
+.ProseMirror ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0.25rem;
+  margin: 0.5rem 0;
+}
+.ProseMirror ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0.35rem 0;
+}
+.ProseMirror ul[data-type="taskList"] li > label {
+  flex: 0 0 auto;
+  margin-top: 0.25rem;
+  user-select: none;
+}
+.ProseMirror ul[data-type="taskList"] li > div {
+  flex: 1 1 auto;
+}
+.ProseMirror blockquote {
+  border-left: 3px solid var(--nx-primary);
+  background: var(--nx-primary-bg);
+  padding: 0.5rem 1rem;
+  margin: 0.75rem 0;
+  border-radius: 0 var(--nx-radius-sm) var(--nx-radius-sm) 0;
+  color: var(--nx-bright);
+  font-style: italic;
+}
+.ProseMirror pre {
+  background: var(--nx-depth);
+  border: 1px solid var(--nx-border);
+  border-radius: var(--nx-radius-sm);
+  padding: 0.75rem 1rem;
+  margin: 0.75rem 0;
+  overflow-x: auto;
+  font-family: var(--nx-font-mono);
+  font-size: var(--nx-text-sm);
+  color: var(--nx-secondary);
+}
+.ProseMirror code {
+  background: rgba(91, 124, 244, 0.14);
+  color: var(--nx-secondary);
+  padding: 0.15rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+.ProseMirror pre code {
+  background: transparent;
+  padding: 0;
+  color: inherit;
+}
+.ProseMirror mark {
+  background-color: rgba(245, 158, 11, 0.35);
+  color: var(--nx-bright);
+  padding: 0.05rem 0.2rem;
+  border-radius: 3px;
+}
+.ProseMirror a {
+  color: var(--nx-secondary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.ProseMirror hr {
+  border: none;
+  border-top: 1px solid var(--nx-border);
+  margin: 1.25rem 0;
+}

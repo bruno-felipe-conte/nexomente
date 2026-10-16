@@ -9,16 +9,15 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { EditorContent } from '@tiptap/react';
 import { FileText, Trash2 } from 'lucide-react';
 import { useNotes } from '../hooks/useNotes';
-import { useFlashcards } from '../hooks/useFlashcards';
 import { useNotaEditor } from '../hooks/useNotaEditor';
 import NotaLista from '../components/editor/NotaLista';
 import EditorToolbar from '../components/editor/EditorToolbar';
 import BibliotecaPanel from '../components/editor/BibliotecaPanel';
 import NoteMetadata from '../components/editor/NoteMetadata';
 import TagInput from '../components/editor/TagInput';
-import AIPanel from '../components/editor/AIPanel';
 import AIBar from '../components/editor/AIBar';
 import FlashcardApproveModal from '../components/editor/FlashcardApproveModal';
+import TagPickerModal from '../components/editor/TagPickerModal';
 import EditorContextMenus from '../components/editor/EditorContextMenus';
 import { getModel } from '../lib/ai/lmStudioService';
 import Button from '../components/ui/Button';
@@ -26,26 +25,30 @@ import { useUIStore } from '../store/useUIStore';
 
 export default function NotasPage() {
   const { notas, create, update, remove, search, getById, addTag, removeTag } = useNotes();
-  const { create: createCard } = useFlashcards();
 
   const [categoriaAtiva, setCategoriaAtiva] = useState('pasta_raiz');
   const [notaSelecionada, setNotaSelecionada] = useState(null);
-  const [editando, setEditando] = useState(false);
+  const [editando, setEditando] = useState(true);
   const [busca, setBusca] = useState('');
   const [focoMode, setFocoMode] = useState(false);
   const [mostrandoTags, setMostrandoTags] = useState(false);
   const [mostrandoMeta, setMostrandoMeta] = useState(false);
-  const [mostrandoAI, setMostrandoAI] = useState(false);
 
   const {
     editor,
     saveStatus,
     lastSavedAt,
+    aiLoadingTags,
+    aiLoadingResumo,
     aiLoadingCards,
+    tagsSugeridas,
     cardsSugeridos,
+    showTagPicker,
     showCardApprove,
+    setShowTagPicker,
     setShowCardApprove,
     handleTagsOpen, handleResumoOpen, handleCardsOpen, handleChatOpen,
+    handleTagsConfirm,
     salvarImediato,
   } = useNotaEditor({ notaSelecionada, editando, update, addTag, setNotaSelecionada });
 
@@ -62,19 +65,21 @@ export default function NotasPage() {
   }, [notas, busca, search, categoriaAtiva]);
 
   const criarNota = useCallback((tipoCustom) => {
+    const tipoExplicito = typeof tipoCustom === 'string' ? tipoCustom : null;
     const defaultTipo = categoriaAtiva !== 'pasta_raiz' && categoriaAtiva !== 'inbox'
       ? categoriaAtiva
       : 'nota';
-    const tipo = tipoCustom || defaultTipo;
-    const id = create({ titulo: 'Nova Nota', tipo, pasta_id: 'inbox', status: 'inbox' });
-    const nova = getById(id);
+    const tipo = tipoExplicito || defaultTipo;
+    const pasta_id = categoriaAtiva === 'inbox' ? 'inbox' : 'pasta_raiz';
+    const status = categoriaAtiva === 'inbox' ? 'inbox' : 'ativo';
+    const id = create({ titulo: 'Nova Nota', tipo, pasta_id, status });
+    const nova = getById(id) || { id, titulo: 'Nova Nota', tipo, pasta_id, status, conteudo: '', tags: [] };
     setNotaSelecionada(nova);
     setEditando(true);
   }, [create, getById, categoriaAtiva]);
 
   const salvarNota = useCallback(() => {
     salvarImediato();
-    setEditando(false);
   }, [salvarImediato]);
 
   // Atalhos de teclado
@@ -97,7 +102,6 @@ export default function NotasPage() {
       }
       // Esc: Fechar painéis/modais
       if (e.key === 'Escape') {
-        setMostrandoAI(false);
         setMostrandoMeta(false);
         setMostrandoTags(false);
       }
@@ -108,6 +112,16 @@ export default function NotasPage() {
 
   const pendingNoteAction = useUIStore((s) => s.pendingNoteAction);
   const setPendingNoteAction = useUIStore((s) => s.setPendingNoteAction);
+  const pendingNoteCategory = useUIStore((s) => s.pendingNoteCategory);
+  const setPendingNoteCategory = useUIStore((s) => s.setPendingNoteCategory);
+
+  useEffect(() => {
+    if (!pendingNoteCategory) return;
+    queueMicrotask(() => {
+      setCategoriaAtiva(pendingNoteCategory === 'nota' ? 'pasta_raiz' : pendingNoteCategory);
+    });
+    setPendingNoteCategory(null);
+  }, [pendingNoteCategory, setPendingNoteCategory]);
 
   // Consome ação pendente vinda do useUIStore (Dashboard, navegação direta)
   useEffect(() => {
@@ -118,13 +132,13 @@ export default function NotasPage() {
       if (target) {
         queueMicrotask(() => {
           setNotaSelecionada(target);
-          setEditando(false);
+          setEditando(true);
         });
       }
       setPendingNoteAction(null);
     } else if (pendingNoteAction.action === 'create') {
       queueMicrotask(() => {
-        criarNota('nota');
+        criarNota();
       });
       setPendingNoteAction(null);
     }
@@ -137,10 +151,10 @@ export default function NotasPage() {
         const target = getById(e.detail.noteId);
         if (target) {
           setNotaSelecionada(target);
-          setEditando(false);
+          setEditando(true);
         }
       } else if (e.detail?.action === 'create') {
-        criarNota('nota');
+        criarNota();
       }
     };
     window.addEventListener('open-note', handleOpenNoteEvent);
@@ -148,10 +162,12 @@ export default function NotasPage() {
   }, [getById, criarNota]);
 
   const excluirNota = (id) => {
+    const titulo = notaSelecionada?.titulo || 'esta nota';
+    if (!window.confirm(`Deseja realmente excluir "${titulo}"?`)) return;
     remove(id);
     if (notaSelecionada?.id === id) {
       setNotaSelecionada(null);
-      setEditando(false);
+      setEditando(true);
     }
   };
 
@@ -181,10 +197,11 @@ export default function NotasPage() {
             busca={busca}
             onBuscaChange={setBusca}
             onSelect={(n) => {
-              setNotaSelecionada(n);
-              setEditando(false);
+              const notaAtualizada = getById(n.id) || n;
+              setNotaSelecionada(notaAtualizada);
+              setEditando(true);
             }}
-            onCriar={criarNota}
+            onCriar={() => criarNota()}
           />
         </div>
       )}
@@ -193,7 +210,7 @@ export default function NotasPage() {
       <div className="flex-1 flex flex-col relative bg-bg-primary/5">
         {notaSelecionada ? (
           <>
-            {/* Breadcrumbs & Actions */}
+            {/* Breadcrumbs & Status */}
             <div className="h-10 px-6 flex items-center justify-between border-b border-white/5 bg-bg-primary/20">
               <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-text-lo/50">
                 <span>Bibliotecas</span>
@@ -209,18 +226,6 @@ export default function NotasPage() {
                 >
                   {saveStatus === 'saving' ? 'Salvando…' : 'Salvo'}
                 </span>
-                {['IA', 'Info', 'Tags'].map(label => {
-                  const show = label === 'IA' ? mostrandoAI : label === 'Info' ? mostrandoMeta : mostrandoTags;
-                  return (
-                    <button
-                      key={label}
-                      onClick={() => label === 'IA' ? setMostrandoAI(!mostrandoAI) : label === 'Info' ? setMostrandoMeta(!mostrandoMeta) : setMostrandoTags(!mostrandoTags)}
-                      className={`text-[10px] font-black uppercase tracking-widest transition-colors ${show ? 'text-accent-main' : 'text-text-lo hover:text-text-hi'}`}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
               </div>
             </div>
 
@@ -231,17 +236,20 @@ export default function NotasPage() {
                   type="text"
                   aria-label="Título da nota"
                   value={notaSelecionada.titulo}
-                  onChange={(e) => setNotaSelecionada({ ...notaSelecionada, titulo: e.target.value })}
+                  onChange={(e) => {
+                    const novoTitulo = e.target.value;
+                    const conteudoAtual = editor ? editor.getHTML() : (notaSelecionada.conteudo || '');
+                    setNotaSelecionada(prev => ({ ...prev, titulo: novoTitulo, conteudo: conteudoAtual }));
+                    update(notaSelecionada.id, { titulo: novoTitulo, conteudo: conteudoAtual });
+                  }}
                   className="flex-1 bg-transparent text-lg font-bold text-text-primary focus:outline-none"
                   placeholder="Título da nota"
                 />
-                {['IA', 'Info', 'Tags'].map((label) => {
-                  const show = label === 'IA' ? mostrandoAI : label === 'Info' ? mostrandoMeta : mostrandoTags;
-                  const toggle = label === 'IA'
-                    ? () => setMostrandoAI(p => !p)
-                    : label === 'Info'
-                      ? () => setMostrandoMeta(p => !p)
-                      : () => setMostrandoTags(p => !p);
+                {['Info', 'Tags'].map((label) => {
+                  const show = label === 'Info' ? mostrandoMeta : mostrandoTags;
+                  const toggle = label === 'Info'
+                    ? () => setMostrandoMeta(p => !p)
+                    : () => setMostrandoTags(p => !p);
                   return (
                     <Button
                       key={label}
@@ -253,15 +261,15 @@ export default function NotasPage() {
                     </Button>
                   );
                 })}
-                {editando ? (
-                  <Button onClick={salvarNota} variant="primary" size="sm" className="bg-success hover:bg-success/90">
-                    Salvar
-                  </Button>
-                ) : (
-                  <Button onClick={() => setEditando(true)} variant="primary" size="sm">
-                    Editar
-                  </Button>
-                )}
+                <Button
+                  onClick={salvarNota}
+                  variant="primary"
+                  size="sm"
+                  className="bg-success hover:bg-success/90"
+                  title="Salvar nota imediatamente (Ctrl+S)"
+                >
+                  {saveStatus === 'saving' ? 'Salvando...' : 'Salvar'}
+                </Button>
                 <Button
                   onClick={() => excluirNota(notaSelecionada.id)}
                   variant="ghost"
@@ -295,9 +303,15 @@ export default function NotasPage() {
             <EditorToolbar editor={editor} focusMode={focoMode} onToggleFocus={() => setFocoMode(p => !p)} />
 
             {!focoMode && (
-              <AIBar nota={notaSelecionada}
-                onTagsOpen={handleTagsOpen} onResumoOpen={handleResumoOpen}
-                onCardsOpen={handleCardsOpen} onChatOpen={handleChatOpen}
+              <AIBar
+                nota={notaSelecionada}
+                onTagsOpen={handleTagsOpen}
+                onResumoOpen={handleResumoOpen}
+                onCardsOpen={handleCardsOpen}
+                onChatOpen={handleChatOpen}
+                loadingTags={aiLoadingTags}
+                loadingResumo={aiLoadingResumo}
+                loadingCards={aiLoadingCards}
               />
             )}
 
@@ -346,26 +360,7 @@ export default function NotasPage() {
         )}
       </div>
 
-      {/* Painéis laterais opcionais */}
-      {mostrandoAI && notaSelecionada && (
-        <div className="w-64 border-l border-border-subtle bg-bg-secondary overflow-auto">
-          <AIPanel
-            nota={notaSelecionada}
-            onTagsUpdate={(tags) => {
-              tags.forEach(t => addTag(notaSelecionada.id, t));
-              setNotaSelecionada(prev => ({ ...prev, tags: [...(prev.tags || []), ...tags] }));
-            }}
-            onResumoUpdate={(resumo) => {
-              update(notaSelecionada.id, { resumo_ia: resumo });
-              setNotaSelecionada(prev => ({ ...prev, resumo_ia: resumo }));
-            }}
-            onFlashcardsCreate={(cards) => {
-              cards.forEach(c => createCard({ frente: c.frente, verso: c.verso, materia: notaSelecionada.tipo }));
-            }}
-          />
-        </div>
-      )}
-
+      {/* Painel lateral de metadados */}
       {mostrandoMeta && notaSelecionada && (
         <NoteMetadata
           nota={notaSelecionada}
@@ -379,6 +374,15 @@ export default function NotasPage() {
       )}
 
       {/* Modais de IA */}
+      {showTagPicker && (
+        <TagPickerModal
+          tagsSugeridas={tagsSugeridas}
+          loading={aiLoadingTags}
+          onConfirm={handleTagsConfirm}
+          onCancel={() => setShowTagPicker(false)}
+          modelo={getModel()}
+        />
+      )}
       {showCardApprove && (
         <FlashcardApproveModal
           cards={cardsSugeridos} loading={aiLoadingCards}

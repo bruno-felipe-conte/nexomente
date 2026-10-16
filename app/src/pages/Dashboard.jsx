@@ -36,7 +36,7 @@ function formatRelativeTime(dateString) {
 
 export default function Dashboard() {
   const { notas } = useNotes();
-  const { poemas } = usePoemas();
+  const { poemas, registrarRecitacao } = usePoemas();
   const { player } = useTamagotchiStore();
   const { userName, setUserName, setActiveTab, setPendingNoteAction } = useUIStore();
 
@@ -99,8 +99,12 @@ export default function Dashboard() {
       {showDojo && poemaVigente && (
         <PoemaRecitacao 
           poema={poemaVigente} 
-          onFinish={() => { setShowDojo(false); toast.success("Dojo concluído!"); }}
-          onCancel={() => setShowDojo(false)}
+          onFinish={() => {
+            registrarRecitacao?.(poemaVigente.id);
+            setShowDojo(false);
+            toast.success("Dojo concluído!");
+          }}
+          onClose={() => setShowDojo(false)}
         />
       )}
 

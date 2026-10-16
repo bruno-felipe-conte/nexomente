@@ -25,13 +25,14 @@ export default function PoemaFormTab({
           </button>
         </div>
 
-        <div className="grid grid-cols-2 gap-6 mb-6">
+        <div className="grid grid-cols-2 gap-6 mb-4">
           <div className="space-y-1 pr-2">
             <label className="text-[10px] font-black uppercase tracking-widest text-nx-dim/40 ml-1">Título</label>
             <input
               value={editForm.titulo}
               onChange={e => setEditForm({ ...editForm, titulo: e.target.value })}
-              className="w-full bg-nx-depth border border-nx-border rounded-nx-md py-4 px-6 text-nx-bright focus:ring-1 focus:ring-nx-primary outline-none"
+              placeholder="Ex: Mar Português"
+              className="w-full bg-nx-depth border border-nx-border rounded-nx-md py-3 px-4 text-nx-bright focus:ring-1 focus:ring-nx-primary outline-none"
             />
           </div>
           <div className="space-y-1 pr-2">
@@ -39,7 +40,38 @@ export default function PoemaFormTab({
             <input
               value={editForm.autor}
               onChange={e => setEditForm({ ...editForm, autor: e.target.value })}
-              className="w-full bg-nx-depth border border-nx-border rounded-nx-md py-4 px-6 text-nx-bright focus:ring-1 focus:ring-nx-primary outline-none"
+              placeholder="Ex: Fernando Pessoa"
+              className="w-full bg-nx-depth border border-nx-border rounded-nx-md py-3 px-4 text-nx-bright focus:ring-1 focus:ring-nx-primary outline-none"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="space-y-1">
+            <label className="text-[10px] font-black uppercase tracking-widest text-nx-dim/40 ml-1">Época / Movimento</label>
+            <input
+              value={editForm.epoca || ''}
+              onChange={e => setEditForm({ ...editForm, epoca: e.target.value })}
+              placeholder="Ex: Modernismo"
+              className="w-full bg-nx-depth border border-nx-border rounded-nx-md py-2.5 px-4 text-xs text-nx-bright focus:ring-1 focus:ring-nx-primary outline-none"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-[10px] font-black uppercase tracking-widest text-nx-dim/40 ml-1">Forma Poética</label>
+            <input
+              value={editForm.forma || ''}
+              onChange={e => setEditForm({ ...editForm, forma: e.target.value })}
+              placeholder="Ex: Soneto, Livre"
+              className="w-full bg-nx-depth border border-nx-border rounded-nx-md py-2.5 px-4 text-xs text-nx-bright focus:ring-1 focus:ring-nx-primary outline-none"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-[10px] font-black uppercase tracking-widest text-nx-dim/40 ml-1">Ano</label>
+            <input
+              value={editForm.ano || ''}
+              onChange={e => setEditForm({ ...editForm, ano: e.target.value })}
+              placeholder="Ex: 1934"
+              className="w-full bg-nx-depth border border-nx-border rounded-nx-md py-2.5 px-4 text-xs text-nx-bright focus:ring-1 focus:ring-nx-primary outline-none"
             />
           </div>
         </div>

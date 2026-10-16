@@ -28,16 +28,17 @@ import TaskItem from '@tiptap/extension-task-item';
 import Highlight from '@tiptap/extension-highlight';
 import Mathematics from '@tiptap/extension-mathematics';
 import 'katex/dist/katex.min.css';
-import { suggestTags, summarizeContent, generateFlashcards } from '../lib/ai/lmStudioService';
+import { suggestTags, summarizeContent } from '../lib/ai/lmStudioService';
+import { useUIStore } from '../store/useUIStore';
 
 export function useNotaEditor({ notaSelecionada, editando, update, addTag, setNotaSelecionada }) {
   const [showTagPicker, setShowTagPicker] = useState(false);
   const [showCardApprove, setShowCardApprove] = useState(false);
   const [aiLoadingTags, setAiLoadingTags] = useState(false);
   const [aiLoadingResumo, setAiLoadingResumo] = useState(false);
-  const [aiLoadingCards, setAiLoadingCards] = useState(false);
+  const aiLoadingCards = false;
   const [tagsSugeridas, setTagsSugeridas] = useState([]);
-  const [cardsSugeridos, setCardsSugeridos] = useState([]);
+  const cardsSugeridos = [];
   const [resumoPreview, setResumoPreview] = useState(null);
   const [saveStatus, setSaveStatus] = useState('saved'); // 'saved' | 'saving'
   const [lastSavedAt, setLastSavedAt] = useState(null);
@@ -80,6 +81,8 @@ export function useNotaEditor({ notaSelecionada, editando, update, addTag, setNo
       const conteudo = ed.getHTML();
       // Ignora updates programáticos (carga da nota / sync externo) sem edição real
       if (conteudo === lastLoadedContentRef.current) return;
+      // Mantém o estado em memória sincronizado imediatamente para que editar o título nunca apague o texto digitado
+      setNotaSelecionada?.(prev => (prev && prev.id === nota.id ? { ...prev, conteudo } : prev));
       setSaveStatus('saving');
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
       debounceTimerRef.current = setTimeout(() => {
@@ -90,7 +93,7 @@ export function useNotaEditor({ notaSelecionada, editando, update, addTag, setNo
         lastLoadedContentRef.current = html;
         setSaveStatus('saved');
         setLastSavedAt(new Date());
-      }, 1000);
+      }, 600);
     },
   });
 
@@ -114,8 +117,8 @@ export function useNotaEditor({ notaSelecionada, editando, update, addTag, setNo
         lastLoadedContentRef.current = notaSelecionada.conteudo || '';
         editor.commands.setContent(notaSelecionada.conteudo || '');
       } else if (
-        notaSelecionada.conteudo !== lastLoadedContentRef.current &&
-        (notaSelecionada.isExternalUpdate || !editor.isFocused)
+        notaSelecionada.isExternalUpdate &&
+        notaSelecionada.conteudo !== lastLoadedContentRef.current
       ) {
         lastLoadedContentRef.current = notaSelecionada.conteudo || '';
         editor.commands.setContent(notaSelecionada.conteudo || '');
@@ -130,10 +133,11 @@ export function useNotaEditor({ notaSelecionada, editando, update, addTag, setNo
     if (!notaSelecionada || !editor) return;
     const conteudo = editor.getHTML();
     update(notaSelecionada.id, { titulo: notaSelecionada.titulo, conteudo });
+    setNotaSelecionada?.(prev => (prev && prev.id === notaSelecionada.id ? { ...prev, conteudo } : prev));
     lastLoadedContentRef.current = conteudo;
     setSaveStatus('saved');
     setLastSavedAt(new Date());
-  }, [notaSelecionada, editor, update]);
+  }, [notaSelecionada, editor, update, setNotaSelecionada]);
 
   const salvarImediato = useCallback(() => {
     if (debounceTimerRef.current) {
@@ -166,18 +170,21 @@ export function useNotaEditor({ notaSelecionada, editando, update, addTag, setNo
     }
   }, [notaSelecionada, editor, salvarNota]);
 
-  const handleCardsOpen = useCallback(async () => {
+  const handleCardsOpen = useCallback(() => {
     if (!notaSelecionada) return;
-    setAiLoadingCards(true);
-    const cards = await generateFlashcards(notaSelecionada, 5);
-    setCardsSugeridos(cards);
-    setAiLoadingCards(false);
-    if (cards.length > 0) setShowCardApprove(true);
-  }, [notaSelecionada]);
+    // Salva alterações pendentes antes de abrir o chat com a nota anexada
+    salvarImediato();
+    useUIStore.getState().setPendingChatNoteId(notaSelecionada.id);
+    window.dispatchEvent(new CustomEvent('navigate', { detail: 'ai' }));
+  }, [notaSelecionada, salvarImediato]);
 
   const handleChatOpen = useCallback(() => {
+    if (notaSelecionada) {
+      salvarImediato();
+      useUIStore.getState().setPendingChatNoteId(notaSelecionada.id);
+    }
     window.dispatchEvent(new CustomEvent('navigate', { detail: 'ai' }));
-  }, []);
+  }, [notaSelecionada, salvarImediato]);
 
   const handleTagsConfirm = useCallback((tagsAceitas) => {
     tagsAceitas.forEach(t => addTag(notaSelecionada.id, t));

@@ -2,10 +2,12 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, MicOff, RotateCcw, X, Trophy } from 'lucide-react';
 import { useVosk } from '../../hooks/useVosk';
+import { useTamagotchiStore } from '../../store/useTamagotchiStore';
+import { useDBStore } from '../../store/useDBStore';
 import { toast } from 'react-hot-toast';
 import './PoemaRecitacao.css';
 
-const PoemaRecitacao = ({ poema, onFinish, onClose }) => {
+const PoemaRecitacao = ({ poema, onFinish, onClose, onCancel }) => {
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
   const [partialTranscript, setPartialTranscript] = useState('');
   const [isFinished, setIsFinished] = useState(false);
@@ -98,7 +100,7 @@ const PoemaRecitacao = ({ poema, onFinish, onClose }) => {
     if (e) e.stopPropagation();
     console.log('[DOJO] Encerrando sessão...');
     terminateAudio();
-    onClose?.();
+    (onClose || onCancel || onFinish)?.();
   };
 
   const handleNextLine = () => {
@@ -113,7 +115,13 @@ const PoemaRecitacao = ({ poema, onFinish, onClose }) => {
     setIsFinished(true);
     stopListening();
     terminateAudio();
-    toast.success('Recitação concluída!');
+    try {
+      useTamagotchiStore.getState().addBonusXp?.(25, 'Recitação no Dojo');
+      useDBStore.getState().XP?.add?.(25, 'Recitação no Dojo', 'poema', poema?.id);
+    } catch {
+      // Silencioso se store indisponivel
+    }
+    toast.success('Recitação concluída! +25 XP');
   };
 
   const acuraciaCalculada = useMemo(() => {

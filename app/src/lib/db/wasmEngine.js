@@ -88,7 +88,7 @@ export function createTables(db) {
     CREATE TABLE IF NOT EXISTS notas (
       id TEXT PRIMARY KEY,
       pasta_id TEXT,
-      tipo TEXT NOT NULL CHECK(tipo IN ('livro', 'projeto', 'ideia', 'lembrete', 'diario', 'biblia', 'estudo', 'nota')),
+      tipo TEXT NOT NULL CHECK(tipo IN ('livro', 'projeto', 'ideia', 'lembrete', 'diario', 'biblia', 'estudo', 'nota', 'referencia')),
       titulo TEXT NOT NULL,
       conteudo TEXT,
       tags TEXT DEFAULT '[]',
@@ -101,9 +101,16 @@ export function createTables(db) {
       avaliacao INTEGER,
       prioridade TEXT,
       data_lembrete TEXT,
-      materia TEXT
+      materia TEXT,
+      resumo_ia TEXT
     )
   `);
+
+  try {
+    db.run("ALTER TABLE notas ADD COLUMN resumo_ia TEXT");
+  } catch {
+    // Coluna resumo_ia já existe
+  }
 
   db.run(`
     CREATE TABLE IF NOT EXISTS materias (

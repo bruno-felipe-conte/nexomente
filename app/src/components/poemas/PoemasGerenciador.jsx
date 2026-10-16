@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Search, Plus, Sparkles, List, ChevronLeft, CheckSquare, X, Star } from 'lucide-react';
+import { Search, Plus, Sparkles, ChevronLeft, CheckSquare, X, Star } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import { usePoemas } from '../../hooks/useMaterias';
 import * as aiProvider from '../../lib/ai/aiProvider';
@@ -107,6 +107,10 @@ export default function PoemasGerenciador({ onLeitura, onSelectPoema }) {
   };
 
   const salvarEdicao = () => {
+    if (!editForm.titulo?.trim() || !editForm.corpo?.trim()) {
+      toast.error('Preencha o título e o corpo do poema.');
+      return;
+    }
     if (editForm.id) {
       update(editForm.id, editForm);
       toast.success('Poema atualizado!');
@@ -115,6 +119,12 @@ export default function PoemasGerenciador({ onLeitura, onSelectPoema }) {
       toast.success('Poema criado!');
     }
     setAbaAtiva('gerenciador');
+  };
+
+  const excluirPoema = (poema) => {
+    if (!window.confirm(`Excluir o poema "${poema.titulo}"?`)) return;
+    remove(poema.id);
+    toast.success('Poema excluído.');
   };
 
   const processarComIA = async () => {
@@ -253,13 +263,6 @@ EXEMPLO DE FORMATO:
                 </button>
               </div>
             )}
-            <button
-              onClick={() => setAbaAtiva('gerenciador')}
-              className={`p-2 rounded-nx-sm transition-all ${abaAtiva === 'gerenciador' ? 'text-nx-primary bg-nx-primary/10' : 'text-nx-dim hover:text-nx-bright'}`}
-              title="Ver Lista"
-            >
-              <List size={20} />
-            </button>
           </div>
         </div>
 
@@ -321,6 +324,7 @@ EXEMPLO DE FORMATO:
               onSelectPoema={onSelectPoema}
               favoritos={favoritos}
               onToggleFavorito={toggleFavorito}
+              onExcluir={excluirPoema}
             />
           )}
 

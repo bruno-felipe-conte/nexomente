@@ -9,11 +9,14 @@ export function createFlashcardsRepository(get, saveDB) {
         id: row[0],
         nota_id: row[1],
         materia_id: row[2],
+        materia: row[2] || 'geral',
         frente: row[3],
         verso: row[4],
         intervalo: row[5],
         repeticoes: row[6],
+        repetitions: row[6],
         ease_factor: row[7],
+        ef: row[7],
         next_review: row[8],
         created_at: row[9],
       }));
@@ -28,11 +31,14 @@ export function createFlashcardsRepository(get, saveDB) {
         id: row[0],
         nota_id: row[1],
         materia_id: row[2],
+        materia: row[2] || 'geral',
         frente: row[3],
         verso: row[4],
         intervalo: row[5],
         repeticoes: row[6],
+        repetitions: row[6],
         ease_factor: row[7],
+        ef: row[7],
         next_review: row[8],
       }));
     },
@@ -41,9 +47,10 @@ export function createFlashcardsRepository(get, saveDB) {
       const db = get().db;
       if (!db) return;
       const id = card.id || `fc_${Date.now()}`;
+      const materiaVal = card.materia_id ?? card.materia ?? 'geral';
       db.run(
         "INSERT INTO flashcards (id, nota_id, materia_id, frente, verso) VALUES (?, ?, ?, ?, ?)",
-        [id, card.nota_id ?? null, card.materia_id ?? null, card.frente, card.verso]
+        [id, card.nota_id ?? null, materiaVal, card.frente, card.verso]
       );
       saveDB();
       return id;

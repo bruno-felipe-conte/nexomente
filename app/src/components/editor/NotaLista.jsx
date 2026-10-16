@@ -3,7 +3,7 @@
  * Reorganizado para o centro da hierarquia (Tarefa 5.2).
  */
 import { useState, useCallback } from 'react';
-import { FileText, Plus, Search, BookOpen, Lightbulb } from 'lucide-react';
+import { FileText, Plus, Search } from 'lucide-react';
 import PropTypes from 'prop-types';
 import Input from '../ui/Input';
 
@@ -49,26 +49,10 @@ export default function NotaLista({ notas, notaSelecionada, busca, onBuscaChange
               className="bg-bg-secondary/30 !border-white/5 !rounded-lg"
             />
           </div>
-          <div className="flex items-center gap-1">
-            <button 
-              onClick={() => onCriar('livro')}
-              className="p-1.5 text-text-lo hover:text-accent-main transition-colors"
-              title="Filtrar Livros"
-            >
-              <BookOpen size={14} />
-            </button>
-            <button 
-              onClick={() => onCriar('ideia')}
-              className="p-1.5 text-text-lo hover:text-accent-main transition-colors"
-              title="Filtrar Ideias"
-            >
-              <Lightbulb size={14} />
-            </button>
-          </div>
         </div>
 
         <button
-          onClick={() => onCriar('nota')}
+          onClick={() => onCriar()}
           className="w-full py-3 border border-dashed border-white/10 rounded-xl flex items-center justify-center gap-2 text-[11px] font-black uppercase tracking-[0.2em] text-text-lo hover:text-accent-main hover:border-accent-main/50 transition-all group cursor-pointer"
         >
           <Plus size={14} className="group-hover:rotate-90 transition-transform duration-500" />

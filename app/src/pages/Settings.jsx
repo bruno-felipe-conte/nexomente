@@ -27,6 +27,9 @@ export default function Settings() {
   const [showApiKey, setShowApiKey] = useState(false);
   const [testandoKey, setTestandoKey] = useState(false);
   const [statusKey, setStatusKey] = useState(null);
+  const [embeddedPath, setEmbeddedPath] = useState(
+    () => localStorage.getItem('nexomente_embedded_path') || './electron/models/gemma-4-E2B-it-GGUF/gemma-4-E2B-it-Q4_K_M.gguf'
+  );
   const [userName, setUserName] = useState(() => globalUserName);
   const [notifStudy, setNotifStudy] = useState(localStorage.getItem('nexomente_notif_study') === 'true');
   const fileInputRef = useRef(null);
@@ -118,7 +121,7 @@ export default function Settings() {
       window.location.reload();
     } else {
       // Limpar apenas chaves de dados, manter config
-      const keysToKeep = ['nexomente_gemini_key', 'nexomente_user_name', 'nexomente_notif_study', 'nexomente_ai_provider'];
+      const keysToKeep = ['nexomente_gemini_key', 'nexomente_user_name', 'nexomente_notif_study', 'nexomente_ai_provider', 'nexomente_embedded_path'];
       const kept = keysToKeep.map(k => ({ k, v: localStorage.getItem(k) }));
       localStorage.clear();
       kept.forEach(item => { if(item.v) localStorage.setItem(item.k, item.v); });
@@ -188,18 +191,18 @@ export default function Settings() {
                       { id: 'local', label: 'LM Studio', icon: Cpu, desc: 'Privacidade Total (Local)', color: 'text-accent-main' },
                       {
                         id: 'embedded',
-                        label: 'Interno',
+                        label: 'Interno (Gemma 4)',
                         icon: Sparkles,
-                        desc: window.electronAPI ? 'Nativo NexoMente' : 'Apenas Desktop',
-                        color: window.electronAPI ? 'text-purple-400' : 'text-text-lo/20',
-                        disabled: !window.electronAPI
+                        desc: 'Motor GGUF Embutido',
+                        color: 'text-purple-400',
+                        disabled: false
                       },
                     ].map(opt => (
                       <button
                         key={opt.id}
                         disabled={opt.disabled}
                         onClick={() => setProvider(opt.id)}
-                        className={`p-5 rounded-3xl border transition-all text-left flex flex-col gap-3 group relative ${provider === opt.id ? 'bg-white/5 border-accent-main/30 ring-1 ring-accent-main/20' : 'bg-transparent border-white/5 hover:border-white/10'} ${opt.disabled ? 'opacity-40 cursor-not-allowed grayscale' : ''}`}
+                        className={`p-5 rounded-3xl border transition-all text-left flex flex-col gap-3 group relative cursor-pointer ${provider === opt.id ? 'bg-white/5 border-accent-main/30 ring-1 ring-accent-main/20' : 'bg-transparent border-white/5 hover:border-white/10'} ${opt.disabled ? 'opacity-40 cursor-not-allowed grayscale' : ''}`}
                       >
                         <div className={`w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center ${opt.color}`}>
                           <opt.icon size={20} />
@@ -211,6 +214,33 @@ export default function Settings() {
                       </button>
                     ))}
                   </div>
+
+                  {provider === 'embedded' && (
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl space-y-4">
+                      <div className="flex items-center justify-between text-text-hi">
+                        <div className="flex items-center gap-2">
+                          <Sparkles size={14} className="text-purple-400" />
+                          <span className="text-[10px] font-bold uppercase tracking-widest">Caminho do Modelo GGUF Interno (node-llama-cpp)</span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <input
+                          type="text"
+                          value={embeddedPath}
+                          onChange={e => setEmbeddedPath(e.target.value)}
+                          placeholder="Caminho da pasta ou arquivo .gguf..."
+                          className="flex-1 bg-bg-secondary border border-white/5 rounded-xl px-4 py-2.5 text-xs font-mono text-text-hi focus:border-purple-400 focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => saveConfig('nexomente_embedded_path', embeddedPath.trim())}
+                          className="px-6 py-2.5 bg-purple-500 text-white rounded-xl font-bold text-xs hover:bg-purple-600 transition-all cursor-pointer"
+                        >
+                          Salvar Caminho
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
 
                   {provider === 'cloud' && (
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl space-y-4">

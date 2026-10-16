@@ -1,4 +1,4 @@
-import { FileText, BookOpen, Lightbulb, Calendar, Bookmark, BookMarked, Clock, Star, Hash, User, X, Sigma } from 'lucide-react';
+import { FileText, BookOpen, Lightbulb, Calendar, Bookmark, BookMarked, Clock, Star, Hash, User, X } from 'lucide-react';
 import PropTypes from 'prop-types';
 
 const tipos = [
@@ -13,6 +13,7 @@ const tipos = [
 ];
 
 const statusLista = [
+  { id: 'ativo', label: 'Ativo' },
   { id: 'rascunho', label: 'Rascunho' },
   { id: 'inbox', label: 'Inbox' },
   { id: 'processando', label: 'Processando' },
@@ -20,7 +21,7 @@ const statusLista = [
   { id: 'arquivado', label: 'Arquivado' },
 ];
 
-export default function NoteMetadata({ nota, onUpdate, onClose, editor }) {
+export default function NoteMetadata({ nota, onUpdate, onClose }) {
   if (!nota) return null;
 
   return (
@@ -65,7 +66,7 @@ export default function NoteMetadata({ nota, onUpdate, onClose, editor }) {
         <div>
           <label className="text-xs text-text-muted mb-1 block">Status</label>
           <select
-            value={nota.status || 'rascunho'}
+            value={nota.status || 'ativo'}
             onChange={(e) => onUpdate({ status: e.target.value })}
             className="w-full bg-bg-tertiary border border-border-subtle rounded px-2 py-1.5 text-sm text-text-primary cursor-pointer"
           >
@@ -141,23 +142,6 @@ export default function NoteMetadata({ nota, onUpdate, onClose, editor }) {
             </div>
           </div>
         )}
-
-        <div className="flex gap-2">
-          <button
-            onClick={() => editor?.chain().focus().insertContent('$ ').run()}
-            title="Fórmula inline ($)"
-            className="p-2 bg-bg-tertiary rounded hover:bg-bg-active"
-          >
-            <Sigma size={16} />
-          </button>
-          <button
-            onClick={() => editor?.chain().focus().insertContent('$$\n\n$$').run()}
-            title="Fórmula bloco ($$)"
-            className="p-2 bg-bg-tertiary rounded hover:bg-bg-active"
-          >
-            <Sigma size={16} className="rotate-180" />
-          </button>
-        </div>
 
         <div>
           <label className="text-xs text-text-muted mb-1 block">

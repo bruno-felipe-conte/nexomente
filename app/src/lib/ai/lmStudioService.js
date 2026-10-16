@@ -188,6 +188,18 @@ export async function chat(messages, options = {}) {
 }
 
 /**
+ * Helper que delega para o provedor ativo caso não seja local (LM Studio)
+ */
+async function generateMultiProvider(prompt, options = {}) {
+  const activeProv = localStorage.getItem('nexomente_ai_provider') || 'local';
+  if (activeProv === 'cloud' || activeProv === 'embedded') {
+    const { generate: provGenerate } = await import('./aiProvider');
+    return provGenerate(prompt, options);
+  }
+  return generate(prompt, options);
+}
+
+/**
  * Extrai tags semânticas de uma nota
  * @param {object} nota - Objeto com titulo e conteudo da nota
  * @param {number} maxTags - Número máximo de tags a sugerir (default: 8)
@@ -198,19 +210,20 @@ Responda APENAS com JSON válido: {"tags": ["tag1", "tag2"]}
 Título: ${nota.titulo}
 Conteúdo: ${(nota.conteudo || '').replace(/<[^>]*>/g, '').substring(0, 1500)}`;
 
-  const result = await generate(prompt, { max_tokens: 384 });
+  const result = await generateMultiProvider(prompt, { max_tokens: 384 });
   if (!result.success) return [];
+  const textResp = result.response || result.content || '';
   try {
-    const parsed = JSON.parse(result.response);
+    const parsed = JSON.parse(textResp);
     return Array.isArray(parsed.tags) ? parsed.tags.slice(0, maxTags) : [];
   } catch {
-    const match = result.response.match(/\[[\s\S]*?\]\s*\]/);
+    const match = textResp.match(/\[[\s\S]*?\]\s*\]/);
     if (match) {
       try {
         return JSON.parse(match[0]).slice(0, maxTags);
       } catch { /* fallback: parse falhou, tenta regex abaixo */ }
     }
-    const quotes = [...result.response.matchAll(/"([^"]+)"/g)].map(m => m[1]);
+    const quotes = [...textResp.matchAll(/"([^"]+)"/g)].map(m => m[1]);
     if (quotes.length > 0) return quotes.slice(0, maxTags);
     return [];
   }
@@ -224,8 +237,8 @@ Conteúdo: ${(nota.conteudo || '').replace(/<[^>]*>/g, '').substring(0, 1500)}`;
 export async function summarizeContent(content, maxTokens = 256) {
   const clean = content.replace(/<[^>]*>/g, '').substring(0, 3000);
   const prompt = `Resuma o conteúdo abaixo em 3-5 frases curtas e objetivas:\n\n${clean}\n\nResumo:`;
-  const result = await generate(prompt, { max_tokens: maxTokens });
-  return result.success ? result.response : '';
+  const result = await generateMultiProvider(prompt, { max_tokens: maxTokens });
+  return result.success ? (result.response || result.content || '') : '';
 }
 
 /**
@@ -237,16 +250,27 @@ export async function summarizeContent(content, maxTokens = 256) {
 export async function generateFlashcards(nota, maxCards = 5) {
   const prompt = `Gere flashcards de revisão sobre esta nota. Gere o máximo que fizer sentido (até ${maxCards}).
 Cada flashcard deve ter frente (pergunta clara) e verso (resposta objetiva).
-Responda APENAS com JSON: [{"frente": "pergunta", "verso": "resposta"}]
+Responda APENAS com JSON puro sem blocos markdown: [{"frente": "pergunta", "verso": "resposta"}]
 Nota: ${nota.titulo}
 Conteúdo: ${(nota.conteudo || '').replace(/<[^>]*>/g, '').substring(0, 2000)}`;
 
-  const result = await generate(prompt, { max_tokens: 768 });
+  const result = await generateMultiProvider(prompt, { max_tokens: 768 });
   if (!result.success) return [];
+  const textResp = (result.response || result.content || '').trim();
   try {
-    const parsed = JSON.parse(result.response);
+    const cleaned = textResp.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+    const parsed = JSON.parse(cleaned);
     return Array.isArray(parsed) ? parsed : [];
   } catch {
+    const match = textResp.match(/\[[\s\S]*\]/);
+    if (match) {
+      try {
+        const parsed = JSON.parse(match[0]);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        // ignore
+      }
+    }
     return [];
   }
 }

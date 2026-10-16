@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useUIStore } from '../store/useUIStore';
 import { Brain, BookOpen, Calendar, Zap, ArrowRight, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -36,22 +35,21 @@ const steps = [
 ];
 
 export function Onboarding() {
-  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
-  const { completeOnboarding } = useUIStore();
+  const { completeOnboarding, setActiveTab } = useUIStore();
 
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
       completeOnboarding();
-      navigate('/dashboard');
+      setActiveTab('dashboard');
     }
   };
 
   const handleSkip = () => {
     completeOnboarding();
-    navigate('/dashboard');
+    setActiveTab('dashboard');
   };
 
   const step = steps[currentStep];

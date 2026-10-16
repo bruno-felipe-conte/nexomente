@@ -1,8 +1,8 @@
 export default function GeradorStatsTab({ stats }) {
   const cards = [
-    { label: 'Por Matéria', stats: stats.porMateria, color: 'color-notas' },
-    { label: 'Por Banca', stats: stats.porBanca, color: 'color-gerador' },
-    { label: 'Por Nível', stats: stats.porNivel, color: 'color-success' }
+    { label: 'Por Matéria', stats: stats.porMateria, color: 'var(--color-notas, #A78BFA)' },
+    { label: 'Por Banca', stats: stats.porBanca, color: 'var(--color-gerador, #FBBF24)' },
+    { label: 'Por Nível', stats: stats.porNivel, color: 'var(--color-success, #34D399)' }
   ];
 
   return (
@@ -15,13 +15,16 @@ export default function GeradorStatsTab({ stats }) {
               {Object.entries(card.stats).map(([key, val]) => (
                 <div key={key} className="space-y-2">
                   <div className="flex justify-between text-xs font-bold">
-                    <span className="text-text-hi capitalize">{key}</span>
-                    <span className={`text-var(--${card.color})`}>{val}</span>
+                    <span className="text-text-hi capitalize">{key || 'Geral'}</span>
+                    <span style={{ color: card.color }}>{val}</span>
                   </div>
-                  <div className="h-1 bg-surface-base rounded-full overflow-hidden">
+                  <div className="h-1.5 bg-surface-base rounded-full overflow-hidden">
                     <div
-                      className={`h-full bg-var(--${card.color}) opacity-40`}
-                      style={{ width: `${stats.total ? (val / stats.total) * 100 : 0}%` }}
+                      className="h-full rounded-full transition-all duration-300"
+                      style={{
+                        width: `${stats.total ? (val / stats.total) * 100 : 0}%`,
+                        backgroundColor: card.color,
+                      }}
                     />
                   </div>
                 </div>

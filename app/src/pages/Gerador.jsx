@@ -45,7 +45,7 @@ export default function GeradorPage() {
     dificuldade: 'médio',
     materia: '',
     banca: 'Geral',
-    provider: 'embedded'
+    provider: (typeof localStorage !== 'undefined' && localStorage.getItem('nexomente_ai_provider')) || 'embedded'
   });
 
   const [filtroMateria, setFiltroMateria] = useState('');
@@ -120,13 +120,18 @@ export default function GeradorPage() {
     toast.success('Matéria adicionada!');
   };
 
-  const handleCriarFlashcard = (questaoId) => {
+  const handleCriarFlashcard = (questaoId, silent = false) => {
     const cardId = criarFlashcards(questaoId);
-    if (cardId) toast.success('Flashcard criado!');
+    if (cardId && !silent) toast.success('Flashcard criado!');
+    return cardId;
   };
 
   const handleExportar = (tipo, incluirGabarito = true) => {
     const questoesParaExportar = questoesExibir.length > 0 ? questoesExibir : questoes;
+    if (questoesParaExportar.length === 0) {
+      toast.error('Nenhuma questão disponível para exportar.');
+      return;
+    }
     const sufixo = incluirGabarito ? 'com_gabarito' : 'caderno_aluno';
 
     if (tipo === 'doc') {
@@ -186,21 +191,31 @@ export default function GeradorPage() {
           </div>
         </div>
 
-        {/* Indicador de Steps */}
-        <div className="flex items-center gap-3 bg-surface-card/50 p-1.5 rounded-2xl border border-surface-border/50 backdrop-blur-sm">
-          {STEPS.map((s, idx) => (
-            <div key={s.id} className="flex items-center gap-2">
-              <div className={`
-                flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300
-                ${step === s.id ? 'bg-color-gerador text-surface-base shadow-lg shadow-color-gerador/20' : 'text-text-lo'}
-              `}>
-                <s.icon size={14} className={step === s.id ? 'animate-pulse' : ''} />
-                <span className="text-[10px] font-black uppercase tracking-widest">{s.label}</span>
-              </div>
-              {idx < STEPS.length - 1 && <div className="w-2 h-[1px] bg-surface-border opacity-50" />}
-            </div>
-          ))}
-        </div>
+        {/* Indicador de Steps (Exibido apenas na aba Criação) */}
+        {aba === 'upload' && (
+          <div className="flex items-center gap-3 bg-surface-card/50 p-1.5 rounded-2xl border border-surface-border/50 backdrop-blur-sm">
+            {STEPS.map((s, idx) => {
+              const canNavigateBack = s.id < step && step !== 3;
+              return (
+                <div key={s.id} className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={!canNavigateBack}
+                    onClick={() => canNavigateBack && setStep(s.id)}
+                    className={`
+                      flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300
+                      ${step === s.id ? 'bg-color-gerador text-surface-base shadow-lg shadow-color-gerador/20' : canNavigateBack ? 'text-text-mid hover:text-text-hi cursor-pointer' : 'text-text-lo cursor-default'}
+                    `}
+                  >
+                    <s.icon size={14} className={step === s.id ? 'animate-pulse' : ''} />
+                    <span className="text-[10px] font-black uppercase tracking-widest">{s.label}</span>
+                  </button>
+                  {idx < STEPS.length - 1 && <div className="w-2 h-[1px] bg-surface-border opacity-50" />}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Navegação de Abas */}
@@ -236,6 +251,8 @@ export default function GeradorPage() {
             fileInputRef={fileInputRef}
             configIA={configIA}
             setConfigIA={setConfigIA}
+            materias={materias}
+            bancas={bancas}
             handleGerarIA={handleGerarIA}
             progresso={progresso}
             questoes={questoes}

@@ -3,13 +3,9 @@ import * as aiProvider from '../lib/ai/aiProvider';
 
 export const useAIStore = create((set, get) => ({
   status: 'checking',
-  provider: (() => {
-    const saved = localStorage.getItem('nexomente_ai_provider');
-    if (!window.electronAPI && (!saved || saved === 'embedded')) return 'cloud';
-    return saved || 'cloud';
-  })(),
+  provider: localStorage.getItem('nexomente_ai_provider') || 'embedded',
   modelos: [],
-  modeloAtual: localStorage.getItem('nexomente_ai_model') || 'gemini-1.5-flash',
+  modeloAtual: localStorage.getItem('nexomente_ai_model') || 'gemma-4-E2B-it (Motor Interno)',
   temperatura: parseFloat(localStorage.getItem('nexomente_ai_temp')) || 0.7,
   apiKey: localStorage.getItem('nexomente_gemini_key') || '',
   loading: false,

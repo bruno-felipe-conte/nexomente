@@ -233,5 +233,46 @@ describe('Validação Comportamental de Tela (Study, Flashcards, Notas)', () => 
       });
       expect(queryByText(/Metadados/i)).toBeNull();
     });
+
+    it('cria nota dentro de uma biblioteca específica (ex: Livros) e preserva o conteúdo ao editar o título', async () => {
+      let utils;
+      await act(async () => {
+        utils = render(<NotasPage />);
+      });
+      const { getByText, getByLabelText } = utils;
+
+      // 1. Seleciona a biblioteca "Livros"
+      const btnLivros = getByText('Livros');
+      act(() => {
+        fireEvent.click(btnLivros);
+      });
+
+      // 2. Clica em "+ Nova Nota" dentro da biblioteca Livros
+      const btnNovaNota = getByText(/Nova Nota/i);
+      act(() => {
+        fireEvent.click(btnNovaNota);
+      });
+
+      // A nota criada deve aparecer listada na biblioteca Livros (não ficar vazia)
+      const { Notas } = useDBStore.getState();
+      const livros = Notas.getAll().filter(n => n.tipo === 'livro');
+      expect(livros).toHaveLength(1);
+      expect(livros[0].tipo).toBe('livro');
+
+      // 3. Edita o título da nota e clica em Salvar
+      const inputTitulo = getByLabelText('Título da nota');
+      act(() => {
+        fireEvent.change(inputTitulo, { target: { value: 'Dom Casmurro' } });
+      });
+
+      const btnSalvar = getByText('Salvar');
+      act(() => {
+        fireEvent.click(btnSalvar);
+      });
+
+      const notaSalva = Notas.getById(livros[0].id);
+      expect(notaSalva.titulo).toBe('Dom Casmurro');
+      expect(notaSalva.tipo).toBe('livro');
+    });
   });
 });

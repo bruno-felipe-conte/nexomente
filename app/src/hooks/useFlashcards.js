@@ -13,7 +13,7 @@ export function useFlashcards() {
     return Flashcards.create({
       frente: cardData.frente,
       verso: cardData.verso,
-      materia_id: cardData.materia_id || null,
+      materia_id: cardData.materia_id || cardData.materia || 'geral',
       nota_id: cardData.nota_id || null,
     });
   }, [Flashcards]);

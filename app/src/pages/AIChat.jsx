@@ -4,12 +4,13 @@
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import { Send, Loader2, RotateCcw, Share2 } from 'lucide-react';
+import { Send, Loader2, RotateCcw, Share2, FileText, ArrowLeft, Sparkles } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useAIModel, useAIChat } from '../hooks/useAIModel';
 import { useNotes } from '../hooks/useNotes';
 import * as aiProvider from '../lib/ai/aiProvider';
 import { useAIStore } from '../store/useAIStore';
+import { useUIStore } from '../store/useUIStore';
 import toast from 'react-hot-toast';
 import ChatMessage from '../components/ai/ChatMessage';
 import ModelSelectorPopover from '../components/ai/ModelSelectorPopover';
@@ -23,22 +24,114 @@ const TEMPLATES = [
 ];
 
 export default function AIChatPage({ onNavigate }) {
-  const { notas } = useNotes();
+  const { notas, update: updateNota, getById } = useNotes();
   const { modelos, modeloAtual, trocarModelo, temperatura, trocarTemperatura } = useAIModel();
   const { provider, apiKey } = useAIStore();
+  const userName = useUIStore((s) => s.userName);
+  const pendingChatNoteId = useUIStore((s) => s.pendingChatNoteId);
+  const setPendingChatNoteId = useUIStore((s) => s.setPendingChatNoteId);
+  const setPendingNoteAction = useUIStore((s) => s.setPendingNoteAction);
 
-  const [notaId, setNotaId] = useState(null);
+  const hour = new Date().getHours();
+  const saudacao = hour >= 5 && hour < 12 ? 'Bom dia' : hour >= 12 && hour < 18 ? 'Boa tarde' : 'Boa noite';
+  const nomeExibicao = (userName && userName !== 'Visitante') ? userName : 'Bruno';
+
+  const [notaId, setNotaId] = useState(() => pendingChatNoteId || null);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resumindoNaNota, setResumindoNaNota] = useState(false);
   const [showModelMenu, setShowModelMenu] = useState(false);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [buscaNota, setBuscaNota] = useState('');
   const [copiadoIdx, setCopiadoIdx] = useState(null);
 
+  // Consome a nota enviada pelo botão Cards / Chat IA do editor
+  useEffect(() => {
+    if (!pendingChatNoteId) return;
+    const idToLoad = pendingChatNoteId;
+    setPendingChatNoteId(null);
+    queueMicrotask(() => {
+      setNotaId(idToLoad);
+    });
+    const target = getById(idToLoad) || notas.find(n => n.id === idToLoad);
+    if (target) {
+      toast.success(`Nota "${target.titulo}" conectada como contexto do chat!`);
+    }
+  }, [pendingChatNoteId, setPendingChatNoteId, getById, notas]);
+
   const { mensagens, adicionar, limpar } = useAIChat(notaId);
-  const notaAtual = notaId ? notas.find(n => n.id === notaId) : null;
+  const notaAtual = notaId ? (getById(notaId) || notas.find(n => n.id === notaId)) : null;
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
+
+  /**
+   * Atualiza ou adiciona o bloco de resumo conciso da conversa no final da própria nota vinculada.
+   */
+  const gravarResumoConversaNaNota = useCallback((resumoTexto, targetNoteId) => {
+    const idAlvo = targetNoteId || notaId;
+    if (!idAlvo || !resumoTexto) return false;
+    const notaAlvo = getById(idAlvo) || notas.find(n => n.id === idAlvo);
+    if (!notaAlvo) return false;
+
+    const htmlResumo = `<hr><blockquote class="ai-chat-summary"><p><strong>💬 Resumo da Conversa IA:</strong> ${resumoTexto.replace(/\n+/g, '<br>')}</p></blockquote>`;
+    const conteudoBase = notaAlvo.conteudo || '';
+    // Se já houver um resumo anterior da conversa na nota, substitui para manter conciso e atualizado; caso contrário, adiciona ao final
+    const regexBlocoExistente = /(<hr>\s*)?<blockquote class="ai-chat-summary">[\s\S]*?<\/blockquote>/i;
+    const novoConteudo = regexBlocoExistente.test(conteudoBase)
+      ? conteudoBase.replace(regexBlocoExistente, htmlResumo)
+      : `${conteudoBase}${htmlResumo}`;
+
+    updateNota(idAlvo, {
+      titulo: notaAlvo.titulo,
+      conteudo: novoConteudo,
+      resumo_ia: resumoTexto,
+    });
+    return true;
+  }, [notaId, getById, notas, updateNota]);
+
+  /**
+   * Gera um resumo conciso de toda a conversa com a IA e salva no final da nota vinculada.
+   */
+  const handleSalvarResumoNaNota = useCallback(async (voltarParaNota = false) => {
+    if (!notaAtual || mensagens.length === 0) return;
+    setResumindoNaNota(true);
+    try {
+      const transcricao = mensagens
+        .slice(-10)
+        .map(m => `${m.role === 'user' ? 'Usuário' : 'IA'}: ${m.texto}`)
+        .join('\n');
+
+      const promptResumo = `Resuma de forma extremamente concisa (em 2 a 4 frases diretas em português) os principais aprendizados e conclusões desta conversa sobre a nota "${notaAtual.titulo}":\n\n${transcricao}\n\nResumo conciso:`;
+
+      const res = await aiProvider.generate(promptResumo, {
+        provider,
+        model: modeloAtual,
+        temperature: 0.3,
+        apiKey,
+        max_tokens: 256,
+      });
+
+      const ultimaRespostaIA = [...mensagens].reverse().find(m => m.role === 'assistant')?.texto || '';
+      const textoResumo = (res.success && (res.response || res.content))
+        ? (res.response || res.content).trim()
+        : ultimaRespostaIA.substring(0, 300);
+
+      if (textoResumo) {
+        gravarResumoConversaNaNota(textoResumo, notaAtual.id);
+        toast.success(`Resumo da conversa adicionado à nota "${notaAtual.titulo}"!`);
+      }
+
+      if (voltarParaNota) {
+        setPendingNoteAction({ noteId: notaAtual.id });
+        if (onNavigate) onNavigate('notes');
+        else window.dispatchEvent(new CustomEvent('navigate', { detail: 'notes' }));
+      }
+    } catch (err) {
+      toast.error(`Erro ao resumir conversa: ${err.message}`);
+    } finally {
+      setResumindoNaNota(false);
+    }
+  }, [notaAtual, mensagens, provider, modeloAtual, apiKey, gravarResumoConversaNaNota, setPendingNoteAction, onNavigate]);
 
   const handleLimpar = () => {
     if (mensagens.length === 0) return;
@@ -70,7 +163,7 @@ export default function AIChatPage({ onNavigate }) {
 
   const buildMessages = useCallback((userPrompt) => {
     const sys = notaAtual
-      ? `Você é um assistente de estudo. Contexto: Nota "${notaAtual.titulo}".\nConteúdo:\n${(notaAtual.conteudo || '').replace(/<[^>]*>/g, '').substring(0, 4000)}`
+      ? `Você é um assistente de estudo conectado à nota "${notaAtual.titulo}". Use o conteúdo da nota abaixo como contexto principal e responda em português de forma clara e objetiva.\n\nConteúdo da Nota:\n${(notaAtual.conteudo || '').replace(/<[^>]*>/g, '').substring(0, 4000)}`
       : 'Você é um assistente de estudo prestativo. Responda em português.';
 
     const msgs = [{ role: 'system', content: sys }];
@@ -97,9 +190,31 @@ export default function AIChatPage({ onNavigate }) {
         model: modeloAtual,
         temperature: temperatura,
         apiKey,
-        max_tokens: 2000
+        max_tokens: 1024
       });
-      adicionar('assistant', res.success ? res.response : res.error, res.code);
+      const respostaTexto = res.success ? res.response : res.error;
+      adicionar('assistant', respostaTexto, res.code);
+
+      // Se houver uma nota conectada ao chat, gera e anexa/atualiza automaticamente um resumo conciso da conversa no final da própria nota
+      if (res.success && notaAtual && respostaTexto) {
+        const historicoRecente = [
+          ...mensagens.slice(-6).map(m => `${m.role === 'user' ? 'Usuário' : 'IA'}: ${m.texto}`),
+          `Usuário: ${prompt}`,
+          `IA: ${respostaTexto}`
+        ].join('\n');
+
+        aiProvider.generate(
+          `Resuma em 1 ou 2 frases curtas e diretas os pontos-chave desta conversa sobre a nota "${notaAtual.titulo}":\n\n${historicoRecente}\n\nResumo conciso:`,
+          { provider, model: modeloAtual, temperature: 0.3, apiKey, max_tokens: 180 }
+        ).then((sumRes) => {
+          const sumText = (sumRes?.success && (sumRes.response || sumRes.content))
+            ? (sumRes.response || sumRes.content).trim()
+            : respostaTexto.split('\n').slice(0, 2).join(' ').substring(0, 240);
+          if (sumText) {
+            gravarResumoConversaNaNota(sumText, notaAtual.id);
+          }
+        }).catch(() => {});
+      }
     } catch (e) {
       adicionar('assistant', e.message, 'ERROR');
     }
@@ -115,28 +230,66 @@ export default function AIChatPage({ onNavigate }) {
 
   return (
     <div className="flex flex-col h-full bg-nx-void font-ui overflow-hidden">
-      {mensagens.length > 0 && (
-        <div className="px-4 py-2 border-b border-nx-border bg-nx-surface/40 flex items-center justify-between text-xs text-text-lo shrink-0">
-          <span className="font-medium text-text-lo/60">
-            {notaAtual ? `Contexto: ${notaAtual.titulo}` : 'Conversa Livre'}
-          </span>
+      {(mensagens.length > 0 || notaAtual) && (
+        <div className="px-4 py-2 border-b border-nx-border bg-nx-surface/40 flex items-center justify-between text-xs text-text-lo shrink-0 flex-wrap gap-2">
           <div className="flex items-center gap-2">
-            <button
-              onClick={handleExportar}
-              title="Copiar conversa em Markdown"
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 hover:text-text-hi text-text-lo/70 transition-all cursor-pointer"
-            >
-              <Share2 size={12} />
-              <span className="text-[11px]">Exportar</span>
-            </button>
-            <button
-              onClick={handleLimpar}
-              title="Limpar histórico"
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-red-500/10 hover:text-red-400 text-text-lo/70 transition-all cursor-pointer"
-            >
-              <RotateCcw size={12} />
-              <span className="text-[11px]">Limpar</span>
-            </button>
+            {notaAtual ? (
+              <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-accent-main/10 border border-accent-main/30 text-accent-main">
+                <FileText size={12} />
+                <span className="font-semibold">Contexto da Nota: {notaAtual.titulo}</span>
+              </div>
+            ) : (
+              <span className="font-medium text-text-lo/60">Conversa Livre</span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {notaAtual && (
+              <>
+                {mensagens.length > 0 && (
+                  <button
+                    onClick={() => handleSalvarResumoNaNota(true)}
+                    disabled={resumindoNaNota || loading}
+                    title="Gerar resumo conciso da conversa, salvar no final da nota e voltar para o editor"
+                    className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-accent-main text-white hover:bg-accent-main/90 disabled:opacity-50 font-semibold transition-all cursor-pointer"
+                  >
+                    {resumindoNaNota ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                    <span className="text-[11px]">Concluir & Salvar Resumo na Nota</span>
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    setPendingNoteAction({ noteId: notaAtual.id });
+                    if (onNavigate) onNavigate('notes');
+                    else window.dispatchEvent(new CustomEvent('navigate', { detail: 'notes' }));
+                  }}
+                  title="Voltar para a nota no editor"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 hover:text-text-hi text-text-lo/70 transition-all cursor-pointer"
+                >
+                  <ArrowLeft size={12} />
+                  <span className="text-[11px]">Voltar à Nota</span>
+                </button>
+              </>
+            )}
+            {mensagens.length > 0 && (
+              <>
+                <button
+                  onClick={handleExportar}
+                  title="Copiar conversa em Markdown"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 hover:text-text-hi text-text-lo/70 transition-all cursor-pointer"
+                >
+                  <Share2 size={12} />
+                  <span className="text-[11px]">Exportar</span>
+                </button>
+                <button
+                  onClick={handleLimpar}
+                  title="Limpar histórico"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-red-500/10 hover:text-red-400 text-text-lo/70 transition-all cursor-pointer"
+                >
+                  <RotateCcw size={12} />
+                  <span className="text-[11px]">Limpar</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -149,7 +302,7 @@ export default function AIChatPage({ onNavigate }) {
               className="mb-6 md:mb-12 text-center w-full"
             >
               <h1 className="text-xl md:text-nx-2xl font-display text-nx-bright tracking-tight leading-tight mb-2 px-6">
-                Boa noite, bruno
+                {saudacao}, {nomeExibicao}
               </h1>
             </motion.div>
 
@@ -224,7 +377,18 @@ export default function AIChatPage({ onNavigate }) {
                   idx={idx}
                   copiadoIdx={copiadoIdx}
                   onCopiar={(t, i) => { navigator.clipboard.writeText(t); setCopiadoIdx(i); setTimeout(() => setCopiadoIdx(null), 2000); }}
-                  onInserir={() => { onNavigate?.('notes'); toast.success('Conteúdo pronto para colar'); }}
+                  onInserir={(texto) => {
+                    if (notaAtual) {
+                      gravarResumoConversaNaNota(texto, notaAtual.id);
+                      setPendingNoteAction({ noteId: notaAtual.id });
+                      toast.success(`Inserido na nota "${notaAtual.titulo}"!`);
+                    } else {
+                      navigator.clipboard.writeText(texto);
+                      toast.success('Conteúdo copiado e pronto para colar na nota');
+                    }
+                    if (onNavigate) onNavigate('notes');
+                    else window.dispatchEvent(new CustomEvent('navigate', { detail: 'notes' }));
+                  }}
                 />
               ))}
             </AnimatePresence>

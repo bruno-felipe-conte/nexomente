@@ -18,6 +18,7 @@ __pycache__/
 # AI Models (Libertados para portabilidade total)
 # assets/models/
 # electron/models/
+electron/models/gemma-4-E2B-it-GGUF/
 
 # Tooling & Cache
 .codegraph/

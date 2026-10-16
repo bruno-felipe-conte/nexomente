@@ -6,9 +6,9 @@ import {
 
 const tipoIcons = {
   pasta_raiz: BookOpen,
-  livros: BookOpen,
-  projetos: FileText,
-  ideias: Lightbulb,
+  livro: BookOpen,
+  projeto: FileText,
+  ideia: Lightbulb,
   diario: Calendar,
   estudo: BookMarked,
   biblia: Bookmark,
@@ -25,9 +25,9 @@ export default function BibliotecaPanel({
   const categorias = [
     { id: 'pasta_raiz', nome: 'Todas', tipo: 'pasta_raiz' },
     { id: 'inbox', nome: 'Inbox', tipo: 'inbox' },
-    { id: 'livros', nome: 'Livros', tipo: 'livros' },
-    { id: 'projetos', nome: 'Projetos', tipo: 'projetos' },
-    { id: 'ideias', nome: 'Ideias', tipo: 'ideias' },
+    { id: 'livro', nome: 'Livros', tipo: 'livro' },
+    { id: 'projeto', nome: 'Projetos', tipo: 'projeto' },
+    { id: 'ideia', nome: 'Ideias', tipo: 'ideia' },
     { id: 'estudo', nome: 'Estudo', tipo: 'estudo' },
     { id: 'biblia', nome: 'Bíblia', tipo: 'biblia' },
   ];
@@ -49,8 +49,8 @@ export default function BibliotecaPanel({
         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-text-lo/40">Bibliotecas</span>
         <button
           onClick={onCriarPasta}
-          title="Nova pasta ou categoria"
-          aria-label="Nova pasta ou categoria"
+          title="Nova nota nesta categoria"
+          aria-label="Nova nota nesta categoria"
           className="p-1 text-text-lo/40 hover:text-accent-main transition-colors cursor-pointer"
         >
           <Plus size={12} />
