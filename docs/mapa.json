@@ -1,8 +1,24 @@
 {
-  "versao": "1.1.0",
-  "data_atualizacao": "2026-10-16",
+  "versao": "1.2.0",
+  "data_atualizacao": "2026-10-17",
   "descricao": "Grafo estruturado de conexões, dependências e canais IPC do NexoMente",
   "hubs": [
+    {
+      "id": "i18n-engine",
+      "nome": "Motor de Internacionalização (i18n Desacoplado PT/EN/ES)",
+      "arquivo": "app/src/lib/i18n.js",
+      "linha": 1,
+      "implementacao": "app/src/lib/i18n.js",
+      "usado_por": [
+        "app/src/components/layout/Sidebar.jsx",
+        "app/src/components/layout/Header.jsx",
+        "app/src/pages/Dashboard.jsx",
+        "app/src/pages/Poemas.jsx",
+        "app/src/pages/Flashcards.jsx",
+        "app/src/pages/Graph.jsx"
+      ],
+      "impacto_falha": "Chaves de tradução deixam de resolver nos componentes principais e a troca de idioma falha."
+    },
     {
       "id": "db-store",
       "nome": "WASM Engine & Repositórios Zustand",
@@ -21,12 +37,10 @@
     },
     {
       "id": "ai-provider",
-      "nome": "Abstração Multiprovedor de IA",
+      "nome": "Motor Interno de IA (node-llama-cpp / GGUF)",
       "arquivo": "app/src/lib/ai/aiProvider.js",
-      "linha": 38,
+      "linha": 29,
       "implementacao": [
-        "app/src/lib/ai/lmStudioService.js",
-        "app/src/lib/ai/geminiService.js",
         "app/src/lib/ai/embeddedService.js",
         "electron/ipc/aiHandlers.js",
         "vite.config.js"
@@ -36,6 +50,7 @@
         "app/src/hooks/useAIModel.js",
         "app/src/lib/parser.js",
         "app/src/pages/AIChat.jsx",
+        "app/src/pages/Graph.jsx",
         "app/src/pages/Settings.jsx"
       ],
       "impacto_falha": "Chat neural, geração de simulados, sugestão de tags e resumos deixam de responder."
@@ -48,9 +63,11 @@
       "implementacao": "app/src/store/useTamagotchiStore.js",
       "usado_por": [
         "app/src/components/gamification/TamagotchiWidget.jsx",
+        "app/src/components/layout/Sidebar.jsx",
         "app/src/components/layout/Header.jsx",
         "app/src/store/useStudyTimerStore.js",
         "app/src/pages/Dashboard.jsx",
+        "app/src/pages/Poemas.jsx",
         "app/src/pages/Statistics.jsx"
       ],
       "impacto_falha": "Progressão de níveis congela, XP de estudos e cards não é computado e widgets do pet quebram."
@@ -104,7 +121,6 @@
       "usado_por": [
         "app/src/components/layout/Header.jsx",
         "app/src/lib/ai/embeddedService.js",
-        "app/src/lib/ai/geminiService.js",
         "app/src/pages/Settings.jsx"
       ],
       "impacto_falha": "Modo desktop perde controle de janela, aceleração nativa de IA fica desativada e chamadas nativas falham."
@@ -230,10 +246,10 @@
     },
     {
       "id": "flashcards-review-sm2",
-      "nome": "Central de Flashcards - Avaliação SM-2 & Atalhos",
+      "nome": "Central de Flashcards - Avaliação Anki SRS & Atalhos",
       "arquivo": "app/src/components/flashcards/FlashcardViewer.jsx",
       "linha": 131,
-      "fluxo": "Clique no card ou Space/Enter -> Flip 3D -> clique na qualidade ou teclas 1-4 -> revisar(card.id, qualidade) -> sm2.js calcula intervalo/ease -> atualiza SQLite",
+      "fluxo": "Clique no card ou Space/Enter -> Flip 3D -> clique no rating (Again, Hard, Good, Easy) ou teclas 1-4 -> revisar(card.id, rating) -> sm2.js (ankiSRS) calcula intervalo/ease/learning steps/lapses -> atualiza SQLite/WASM",
       "usa": ["db-store"],
       "afeta": ["Flashcards", "Statistics"]
     },
@@ -268,8 +284,8 @@
       "id": "gerador-forja-simulado",
       "nome": "Forja de Questões - Geração de Simulado por IA",
       "arquivo": "app/src/components/gerador/GeradorForjaTab.jsx",
-      "linha": 191,
-      "fluxo": "Depósito de material/arquivo -> seleção de disciplina, banca, rigor, formato e provider -> clique em Forjar Agora -> useGerador.gerarComIA(texto, config) -> parser.extrairQuestoesDeResposta decodifica JSON ou stream -> salva no banco",
+      "linha": 201,
+      "fluxo": "Depósito de material/arquivo (.txt, .md, .pdf via extrairTextoDePDF) -> seleção de disciplina, banca, foco BM25 (topico), rigor, formato e provider -> clique em Forjar Agora -> useGerador.gerarComIA(texto, config) -> pipeline Chunking + BM25 (selecionarChunksRelevantes) + Micro-Lotes com citacao_base e QUESTOES_JSON_SCHEMA (JSON Grammar) -> salva no banco",
       "usa": ["ai-provider", "db-store"],
       "afeta": ["Gerador", "Flashcards"]
     },
@@ -320,10 +336,10 @@
     },
     {
       "id": "settings-test-api-key",
-      "nome": "Configurações - Testar Chave API do Gemini & Motor Interno GGUF",
+      "nome": "Configurações - Motor Interno GGUF",
       "arquivo": "app/src/pages/Settings.jsx",
-      "linha": 43,
-      "fluxo": "Seleção de provedor (embedded, cloud, local) -> para embedded, configura nexomente_embedded_path (padrão gemma-4-E2B-it-GGUF) validando via embeddedService.checkStatus() -> para cloud, Testar Conexão -> geminiService.checkStatus()",
+      "linha": 31,
+      "fluxo": "Configuração do caminho do modelo interno nexomente_embedded_path (padrão gemma-4-E2B-it-GGUF) validando via embeddedService.checkStatus()",
       "usa": ["ai-provider"],
       "afeta": ["Settings", "AIChat"]
     },
@@ -331,14 +347,13 @@
       "id": "settings-reset-factory",
       "nome": "Configurações - Reset de Fábrica com Confirmação Dupla",
       "arquivo": "app/src/pages/Settings.jsx",
-      "linha": 110,
+      "linha": 48,
       "fluxo": "Clique em Apagar Tudo -> modal exige digitar CONFIRMAR -> limpeza de localStorage -> reinicialização do SQLite -> reload",
       "usa": ["db-store"],
       "afeta": ["Notas", "Flashcards", "Study", "Settings", "Dashboard"]
     }
   ],
   "ipc_canais": [
-    { "canal": "ai:geminiChat", "chama": "app/src/lib/ai/geminiService.js", "trata": "electron/ipc/aiHandlers.js", "retorno": "{ ok: boolean, status: number, data: object }" },
     { "canal": "ai:embeddedChat", "chama": "app/src/lib/ai/embeddedService.js", "trata": "electron/ipc/aiHandlers.js", "retorno": "{ success: boolean, response: string, tokens: number }" },
     { "canal": "ai:getHardwareInfo", "chama": "electron/preload.js", "trata": "electron/ipc/aiHandlers.js", "retorno": "{ cpu: string, ram: number, gpu: string, vram: number }" },
     { "canal": "ai:getContextStats", "chama": "electron/preload.js", "trata": "electron/ipc/aiHandlers.js", "retorno": "{ activeTokens: number, maxTokens: number }" },

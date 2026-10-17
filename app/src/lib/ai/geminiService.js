@@ -29,14 +29,19 @@ export async function chat(messages, options = {}) {
   try {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
+    const generationConfig = {
+      temperature: options.temperature ?? 0.7,
+      maxOutputTokens: options.max_tokens || 1024,
+    };
+    if (options.jsonSchema) {
+      generationConfig.responseMimeType = 'application/json';
+    }
+
     const payload = {
       url,
       body: {
         contents,
-        generationConfig: {
-          temperature: options.temperature || 0.7,
-          maxOutputTokens: options.max_tokens || 1024,
-        }
+        generationConfig,
       }
     };
 

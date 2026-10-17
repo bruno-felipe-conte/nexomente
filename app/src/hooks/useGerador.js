@@ -126,15 +126,26 @@ export function useGerador() {
   const gerarComIA = useCallback(async (textoOuConfig, configOpt = {}) => {
     setCarregando(true);
     setErro(null);
-    setProgresso(15);
+    setProgresso(10);
 
-    // Indicador progressivo suave enquanto a IA local/remota processa
+    // Indicador progressivo suave combinando progresso real por lote com interpolação visual
     const progressInterval = setInterval(() => {
-      setProgresso(prev => (prev < 85 ? prev + 5 : prev));
-    }, 500);
+      setProgresso(prev => (prev < 88 ? prev + 3 : prev));
+    }, 450);
+
+    const onProgress = (pct) => {
+      setProgresso(prev => Math.max(prev, pct));
+    };
 
     try {
-      const resultado = await gerarQuestoesComIA(textoOuConfig, configOpt);
+      const configComProgresso = typeof textoOuConfig === 'object' && !Array.isArray(textoOuConfig)
+        ? { ...textoOuConfig, ...configOpt, onProgress }
+        : { ...configOpt, onProgress };
+
+      const resultado = await gerarQuestoesComIA(
+        typeof textoOuConfig === 'string' ? textoOuConfig : configComProgresso,
+        configComProgresso
+      );
       clearInterval(progressInterval);
 
       if (!resultado.success) {

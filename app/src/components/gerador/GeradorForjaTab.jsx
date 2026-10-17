@@ -1,4 +1,4 @@
-import { Sparkles, Settings, Cloud, Upload, Wand2, BookOpen } from 'lucide-react';
+import { Sparkles, Upload, Wand2, BookOpen } from 'lucide-react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import QuestaoCard from './QuestaoCard';
@@ -48,7 +48,7 @@ export default function GeradorForjaTab({
                   <Upload size={14} /> Importar Arquivo
                 </button>
                 <div className="h-3 w-[1px] bg-surface-border" />
-                <span className="text-[9px] text-text-lo/40 font-bold uppercase tracking-[0.2em]">.txt, .md</span>
+                <span className="text-[9px] text-text-lo/40 font-bold uppercase tracking-[0.2em]">.txt, .md, .pdf</span>
               </div>
 
               <div className="flex items-center gap-4">
@@ -132,31 +132,20 @@ export default function GeradorForjaTab({
               </div>
             </div>
 
-            {/* Cérebro (Provider) */}
+            {/* Cérebro (Motor Local) */}
             <div className="p-6 bg-surface-card/40 border border-surface-border rounded-[2.5rem] space-y-5">
               <span className="text-xs font-bold uppercase tracking-widest text-text-lo text-center block">Cérebro da Forja</span>
               <div className="flex flex-col gap-2">
-                {[
-                  { id: 'embedded', label: 'Interno', icon: Sparkles },
-                  { id: 'cloud',    label: 'Nuvem',   icon: Cloud },
-                  { id: 'local',    label: 'Local',   icon: Settings }
-                ].map(p => (
-                  <button
-                    key={p.id}
-                    onClick={() => setConfigIA(prev => ({ ...prev, provider: p.id }))}
-                    className={`w-full py-2.5 px-3 flex items-center justify-center gap-2 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all border
-                      ${configIA.provider === p.id ? 'bg-color-gerador/20 border-color-gerador text-color-gerador shadow-lg shadow-color-gerador/10' : 'bg-surface-elevated border-transparent text-text-lo hover:text-text-mid'}`}
-                  >
-                    <p.icon size={13} />
-                    {p.label}
-                  </button>
-                ))}
+                <div className="w-full py-3 px-4 flex items-center justify-center gap-2 rounded-xl text-[11px] font-bold uppercase tracking-widest bg-color-gerador/20 border border-color-gerador text-color-gerador shadow-lg shadow-color-gerador/10">
+                  <Sparkles size={14} />
+                  Motor Interno GGUF
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Seletores de Matéria e Banca */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Seletores de Matéria, Banca e Filtro BM25 de Tópico */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="p-5 bg-surface-card/40 border border-surface-border rounded-3xl flex items-center justify-between gap-4">
               <span className="text-xs font-bold uppercase tracking-widest text-text-lo shrink-0">Matéria</span>
               <select
@@ -171,7 +160,7 @@ export default function GeradorForjaTab({
               </select>
             </div>
             <div className="p-5 bg-surface-card/40 border border-surface-border rounded-3xl flex items-center justify-between gap-4">
-              <span className="text-xs font-bold uppercase tracking-widest text-text-lo shrink-0">Banca Examinadora</span>
+              <span className="text-xs font-bold uppercase tracking-widest text-text-lo shrink-0">Banca</span>
               <select
                 value={configIA.banca || 'Geral'}
                 onChange={(e) => setConfigIA(prev => ({ ...prev, banca: e.target.value }))}
@@ -182,6 +171,16 @@ export default function GeradorForjaTab({
                   <option key={b.key || b.nome} value={b.nome}>{b.nome}</option>
                 ))}
               </select>
+            </div>
+            <div className="p-5 bg-surface-card/40 border border-surface-border rounded-3xl flex items-center justify-between gap-4">
+              <span className="text-xs font-bold uppercase tracking-widest text-text-lo shrink-0">Foco BM25</span>
+              <input
+                type="text"
+                value={configIA.topico || ''}
+                onChange={(e) => setConfigIA(prev => ({ ...prev, topico: e.target.value }))}
+                placeholder="Todo o documento ou tópico..."
+                className="flex-1 bg-surface-elevated border border-surface-border rounded-xl px-4 py-2.5 text-xs font-bold text-text-hi outline-none focus:border-color-gerador/50 placeholder:text-text-lo/40"
+              />
             </div>
           </div>
 

@@ -1,3 +1,5 @@
+import ankiSRS from '../../../hooks/sm2';
+
 export function createFlashcardsRepository(get, saveDB) {
   return {
     getAll: () => {
@@ -18,7 +20,10 @@ export function createFlashcardsRepository(get, saveDB) {
         ease_factor: row[7],
         ef: row[7],
         next_review: row[8],
-        created_at: row[9],
+        lapses: row[9] ?? 0,
+        state: row[10] || 'new',
+        stepIndex: row[11] ?? 0,
+        created_at: row[12] || row[9],
       }));
     },
 
@@ -40,6 +45,9 @@ export function createFlashcardsRepository(get, saveDB) {
         ease_factor: row[7],
         ef: row[7],
         next_review: row[8],
+        lapses: row[9] ?? 0,
+        state: row[10] || 'new',
+        stepIndex: row[11] ?? 0,
       }));
     },
 
@@ -49,8 +57,8 @@ export function createFlashcardsRepository(get, saveDB) {
       const id = card.id || `fc_${Date.now()}`;
       const materiaVal = card.materia_id ?? card.materia ?? 'geral';
       db.run(
-        "INSERT INTO flashcards (id, nota_id, materia_id, frente, verso) VALUES (?, ?, ?, ?, ?)",
-        [id, card.nota_id ?? null, materiaVal, card.frente, card.verso]
+        "INSERT INTO flashcards (id, nota_id, materia_id, frente, verso, state) VALUES (?, ?, ?, ?, ?, ?)",
+        [id, card.nota_id ?? null, materiaVal, card.frente, card.verso, 'new']
       );
       saveDB();
       return id;
@@ -60,31 +68,44 @@ export function createFlashcardsRepository(get, saveDB) {
       const db = get().db;
       if (!db) return;
 
-      const result = db.exec("SELECT intervalo, repeticoes, ease_factor FROM flashcards WHERE id = ?", [id]);
+      const result = db.exec("SELECT intervalo, repeticoes, ease_factor, lapses, state, step_index FROM flashcards WHERE id = ?", [id]);
       if (!result[0]?.values[0]) return;
 
-      let [intervalo, repeticoes, ease_factor] = result[0].values[0];
-      repeticoes = repeticoes || 0;
-      ease_factor = ease_factor || 2.5;
+      const [intervalo, repeticoes, ease_factor, lapses, state, step_index] = result[0].values[0];
+      const cardAtual = {
+        intervalo: intervalo || 0,
+        repeticoes: repeticoes || 0,
+        ease_factor: ease_factor || 2.5,
+        lapses: lapses || 0,
+        state: state || 'new',
+        stepIndex: step_index || 0,
+      };
 
-      if (qualidade >= 3) {
-        if (repeticoes === 0) intervalo = 1;
-        else if (repeticoes === 1) intervalo = 6;
-        else intervalo = Math.round(intervalo * ease_factor);
-        repeticoes += 1;
-      } else {
-        repeticoes = 0;
-        intervalo = 1;
-      }
-
-      ease_factor = ease_factor + (0.1 - (5 - qualidade) * (0.08 + (5 - qualidade) * 0.02));
-      if (ease_factor < 1.3) ease_factor = 1.3;
+      const srsResult = ankiSRS(cardAtual, qualidade);
 
       db.run(
-        "UPDATE flashcards SET intervalo = ?, repeticoes = ?, ease_factor = ?, next_review = datetime('now', ? || ' days') WHERE id = ?",
-        [intervalo, repeticoes, ease_factor, intervalo, id]
+        `UPDATE flashcards SET
+          intervalo = ?,
+          repeticoes = ?,
+          ease_factor = ?,
+          lapses = ?,
+          state = ?,
+          step_index = ?,
+          next_review = ?
+        WHERE id = ?`,
+        [
+          srsResult.intervalo ?? 0,
+          srsResult.repeticoes ?? srsResult.repetitions ?? 0,
+          srsResult.ease_factor ?? srsResult.ef ?? 2.5,
+          srsResult.lapses ?? 0,
+          srsResult.state ?? 'review',
+          srsResult.stepIndex ?? 0,
+          srsResult.next_review ?? new Date().toISOString(),
+          id
+        ]
       );
       saveDB();
+      return srsResult;
     },
 
     update: (id, updates) => {
@@ -100,6 +121,12 @@ export function createFlashcardsRepository(get, saveDB) {
       if (updates.repeticoes !== undefined) { fields.push('repeticoes = ?'); values.push(updates.repeticoes); }
       if (updates.ease_factor !== undefined) { fields.push('ease_factor = ?'); values.push(updates.ease_factor); }
       if (updates.next_review !== undefined) { fields.push('next_review = ?'); values.push(updates.next_review); }
+      if (updates.lapses !== undefined) { fields.push('lapses = ?'); values.push(updates.lapses); }
+      if (updates.state !== undefined) { fields.push('state = ?'); values.push(updates.state); }
+      if (updates.stepIndex !== undefined || updates.step_index !== undefined) {
+        fields.push('step_index = ?');
+        values.push(updates.stepIndex ?? updates.step_index);
+      }
       if (fields.length === 0) return false;
       values.push(id);
       db.run(`UPDATE flashcards SET ${fields.join(', ')} WHERE id = ?`, values);

@@ -87,14 +87,9 @@ export default defineConfig({
   server: {
     port: 5173,
     watch: {
+      usePolling: true,
+      interval: 300,
       ignored: ['**/electron/models/**', '**/*.gguf', '**/*.part'],
-    },
-    proxy: {
-      '/v1': {
-        target: 'http://127.0.0.1:1234',
-        changeOrigin: true,
-        rewrite: (path) => path,
-      },
     },
   },
 });

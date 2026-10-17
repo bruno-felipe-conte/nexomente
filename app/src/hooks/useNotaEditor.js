@@ -28,7 +28,7 @@ import TaskItem from '@tiptap/extension-task-item';
 import Highlight from '@tiptap/extension-highlight';
 import Mathematics from '@tiptap/extension-mathematics';
 import 'katex/dist/katex.min.css';
-import { suggestTags, summarizeContent } from '../lib/ai/lmStudioService';
+import * as aiProvider from '../lib/ai/aiProvider';
 import { useUIStore } from '../store/useUIStore';
 
 export function useNotaEditor({ notaSelecionada, editando, update, addTag, setNotaSelecionada }) {
@@ -150,23 +150,48 @@ export function useNotaEditor({ notaSelecionada, editando, update, addTag, setNo
   const handleTagsOpen = useCallback(async () => {
     if (!notaSelecionada) return;
     setAiLoadingTags(true);
-    const tags = await suggestTags(notaSelecionada, 8);
-    setTagsSugeridas(tags);
-    setAiLoadingTags(false);
-    if (tags.length > 0) setShowTagPicker(true);
+    try {
+      const prompt = `Analise esta nota e sugira até 8 tags em português (minúsculas, hífen para espaço, máximo 2 palavras cada). Responda APENAS com JSON no formato: {"tags": ["tag1", "tag2"]}\nTítulo: ${notaSelecionada.titulo}\nConteúdo: ${(notaSelecionada.conteudo || '').replace(/<[^>]*>/g, '').substring(0, 1500)}`;
+      const res = await aiProvider.generate(prompt, { max_tokens: 384, temperature: 0.3 });
+      let tags = [];
+      if (res.success) {
+        const textResp = res.response || res.content || '';
+        try {
+          const parsed = JSON.parse(textResp);
+          if (Array.isArray(parsed.tags)) tags = parsed.tags.slice(0, 8);
+        } catch {
+          const quotes = [...textResp.matchAll(/"([^"]+)"/g)].map(m => m[1]);
+          if (quotes.length > 0) tags = quotes.slice(0, 8);
+        }
+      }
+      setTagsSugeridas(tags);
+      if (tags.length > 0) setShowTagPicker(true);
+    } catch (e) {
+      console.error('[AI TAGS] Erro:', e);
+    } finally {
+      setAiLoadingTags(false);
+    }
   }, [notaSelecionada]);
 
   const handleResumoOpen = useCallback(async () => {
     if (!notaSelecionada || !editor) return;
     setAiLoadingResumo(true);
-    const resumo = await summarizeContent(notaSelecionada.conteudo || '');
-    setResumoPreview(resumo);
-    setAiLoadingResumo(false);
-    if (resumo && window.confirm(`Resumo gerado:\n\n${resumo}\n\nInserir no topo da nota?`)) {
-      editor.chain().focus().insertContentAt(0,
-        `<blockquote class="ai-resumo"><p>${resumo.replace(/"/g, '&quot;')}</p></blockquote><p></p>`
-      ).run();
-      salvarNota();
+    try {
+      const clean = (notaSelecionada.conteudo || '').replace(/<[^>]*>/g, '').substring(0, 3000);
+      const prompt = `Resuma o conteúdo abaixo em 3 a 5 frases curtas e objetivas em português:\n\n${clean}\n\nResumo:`;
+      const res = await aiProvider.generate(prompt, { max_tokens: 256, temperature: 0.3 });
+      const resumo = (res.success && (res.response || res.content)) ? (res.response || res.content).trim() : '';
+      setResumoPreview(resumo);
+      if (resumo && window.confirm(`Resumo gerado:\n\n${resumo}\n\nInserir no topo da nota?`)) {
+        editor.chain().focus().insertContentAt(0,
+          `<blockquote class="ai-resumo"><p>${resumo.replace(/"/g, '&quot;')}</p></blockquote><p></p>`
+        ).run();
+        salvarNota();
+      }
+    } catch (e) {
+      console.error('[AI RESUMO] Erro:', e);
+    } finally {
+      setAiLoadingResumo(false);
     }
   }, [notaSelecionada, editor, salvarNota]);
 

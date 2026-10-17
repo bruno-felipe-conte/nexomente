@@ -42,10 +42,32 @@ export function useFlashcards() {
     return cards.find(c => c.id === id);
   }, [cards]);
 
+  const contadoresAnki = useMemo(() => {
+    let novos = 0;
+    let aprendendo = 0;
+    let devidos = 0;
+    const now = new Date();
+
+    cards.forEach(c => {
+      const isDue = !c.next_review || new Date(c.next_review) <= now;
+      if (!isDue) return;
+
+      const state = c.state || (c.repeticoes === 0 && (!c.intervalo || c.intervalo === 0) ? 'new' : 'review');
+      if (state === 'new') novos++;
+      else if (state === 'learning' || state === 'relearning') aprendendo++;
+      else devidos++;
+    });
+
+    return { novos, aprendendo, devidos };
+  }, [cards]);
+
   const stats = {
     total: cards.length,
     paraRevisar: getParaRevisao().length,
     dominados: getDominados().length,
+    novos: contadoresAnki.novos,
+    aprendendo: contadoresAnki.aprendendo,
+    devidos: contadoresAnki.devidos,
   };
 
   return {
@@ -58,6 +80,7 @@ export function useFlashcards() {
     getParaRevisao,
     getDominados,
     getById,
+    contadoresAnki,
     stats,
   };
 }

@@ -317,32 +317,79 @@ export function registerDbHandlers() {
       const row = db.prepare('SELECT * FROM flashcards WHERE id = ?').get(id);
       if (!row) return false;
 
-      let { intervalo, repeticoes, ease_factor } = row;
-
-      if (qualidade >= 3) {
-        if (repeticoes === 0) intervalo = 1;
-        else if (repeticoes === 1) intervalo = 6;
-        else intervalo = Math.round(intervalo * ease_factor);
-        repeticoes = (repeticoes || 0) + 1;
-      } else {
-        repeticoes = 0;
-        intervalo = 1;
-      }
-
-      ease_factor = ease_factor + (0.1 - (5 - qualidade) * (0.08 + (5 - qualidade) * 0.02));
-      if (ease_factor < 1.3) ease_factor = 1.3;
+      let { intervalo, repeticoes, ease_factor, lapses, state, step_index } = row;
+      let ef = Number(ease_factor || 2.5);
+      let rep = Number(repeticoes || 0);
+      let interval = Number(intervalo || 0);
+      let falhas = Number(lapses || 0);
+      let cardState = state || (rep === 0 && interval === 0 ? 'new' : 'review');
+      let stepIdx = Number(step_index || 0);
 
       const nextDate = new Date();
-      nextDate.setDate(nextDate.getDate() + intervalo);
+
+      if (qualidade === 1) { // AGAIN
+        if (cardState === 'review') {
+          falhas += 1;
+          ef = Math.max(1.3, ef - 0.20);
+        }
+        cardState = cardState === 'review' ? 'relearning' : 'learning';
+        stepIdx = 0;
+        interval = 0;
+        rep = 0;
+        nextDate.setMinutes(nextDate.getMinutes() + 1);
+      } else if (cardState === 'new' || cardState === 'learning' || cardState === 'relearning') {
+        if (qualidade === 2) { // HARD
+          nextDate.setMinutes(nextDate.getMinutes() + 6);
+        } else if (qualidade === 3) { // GOOD
+          if (stepIdx === 0) {
+            stepIdx = 1;
+            nextDate.setMinutes(nextDate.getMinutes() + 10);
+          } else {
+            cardState = 'review';
+            interval = 1;
+            rep += 1;
+            nextDate.setDate(nextDate.getDate() + 1);
+          }
+        } else if (qualidade === 4) { // EASY
+          cardState = 'review';
+          interval = 4;
+          rep += 1;
+          nextDate.setDate(nextDate.getDate() + 4);
+        }
+      } else { // REVIEW
+        if (qualidade === 2) {
+          interval = Math.max(interval + 1, Math.round(interval * 1.2));
+          ef = Math.max(1.3, ef - 0.15);
+        } else if (qualidade === 3) {
+          interval = Math.max(interval + 1, Math.round(interval * ef));
+        } else if (qualidade === 4) {
+          interval = Math.max(interval + 1, Math.round(interval * ef * 1.3));
+          ef = Math.min(3.5, ef + 0.15);
+        }
+        rep += 1;
+        nextDate.setDate(nextDate.getDate() + interval);
+      }
 
       const info = db.prepare(`
         UPDATE flashcards SET
           intervalo = ?,
           repeticoes = ?,
           ease_factor = ?,
+          lapses = ?,
+          state = ?,
+          step_index = ?,
           next_review = ?
         WHERE id = ?
-      `).run(intervalo, repeticoes, ease_factor, nextDate.toISOString(), id);
+      `).run(
+        interval,
+        rep,
+        Number(ef.toFixed(2)),
+        falhas,
+        cardState,
+        stepIdx,
+        nextDate.toISOString(),
+        id
+      );
 
       return info.changes > 0;
     } catch (error) {

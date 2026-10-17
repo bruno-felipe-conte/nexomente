@@ -3,25 +3,27 @@
  * Extraído de Flashcards.jsx (Tarefa 4.1).
  * Suporta navegação por teclado: Espaço (flip), 1/3/5 (review), Setas (navegar).
  */
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Brain, RotateCcw, Check, ChevronLeft, ChevronRight, Edit } from 'lucide-react';
+import { Brain, RotateCcw, Check, ChevronLeft, ChevronRight, Edit, Flame, AlertCircle } from 'lucide-react';
 import PropTypes from 'prop-types';
 
 import Button from '../ui/Button';
 import Card from '../ui/Card';
-import { previewIntervalo } from '../../hooks/sm2';
+import { previewIntervalo, parseCloze } from '../../hooks/sm2';
 
-const QUALITY_LABELS = {
-  1: { label: 'Errei', cor: 'var(--color-error)' },
-  2: { label: 'Difícil', cor: 'var(--color-warning)' },
-  3: { label: 'Bom', cor: 'var(--color-success)' },
-  4: { label: 'Fácil', cor: 'var(--color-brand)' },
+// 4 Botões Oficiais do Anki (Cores e Teclas de 1 a 4)
+const ANKI_BUTTONS = {
+  1: { label: 'Errei (Again)', cor: '#ef4444', border: 'border-red-500/30', bg: 'hover:bg-red-500/10' },
+  2: { label: 'Difícil (Hard)', cor: '#f59e0b', border: 'border-amber-500/30', bg: 'hover:bg-amber-500/10' },
+  3: { label: 'Bom (Good)',    cor: '#10b981', border: 'border-emerald-500/30', bg: 'hover:bg-emerald-500/10' },
+  4: { label: 'Fácil (Easy)',  cor: '#3b82f6', border: 'border-blue-500/30', bg: 'hover:bg-blue-500/10' },
 };
 
 export default function FlashcardViewer({
   cardAtual, paraRevisao, idxRevisao, mostrandoFrente,
   onViraCard, onRevisar, onAnterior, onProximo, onEditar, onCriar,
+  contadoresAnki = { novos: 0, aprendendo: 0, devidos: 0 }
 }) {
   useEffect(() => {
     if (!cardAtual) return;
@@ -31,9 +33,7 @@ export default function FlashcardViewer({
       else if (mostrandoFrente) return;
       else if (['1', '2', '3', '4'].includes(e.key)) {
         e.preventDefault();
-        const numKey = parseInt(e.key);
-        const sm2Q = numKey === 1 ? 1 : numKey === 2 ? 3 : numKey === 3 ? 4 : 5;
-        onRevisar(sm2Q);
+        onRevisar(parseInt(e.key));
       }
       else if (e.key === 'ArrowLeft') { e.preventDefault(); onAnterior(); }
       else if (e.key === 'ArrowRight') { e.preventDefault(); onProximo(); }
@@ -42,14 +42,32 @@ export default function FlashcardViewer({
     return () => window.removeEventListener('keydown', handleKey);
   }, [cardAtual, onViraCard, onRevisar, onAnterior, onProximo, mostrandoFrente]);
 
+  // Suporte automático a Cloze Deletion (Omissão de Palavras)
+  const frenteHtml = useMemo(() => {
+    if (!cardAtual?.frente) return '';
+    return parseCloze(cardAtual.frente, true);
+  }, [cardAtual]);
+
+  const versoHtml = useMemo(() => {
+    if (!cardAtual) return '';
+    // Se o card for Cloze (contém {{c1::...}} na frente), renderiza o cloze revelado no verso
+    if (cardAtual.frente && /\{\{c\d+::/.test(cardAtual.frente)) {
+      const clozeRevelado = parseCloze(cardAtual.frente, false);
+      return cardAtual.verso ? `${clozeRevelado}<hr class="my-4 border-white/10" /><div class="text-sm text-text-lo/80 font-normal">${cardAtual.verso}</div>` : clozeRevelado;
+    }
+    return cardAtual.verso || '';
+  }, [cardAtual]);
+
+  const ehLeech = Boolean((cardAtual?.lapses || 0) >= 4);
+
   if (!cardAtual) {
     return (
       <div className="bg-bg-secondary/50 backdrop-blur-xl rounded-3xl p-16 border border-white/5 text-center max-w-xl mx-auto animate-in fade-in zoom-in-95 duration-500">
         <div className="w-20 h-20 bg-accent-main/10 rounded-2xl flex items-center justify-center mx-auto mb-6 text-accent-main">
            <Brain size={40} />
         </div>
-        <h2 className="text-2xl font-display font-bold text-text-hi mb-2">Meta Batida!</h2>
-        <p className="text-text-mid text-sm mb-8">Nenhum card pendente para revisão no momento. Que tal criar novos cards ou revisar seus dominados?</p>
+        <h2 className="text-2xl font-display font-bold text-text-hi mb-2">Parabéns! Decks em dia.</h2>
+        <p className="text-text-mid text-sm mb-8">Você concluiu todos os cards devidos para hoje neste baralho.</p>
         <Button onClick={onCriar} variant="primary" size="lg" className="rounded-2xl px-10">
           Criar Novo Card
         </Button>
@@ -59,31 +77,48 @@ export default function FlashcardViewer({
 
   return (
     <div className="max-w-4xl mx-auto w-full flex flex-col items-center animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="w-full flex justify-between items-center mb-8 px-2">
-        <div className="flex flex-col">
-           <span className="text-[10px] font-black text-text-lo uppercase tracking-[0.2em] mb-1">Sessão Ativa</span>
-           <span className="text-xs font-bold text-text-hi">
-             Progresso: {idxRevisao + 1} de {paraRevisao.length}
-           </span>
+      {/* Barra de Status estilo Anki (Novos em azul, Aprendendo em vermelho/laranja, Revisão em verde) */}
+      <div className="w-full flex justify-between items-center mb-6 px-2">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-400 font-mono text-xs font-bold" title="Novos">
+            <span>●</span> {contadoresAnki.novos || 0}
+          </div>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 font-mono text-xs font-bold" title="Aprendendo">
+            <span>▲</span> {contadoresAnki.aprendendo || 0}
+          </div>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono text-xs font-bold" title="Para Revisar">
+            <span>✓</span> {contadoresAnki.devidos || 0}
+          </div>
+          {ehLeech && (
+            <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-red-500/15 border border-red-500/30 text-red-400 text-[10px] font-bold uppercase tracking-wider">
+              <AlertCircle size={12} /> Sanguessuga ({cardAtual.lapses} erros)
+            </div>
+          )}
         </div>
-        <div className="h-1.5 w-32 bg-white/5 rounded-full overflow-hidden">
-           <motion.div
-             className="h-full bg-accent-main"
-             initial={{ width: 0 }}
-             animate={{ width: `${((idxRevisao + 1) / paraRevisao.length) * 100}%` }}
-           />
+
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-bold text-text-lo">
+            {idxRevisao + 1} de {paraRevisao.length}
+          </span>
+          <div className="h-1.5 w-24 bg-white/5 rounded-full overflow-hidden">
+            <motion.div
+              className="h-full bg-accent-main"
+              initial={{ width: 0 }}
+              animate={{ width: `${((idxRevisao + 1) / Math.max(1, paraRevisao.length)) * 100}%` }}
+            />
+          </div>
         </div>
       </div>
 
       {/* Container do Flip 3D */}
       <div
-        className="w-full aspect-[16/10] relative cursor-pointer group perspective-2000 mb-10"
+        className="w-full aspect-[16/10] relative cursor-pointer group perspective-2000 mb-8"
         onClick={onViraCard}
       >
         <motion.div
           className="w-full h-full relative preserve-3d"
           animate={{ rotateY: mostrandoFrente ? 0 : 180 }}
-          transition={{ duration: 0.7, type: "spring", stiffness: 100, damping: 15 }}
+          transition={{ duration: 0.6, type: "spring", stiffness: 100, damping: 15 }}
           style={{ transformStyle: "preserve-3d" }}
         >
           {/* Lado da Frente */}
@@ -93,14 +128,17 @@ export default function FlashcardViewer({
           >
             <div className="absolute top-6 left-6 flex items-center gap-2">
                <div className="w-1.5 h-1.5 rounded-full bg-accent-main animate-pulse" />
-               <span className="text-[10px] font-bold text-text-lo uppercase tracking-widest">Pergunta</span>
+               <span className="text-[10px] font-bold text-text-lo uppercase tracking-widest">
+                 {cardAtual.materia || 'Pergunta'}
+               </span>
             </div>
-            <p className="text-3xl md:text-5xl font-display font-bold text-text-hi leading-tight tracking-tight px-4">
-              {cardAtual.frente}
-            </p>
-            <div className="absolute bottom-10 flex items-center gap-2 opacity-40 group-hover:opacity-100 transition-opacity">
-               <span className="text-[10px] font-bold uppercase tracking-widest text-text-lo">Toque para revelar</span>
-               <div className="px-1.5 py-0.5 rounded bg-white/10 text-[9px] font-mono text-text-hi">SPACE</div>
+            <div
+              className="text-2xl md:text-4xl font-display font-bold text-text-hi leading-relaxed tracking-tight px-4 select-text"
+              dangerouslySetInnerHTML={{ __html: frenteHtml }}
+            />
+            <div className="absolute bottom-8 flex items-center gap-2 opacity-40 group-hover:opacity-100 transition-opacity">
+               <span className="text-[10px] font-bold uppercase tracking-widest text-text-lo">Mostrar Resposta</span>
+               <div className="px-1.5 py-0.5 rounded bg-white/10 text-[9px] font-mono text-text-hi">SPACE / ENTER</div>
             </div>
           </Card>
 
@@ -109,58 +147,49 @@ export default function FlashcardViewer({
             className="absolute inset-0 w-full h-full p-10 flex flex-col items-start justify-start text-left m-0 backface-hidden bg-[#121422] border-white/10 shadow-2xl overflow-y-auto custom-scrollbar"
             style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
           >
-            <div className="w-full flex items-center justify-between pb-4 border-b border-white/5 mb-8">
-              <span className="text-[10px] font-black text-accent-main uppercase tracking-[0.2em]">Resposta Correta</span>
-              <div className="flex gap-1">
-                 <div className="w-1.5 h-1.5 rounded-full bg-white/20" />
-                 <div className="w-1.5 h-1.5 rounded-full bg-white/20" />
-                 <div className="w-1.5 h-1.5 rounded-full bg-white/20" />
-              </div>
+            <div className="w-full flex items-center justify-between pb-4 border-b border-white/5 mb-6">
+              <span className="text-[10px] font-black text-accent-main uppercase tracking-[0.2em]">Resposta (Anki SRS)</span>
+              <span className="text-[10px] font-mono text-text-lo/60">
+                Fase: <strong className="text-text-hi uppercase">{cardAtual.state || 'learning'}</strong> | Ease: {((cardAtual.ease_factor || 2.5) * 100).toFixed(0)}%
+              </span>
             </div>
-            <div className="prose prose-invert max-w-none text-xl md:text-2xl font-medium text-text-hi leading-relaxed px-2">
-              {cardAtual.verso}
-            </div>
+            <div
+              className="prose prose-invert max-w-none text-xl md:text-2xl font-medium text-text-hi leading-relaxed px-2 select-text w-full"
+              dangerouslySetInnerHTML={{ __html: versoHtml }}
+            />
           </Card>
         </motion.div>
       </div>
 
-      {/* Botões de avaliação */}
+      {/* 4 Botões Oficiais do Anki */}
       <AnimatePresence>
         {!mostrandoFrente && (
           <motion.div
-            initial={{ opacity: 0, y: 30, scale: 0.9 }}
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20 }}
-            className="w-full space-y-4"
+            exit={{ opacity: 0, y: 15 }}
+            className="w-full space-y-3"
           >
-            <p className="text-center text-[10px] font-black text-text-lo uppercase tracking-[0.3em]">Como foi seu desempenho?</p>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
-              {Object.entries(QUALITY_LABELS).map(([q, info]) => {
-                const numQ = parseInt(q);
-                // Mapeia botões 1..4 para escala SM-2: 1=1 (falha), 2=3 (difícil), 3=4 (bom), 4=5 (fácil)
-                const sm2Qualidade = numQ === 1 ? 1 : numQ === 2 ? 3 : numQ === 3 ? 4 : 5;
-                const intervaloEstimado = previewIntervalo(cardAtual, sm2Qualidade);
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full">
+              {Object.entries(ANKI_BUTTONS).map(([btnKey, info]) => {
+                const rating = parseInt(btnKey);
+                const intervaloEstimado = previewIntervalo(cardAtual, rating);
 
                 return (
                   <button
-                    key={q}
-                    onClick={(e) => { e.stopPropagation(); onRevisar(sm2Qualidade); }}
-                    className="group relative flex flex-col items-center justify-center p-5 rounded-2xl border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer overflow-hidden"
-                    style={{
-                      backgroundColor: 'rgba(255,255,255,0.02)',
-                      borderColor: 'rgba(255,255,255,0.05)',
-                    }}
+                    key={btnKey}
+                    onClick={(e) => { e.stopPropagation(); onRevisar(rating); }}
+                    className={`group relative flex flex-col items-center justify-center p-4 rounded-2xl border transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl cursor-pointer ${info.border} ${info.bg} bg-white/[0.02]`}
                   >
-                    <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity" style={{ backgroundColor: info.cor }} />
-                    <span className="font-black text-lg mb-0.5 transition-colors" style={{ color: info.cor }}>
-                      {info.label}
-                    </span>
-                    <span className="text-[11px] font-mono text-text-lo/80 mb-2 font-semibold">
+                    <span className="text-[11px] font-mono font-bold mb-0.5" style={{ color: info.cor }}>
                       {intervaloEstimado}
                     </span>
-                    <div className="flex items-center gap-1.5 opacity-40 group-hover:opacity-100 transition-all">
-                       <span className="text-[9px] font-bold uppercase tracking-tighter">Tecla</span>
-                       <span className="px-1.5 py-0.5 rounded bg-white/10 text-[9px] font-mono text-text-hi">{q}</span>
+                    <span className="font-bold text-sm mb-1 text-text-hi">
+                      {info.label}
+                    </span>
+                    <div className="flex items-center gap-1 opacity-50 group-hover:opacity-100 transition-opacity">
+                       <span className="text-[9px] font-bold text-text-lo">Tecla</span>
+                       <span className="px-1.5 py-0.2 bg-white/10 rounded text-[9px] font-mono text-text-hi">{btnKey}</span>
                     </div>
                   </button>
                 );
@@ -172,43 +201,49 @@ export default function FlashcardViewer({
 
       {/* Rodapé de Meta */}
       {mostrandoFrente && (
-         <div className="flex gap-4 mt-4">
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-full border border-white/5">
+         <div className="flex gap-4 mt-2">
+            <div className="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/5 text-[10px] font-bold text-text-lo">
                <RotateCcw size={12} className="text-warning" />
-               <span className="text-[10px] font-bold text-text-lo uppercase tracking-widest">Repetições: {cardAtual.repeticoes || 0}</span>
+               <span>Repetições: {cardAtual.repeticoes || 0}</span>
             </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-full border border-white/5">
+            <div className="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/5 text-[10px] font-bold text-text-lo">
                <Check size={12} className="text-success" />
-               <span className="text-[10px] font-bold text-text-lo uppercase tracking-widest">Facilidade: {(cardAtual.ease_factor || 2.5).toFixed(1)}</span>
+               <span>Facilidade: {((cardAtual.ease_factor || 2.5) * 100).toFixed(0)}%</span>
             </div>
+            {cardAtual.lapses > 0 && (
+              <div className="flex items-center gap-2 px-3 py-1 bg-red-500/10 rounded-full border border-red-500/20 text-[10px] font-bold text-red-400">
+                 <Flame size={12} />
+                 <span>Erros: {cardAtual.lapses}</span>
+              </div>
+            )}
          </div>
       )}
 
       {/* Navegação e Atalhos Rápidos */}
-      <div className="w-full mt-10 pt-6 border-t border-white/5 flex items-center justify-between">
+      <div className="w-full mt-6 pt-4 border-t border-white/5 flex items-center justify-between">
          <button
            onClick={onAnterior}
            disabled={idxRevisao === 0}
-           className="p-3 text-text-lo hover:text-text-hi disabled:opacity-20 transition-all"
+           className="p-3 text-text-lo hover:text-text-hi disabled:opacity-20 transition-all cursor-pointer"
+           title="Card anterior (Seta Esquerda)"
          >
-           <ChevronLeft size={24} />
+           <ChevronLeft size={22} />
          </button>
 
-         <div className="flex items-center gap-3">
-            <button
-              onClick={() => onEditar(cardAtual)}
-              className="px-4 py-2 bg-white/5 rounded-xl text-[10px] font-black uppercase tracking-widest text-text-lo hover:text-text-hi hover:bg-white/10 transition-all flex items-center gap-2"
-            >
-              <Edit size={12} /> Editar Card
-            </button>
-         </div>
+         <button
+           onClick={() => onEditar(cardAtual)}
+           className="px-4 py-2 bg-white/5 rounded-xl text-[10px] font-black uppercase tracking-widest text-text-lo hover:text-text-hi hover:bg-white/10 transition-all flex items-center gap-2 cursor-pointer"
+         >
+           <Edit size={12} /> Editar Card
+         </button>
 
          <button
            onClick={onProximo}
            disabled={idxRevisao >= paraRevisao.length - 1}
-           className="p-3 text-text-lo hover:text-text-hi disabled:opacity-20 transition-all"
+           className="p-3 text-text-lo hover:text-text-hi disabled:opacity-20 transition-all cursor-pointer"
+           title="Próximo card (Seta Direita)"
          >
-           <ChevronRight size={24} />
+           <ChevronRight size={22} />
          </button>
       </div>
     </div>
@@ -226,4 +261,5 @@ FlashcardViewer.propTypes = {
   onProximo: PropTypes.func,
   onEditar: PropTypes.func,
   onCriar: PropTypes.func,
+  contadoresAnki: PropTypes.object,
 };

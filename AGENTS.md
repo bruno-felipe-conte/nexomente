@@ -68,4 +68,17 @@ Para carregar: Load gstack. Run /<skill>
 > 
 > "Antes de alterar qualquer função: leia `docs/MAPA.md` e liste os nós afetados.
 > Depois de alterar: atualize `docs/MAPA.md` e `docs/mapa.json` e rode `npm run mapa:check` (ou `node scripts/verificar-mapa.js`).
-> A tarefa só está concluída se o mapa estiver em dia."
+> A tarefa só está concluída se o mapa estiver em dia."
+
+
+---
+
+## Regra Permanente: 5 Diretrizes de Arquitetura UI/UX (NexoMente)
+
+> **Obrigatório para todo agente ao criar ou refatorar qualquer tela.**
+
+1. **Fonte Única de Verdade por Módulo:** nenhuma métrica, KPI, XP, status de Pet ou dado de perfil aparece duplicado na mesma tela, nem simultaneamente na Sidebar/Topbar e no corpo da página. Se o Widget global exibe o dado, ele é ocultado do conteúdo. (Pet/XP vivem só na Sidebar; nome do operador e ofensiva só na Topbar.)
+2. **Proibição de Páginas de Utilitários Isolados:** cronômetro Pomodoro, chat IA/RAG e Forja IA nunca ocupam rota de página inteira. Devem ser popover na Topbar, Drawer lateral ou aba interna. Rotas legadas (`study`, `ai`, `gerador`, `statistics`) são redirecionadas em `App.jsx` (`LEGACY_ROUTES`).
+3. **Consolidação de Telas Analíticas:** o Dashboard é a única central de telemetria. Telas de "Métricas/Estatísticas" são abolidas; heatmap e metas vivem na seção colapsável "Consistência Anual & Metas" do Dashboard.
+4. **Padronização de Ações de Criação:** cada ação atômica (`+ Nova Nota`, `+ Novo Card`) tem um único gatilho por contexto, na barra de ferramentas superior da seção. Sem botões idênticos espalhados em rodapé, topo e laterais.
+5. **Auditoria Antes de Codificar:** antes de criar card, botão ou painel, consultar `docs/MAPA.md` e o inventário de UI (`inventario_completo_nexomente.md`). Se já existir, reutilizar ou extrair para componente compartilhado em vez de duplicar.

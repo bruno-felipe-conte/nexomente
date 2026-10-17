@@ -1,13 +1,13 @@
 import PropTypes from 'prop-types';
-import { Home, FileText, BookOpen, Layers, MessageSquare, Settings } from 'lucide-react';
+import { Home, FileText, Mic, Layers, GitBranch, Settings } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const NAV_ITEMS = [
   { id: 'dashboard', icon: Home,         label: 'Início',  color: '#7C6FFA' },
   { id: 'notes',     icon: FileText,      label: 'Notas',   color: '#A78BFA' },
-  { id: 'study',     icon: BookOpen,      label: 'Estudo',  color: '#22D3EE' },
+  { id: 'poemas',    icon: Mic,           label: 'Dojo',    color: '#22D3EE' },
   { id: 'flashcards',icon: Layers,        label: 'Cards',   color: '#F472B6' },
-  { id: 'ai',        icon: MessageSquare, label: 'IA',      color: '#22D3EE' },
+  { id: 'graph',     icon: GitBranch,     label: 'Grafo',   color: '#22D3EE' },
   { id: 'settings',  icon: Settings,      label: 'Config',  color: '#7D869E' },
 ];
 

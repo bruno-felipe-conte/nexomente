@@ -47,15 +47,23 @@ function getLevelData(xp) {
 }
 
 function getLevelProgress(xp) {
-  const current = getLevelData(xp);
+  const safeXp = Number(xp) || 0;
+  const current = getLevelData(safeXp);
   const nextIdx = TAMAGOTCHI_LEVELS.indexOf(current) + 1;
   const next = TAMAGOTCHI_LEVELS[nextIdx];
 
-  if (!next) return 100; // Nível máximo
+  const pct = !next
+    ? 100
+    : Math.min(100, Math.max(0, ((safeXp - current.xp) / Math.max(1, next.xp - current.xp)) * 100));
 
-  const range = next.xp - current.xp;
-  const currentProgress = xp - current.xp;
-  return Math.min(100, Math.max(0, (currentProgress / range) * 100));
+  // Retorna objeto que se comporta como número primitivo (valueOf) e expõe .progress para retrocompatibilidade
+  const res = Object.assign(Object(Number(pct.toFixed(1))), {
+    progress: Number(pct.toFixed(1)),
+    currentXp: safeXp,
+    currentLevel: current.level,
+    nextXp: next ? next.xp : current.xp,
+  });
+  return res;
 }
 
 function getStreakMultiplier(streak) {

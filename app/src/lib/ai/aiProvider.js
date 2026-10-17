@@ -1,12 +1,8 @@
-import * as lmStudio from './lmStudioService';
-import * as gemini from './geminiService';
 import * as embedded from './embeddedService';
 
 /**
- * Provedores disponíveis:
- * - 'local': LM Studio / Ollama (Porta 1234)
- * - 'cloud': Google Gemini API
- * - 'embedded': Modelo embutido (Via Electron/Node) -- Em breve
+ * Provedor de IA do NexoMente:
+ * - 'embedded': Motor Local GGUF nativo (node-llama-cpp / Gemma 4 / Llama)
  */
 
 /**
@@ -28,15 +24,14 @@ export function getAIConfig() {
 }
 
 export function getActiveProvider() {
-  return localStorage.getItem('nexomente_ai_provider') || 'embedded';
+  return 'embedded';
 }
 
-export function setActiveProvider(provider) {
-  localStorage.setItem('nexomente_ai_provider', provider);
+export function setActiveProvider() {
+  localStorage.setItem('nexomente_ai_provider', 'embedded');
 }
 
 export async function chat(messages, options = {}) {
-  const provider = options.provider || getActiveProvider();
   const globalConfig = getAIConfig();
   
   // Mescla as opções (prioriza as passadas por parâmetro)
@@ -52,14 +47,7 @@ export async function chat(messages, options = {}) {
     finalMessages.unshift({ role: 'system', content: globalConfig.system_prompt });
   }
 
-  let result;
-  if (provider === 'cloud') {
-    result = await gemini.chat(finalMessages, finalOptions);
-  } else if (provider === 'embedded') {
-    result = await embedded.chat(finalMessages, finalOptions);
-  } else {
-    result = await lmStudio.chat(finalMessages, finalOptions);
-  }
+  const result = await embedded.chat(finalMessages, finalOptions);
 
   // Padronização: garante que 'content' e 'response' existam para o frontend
   if (result.success) {
@@ -74,20 +62,10 @@ export async function chat(messages, options = {}) {
 export const aiChat = chat;
 
 export async function generate(prompt, options = {}) {
-  const provider = getActiveProvider();
-  let result;
-  
-  if (provider === 'cloud') {
-    const messages = [{ role: 'user', content: prompt }];
-    result = await gemini.chat(messages, options);
-  } else if (provider === 'embedded') {
-    const messages = [{ role: 'user', content: prompt }];
-    result = await embedded.chat(messages, options);
-  } else {
-    result = await lmStudio.generate(prompt, options);
-  }
+  const messages = [{ role: 'user', content: prompt }];
+  const result = await embedded.chat(messages, options);
 
-  if (!result.success && (result.error.includes('Falha na conexão') || result.error.includes('Exceeded') || result.error.includes('fetch') || result.error.includes('not a function'))) {
+  if (!result.success && (result.error?.includes('Falha na conexão') || result.error?.includes('Exceeded') || result.error?.includes('fetch') || result.error?.includes('not a function'))) {
     result.isProviderError = true;
   }
   
@@ -95,27 +73,10 @@ export async function generate(prompt, options = {}) {
 }
 
 export async function checkStatus() {
-  const provider = getActiveProvider();
-  
-  if (provider === 'cloud') {
-    return gemini.checkStatus();
-  } else if (provider === 'embedded') {
-    return embedded.checkStatus();
-  }
-  
-  return lmStudio.checkLMStudioStatus();
+  return embedded.checkStatus();
 }
 
 export async function listModels() {
-  const provider = getActiveProvider();
-  
-  if (provider === 'cloud') {
-    const res = await gemini.checkStatus();
-    return res.models;
-  } else if (provider === 'embedded') {
-    const res = await embedded.checkStatus();
-    return res.models;
-  }
-  
-  return lmStudio.listModels();
+  const res = await embedded.checkStatus();
+  return res.models;
 }

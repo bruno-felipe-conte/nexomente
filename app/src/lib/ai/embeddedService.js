@@ -25,8 +25,10 @@ export async function chat(messages, options = {}) {
     modelPath,
     messages,
     options: {
-      temperature: options.temperature || 0.7,
+      temperature: options.temperature ?? 0.7,
       max_tokens: options.max_tokens || 512,
+      reasoning: Boolean(options.reasoning),
+      jsonSchema: options.jsonSchema || undefined,
     }
   };
 

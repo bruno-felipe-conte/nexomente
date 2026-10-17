@@ -9,7 +9,6 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useAIModel, useAIChat } from '../hooks/useAIModel';
 import { useNotes } from '../hooks/useNotes';
 import * as aiProvider from '../lib/ai/aiProvider';
-import { useAIStore } from '../store/useAIStore';
 import { useUIStore } from '../store/useUIStore';
 import toast from 'react-hot-toast';
 import ChatMessage from '../components/ai/ChatMessage';
@@ -26,7 +25,6 @@ const TEMPLATES = [
 export default function AIChatPage({ onNavigate }) {
   const { notas, update: updateNota, getById } = useNotes();
   const { modelos, modeloAtual, trocarModelo, temperatura, trocarTemperatura } = useAIModel();
-  const { provider, apiKey } = useAIStore();
   const userName = useUIStore((s) => s.userName);
   const pendingChatNoteId = useUIStore((s) => s.pendingChatNoteId);
   const setPendingChatNoteId = useUIStore((s) => s.setPendingChatNoteId);
@@ -104,10 +102,7 @@ export default function AIChatPage({ onNavigate }) {
       const promptResumo = `Resuma de forma extremamente concisa (em 2 a 4 frases diretas em português) os principais aprendizados e conclusões desta conversa sobre a nota "${notaAtual.titulo}":\n\n${transcricao}\n\nResumo conciso:`;
 
       const res = await aiProvider.generate(promptResumo, {
-        provider,
-        model: modeloAtual,
         temperature: 0.3,
-        apiKey,
         max_tokens: 256,
       });
 
@@ -131,7 +126,7 @@ export default function AIChatPage({ onNavigate }) {
     } finally {
       setResumindoNaNota(false);
     }
-  }, [notaAtual, mensagens, provider, modeloAtual, apiKey, gravarResumoConversaNaNota, setPendingNoteAction, onNavigate]);
+  }, [notaAtual, mensagens, gravarResumoConversaNaNota, setPendingNoteAction, onNavigate]);
 
   const handleLimpar = () => {
     if (mensagens.length === 0) return;
@@ -186,10 +181,7 @@ export default function AIChatPage({ onNavigate }) {
         : "";
 
       const res = await aiProvider.chat(buildMessages(prompt + instrucaoRaciocinio), {
-        provider,
-        model: modeloAtual,
         temperature: temperatura,
-        apiKey,
         max_tokens: 1024
       });
       const respostaTexto = res.success ? res.response : res.error;
@@ -205,7 +197,7 @@ export default function AIChatPage({ onNavigate }) {
 
         aiProvider.generate(
           `Resuma em 1 ou 2 frases curtas e diretas os pontos-chave desta conversa sobre a nota "${notaAtual.titulo}":\n\n${historicoRecente}\n\nResumo conciso:`,
-          { provider, model: modeloAtual, temperature: 0.3, apiKey, max_tokens: 180 }
+          { temperature: 0.3, max_tokens: 180 }
         ).then((sumRes) => {
           const sumText = (sumRes?.success && (sumRes.response || sumRes.content))
             ? (sumRes.response || sumRes.content).trim()

@@ -157,7 +157,7 @@ export async function ensureEmbeddedEngineReady(requestedModelPath) {
     diagnostics.snapshot('before-context');
 
     const contextConfig = {
-      contextSize: 4096,
+      contextSize: 8192,
       batchSize: 512,
       threads: Math.max(4, Math.floor(cachedHardware.cpuCores * 0.75)),
     };
@@ -245,11 +245,21 @@ export async function runEmbeddedInference({ modelPath, messages = [], options =
     });
 
     const maxTokens = Number(options.max_tokens) || 512;
-
-    const meta = await session.promptWithMeta(lastMessage, {
+    const promptOptions = {
       maxTokens,
       temperature: Number(options.temperature) || 0.7,
-    });
+    };
+
+    // Suporte a JSON Schema Grammar nativo do node-llama-cpp para 0% de erro de sintaxe JSON
+    if (options.jsonSchema && llamaInstance) {
+      try {
+        promptOptions.grammar = await llamaInstance.createGrammarForJsonSchema(options.jsonSchema);
+      } catch (grammarErr) {
+        console.warn('[AI ENGINE] Falha ao compilar JSON Grammar, seguindo sem grammar:', grammarErr.message);
+      }
+    }
+
+    const meta = await session.promptWithMeta(lastMessage, promptOptions);
     let response = (meta?.responseText || '').trim();
     if (!response && Array.isArray(meta?.response)) {
       response = meta.response
@@ -291,21 +301,6 @@ export function registerAiHandlers() {
   setTimeout(() => {
     warmupEmbeddedModel();
   }, 1500);
-
-  // Gemini Proxy
-  ipcMain.handle('ai:geminiChat', async (event, { url, body }) => {
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-      const data = await response.json();
-      return { ok: response.ok, status: response.status, data };
-    } catch (error) {
-      return { ok: false, error: error.message };
-    }
-  });
 
   // Embedded LLM (node-llama-cpp)
   ipcMain.handle('ai:embeddedChat', async (event, payload) => {

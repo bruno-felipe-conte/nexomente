@@ -1,6 +1,7 @@
 import { useState, useRef, useMemo } from 'react';
 import { useGerador } from '../hooks/useGerador';
 import { useMaterias } from '../hooks/useMaterias';
+import { extrairTextoDePDF } from '../lib/parser';
 import { Settings, Upload, Wand2, ClipboardList } from 'lucide-react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -44,6 +45,7 @@ export default function GeradorPage() {
     tipo: 'multipla-escolha',
     dificuldade: 'médio',
     materia: '',
+    topico: '',
     banca: 'Geral',
     provider: (typeof localStorage !== 'undefined' && localStorage.getItem('nexomente_ai_provider')) || 'embedded'
   });
@@ -70,9 +72,30 @@ export default function GeradorPage() {
     );
   }, [questoesFiltradas, busca]);
 
-  const handleFileSelect = (e) => {
+  const handleFileSelect = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    const isPdf = file.name.toLowerCase().endsWith('.pdf') || file.type === 'application/pdf';
+    if (isPdf) {
+      const loadingToast = toast.loading(`Extraindo texto de "${file.name}"...`);
+      try {
+        const buffer = await file.arrayBuffer();
+        const textoPdf = await extrairTextoDePDF(buffer);
+        toast.dismiss(loadingToast);
+        if (!textoPdf || textoPdf.length < 30) {
+          toast.error('Não foi possível extrair texto legível deste PDF (pode ser um PDF escaneado como imagem).');
+          return;
+        }
+        setTextoInput(textoPdf);
+        toast.success(`PDF carregado (${textoPdf.length.toLocaleString()} caracteres extraídos)!`);
+        setStep(2);
+      } catch (err) {
+        toast.dismiss(loadingToast);
+        toast.error(`Erro ao ler PDF: ${err.message}`);
+      }
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -299,7 +322,7 @@ export default function GeradorPage() {
         )}
       </div>
 
-      <input ref={fileInputRef} type="file" accept=".txt,.md" className="hidden" onChange={handleFileSelect} />
+      <input ref={fileInputRef} type="file" accept=".txt,.md,.pdf,application/pdf" className="hidden" onChange={handleFileSelect} />
     </div>
   );
 }

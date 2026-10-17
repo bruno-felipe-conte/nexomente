@@ -27,6 +27,73 @@ function detectarMateria(texto) {
   return 'Geral';
 }
 
+/**
+ * Extrai texto legível de arquivos PDF (suportando streams FlateDecode via DecompressionStream e blocos BT/ET).
+ */
+export async function extrairTextoDePDF(arrayBuffer) {
+  const bytes = new Uint8Array(arrayBuffer);
+  const rawLatin1 = new TextDecoder('latin1').decode(bytes);
+  const partesTexto = [];
+
+  const extrairStringsDeOperadoresPDF = (conteudoStream) => {
+    const blocos = [];
+    // Captura strings literais entre parênteses (...) em blocos de texto PDF
+    const regexParenteses = /\(([^()\\]*(?:\\.[^()\\]*)*)\)\s*(?:Tj|'|")?/g;
+    let m;
+    while ((m = regexParenteses.exec(conteudoStream)) !== null) {
+      const decodificado = m[1]
+        .replace(/\\n/g, '\n')
+        .replace(/\\r/g, ' ')
+        .replace(/\\t/g, ' ')
+        .replace(/\\\(/g, '(')
+        .replace(/\\\)/g, ')')
+        .replace(/\\\\/g, '\\');
+      if (/[a-zA-ZÀ-ÿ0-9]{2,}/.test(decodificado)) {
+        blocos.push(decodificado);
+      }
+    }
+    return blocos.join(' ');
+  };
+
+  // Tenta descomprimir streams FlateDecode se DecompressionStream estiver disponível
+  if (typeof DecompressionStream !== 'undefined') {
+    const regexStream = /stream[\r\n]+([\s\S]*?)[\r\n]+endstream/g;
+    let match;
+    while ((match = regexStream.exec(rawLatin1)) !== null) {
+      const streamBody = match[1];
+      if (streamBody.length > 5_000_000) continue;
+      const streamBytes = new Uint8Array(streamBody.length);
+      for (let i = 0; i < streamBody.length; i++) {
+        streamBytes[i] = streamBody.charCodeAt(i) & 0xff;
+      }
+      try {
+        const ds = new DecompressionStream('deflate');
+        const writer = ds.writable.getWriter();
+        writer.write(streamBytes).catch(() => {});
+        writer.close().catch(() => {});
+        const decompressedBuf = await new Response(ds.readable).arrayBuffer();
+        const decompressedStr = new TextDecoder('latin1').decode(decompressedBuf);
+        const extraido = extrairStringsDeOperadoresPDF(decompressedStr);
+        if (extraido.trim().length > 10) partesTexto.push(extraido.trim());
+      } catch {
+        // Caso o stream não seja deflate puro, tenta extração direta
+        const direto = extrairStringsDeOperadoresPDF(streamBody);
+        if (direto.trim().length > 10) partesTexto.push(direto.trim());
+      }
+    }
+  }
+
+  if (partesTexto.length === 0) {
+    const diretoGlobal = extrairStringsDeOperadoresPDF(rawLatin1);
+    if (diretoGlobal.trim()) partesTexto.push(diretoGlobal.trim());
+  }
+
+  return partesTexto
+    .join('\n\n')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
 // --- PARSERS DE TEXTO (FALLBACKS) ---
 
 export function parseTextoSimples(texto) {
@@ -146,7 +213,159 @@ export function extrairQuestoesDeResposta(raw) {
   return parseTextoSimples(raw);
 }
 
-// --- INTEGRAÇÃO COM IA ---
+// --- CHUNKING INTELIGENTE + BM25 (ANTI-ALUCINAÇÃO PARA PDF/TEXTO GRANDE) ---
+
+const STOPWORDS_PT = new Set([
+  'de', 'da', 'do', 'das', 'dos', 'em', 'na', 'no', 'nas', 'nos', 'um', 'uma', 'uns', 'umas',
+  'para', 'por', 'com', 'sem', 'sob', 'sobre', 'entre', 'que', 'se', 'ao', 'aos', 'as', 'os',
+  'como', 'mais', 'mas', 'ou', 'ser', 'sao', 'foi', 'foram', 'esta', 'este', 'isso', 'isto',
+  'pelo', 'pela', 'pelos', 'pelas', 'seu', 'sua', 'seus', 'suas', 'nao', 'sim', 'tambem', 'muito'
+]);
+
+function tokenizarBM25(texto) {
+  return (texto || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter(t => t.length > 2 && !STOPWORDS_PT.has(t));
+}
+
+/**
+ * Divide documentos ou PDFs grandes em blocos semânticos limpos (~1800-2400 chars),
+ * descartando sumários/ruído e ranqueando via BM25 (quando há tópico/matéria)
+ * ou amostragem estratificada (para cobrir início, meio e fim do documento inteiro).
+ */
+export function selecionarChunksRelevantes(textoBruto, { numChunks = 1, query = '', chunkSize = 2200 } = {}) {
+  const limpo = (textoBruto || '')
+    .replace(/\r\n/g, '\n')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
+  if (!limpo) return [];
+  if (limpo.length <= chunkSize * 1.3) return [limpo];
+
+  // Quebra respeitando parágrafos ou sentenças
+  const paragrafos = limpo.split(/\n\n+/);
+  const chunks = [];
+  let buffer = '';
+
+  for (const p of paragrafos) {
+    const trimmed = p.trim();
+    if (!trimmed) continue;
+
+    // Ignora linhas típicas de sumário pontilhado ("Capítulo 1 ....... 12")
+    if (/\.{4,}\s*\d+$/.test(trimmed)) continue;
+
+    if ((buffer + '\n\n' + trimmed).length <= chunkSize) {
+      buffer = buffer ? `${buffer}\n\n${trimmed}` : trimmed;
+    } else {
+      if (buffer.length >= 200) chunks.push(buffer);
+      // Se um único parágrafo for gigante, fatia por sentenças
+      if (trimmed.length > chunkSize) {
+        for (let i = 0; i < trimmed.length; i += chunkSize) {
+          const fatia = trimmed.slice(i, i + chunkSize).trim();
+          if (fatia.length >= 150) chunks.push(fatia);
+        }
+        buffer = '';
+      } else {
+        buffer = trimmed;
+      }
+    }
+  }
+  if (buffer.trim()) chunks.push(buffer.trim());
+  if (chunks.length === 0) return [limpo.slice(0, chunkSize)];
+  if (chunks.length <= numChunks) return chunks;
+
+  const queryTerms = tokenizarBM25(query);
+
+  // Se houver termos de busca (tópico/matéria específica), ranqueia por BM25 + densidade informacional
+  if (queryTerms.length > 0) {
+    const k1 = 1.5;
+    const b = 0.75;
+    const docTokens = chunks.map(tokenizarBM25);
+    const avgDl = docTokens.reduce((s, d) => s + d.length, 0) / docTokens.length || 1;
+
+    const df = {};
+    for (const term of queryTerms) {
+      df[term] = docTokens.filter(d => d.includes(term)).length;
+    }
+
+    const scored = chunks.map((chunk, idx) => {
+      const tokens = docTokens[idx];
+      const dl = tokens.length || 1;
+      let score = 0;
+
+      for (const term of queryTerms) {
+        const tf = tokens.filter(t => t === term).length;
+        if (tf > 0) {
+          const idf = Math.log(1 + (chunks.length - (df[term] || 0) + 0.5) / ((df[term] || 0) + 0.5));
+          score += idf * ((tf * (k1 + 1)) / (tf + k1 * (1 - b + b * (dl / avgDl))));
+        }
+      }
+
+      // Bônus leve por densidade de conteúdo (evita blocos muito curtos ou só de títulos)
+      const densityBonus = Math.min(1, chunk.length / 1200) * 0.25;
+      return { chunk, idx, score: score + densityBonus };
+    });
+
+    const temMatch = scored.some(s => s.score > 0.3);
+    if (temMatch) {
+      return scored
+        .sort((a, b) => b.score - a.score)
+        .slice(0, numChunks)
+        .sort((a, b) => a.idx - b.idx) // preserva ordem cronológica do documento
+        .map(s => s.chunk);
+    }
+  }
+
+  // Amostragem Estratificada Uniforme: cobre início, meio e fim do PDF grande sem repetir
+  const selecionados = [];
+  const step = chunks.length / numChunks;
+  for (let i = 0; i < numChunks; i++) {
+    const targetIdx = Math.min(chunks.length - 1, Math.floor(i * step));
+    selecionados.push(chunks[targetIdx]);
+  }
+  return selecionados;
+}
+
+// --- SCHEMA GRAMMAR ESTRITO PARA GERAÇÃO RÁPIDA E SEM ALUCINAÇÃO ---
+
+export const QUESTOES_JSON_SCHEMA = {
+  type: 'object',
+  properties: {
+    questoes: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          citacao_base: { type: 'string' },
+          pergunta: { type: 'string' },
+          resposta_correta: { type: 'string', enum: ['A', 'B', 'C', 'D', 'V', 'F'] },
+          explicacao: { type: 'string' },
+          opcoes: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                letra: { type: 'string' },
+                texto: { type: 'string' },
+                correta: { type: 'boolean' }
+              },
+              required: ['letra', 'texto', 'correta']
+            }
+          }
+        },
+        required: ['citacao_base', 'pergunta', 'resposta_correta', 'explicacao', 'opcoes']
+      }
+    }
+  },
+  required: ['questoes']
+};
+
+// --- INTEGRAÇÃO COM IA (PIPELINE MICRO-LOTES + BM25 + JSON GRAMMAR) ---
 
 export async function gerarQuestoesComIA(textoOuConfig, configOpt = {}) {
   // Suporte a chamada com (texto, config) ou (config)
@@ -164,106 +383,169 @@ export async function gerarQuestoesComIA(textoOuConfig, configOpt = {}) {
     banca = 'Geral',
     tipo = 'multipla-escolha',
     provider = null,
-    modelo = null
+    modelo = null,
+    onProgress = null,
   } = config;
 
   const nivel = config.nivel || config.dificuldade || 'Médio';
-  const textoLimpo = (texto || '').slice(0, 4500);
+  const textoBruto = (texto || '').trim();
 
-  if (!textoLimpo.trim()) {
+  if (!textoBruto) {
     return { success: false, erro: 'Texto de entrada vazio para geração de questões.', code: 'ERR-GEN-000' };
   }
 
   const instrucaoTipo = tipo === 'v-f'
     ? 'questões de Verdadeiro ou Falso (onde cada questão possui duas opções: "V" e "F")'
     : tipo === 'discursiva'
-    ? 'questões discursivas com critérios e resposta esperada na justificativa'
+    ? 'questões discursivas com resposta esperada na explicação'
     : 'questões objetivas de múltipla escolha com 4 opções (A, B, C, D)';
 
-  const prompt = `Gere exatamente ${quantidade} ${instrucaoTipo} baseadas estritamente no texto fornecido.
-Banca: ${banca}
-Nível de Dificuldade: ${nivel}
-Matéria: ${materia}
+  // Divide em micro-lotes de até 5 questões para nunca estourar a janela de contexto nem alucinar
+  const TAMANHO_MAX_LOTE = 5;
+  const totalSolicitado = Math.max(1, Number(quantidade) || 5);
+  const numLotes = Math.ceil(totalSolicitado / TAMANHO_MAX_LOTE);
 
-Você DEVE responder exclusivamente no seguinte formato JSON estrito:
+  // Seleciona os melhores trechos do documento via BM25 ou amostragem estratificada do PDF
+  const queryBM25 = [topico, materia !== 'Geral' ? materia : ''].filter(Boolean).join(' ');
+  const chunks = selecionarChunksRelevantes(textoBruto, {
+    numChunks: numLotes,
+    query: queryBM25,
+    chunkSize: 2800
+  });
+
+  try {
+    console.log(`[GERADOR] Pipeline Micro-Lotes iniciado via ${provider || 'Global'}: ${totalSolicitado} questões em ${numLotes} lote(s)`);
+
+    const todasExtraidas = [];
+    const perguntasJaGeradas = new Set();
+    let ultimoErro = null;
+
+    for (let loteIdx = 0; loteIdx < numLotes; loteIdx++) {
+      const restantes = totalSolicitado - todasExtraidas.length;
+      if (restantes <= 0) break;
+
+      const qtdLote = Math.min(TAMANHO_MAX_LOTE, restantes);
+      const chunkTexto = chunks[loteIdx % chunks.length] || textoBruto.slice(0, 3500);
+
+      const avisoNaoRepetir = perguntasJaGeradas.size > 0
+        ? `\nNão repita perguntas já abordadas: ${Array.from(perguntasJaGeradas).slice(-5).join(' | ')}`
+        : '';
+
+      const prompt = `Gere exatamente ${qtdLote} ${instrucaoTipo} baseadas ESTRITAMENTE nos fatos presentes no Texto Base abaixo.
+Banca: ${banca} | Nível: ${nivel} | Matéria: ${materia}${topico ? ` | Tópico: ${topico}` : ''}${avisoNaoRepetir}
+
+REGRAS ANTI-ALUCINAÇÃO OBRIGATÓRIAS:
+1. Antes de criar cada pergunta, preencha "citacao_base" com o fato ou trecho exato do Texto Base que comprova o gabarito.
+2. NUNCA invente informações, datas ou conceitos que não estejam explícitos no Texto Base.
+3. Responda EXCLUSIVAMENTE no seguinte formato JSON:
 {
   "questoes": [
     {
-      "pergunta": "Enunciado claro e contextualizado da questão...",
+      "citacao_base": "Trecho curto extraído do texto que fundamenta a resposta...",
+      "pergunta": "Enunciado claro e objetivo da questão...",
       "resposta_correta": "A",
+      "explicacao": "Justificativa concisa explicando por que a alternativa está correta segundo o texto...",
       "opcoes": [
-        { "letra": "A", "texto": "Opção A", "correta": true, "justificativa_correta": "Por que esta opção é a correta...", "justificativa_errada": "" },
-        { "letra": "B", "texto": "Opção B", "correta": false, "justificativa_correta": "", "justificativa_errada": "Por que esta opção está incorreta..." },
-        { "letra": "C", "texto": "Opção C", "correta": false, "justificativa_correta": "", "justificativa_errada": "Por que esta opção está incorreta..." },
-        { "letra": "D", "texto": "Opção D", "correta": false, "justificativa_correta": "", "justificativa_errada": "Por que esta opção está incorreta..." }
+        { "letra": "A", "texto": "Opção A", "correta": true },
+        { "letra": "B", "texto": "Opção B", "correta": false },
+        { "letra": "C", "texto": "Opção C", "correta": false },
+        { "letra": "D", "texto": "Opção D", "correta": false }
       ]
     }
   ]
 }
 
-Texto Base:
-${textoLimpo}`;
+Texto Base (Trecho ${loteIdx + 1}/${numLotes}):
+${chunkTexto}`;
 
-  try {
-    console.log(`[GERADOR] Chamando IA via ${provider || 'Global'} (${quantidade} questões, tipo: ${tipo})`);
-    
-    // Aloca tokens suficientes para o número solicitado de questões em JSON
-    const tokensNecessarios = Math.max(1600, Number(quantidade || 5) * 450);
+      // Orçamento enxuto de tokens por micro-lote (2x mais rápido que o JSON verboso antigo)
+      const tokensLote = Math.max(900, qtdLote * 260);
 
-    const resposta = await aiChat([
-      {
-        role: 'system',
-        content: 'Você é um examinador e gerador sênior de questões de concursos e exames acadêmicos. Responda ESTRITAMENTE em formato JSON puro, sem comentários fora do JSON, sem saudações e sem explicações externas.'
-      },
-      {
-        role: 'user',
-        content: prompt
+      const resposta = await aiChat([
+        {
+          role: 'system',
+          content: 'Você é um examinador sênior de concursos e provas acadêmicas. Você só cria questões ancoradas nos fatos literais do texto fornecido e responde estritamente em JSON válido.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ], {
+        provider,
+        model: modelo,
+        max_tokens: tokensLote,
+        temperature: 0.2,
+        jsonSchema: QUESTOES_JSON_SCHEMA
+      });
+
+      if (!resposta.success) {
+        ultimoErro = resposta.error || 'Falha na conexão com a IA';
+        continue;
       }
-    ], {
-      provider,
-      model: modelo,
-      max_tokens: tokensNecessarios,
-      temperature: 0.25
-    });
 
-    if (!resposta.success) {
-      return { success: false, erro: resposta.error || 'Falha na conexão com a IA', code: 'ERR-GEN-001' };
+      const raw = (resposta.content || resposta.response || '').trim();
+      if (!raw) {
+        ultimoErro = 'IA retornou resposta vazia';
+        continue;
+      }
+
+      const extraidasLote = extrairQuestoesDeResposta(raw);
+      for (const q of extraidasLote) {
+        const chavePergunta = (q.pergunta || q.enunciado || '').trim().toLowerCase();
+        if (chavePergunta && !perguntasJaGeradas.has(chavePergunta)) {
+          perguntasJaGeradas.add(chavePergunta);
+          todasExtraidas.push(q);
+        }
+      }
+
+      if (typeof onProgress === 'function') {
+        const pct = Math.min(92, Math.round(((loteIdx + 1) / numLotes) * 85) + 10);
+        onProgress(pct, todasExtraidas.length);
+      }
     }
 
-    const raw = (resposta.content || resposta.response || '').trim();
-    if (!raw) return { success: false, erro: 'IA retornou resposta vazia', code: 'ERR-GEN-002' };
-
-    const extraidas = extrairQuestoesDeResposta(raw);
-
-    if (!extraidas || extraidas.length === 0) {
-      console.warn('[GERADOR] Nenhuma questão extraída da resposta bruta:\n', raw);
+    if (todasExtraidas.length === 0) {
+      if (ultimoErro === 'IA retornou resposta vazia') {
+        return { success: false, erro: 'IA retornou resposta vazia', code: 'ERR-GEN-002' };
+      }
+      if (ultimoErro) {
+        return { success: false, erro: ultimoErro, code: 'ERR-GEN-001' };
+      }
       return { success: false, erro: 'Não foi possível identificar questões na resposta da IA.', code: 'ERR-GEN-003' };
     }
 
     // Processar e normalizar para o formato oficial do NexoMente
-    const processadas = extraidas.map((q, idx) => {
-      const opcoesNormalizadas = (q.opcoes || []).map((o, oIdx) => {
+    const processadas = todasExtraidas.slice(0, totalSolicitado).map((q, idx) => {
+      const explicacaoGeral = q.explicacao || q.justificativa || q.citacao_base || '';
+
+      // Determina a letra correta primeiro
+      let corretaDefinida = (q.resposta_correta || '').toUpperCase().trim();
+      const opcoesBrutas = Array.isArray(q.opcoes) ? q.opcoes : [];
+      if (!corretaDefinida && opcoesBrutas.length > 0) {
+        const achada = opcoesBrutas.find(o => o.correta);
+        corretaDefinida = achada ? (achada.letra || 'A').toUpperCase() : 'A';
+      }
+
+      const opcoesNormalizadas = opcoesBrutas.map((o, oIdx) => {
         const letraPadrao = ['A', 'B', 'C', 'D', 'E'][oIdx] || String.fromCharCode(65 + oIdx);
+        const letra = (o.letra || letraPadrao).toUpperCase();
+        const ehCorreta = Boolean(o.correta) || letra === corretaDefinida;
         return {
-          letra: (o.letra || letraPadrao).toUpperCase(),
+          letra,
           texto: o.texto || o.opcao || 'Opção sem texto',
-          correta: Boolean(o.correta),
-          justificativa_correta: o.justificativa_correta || '',
-          justificativa_errada: o.justificativa_errada || ''
+          correta: ehCorreta,
+          justificativa_correta: ehCorreta
+            ? (o.justificativa_correta || explicacaoGeral || 'Fundamentado no texto base.')
+            : (o.justificativa_correta || ''),
+          justificativa_errada: !ehCorreta
+            ? (o.justificativa_errada || (q.citacao_base ? `Incorreta segundo o trecho: "${q.citacao_base}"` : ''))
+            : ''
         };
       });
 
-      // Garante que a resposta correta corresponda a uma opção válida
-      let corretaDefinida = (q.resposta_correta || '').toUpperCase();
       if (!corretaDefinida && opcoesNormalizadas.length > 0) {
-        const achada = opcoesNormalizadas.find(o => o.correta);
-        corretaDefinida = achada ? achada.letra : opcoesNormalizadas[0].letra;
+        corretaDefinida = opcoesNormalizadas[0].letra;
       }
-
-      // Garante flag correta: true na opção correspondente
-      opcoesNormalizadas.forEach(o => {
-        if (o.letra === corretaDefinida) o.correta = true;
-      });
 
       return {
         id: `q_${Date.now()}_${idx}_${Math.random().toString(36).slice(2, 6)}`,
@@ -276,7 +558,7 @@ ${textoLimpo}`;
         banca,
         nivel,
         fonte: 'Gerado por IA',
-        dispositivo_legal: q.dispositivo_legal || '',
+        dispositivo_legal: q.dispositivo_legal || q.citacao_base || '',
         tags: Array.isArray(q.tags) ? q.tags : [],
         created_at: new Date().toISOString()
       };

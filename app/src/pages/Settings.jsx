@@ -3,19 +3,15 @@ import AIPerformancePanel from '../components/ai/AIPerformancePanel';
 import Card from '../components/ui/Card';
 import {
   Settings as SettingsIcon, Bell, Shield, User,
-  Database, Trash2, Cpu, Globe,
-  AlertTriangle, Sparkles, Key, Download, Upload, Mic,
-  Eye, EyeOff, CheckCircle2, XCircle, Loader2
+  Database, Trash2, Cpu,
+  AlertTriangle, Sparkles, Download, Upload, Mic
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAIModel } from '../hooks/useAIModel';
 import { useUIStore } from '../store/useUIStore';
-import * as geminiService from '../lib/ai/geminiService';
 import toast from 'react-hot-toast';
 import RecitacaoSettings from '../components/settings/RecitacaoSettings';
 
 export default function Settings() {
-  const { provider, setProvider, apiKey, setApiKey } = useAIModel();
   const { userName: globalUserName, setUserName: setGlobalUserName } = useUIStore();
   const [activeTab, setActiveTab] = useState('perf');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -23,10 +19,6 @@ export default function Settings() {
   const [confirmText, setConfirmText] = useState('');
 
   // Estados Locais de UI (Não globais)
-  const [localApiKey, setLocalApiKey] = useState(() => apiKey || '');
-  const [showApiKey, setShowApiKey] = useState(false);
-  const [testandoKey, setTestandoKey] = useState(false);
-  const [statusKey, setStatusKey] = useState(null);
   const [embeddedPath, setEmbeddedPath] = useState(
     () => localStorage.getItem('nexomente_embedded_path') || './electron/models/gemma-4-E2B-it-GGUF/gemma-4-E2B-it-Q4_K_M.gguf'
   );
@@ -35,38 +27,8 @@ export default function Settings() {
   const fileInputRef = useRef(null);
 
   const saveConfig = (key, value) => {
-    if (key === 'nexomente_gemini_key') {
-      setApiKey(value);
-    } else {
-      localStorage.setItem(key, value);
-    }
+    localStorage.setItem(key, value);
     toast.success('Configuração salva');
-  };
-
-  const handleTestarApiKey = async () => {
-    if (!localApiKey.trim()) {
-      toast.error('Insira uma chave API para testar');
-      return;
-    }
-    setTestandoKey(true);
-    setStatusKey(null);
-    try {
-      localStorage.setItem('nexomente_gemini_key', localApiKey.trim());
-      const res = await geminiService.checkStatus();
-      if (res.status === 'online') {
-        setStatusKey({ ok: true, msg: 'Chave válida e conectada!' });
-        toast.success('Conexão com Gemini estabelecida com sucesso!');
-        setApiKey(localApiKey.trim());
-      } else {
-        setStatusKey({ ok: false, msg: res.error || 'Falha ao autenticar com a API.' });
-        toast.error('Erro na chave API do Gemini');
-      }
-    } catch (err) {
-      setStatusKey({ ok: false, msg: err.message || 'Erro de conexão' });
-      toast.error('Erro ao conectar com a API');
-    } finally {
-      setTestandoKey(false);
-    }
   };
 
   const handleBackup = async () => {
@@ -139,16 +101,15 @@ export default function Settings() {
   ];
 
   return (
-    <div className="main-content min-h-screen p-6 md:p-10 space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 bg-bg-primary">
-
-      {/* Header */}
-      <header className="flex items-center gap-6 mb-12 max-w-5xl mx-auto w-full">
-        <div className="w-16 h-16 rounded-3xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-text-hi shadow-2xl">
-           <SettingsIcon size={32} />
+    <div className="main-content min-h-screen p-4 md:p-6 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 bg-bg-primary">
+      {/* Sub-header compacto */}
+      <header className="flex items-center gap-3 max-w-6xl mx-auto w-full pb-2 border-b border-white/[0.06]">
+        <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/10 flex items-center justify-center text-text-hi shadow-sm">
+           <SettingsIcon size={20} className="text-nx-primary" />
         </div>
         <div>
-          <h1 className="text-4xl font-serif font-bold text-text-hi tracking-tight">Configurações</h1>
-          <p className="text-text-lo/40 text-sm font-medium">Controle total sobre seu ambiente de estudo.</p>
+          <h2 className="text-base font-bold text-text-hi tracking-tight">Central de Parâmetros</h2>
+          <p className="text-text-lo/60 text-xs font-medium">Controle dos motores locais de IA, áudio Whisper, backups e perfil.</p>
         </div>
       </header>
 
@@ -179,122 +140,46 @@ export default function Settings() {
                 <div className="p-8 space-y-8 border-b border-white/5 bg-white/[0.01]">
                   <div className="flex flex-col gap-1">
                     <h3 className="text-lg font-serif font-bold text-text-hi flex items-center gap-2">
-                      <Globe size={20} className="text-accent-main" />
-                      Motor de Inteligência
+                      <Sparkles size={20} className="text-accent-main" />
+                      Motor de Inteligência Interno (Offline)
                     </h3>
-                    <p className="text-xs text-text-lo/40">Defina onde o processamento da sua rede neural acontece.</p>
+                    <p className="text-xs text-text-lo/40">Inferência neural nativa e 100% privada com aceleração por GPU via GGUF (node-llama-cpp).</p>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {[
-                      { id: 'cloud', label: 'Gemini Pro', icon: Globe, desc: 'Alta Performance (Cloud)', color: 'text-blue-400' },
-                      { id: 'local', label: 'LM Studio', icon: Cpu, desc: 'Privacidade Total (Local)', color: 'text-accent-main' },
-                      {
-                        id: 'embedded',
-                        label: 'Interno (Gemma 4)',
-                        icon: Sparkles,
-                        desc: 'Motor GGUF Embutido',
-                        color: 'text-purple-400',
-                        disabled: false
-                      },
-                    ].map(opt => (
+                  <div className="p-6 rounded-3xl border bg-white/[0.03] border-accent-main/30 ring-1 ring-accent-main/20 flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-accent-main shrink-0">
+                      <Cpu size={24} />
+                    </div>
+                    <div>
+                      <p className="text-base font-bold text-text-hi">LLM Local Embutida (Gemma 4 / Llama 3.2)</p>
+                      <p className="text-xs text-text-lo/60 mt-0.5">Execução direta em hardware local sem envio de dados para a nuvem.</p>
+                    </div>
+                  </div>
+
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl space-y-4">
+                    <div className="flex items-center justify-between text-text-hi">
+                      <div className="flex items-center gap-2">
+                        <Sparkles size={14} className="text-accent-main" />
+                        <span className="text-[10px] font-bold uppercase tracking-widest">Caminho do Modelo GGUF Interno</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input
+                        type="text"
+                        value={embeddedPath}
+                        onChange={e => setEmbeddedPath(e.target.value)}
+                        placeholder="Caminho da pasta ou arquivo .gguf..."
+                        className="flex-1 bg-bg-secondary border border-white/5 rounded-xl px-4 py-2.5 text-xs font-mono text-text-hi focus:border-accent-main focus:outline-none"
+                      />
                       <button
-                        key={opt.id}
-                        disabled={opt.disabled}
-                        onClick={() => setProvider(opt.id)}
-                        className={`p-5 rounded-3xl border transition-all text-left flex flex-col gap-3 group relative cursor-pointer ${provider === opt.id ? 'bg-white/5 border-accent-main/30 ring-1 ring-accent-main/20' : 'bg-transparent border-white/5 hover:border-white/10'} ${opt.disabled ? 'opacity-40 cursor-not-allowed grayscale' : ''}`}
+                        type="button"
+                        onClick={() => saveConfig('nexomente_embedded_path', embeddedPath.trim())}
+                        className="px-6 py-2.5 bg-accent-main text-white rounded-xl font-bold text-xs hover:bg-accent-main/80 transition-all cursor-pointer"
                       >
-                        <div className={`w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center ${opt.color}`}>
-                          <opt.icon size={20} />
-                        </div>
-                        <div>
-                          <p className={`text-sm font-bold ${provider === opt.id ? 'text-text-hi' : 'text-text-lo'}`}>{opt.label}</p>
-                          <p className="text-[9px] text-text-lo/40 uppercase tracking-widest mt-0.5">{opt.desc}</p>
-                        </div>
+                        Salvar Caminho
                       </button>
-                    ))}
-                  </div>
-
-                  {provider === 'embedded' && (
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl space-y-4">
-                      <div className="flex items-center justify-between text-text-hi">
-                        <div className="flex items-center gap-2">
-                          <Sparkles size={14} className="text-purple-400" />
-                          <span className="text-[10px] font-bold uppercase tracking-widest">Caminho do Modelo GGUF Interno (node-llama-cpp)</span>
-                        </div>
-                      </div>
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <input
-                          type="text"
-                          value={embeddedPath}
-                          onChange={e => setEmbeddedPath(e.target.value)}
-                          placeholder="Caminho da pasta ou arquivo .gguf..."
-                          className="flex-1 bg-bg-secondary border border-white/5 rounded-xl px-4 py-2.5 text-xs font-mono text-text-hi focus:border-purple-400 focus:outline-none"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => saveConfig('nexomente_embedded_path', embeddedPath.trim())}
-                          className="px-6 py-2.5 bg-purple-500 text-white rounded-xl font-bold text-xs hover:bg-purple-600 transition-all cursor-pointer"
-                        >
-                          Salvar Caminho
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {provider === 'cloud' && (
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl space-y-4">
-                      <div className="flex items-center justify-between text-text-hi">
-                        <div className="flex items-center gap-2">
-                          <Key size={14} className="text-blue-400" />
-                          <span className="text-[10px] font-bold uppercase tracking-widest">Configuração de Chave</span>
-                        </div>
-                        {statusKey && (
-                          <div className={`flex items-center gap-1.5 text-xs font-semibold ${statusKey.ok ? 'text-emerald-400' : 'text-red-400'}`}>
-                            {statusKey.ok ? <CheckCircle2 size={13} /> : <XCircle size={13} />}
-                            <span>{statusKey.msg}</span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <div className="relative flex-1">
-                          <input
-                            type={showApiKey ? 'text' : 'password'}
-                            value={localApiKey}
-                            onChange={e => setLocalApiKey(e.target.value)}
-                            placeholder="Gemini API Key..."
-                            className="w-full bg-bg-secondary border border-white/5 rounded-xl pl-4 pr-10 py-2.5 text-sm text-text-hi focus:border-blue-400 focus:outline-none"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowApiKey(!showApiKey)}
-                            className="absolute right-3 top-3 text-text-lo/40 hover:text-text-hi transition-colors cursor-pointer"
-                            title={showApiKey ? 'Ocultar chave' : 'Exibir chave'}
-                          >
-                            {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
-                          </button>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={handleTestarApiKey}
-                            disabled={testandoKey || !localApiKey.trim()}
-                            className="px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl font-bold text-xs text-text-hi transition-all flex items-center gap-2 disabled:opacity-40 cursor-pointer"
-                          >
-                            {testandoKey && <Loader2 size={13} className="animate-spin text-blue-400" />}
-                            Testar Conexão
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => saveConfig('nexomente_gemini_key', localApiKey)}
-                            className="px-6 py-2.5 bg-blue-500 text-white rounded-xl font-bold text-xs hover:bg-blue-600 transition-all flex items-center gap-2 cursor-pointer"
-                          >
-                            Salvar
-                          </button>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
+                    </div>
+                  </motion.div>
                 </div>
 
                 {/* Seção Inferior: Performance (Conectada) */}

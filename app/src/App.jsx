@@ -6,7 +6,7 @@
  * e prover Code Splitting nativo através de `React.lazy` e `<Suspense>`.
  * Todo o roteamento é baseado em estado (`currentPage`) e ouvintes de eventos customizados (`navigate`).
  */
-import { useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { Toaster } from 'react-hot-toast';
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
@@ -14,22 +14,28 @@ import { useUIStore } from './store/useUIStore';
 import ErrorBoundary from './components/ErrorBoundary';
 import LevelUpOverlay from './components/gamification/LevelUpOverlay';
 import BottomNav from './components/layout/BottomNav';
-import MiniTimerWidget from './components/study/MiniTimerWidget';
 import { useStudyTimerStore } from './store/useStudyTimerStore';
 
 // ─── Code Splitting — cada página carrega só quando necessária (Tarefa 5.1) ───
 const Dashboard    = lazy(() => import('./pages/Dashboard'));
 const Notas        = lazy(() => import('./pages/Notas'));
-const Study        = lazy(() => import('./pages/Study'));
 const Flashcards   = lazy(() => import('./pages/Flashcards'));
 const Graph        = lazy(() => import('./pages/Graph'));
-const Statistics   = lazy(() => import('./pages/Statistics'));
 const Settings     = lazy(() => import('./pages/Settings'));
 const Poemas       = lazy(() => import('./pages/Poemas'));
-const AIChat       = lazy(() => import('./pages/AIChat'));
-const Gerador      = lazy(() => import('./pages/Gerador'));
 
-const PAGES = ['dashboard', 'notes', 'study', 'flashcards', 'gerador', 'poemas', 'ai', 'graph', 'statistics', 'settings'];
+import AICopilotDrawer from './components/ai/AICopilotDrawer';
+
+// Páginas reais navegáveis (Alt+←/→)
+const PAGES = ['dashboard', 'notes', 'flashcards', 'poemas', 'graph', 'settings'];
+
+// Rotas abolidas → destino real (utilitários viram componentes globais ou abas internas)
+const LEGACY_ROUTES = {
+  ai: 'copilot',          // Chat Neural → Drawer global (Ctrl+J)
+  study: 'pomodoro',      // Sala de Estudos → Popover do Timer na Topbar
+  gerador: 'forja',       // Forja IA → aba dentro de Flashcards
+  statistics: 'anual',    // Métricas → seção colapsável do Dashboard
+};
 
 // Fallback enquanto o chunk carrega
 function PageLoader() {
@@ -46,6 +52,8 @@ function App() {
     activeTab: currentPage, setActiveTab: setCurrentPage,
     setPendingNoteAction
   } = useUIStore();
+
+  const [isCopilotOpen, setIsCopilotOpen] = useState(false);
 
   const studyRodando = useStudyTimerStore((s) => s.rodando);
   const studySessaoId = useStudyTimerStore((s) => s.sessaoId);
@@ -108,13 +116,45 @@ function App() {
 
   useEffect(() => {
     const handleNavigate = (e) => {
-      if (['dashboard', 'notes', 'study', 'flashcards', 'graph', 'statistics', 'settings', 'poemas', 'ai', 'gerador'].includes(e.detail)) {
+      if (['dashboard', 'notes', 'flashcards', 'graph', 'settings', 'poemas', ...Object.keys(LEGACY_ROUTES)].includes(e.detail)) {
         setCurrentPage(e.detail);
       }
     };
+    const handleToggleCopilot = () => {
+      setIsCopilotOpen((v) => !v);
+    };
     window.addEventListener('navigate', handleNavigate);
-    return () => window.removeEventListener('navigate', handleNavigate);
+    window.addEventListener('toggle-copilot', handleToggleCopilot);
+    return () => {
+      window.removeEventListener('navigate', handleNavigate);
+      window.removeEventListener('toggle-copilot', handleToggleCopilot);
+    };
   }, [setCurrentPage]);
+
+  // ── Diretrizes 2 e 3: rotas legadas viram componentes globais / abas internas ──
+  const lastValidPageRef = useRef('dashboard');
+  useEffect(() => {
+    if (!LEGACY_ROUTES[currentPage]) {
+      lastValidPageRef.current = currentPage;
+      return;
+    }
+    const acao = LEGACY_ROUTES[currentPage];
+    if (acao === 'copilot') {
+      setCurrentPage(lastValidPageRef.current);
+      setIsCopilotOpen(true);
+    } else if (acao === 'pomodoro') {
+      setCurrentPage(lastValidPageRef.current);
+      window.dispatchEvent(new CustomEvent('toggle-pomodoro'));
+    } else if (acao === 'forja') {
+      sessionStorage.setItem('nexomente_flashcards_tab', 'forja');
+      setCurrentPage('flashcards');
+      window.dispatchEvent(new CustomEvent('flashcards-tab', { detail: 'forja' }));
+    } else if (acao === 'anual') {
+      sessionStorage.setItem('nexomente_dashboard_anual', '1');
+      setCurrentPage('dashboard');
+      window.dispatchEvent(new CustomEvent('dashboard-anual'));
+    }
+  }, [currentPage, setCurrentPage]);
 
   // ── Atalhos de teclado globais (Tarefa 6.1) ──────────────────────────────
   const pageIndex = PAGES.indexOf(currentPage);
@@ -214,6 +254,7 @@ function App() {
           title={currentPage}
           onToggleSidebar={toggleSidebar}
           onNavigate={setCurrentPage}
+          onToggleCopilot={() => setIsCopilotOpen((v) => !v)}
         />
 
         <main
@@ -225,14 +266,10 @@ function App() {
             <Suspense fallback={<PageLoader />}>
               {currentPage === 'dashboard'   && <Dashboard />}
               {currentPage === 'notes'       && <Notas />}
-              {currentPage === 'study'       && <Study />}
               {currentPage === 'flashcards'  && <Flashcards />}
               {currentPage === 'graph'       && <Graph />}
-              {currentPage === 'statistics'  && <Statistics />}
               {currentPage === 'settings'    && <Settings />}
               {currentPage === 'poemas'      && <Poemas />}
-              {currentPage === 'ai'          && <AIChat onNavigate={setCurrentPage} />}
-              {currentPage === 'gerador'     && <Gerador />}
             </Suspense>
           </ErrorBoundary>
         </main>
@@ -240,10 +277,11 @@ function App() {
         <BottomNav currentPage={currentPage} onNavigate={setCurrentPage} />
       </div>
 
-      {/* Mini Timer Flutuante (PiP) quando fora da Sala de Estudos */}
-      {currentPage !== 'study' && (studyRodando || studySessaoId) && (
-        <MiniTimerWidget onExpand={() => setCurrentPage('study')} />
-      )}
+      {/* Copiloto Neural Global (Slide-over Drawer) */}
+      <AICopilotDrawer
+        isOpen={isCopilotOpen}
+        onClose={() => setIsCopilotOpen(false)}
+      />
     </div>
   );
 }

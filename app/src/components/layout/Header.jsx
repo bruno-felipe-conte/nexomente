@@ -1,55 +1,119 @@
-import { Menu, Search, Minus, Square, X, Bell, Edit2, Zap, FileText, Brain, Flame } from 'lucide-react';
+/**
+ * @module Header
+ * @description TopBar do NexoMente unificada:
+ * - Saudação contextual com edição inline do nome (data-testid="edit-user-name")
+ * - Omnibar de busca rápida (Ctrl+K / ⌘K)
+ * - Timer Pomodoro Global retrátil (⏱️ 25:00) com popover completo
+ * - Pílula de Streak (🔥 18 Dias)
+ * - Botão Copiloto Neural (abre AICopilotDrawer lateral ou Ctrl+J)
+ * - Central de Alertas e Notificações
+ * - Botão de toggle da barra lateral
+ */
+import {
+  Menu, Search, Minus, Square, X, Bell, Edit2, FileText, Brain, Flame, Check,
+  Clock, Play, Pause, Sparkles
+} from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import PropTypes from 'prop-types';
 import { useUIStore } from '../../store/useUIStore';
 import { useTamagotchiStore, getLevelProgress } from '../../store/useTamagotchiStore';
+import { useStudyTimerStore, MODOS_ESTUDO } from '../../store/useStudyTimerStore';
 import { useNotes } from '../../hooks/useNotes';
 import { useFlashcards } from '../../hooks/useFlashcards';
+import { useTranslation } from '../../lib/i18n';
+import { toast } from 'react-hot-toast';
 
-const pageTitles = {
-  dashboard:  'Dashboard',
-  notes:      'Notas',
-  study:      'Estudo',
-  flashcards: 'Flashcards',
-  graph:      'Grafo de Conexões',
-  statistics: 'Estatísticas',
-  settings:   'Configurações',
-  gerador:    'Gerador IA',
-  poemas:     'Poemas',
-  ai:         'Chat Neural',
-};
-
-const pageColors = {
-  dashboard:  '#7C6FFA',
-  notes:      '#A78BFA',
-  study:      '#22D3EE',
-  flashcards: '#F472B6',
-  graph:      '#818CF8',
-  statistics: '#34D399',
-  settings:   '#7D869E',
-  gerador:    '#FBBF24',
-  poemas:     '#34D399',
-  ai:         '#22D3EE',
-};
-
-export default function Header({ title, onToggleSidebar, onNavigate }) {
+export default function Header({ title, onToggleSidebar, onNavigate, onToggleCopilot }) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [isPomodoroOpen, setIsPomodoroOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [tempName, setTempName] = useState('');
   const searchInputRef = useRef(null);
 
-  const { userName, setPendingNoteAction } = useUIStore();
+  const { userName, setUserName, setPendingNoteAction } = useUIStore();
   const { player } = useTamagotchiStore();
   const { notas } = useNotes();
   const { cards, getParaRevisao } = useFlashcards();
+  const { t } = useTranslation();
 
-  const userInitial = userName ? userName.charAt(0).toUpperCase() : '?';
-  const xpProgress = getLevelProgress(player.xp);
-  const accent = pageColors[title] || '#7C6FFA';
+  // Store global de Timer Pomodoro
+  const {
+    timer, rodando, modo: modoTimer,
+    iniciar: iniciarTimer, pausar: pausarTimer, trocarModo: trocarModoTimer,
+    concluirSessao: concluirSessaoTimer
+  } = useStudyTimerStore();
 
+  const currentModoTimer = MODOS_ESTUDO.find(m => m.id === modoTimer) || MODOS_ESTUDO[0];
+  const formatTimer = (s) => {
+    const min = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+  };
+
+  const displayName = (userName && userName !== 'Visitante') ? userName : (player?.name || 'Bruno');
+  const userInitial = displayName ? displayName.charAt(0).toUpperCase() : 'B';
+  const xpInfo = getLevelProgress(player.xp);
+  const progressPct = typeof xpInfo === 'number' ? xpInfo : (xpInfo.progress ?? 0);
   const cardsPendentes = getParaRevisao();
+
+  const getGreetingText = () => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) return t('dash.greeting.morning');
+    if (hour >= 12 && hour < 18) return t('dash.greeting.afternoon');
+    return t('dash.greeting.evening');
+  };
+
+  const SCREEN_META = {
+    dashboard: {
+      heading: `${getGreetingText()}, ${displayName}`,
+      subtitle: t('dash.subtitle'),
+    },
+    poemas: {
+      heading: t('dojo.header.title'),
+      subtitle: t('dojo.header.sub'),
+    },
+    flashcards: {
+      heading: 'Flashcards & Forja IA',
+      subtitle: 'Repetição espaçada FSRS-5, gerador neural e curva de retenção',
+    },
+    graph: {
+      heading: t('graph.header.title'),
+      subtitle: t('graph.header.sub'),
+    },
+    notes: {
+      heading: t('nav.notes'),
+      subtitle: `${(notas || []).length} notas salvas no Vault Markdown local`,
+    },
+    settings: {
+      heading: t('nav.settings'),
+      subtitle: 'Modelos GGUF locais, idioma (i18n), backups e preferências',
+    },
+  };
+
+  const currentMeta = SCREEN_META[title] || SCREEN_META.dashboard;
+
+  const startEditName = () => {
+    setTempName(displayName);
+    setIsEditingName(true);
+  };
+
+  const saveEditName = () => {
+    if (tempName.trim()) {
+      setUserName(tempName.trim());
+      toast.success('Nome atualizado!');
+    }
+    setIsEditingName(false);
+  };
+
+  useEffect(() => {
+    const abrirPomodoro = () => setIsPomodoroOpen((v) => !v);
+    window.addEventListener('toggle-pomodoro', abrirPomodoro);
+    return () => window.removeEventListener('toggle-pomodoro', abrirPomodoro);
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -58,15 +122,20 @@ export default function Header({ title, onToggleSidebar, onNavigate }) {
         searchInputRef.current?.focus();
         setIsSearchOpen(true);
       }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'j') {
+        e.preventDefault();
+        onToggleCopilot?.();
+      }
       if (e.key === 'Escape') {
         setIsSearchOpen(false);
         setIsNotifOpen(false);
         setIsProfileOpen(false);
+        setIsPomodoroOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [onToggleCopilot]);
 
   const searchResultsNotas = searchQuery.trim()
     ? (notas || []).filter(n =>
@@ -84,148 +153,264 @@ export default function Header({ title, onToggleSidebar, onNavigate }) {
 
   return (
     <header
-      className="sticky top-0 z-[100] flex flex-col"
+      className="sticky top-0 z-[90] flex flex-col bg-nx-void/95 backdrop-blur-md border-b border-nx-border/80"
       style={{ WebkitAppRegion: 'drag' }}
     >
-      {/* Main bar */}
       <div
-        className="flex items-center justify-between h-[60px] px-4 md:px-6 border-b border-nx-border"
-        style={{ background: 'rgba(8, 11, 24, 0.88)', backdropFilter: 'blur(16px)', WebkitAppRegion: 'no-drag' }}
+        className="flex items-center justify-between px-4 md:px-7 py-3 gap-3"
+        style={{ WebkitAppRegion: 'no-drag' }}
       >
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onToggleSidebar}
-            className="p-1.5 rounded-nx-sm text-nx-dim hover:text-nx-bright hover:bg-nx-surface transition-all duration-nx-fast"
-            aria-label="Toggle sidebar"
-          >
-            <Menu size={19} />
-          </button>
+        {/* Left: Toggle + Screen Title & Subtitle */}
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              {title === 'dashboard' ? (
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-lg md:text-[22px] font-display font-bold text-nx-bright tracking-tight leading-tight">
+                    {getGreetingText()},
+                  </span>
+                  {isEditingName ? (
+                    <div className="flex items-center gap-1">
+                      <input
+                        autoFocus
+                        value={tempName}
+                        onChange={(e) => setTempName(e.target.value)}
+                        onBlur={saveEditName}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') saveEditName();
+                          if (e.key === 'Escape') setIsEditingName(false);
+                        }}
+                        className="bg-nx-surface border border-nx-primary px-2 py-0.5 rounded text-sm text-nx-bright font-bold outline-none"
+                      />
+                      <button onClick={saveEditName} className="p-1 text-nx-primary hover:text-white">
+                        <Check size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={startEditName}
+                      data-testid="edit-user-name"
+                      className="text-lg md:text-[22px] font-display font-bold text-nx-bright hover:text-nx-primary transition-colors flex items-center gap-1.5 group cursor-pointer tracking-tight leading-tight"
+                      title="Clique para editar seu nome"
+                    >
+                      <span>{displayName}</span>
+                      <Edit2 size={12} className="opacity-0 group-hover:opacity-80 text-nx-primary transition-opacity" />
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <h1 className="text-lg md:text-[22px] font-display font-bold text-nx-bright tracking-tight leading-tight truncate">
+                  {currentMeta.heading}
+                </h1>
+              )}
+            </div>
+            <p className="text-[12px] text-nx-dim truncate hidden sm:block mt-0.5">
+              {currentMeta.subtitle}
+            </p>
+          </div>
+        </div>
 
-          <div className="flex items-center gap-2">
-            <div
-              className="w-1.5 h-5 rounded-full"
-              style={{ background: `linear-gradient(180deg, ${accent} 0%, ${accent}60 100%)`, boxShadow: `0 0 8px ${accent}60` }}
-            />
-            <span
-              className="font-display font-bold tracking-tight text-[15px]"
-              style={{ color: '#EBF0FF' }}
+        {/* Center/Right: Quick Search + Global Pomodoro Timer + Streak + Copilot + Notifications + Profile */}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Quick Search (Cmd+K) */}
+          <div className="hidden xl:flex relative w-[240px]">
+            <div className="relative w-full flex items-center">
+              <Search size={14} className="absolute left-3 text-nx-subtle pointer-events-none" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => { setSearchQuery(e.target.value); setIsSearchOpen(true); }}
+                onFocus={() => setIsSearchOpen(true)}
+                placeholder={t('header.search.placeholder')}
+                className="w-full h-[38px] pl-8 pr-11 bg-nx-surface border border-nx-border rounded-[10px] text-[12px] text-nx-text placeholder-nx-subtle focus:outline-none focus:border-nx-primary transition-colors"
+              />
+              <kbd className="absolute right-2 px-1.5 py-0.5 rounded-[5px] bg-nx-overlay border border-nx-border/60 text-[9.5px] font-mono font-semibold text-nx-dim pointer-events-none">
+                ⌘K
+              </kbd>
+            </div>
+
+            <AnimatePresence>
+              {isSearchOpen && searchQuery.trim().length > 0 && (
+                <>
+                  <div className="fixed inset-0 z-[105]" onClick={() => setIsSearchOpen(false)} />
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 6 }}
+                    className="absolute top-11 left-0 right-0 rounded-[12px] bg-nx-surface border border-nx-border shadow-2xl z-[120] p-3 space-y-2"
+                  >
+                    {searchResultsNotas.length === 0 && searchResultsCards.length === 0 ? (
+                      <p className="text-xs text-nx-dim text-center py-3">
+                        Nenhum resultado para &ldquo;{searchQuery}&rdquo;
+                      </p>
+                    ) : (
+                      <>
+                        {searchResultsNotas.length > 0 && (
+                          <div>
+                            <span className="text-[9px] font-mono uppercase tracking-widest text-nx-muted px-2">Notas</span>
+                            {searchResultsNotas.map(n => (
+                              <button
+                                key={n.id}
+                                onClick={() => {
+                                  setPendingNoteAction({ noteId: n.id });
+                                  onNavigate('notes');
+                                  setIsSearchOpen(false);
+                                  setSearchQuery('');
+                                }}
+                                className="w-full flex items-center gap-2 px-2 py-1.5 rounded hover:bg-nx-overlay text-left transition-colors cursor-pointer"
+                              >
+                                <FileText size={13} className="text-nx-primary shrink-0" />
+                                <span className="text-xs text-nx-bright truncate">{n.titulo}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {searchResultsCards.length > 0 && (
+                          <div>
+                            <span className="text-[9px] font-mono uppercase tracking-widest text-nx-muted px-2">Flashcards</span>
+                            {searchResultsCards.map(c => (
+                              <button
+                                key={c.id}
+                                onClick={() => {
+                                  onNavigate('flashcards');
+                                  setIsSearchOpen(false);
+                                  setSearchQuery('');
+                                }}
+                                className="w-full flex items-center gap-2 px-2 py-1.5 rounded hover:bg-nx-overlay text-left transition-colors cursor-pointer"
+                              >
+                                <Brain size={13} className="text-nx-secondary shrink-0" />
+                                <span className="text-xs text-nx-bright truncate">{c.frente}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Global Pomodoro Timer Player & Popover */}
+          <div className="relative">
+            <button
+              onClick={() => setIsPomodoroOpen(!isPomodoroOpen)}
+              title="Timer de Estudo & Foco Profundo"
+              className={`flex items-center gap-2 h-[38px] px-3 rounded-[10px] border transition-all cursor-pointer ${
+                rodando
+                  ? 'bg-nx-secondary/15 border-nx-secondary/60 text-nx-secondary shadow-[0_0_12px_rgba(56,189,248,0.25)]'
+                  : 'bg-nx-surface border-nx-border hover:border-nx-primary/60 text-nx-dim hover:text-nx-bright'
+              }`}
             >
-              {pageTitles[title] || title}
+              <Clock size={14} className={rodando ? 'text-nx-secondary animate-pulse' : 'text-nx-dim'} />
+              <span className="text-[12px] font-mono font-bold whitespace-nowrap">
+                {formatTimer(timer)}
+              </span>
+            </button>
+
+            <AnimatePresence>
+              {isPomodoroOpen && (
+                <>
+                  <div className="fixed inset-0 z-[110]" onClick={() => setIsPomodoroOpen(false)} />
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                    className="absolute top-11 right-0 w-72 rounded-[14px] bg-nx-surface border border-nx-border shadow-2xl z-[120] p-4 space-y-3.5 select-none"
+                  >
+                    <div className="flex items-center justify-between border-b border-nx-border pb-2">
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-nx-bright">
+                        Timer de Estudo
+                      </span>
+                      <span className="text-[10px] font-mono text-nx-secondary font-bold">
+                        {currentModoTimer.name}
+                      </span>
+                    </div>
+
+                    <div className="text-center py-2">
+                      <div className="text-3xl font-display font-bold font-mono text-nx-bright">
+                        {formatTimer(timer)}
+                      </div>
+                      <p className="text-[11px] text-nx-dim mt-0.5">Ganhe +XP ao concluir sessões de foco</p>
+                    </div>
+
+                    {/* Modos Pomodoro */}
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {MODOS_ESTUDO.map((m) => (
+                        <button
+                          key={m.id}
+                          onClick={() => trocarModoTimer(m.id)}
+                          className={`py-1.5 px-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer border ${
+                            modoTimer === m.id
+                              ? 'bg-nx-overlay border-nx-primary text-nx-bright'
+                              : 'bg-nx-depth border-nx-border/60 text-nx-dim hover:text-nx-bright'
+                          }`}
+                        >
+                          {m.name.split(' ')[0]}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Controles do Timer */}
+                    <div className="flex items-center gap-2 pt-1">
+                      <button
+                        onClick={rodando ? pausarTimer : iniciarTimer}
+                        className="flex-1 py-2 rounded-xl bg-nx-primary hover:bg-nx-primary/90 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      >
+                        {rodando ? <Pause size={14} /> : <Play size={14} />}
+                        <span>{rodando ? 'Pausar' : 'Iniciar'}</span>
+                      </button>
+                      <button
+                        onClick={concluirSessaoTimer}
+                        title="Concluir sessão agora e ganhar XP"
+                        className="p-2 rounded-xl bg-nx-depth hover:bg-nx-overlay border border-nx-border text-nx-dim hover:text-nx-bright cursor-pointer"
+                      >
+                        <Check size={14} />
+                      </button>
+                    </div>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Streak Pill */}
+          <div
+            className="hidden sm:flex items-center gap-1.5 h-[38px] px-3 rounded-[10px] bg-nx-surface border border-nx-border text-nx-accent"
+            title="Ofensiva de estudo contínuo"
+          >
+            <Flame size={14} className="text-nx-accent shrink-0" />
+            <span className="text-[12px] font-bold whitespace-nowrap font-mono">
+              {player.streak || 0} {t('header.streak.days')}
             </span>
           </div>
-        </div>
 
-        {/* Search (Omnibar Ctrl+K) */}
-        <div className="hidden md:flex flex-1 max-w-md mx-8 relative">
-          <div className="relative group w-full">
-            <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-nx-muted group-focus-within:text-nx-primary transition-colors duration-nx-fast" />
-            <input
-              ref={searchInputRef}
-              type="text"
-              value={searchQuery}
-              onChange={(e) => { setSearchQuery(e.target.value); setIsSearchOpen(true); }}
-              placeholder="Pesquisar notas, flashcards... (Ctrl+K)"
-              className="w-full pl-10 pr-4 py-2 bg-nx-depth border border-nx-border rounded-nx-md text-nx-text placeholder-nx-muted text-nx-sm font-ui focus:outline-none transition-all duration-nx-fast"
-              style={{ fontSize: '13px' }}
-              onFocus={e => {
-                setIsSearchOpen(true);
-                e.currentTarget.style.borderColor = 'rgba(124,111,250,0.50)';
-                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(124,111,250,0.10)';
-              }}
-              onBlur={e => {
-                e.currentTarget.style.borderColor = '';
-                e.currentTarget.style.boxShadow = '';
-              }}
-            />
-          </div>
-
-          <AnimatePresence>
-            {isSearchOpen && searchQuery.trim().length > 0 && (
-              <>
-                <div className="fixed inset-0 z-[105]" onClick={() => setIsSearchOpen(false)} />
-                <motion.div
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 6 }}
-                  className="absolute top-12 left-0 right-0 rounded-nx-lg border border-nx-border shadow-2xl z-[120] p-3 space-y-2"
-                  style={{ background: '#0E1122' }}
-                >
-                  {searchResultsNotas.length === 0 && searchResultsCards.length === 0 ? (
-                    <p className="text-xs text-nx-dim text-center py-3">Nenhum resultado encontrado para "{searchQuery}"</p>
-                  ) : (
-                    <>
-                      {searchResultsNotas.length > 0 && (
-                        <div>
-                          <span className="text-[9px] font-mono uppercase tracking-widest text-nx-muted px-2">Notas</span>
-                          {searchResultsNotas.map(n => (
-                            <button
-                              key={n.id}
-                              onClick={() => {
-                                setPendingNoteAction({ noteId: n.id });
-                                onNavigate('notes');
-                                setIsSearchOpen(false);
-                                setSearchQuery('');
-                              }}
-                              className="w-full flex items-center gap-2 px-2 py-1.5 rounded hover:bg-white/5 text-left transition-colors"
-                            >
-                              <FileText size={13} className="text-nx-primary shrink-0" />
-                              <span className="text-xs text-nx-bright truncate">{n.titulo}</span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                      {searchResultsCards.length > 0 && (
-                        <div>
-                          <span className="text-[9px] font-mono uppercase tracking-widest text-nx-muted px-2">Flashcards</span>
-                          {searchResultsCards.map(c => (
-                            <button
-                              key={c.id}
-                              onClick={() => {
-                                onNavigate('flashcards');
-                                setIsSearchOpen(false);
-                                setSearchQuery('');
-                              }}
-                              className="w-full flex items-center gap-2 px-2 py-1.5 rounded hover:bg-white/5 text-left transition-colors"
-                            >
-                              <Brain size={13} className="text-pink-400 shrink-0" />
-                              <span className="text-xs text-nx-bright truncate">{c.frente}</span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </>
-                  )}
-                </motion.div>
-              </>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Right actions */}
-        <div className="flex items-center gap-3">
-          {/* XP badge */}
+          {/* Copiloto Neural Global Button (Abre Gaveta Lateral) */}
           <button
-            onClick={() => onNavigate('statistics')}
-            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-nx-sm border border-nx-border bg-nx-surface hover:border-nx-primary/40 transition-all duration-nx-fast"
+            onClick={onToggleCopilot}
+            title="Copiloto Neural Global (Ctrl+J)"
+            className="flex items-center gap-1.5 h-[38px] px-3.5 rounded-[10px] text-[12px] font-bold text-white shadow-glow-primary hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer whitespace-nowrap"
+            style={{
+              background: 'linear-gradient(90deg, var(--nx-primary) 0%, #4A6BEF 100%)',
+            }}
           >
-            <Zap size={12} className="text-nx-accent" style={{ filter: 'drop-shadow(0 0 4px rgba(251,191,36,0.6))' }} />
-            <span className="text-[11px] font-mono font-bold text-nx-accent">{player.xp.toLocaleString()} XP</span>
+            <Sparkles size={14} />
+            <span className="hidden md:inline">Copiloto</span>
           </button>
 
-          {/* Notifications */}
+          {/* Notifications Bell */}
           <div className="relative">
             <button
               onClick={() => { setIsNotifOpen(!isNotifOpen); setIsProfileOpen(false); }}
               aria-label="Notificações"
               title="Central de Alertas"
-              className="relative p-1.5 text-nx-dim hover:text-nx-bright transition-colors duration-nx-fast"
+              className="relative h-[38px] w-[38px] rounded-[10px] bg-nx-surface border border-nx-border flex items-center justify-center text-nx-dim hover:text-nx-bright transition-colors cursor-pointer"
             >
-              <Bell size={17} />
+              <Bell size={15} />
               {(cardsPendentes.length > 0 || player.hp < 50) && (
-                <span
-                  className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full border border-nx-depth"
-                  style={{ background: '#7C6FFA', boxShadow: '0 0 6px rgba(124,111,250,0.7)' }}
-                />
+                <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-nx-primary" />
               )}
             </button>
 
@@ -237,35 +422,23 @@ export default function Header({ title, onToggleSidebar, onNavigate }) {
                     initial={{ opacity: 0, y: 8, scale: 0.96 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.96 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute top-11 right-0 w-72 rounded-nx-lg border border-nx-border shadow-2xl z-[120] p-4 space-y-3"
-                    style={{ background: '#0E1122', backdropFilter: 'blur(20px)' }}
+                    className="absolute top-11 right-0 w-72 rounded-[14px] bg-nx-surface border border-nx-border shadow-2xl z-[120] p-4 space-y-3"
                   >
                     <div className="flex items-center justify-between border-b border-nx-border pb-2">
-                      <span className="text-[10px] font-mono font-black uppercase tracking-widest text-nx-bright">Notificações</span>
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-nx-bright">Notificações</span>
                       <span className="text-[10px] font-mono text-nx-primary">{cardsPendentes.length} pendentes</span>
                     </div>
                     <div className="space-y-2">
                       <button
                         onClick={() => { onNavigate('flashcards'); setIsNotifOpen(false); }}
-                        className="w-full flex items-center gap-3 p-2 rounded-nx-sm bg-white/[0.03] hover:bg-white/[0.07] transition-colors text-left"
+                        className="w-full flex items-center gap-3 p-2 rounded-lg bg-nx-overlay hover:border-nx-primary border border-transparent transition-colors text-left cursor-pointer"
                       >
-                        <Brain size={15} className="text-pink-400 shrink-0" />
+                        <Brain size={15} className="text-nx-primary shrink-0" />
                         <div>
                           <p className="text-xs font-bold text-nx-bright">
                             {cardsPendentes.length > 0 ? `${cardsPendentes.length} cards para revisar` : 'Revisões em dia!'}
                           </p>
-                          <p className="text-[10px] text-nx-dim">Algoritmo SM-2 pronto</p>
-                        </div>
-                      </button>
-                      <button
-                        onClick={() => { onNavigate('study'); setIsNotifOpen(false); }}
-                        className="w-full flex items-center gap-3 p-2 rounded-nx-sm bg-white/[0.03] hover:bg-white/[0.07] transition-colors text-left"
-                      >
-                        <Flame size={15} className="text-amber-400 shrink-0" />
-                        <div>
-                          <p className="text-xs font-bold text-nx-bright">Streak: {player.streak || 0} dias</p>
-                          <p className="text-[10px] text-nx-dim">HP do Pet: {player.hp}/{player.maxHp}</p>
+                          <p className="text-[10px] text-nx-dim">Motor FSRS-5 pronto</p>
                         </div>
                       </button>
                     </div>
@@ -275,15 +448,11 @@ export default function Header({ title, onToggleSidebar, onNavigate }) {
             </AnimatePresence>
           </div>
 
-          {/* Avatar */}
+          {/* Profile Avatar Popover */}
           <div className="relative">
             <button
               onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className="w-9 h-9 rounded-nx-md flex items-center justify-center font-display font-black text-nx-sm relative overflow-hidden transition-all duration-nx-fast border border-nx-border hover:border-nx-primary/60"
-              style={isProfileOpen
-                ? { background: 'linear-gradient(135deg, rgba(124,111,250,0.20), rgba(34,211,238,0.10))', borderColor: 'rgba(124,111,250,0.60)', color: '#EBF0FF' }
-                : { background: 'var(--nx-surface)', color: '#EBF0FF' }
-              }
+              className="w-[38px] h-[38px] rounded-[10px] bg-nx-surface border border-nx-border hover:border-nx-primary flex items-center justify-center font-display font-bold text-xs text-nx-bright transition-colors cursor-pointer"
             >
               {userInitial}
             </button>
@@ -296,64 +465,28 @@ export default function Header({ title, onToggleSidebar, onNavigate }) {
                     initial={{ opacity: 0, y: 8, scale: 0.96 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.96 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute top-11 right-0 w-64 rounded-nx-lg border border-nx-border shadow-2xl z-[120] p-5 overflow-hidden"
-                    style={{ background: '#0E1122', backdropFilter: 'blur(20px)' }}
+                    className="absolute top-11 right-0 w-64 rounded-[14px] bg-nx-surface border border-nx-border shadow-2xl z-[120] p-4 space-y-3"
                   >
-                    {/* Gradient line */}
-                    <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #7C6FFA, #22D3EE)' }} />
-
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-10 h-10 rounded-nx-md flex items-center justify-center font-display font-black text-white"
-                          style={{ background: 'linear-gradient(135deg, #7C6FFA, #22D3EE)' }}
-                        >
-                          {userInitial}
-                        </div>
-                        <div>
-                          <p className="text-[11px] font-mono font-black text-nx-bright uppercase tracking-wider">{userName}</p>
-                          <p className="text-[10px] font-mono text-nx-primary" style={{ color: '#7C6FFA' }}>Nível {player.level}</p>
-                        </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-bold text-nx-bright">{displayName}</p>
+                        <p className="text-[10px] font-mono text-nx-primary">Nível {player.level} • {player.xp} XP</p>
                       </div>
                       <button
                         onClick={() => { onNavigate('settings'); setIsProfileOpen(false); }}
-                        className="p-1.5 hover:bg-nx-surface rounded-nx-xs text-nx-dim hover:text-nx-bright transition-colors"
+                        className="p-1.5 hover:bg-nx-overlay rounded text-nx-dim hover:text-nx-bright"
                       >
                         <Edit2 size={13} />
                       </button>
                     </div>
-
-                    {/* XP Progress */}
-                    <div className="space-y-1.5 mb-4">
-                      <div className="flex justify-between text-[10px] font-mono">
-                        <span className="text-nx-dim">Progresso</span>
-                        <span style={{ color: '#FBBF24' }}>{player.xp.toLocaleString()} XP</span>
-                      </div>
-                      <div className="w-full h-2 bg-nx-border rounded-full overflow-hidden">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${xpProgress}%` }}
-                          transition={{ duration: 0.6, ease: 'easeOut' }}
-                          className="h-full rounded-full"
-                          style={{ background: 'linear-gradient(90deg, #FBBF24, #F472B6)' }}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="pt-3 border-t border-nx-border grid grid-cols-2 gap-2">
-                      <button
-                        onClick={() => { onNavigate('settings'); setIsProfileOpen(false); }}
-                        className="py-2 text-[10px] font-mono font-bold uppercase tracking-widest text-nx-dim hover:text-nx-bright bg-nx-surface rounded-nx-sm transition-colors border border-nx-border hover:border-nx-primary/30"
-                      >
-                        Config
-                      </button>
-                      <button
-                        onClick={() => { onNavigate('statistics'); setIsProfileOpen(false); }}
-                        className="py-2 text-[10px] font-mono font-bold uppercase tracking-widest text-nx-dim hover:text-nx-bright bg-nx-surface rounded-nx-sm transition-colors border border-nx-border hover:border-nx-primary/30"
-                      >
-                        Métricas
-                      </button>
+                    <div className="w-full h-1.5 bg-nx-void rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${progressPct}%`,
+                          background: 'linear-gradient(90deg, var(--nx-accent), var(--nx-primary))',
+                        }}
+                      />
                     </div>
                   </motion.div>
                 </>
@@ -361,30 +494,25 @@ export default function Header({ title, onToggleSidebar, onNavigate }) {
             </AnimatePresence>
           </div>
 
-          {/* Electron window controls */}
-          {window.electronAPI && (
-            <div className="flex items-center gap-2 ml-3 pl-4 border-l border-nx-border">
-              <button onClick={() => window.electronAPI.minimize()} className="text-nx-dim hover:text-nx-bright transition-colors p-1"><Minus size={16} /></button>
-              <button onClick={() => window.electronAPI.maximize()} className="text-nx-dim hover:text-nx-bright transition-colors p-1"><Square size={13} /></button>
-              <button onClick={() => window.electronAPI.close()} className="text-nx-dim hover:text-nx-error transition-colors p-1"><X size={16} /></button>
+          {/* Toggle Sidebar Button na Extrema Direita */}
+          <button
+            onClick={onToggleSidebar}
+            className="p-2 rounded-[10px] text-nx-dim hover:text-nx-bright hover:bg-nx-surface border border-transparent hover:border-nx-border transition-all cursor-pointer shrink-0"
+            aria-label="Toggle sidebar"
+            title="Alternar barra lateral"
+          >
+            <Menu size={18} />
+          </button>
+
+          {/* Electron Window Controls */}
+          {typeof window !== 'undefined' && window.electronAPI && (
+            <div className="flex items-center gap-1.5 ml-1 pl-2 border-l border-nx-border">
+              <button onClick={() => window.electronAPI.minimize()} className="text-nx-dim hover:text-nx-bright p-1"><Minus size={14} /></button>
+              <button onClick={() => window.electronAPI.maximize()} className="text-nx-dim hover:text-nx-bright p-1"><Square size={11} /></button>
+              <button onClick={() => window.electronAPI.close()} className="text-nx-dim hover:text-nx-error p-1"><X size={14} /></button>
             </div>
           )}
         </div>
-      </div>
-
-      {/* XP progress strip */}
-      <div className="h-[2px] relative overflow-hidden">
-        <div className="absolute inset-0 bg-nx-border/40" />
-        <motion.div
-          className="absolute left-0 top-0 bottom-0 rounded-r-full"
-          initial={{ width: 0 }}
-          animate={{ width: `${xpProgress}%` }}
-          transition={{ duration: 1, ease: 'easeOut', delay: 0.3 }}
-          style={{
-            background: 'linear-gradient(90deg, #7C6FFA 0%, #22D3EE 60%, #34D399 100%)',
-            boxShadow: '0 0 8px rgba(124,111,250,0.6)',
-          }}
-        />
       </div>
     </header>
   );
@@ -394,4 +522,5 @@ Header.propTypes = {
   title: PropTypes.string,
   onToggleSidebar: PropTypes.func,
   onNavigate: PropTypes.func,
+  onToggleCopilot: PropTypes.func,
 };

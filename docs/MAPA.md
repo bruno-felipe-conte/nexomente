@@ -11,6 +11,19 @@
 
 ## 1. HUBS (Recursos Compartilhados)
 
+### HUB: i18n-engine (Internacionalização Desacoplada PT-BR / EN-US / ES-ES)
+- **Arquivo**: `app/src/lib/i18n.js:1`
+- **Implementação**: Store Zustand `useI18nStore` + hook `useTranslation()` persistido em `localStorage('nexomente_locale')`.
+- **Descrição**: Arquitetura de internacionalização baseada em chaves e dicionários (`pt-BR`, `en-US`, `es-ES`) para eliminar textos hardcoded nas telas principais e na navegação.
+- **Usado por**:
+  - `layout: Sidebar` (`app/src/components/layout/Sidebar.jsx`)
+  - `layout: Header` (`app/src/components/layout/Header.jsx`)
+  - `página: Dashboard` (`app/src/pages/Dashboard.jsx`)
+  - `página: Poemas` (`app/src/pages/Poemas.jsx`)
+  - `página: Flashcards` (`app/src/pages/Flashcards.jsx`)
+  - `página: Graph` (`app/src/pages/Graph.jsx`)
+- **Se quebrar**: As chaves de tradução não são resolvidas na interface e o seletor de idiomas na Sidebar deixa de atualizar os textos.
+
 ### HUB: db-store (WASM Engine & Repositórios Zustand)
 - **Arquivo**: `app/src/store/useDBStore.js:13`
 - **Implementação**: `app/src/lib/db/wasmEngine.js:19`, repositórios em `app/src/lib/db/repositories/`
@@ -24,17 +37,18 @@
   - `página: Statistics` (`app/src/pages/Statistics.jsx`)
 - **Se quebrar**: Toda a leitura e gravação de notas, cards, matérias, poemas e histórico de estudo falha e o app entra em modo de erro.
 
-### HUB: ai-provider (Abstração Multiprovedor de IA)
-- **Arquivo**: `app/src/lib/ai/aiProvider.js:38`
-- **Implementação**: `app/src/lib/ai/lmStudioService.js`, `app/src/lib/ai/geminiService.js`, `app/src/lib/ai/embeddedService.js`, `electron/ipc/aiHandlers.js`, `vite.config.js`
-- **Descrição**: Roteador agnóstico de requisições de inteligência artificial. Encaminha chats e gerações para Embutido (`node-llama-cpp@3.22.1` nativo apontando para a pasta própria `electron/models/gemma-4-E2B-it-GGUF/gemma-4-E2B-it-Q4_K_M.gguf` dentro do projeto, via IPC `ai:embeddedChat` no Electron ou middleware `/api/embedded/chat` no Vite), Cloud (Gemini) ou Local (LM Studio na porta 1234).
+### HUB: ai-provider (Motor Interno de IA GGUF)
+- **Arquivo**: `app/src/lib/ai/aiProvider.js:29`
+- **Implementação**: `app/src/lib/ai/embeddedService.js`, `electron/ipc/aiHandlers.js`, `vite.config.js`
+- **Descrição**: Roteador do motor de inteligência artificial unificado e 100% privado. Executa inferência local embutida (`node-llama-cpp@3.22.1` nativo apontando para a pasta própria `electron/models/gemma-4-E2B-it-GGUF/gemma-4-E2B-it-Q4_K_M.gguf` dentro do projeto, via IPC `ai:embeddedChat` no Electron ou middleware `/api/embedded/chat` no Vite).
 - **Usado por**:
   - `store: useAIStore` (`app/src/store/useAIStore.js`)
   - `hook: useAIModel` (`app/src/hooks/useAIModel.js`)
   - `parser: gerarQuestoesComIA` (`app/src/lib/parser.js`)
   - `página: AIChat` (`app/src/pages/AIChat.jsx`)
+  - `página: Graph` (`app/src/pages/Graph.jsx`)
   - `página: Settings` (`app/src/pages/Settings.jsx`)
-- **Se quebrar**: Chat neural, geração automática de questões da forja, resumos e sugestão de tags falham ou caem para mensagem de erro de provedor.
+- **Se quebrar**: Chat neural, geração de questões da forja, resumos e sugestão de tags deixam de responder.
 
 ### HUB: tamagotchi-engine (Gamificação, Níveis e HP)
 - **Arquivo**: `app/src/store/useTamagotchiStore.js:84`
@@ -42,9 +56,11 @@
 - **Descrição**: Controla ciclo de vida do pet virtual (30 níveis, estágios de evolução, HP de 0 a 150, penalidade por dias ausentes, escudos de gelo `streak_freezes`, multiplicadores de XP e recompensas).
 - **Usado por**:
   - `componente: TamagotchiWidget` (`app/src/components/gamification/TamagotchiWidget.jsx`)
+  - `componente: Sidebar` (`app/src/components/layout/Sidebar.jsx`)
   - `componente: Header` (`app/src/components/layout/Header.jsx`)
   - `store: useStudyTimerStore` (`app/src/store/useStudyTimerStore.js`)
   - `página: Dashboard` (`app/src/pages/Dashboard.jsx`)
+  - `página: Poemas` (`app/src/pages/Poemas.jsx`)
   - `página: Statistics` (`app/src/pages/Statistics.jsx`)
 - **Se quebrar**: Progressão de níveis congela, XP de estudos e cards não é computado na evolução do avatar e widgets do pet somem ou quebram o layout.
 
@@ -79,11 +95,10 @@
 ### HUB: electron-ipc-bridge (Barramento Nativo Desktop)
 - **Arquivo**: `electron/preload.js:3`
 - **Implementação**: Processo principal (`electron/main.js`), handlers em `electron/ipc/` (`aiHandlers.js`, `dbHandlers.js`, `windowHandlers.js`) e SQLite nativo (`electron/db/database.js`).
-- **Descrição**: Camada de integração nativa do Electron protegida por `contextIsolation: true`. Disponibiliza controles de janela sem borda, acesso direto a banco local `better-sqlite3`, proxy HTTP para Gemini e runtime nativo de inferência local `node-llama-cpp`.
+- **Descrição**: Camada de integração nativa do Electron protegida por `contextIsolation: true`. Disponibiliza controles de janela sem borda, acesso direto a banco local `better-sqlite3` e runtime nativo de inferência local `node-llama-cpp`.
 - **Usado por**:
   - `componente: Header` (minimizar, maximizar, fechar)
   - `serviço: embeddedService` (inferência GGUF local)
-  - `serviço: geminiService` (proxy de bypass de CORS no desktop)
   - `página: Settings` (detecção de execução desktop)
 - **Se quebrar**: O modo desktop perde controle de janela, aceleração nativa de IA fica desativada e chamadas nativas emitem `ERR-IPC-MISSING`.
 
@@ -169,11 +184,11 @@
 - **Usa**: `ui-store`, `ai-provider`, `hook: useNotes`, `db-store`
 - **Afeta**: Conexão direta entre Nota e Chat Neural, enriquecimento automático da nota com o resumo conciso da conversa.
 
-### NÓ: Central de Flashcards - Avaliação SM-2 & Atalhos
+### NÓ: Central de Flashcards - Avaliação Anki SRS, Cloze & Atalhos
 - **Arquivo**: `app/src/components/flashcards/FlashcardViewer.jsx:131`
-- **Fluxo**: Usuário clica no card ou pressiona `Space`/`Enter` → `setMostrandoFrente(!mostrandoFrente)` (animação Flip 3D) → usuário clica no botão de qualidade ou pressiona tecla `1`, `2`, `3` ou `4` → `revisar(card.id, qualidade)` → cálculo SuperMemo-2 em `sm2.js` → atualização de `intervalo`, `ease_factor` e `next_review` no SQLite → avanço para o próximo card da fila.
-- **Usa**: `hook: useFlashcards`, `db-store` (repositório `Flashcards`), `sm2.js`
-- **Afeta**: Próxima data de revisão do card, taxa de retenção em `Statistics.jsx`.
+- **Fluxo**: Usuário clica no card ou pressiona `Space`/`Enter` → `setMostrandoFrente(!mostrandoFrente)` (animação Flip 3D com renderização Cloze Deletion `{{c1::...}}`) → usuário clica no botão de rating ou pressiona tecla `1` (*Again*), `2` (*Hard*), `3` (*Good*) ou `4` (*Easy*) → `revisar(card.id, rating)` → cálculo do motor Anki SRS em `sm2.js` (`ankiSRS`, learning steps [1m, 10m], graduação, lapses, detecção de leech) → atualização de `intervalo`, `ease_factor`, `lapses`, `state`, `step_index` e `next_review` no SQLite/WASM → exibição de contadores estilo Anki (Novos em azul, Aprendendo em âmbar, Devidos em verde).
+- **Usa**: `hook: useFlashcards`, `db-store` (repositório `Flashcards`), `sm2.js` (`ankiSRS`, `parseCloze`, `previewIntervalo`)
+- **Afeta**: Próxima data de revisão do card, taxa de retenção em `Statistics.jsx`, contadores de deck e detecção de sanguessugas (Leech).
 
 ### NÓ: Central de Flashcards - Desfazer Imediato (Undo)
 - **Arquivo**: `app/src/pages/Flashcards.jsx:47`
@@ -194,10 +209,10 @@
 - **Afeta**: Streak de declamação do poema (`streak_recitacao`), ganho de XP e evolução do pet.
 
 ### NÓ: Forja de Questões - Geração de Simulado por IA
-- **Arquivo**: `app/src/components/gerador/GeradorForjaTab.jsx:191`
-- **Fluxo**: Depósito de material/arquivo no Passo 1 → seleção de disciplina (`materia`), banca, rigor/dificuldade, tipo (múltipla escolha, V/F ou discursiva) e provider (interno, nuvem, local) no Passo 2 → clique em "Forjar Agora" → `useGerador.gerarComIA(texto, config)` → envio do prompt estrito para `aiProvider` com dimensionamento dinâmico de `max_tokens` → extrator resiliente `parser.extrairQuestoesDeResposta` decodifica JSON puro ou recupera questões em stream → inclusão das questões no banco de simulados.
+- **Arquivo**: `app/src/components/gerador/GeradorForjaTab.jsx:201`
+- **Fluxo**: Depósito de material/arquivo (`.txt`, `.md`, `.pdf` via `extrairTextoDePDF`) no Passo 1 → seleção de disciplina (`materia`), banca, foco BM25 (`topico`), rigor/dificuldade, tipo (múltipla escolha, V/F ou discursiva) e provider (interno, nuvem, local) no Passo 2 → clique em "Forjar Agora" → `useGerador.gerarComIA(texto, config)` → pipeline de Chunking Inteligente + BM25 (`selecionarChunksRelevantes`) + Micro-Lotes de até 5 questões com ancoragem literal (`citacao_base`) e `QUESTOES_JSON_SCHEMA` (`createGrammarForJsonSchema` no `node-llama-cpp`) → extrator resiliente `parser.extrairQuestoesDeResposta` → inclusão das questões no banco de simulados.
 - **Usa**: `ai-provider`, `hook: useGerador`, `services/exportService`, `serviço: embeddedService`
-- **Afeta**: Banco de questões ativas, geração de simulados e conversão silenciosa em lote para flashcards.
+- **Afeta**: Banco de questões ativas, geração de simulados sem alucinação e conversão silenciosa em lote para flashcards.
 
 ### NÓ: Chat Neural - Envio de Mensagem & Resumo Automático na Nota
 - **Arquivo**: `app/src/pages/AIChat.jsx:180`
@@ -229,14 +244,14 @@
 - **Usa**: `hook: useFlashcards`, `tamagotchi-engine`
 - **Afeta**: Engajamento diário e acesso imediato às revisões pendentes.
 
-### NÓ: Configurações - Testar Chave API do Gemini & Motor Interno GGUF
-- **Arquivo**: `app/src/pages/Settings.jsx:43`
-- **Fluxo**: Seleção de provedor (`embedded`, `cloud`, `local`) → para `embedded`, permite configurar e salvar `nexomente_embedded_path` (padrão `./electron/models/gemma-4-E2B-it-GGUF/gemma-4-E2B-it-Q4_K_M.gguf`) validando via `embeddedService.checkStatus()` → para `cloud`, entrada da chave no input com toggle de visibilidade e botão "Testar Conexão" (`geminiService.checkStatus()`).
-- **Usa**: `serviço: embeddedService`, `serviço: geminiService`, `ai-provider`
-- **Afeta**: Seleção do motor ativo e validação de modelos locais/credenciais antes do uso nas ferramentas de IA.
+### NÓ: Configurações - Motor Interno GGUF
+- **Arquivo**: `app/src/pages/Settings.jsx:31`
+- **Fluxo**: Permite configurar e salvar `nexomente_embedded_path` (padrão `./electron/models/gemma-4-E2B-it-GGUF/gemma-4-E2B-it-Q4_K_M.gguf`) validando via `embeddedService.checkStatus()`.
+- **Usa**: `serviço: embeddedService`, `ai-provider`
+- **Afeta**: Seleção do motor ativo e validação de modelos locais antes do uso nas ferramentas de IA.
 
 ### NÓ: Configurações - Reset de Fábrica com Confirmação Dupla
-- **Arquivo**: `app/src/pages/Settings.jsx:110`
+- **Arquivo**: `app/src/pages/Settings.jsx:48`
 - **Fluxo**: Clique em "Apagar Tudo" → modal de perigo exige digitar a palavra exata `"CONFIRMAR"` → botão de exclusão é liberado → limpeza de `localStorage('nexomente_db')`, reinicialização das tabelas SQLite WASM e recarga de página.
 - **Usa**: `db-store`, `window.location.reload`
 - **Afeta**: Purga total de dados de notas, matérias, sessões e flashcards.
@@ -247,10 +262,9 @@
 
 | Canal IPC | Quem Chama (Renderer) | Quem Trata (Electron Main) | Retorno / Tipo |
 |---|---|---|---|
-| `ai:geminiChat` | `geminiService.js:46` | `electron/ipc/aiHandlers.js:76` | `{ ok: boolean, status: number, data: object }` |
-| `ai:embeddedChat` | `embeddedService.js:24` | `electron/ipc/aiHandlers.js:92` | `{ success: boolean, response: string, tokens: number, modelFile: string }` |
-| `ai:getHardwareInfo` | `electron/preload.js:64` *(Interface declarada)* | `electron/ipc/aiHandlers.js:189` | `{ cpu: string, ram: number, gpu: string, vram: number }` |
-| `ai:getContextStats` | `electron/preload.js:65` *(Interface declarada)* | `electron/ipc/aiHandlers.js:198` | `{ activeTokens: number, maxTokens: number }` |
+| `ai:embeddedChat` | `embeddedService.js:38` | `electron/ipc/aiHandlers.js:306` | `{ success: boolean, response: string, tokens: number, modelFile: string }` |
+| `ai:getHardwareInfo` | `electron/preload.js:64` *(Interface declarada)* | `electron/ipc/aiHandlers.js:311` | `{ cpu: string, ram: number, gpu: string, vram: number }` |
+| `ai:getContextStats` | `electron/preload.js:65` *(Interface declarada)* | `electron/ipc/aiHandlers.js:323` | `{ activeTokens: number, maxTokens: number }` |
 | `db-notas:getAll` | `electron/preload.js:18` *(Interface nativa)* | `electron/ipc/dbHandlers.js:8` | `Array<Nota>` (com tags parsed) |
 | `db-notas:getById` | `electron/preload.js:19` *(Interface nativa)* | `electron/ipc/dbHandlers.js:29` | `Nota \| null` |
 | `db-notas:create` | `electron/preload.js:20` *(Interface nativa)* | `electron/ipc/dbHandlers.js:50` | `string` (ID da nota criada) |

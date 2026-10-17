@@ -142,13 +142,21 @@ export function createTables(db) {
       materia_id TEXT,
       frente TEXT NOT NULL,
       verso TEXT NOT NULL,
-      intervalo INTEGER DEFAULT 1,
+      intervalo INTEGER DEFAULT 0,
       repeticoes INTEGER DEFAULT 0,
       ease_factor REAL DEFAULT 2.5,
       next_review TEXT,
+      lapses INTEGER DEFAULT 0,
+      state TEXT DEFAULT 'new',
+      step_index INTEGER DEFAULT 0,
       created_at TEXT DEFAULT (datetime('now'))
     )
   `);
+
+  // Migrações seguras de colunas para flashcards existentes
+  try { db.run("ALTER TABLE flashcards ADD COLUMN lapses INTEGER DEFAULT 0"); } catch { /* ignore */ }
+  try { db.run("ALTER TABLE flashcards ADD COLUMN state TEXT DEFAULT 'new'"); } catch { /* ignore */ }
+  try { db.run("ALTER TABLE flashcards ADD COLUMN step_index INTEGER DEFAULT 0"); } catch { /* ignore */ }
 
   db.run(`
     CREATE TABLE IF NOT EXISTS transacoes_xp (
