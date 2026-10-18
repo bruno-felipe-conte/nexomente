@@ -15,6 +15,11 @@ import { usePoemas } from '../hooks/useMaterias';
 import { useTamagotchiStore } from '../store/useTamagotchiStore';
 import { useVosk } from '../hooks/useVosk';
 import { useTranslation } from '../lib/i18n';
+import {
+  calcularSimilaridadeFonetica,
+  extrairGramaticaContextual,
+  normalizarTexto,
+} from '../lib/audio/audioDecoder';
 import PoemaLeitura from '../components/poemas/PoemaLeitura';
 import PoemasGerenciador from '../components/poemas/PoemasGerenciador';
 import PoemaRecitacao from '../components/poemas/PoemaRecitacao';
@@ -125,6 +130,10 @@ export default function PoemasPage() {
     return versoAtualTexto.split(/\s+/).filter(Boolean);
   }, [versoAtualTexto]);
 
+  const gramaticaPoema = useMemo(() => {
+    return extrairGramaticaContextual(versoAtualTexto);
+  }, [versoAtualTexto]);
+
   // Processamento Fonético Fiel ao Vosk:
   // - partialresult (isFinal = false): pinta acertos de VERDE ('correta') em tempo real SEM avançar ponteiroRef.current
   // - result (isFinal = true): marca palavras faladas incorretamente de VERMELHO ('errada') e avança ponteiroRef.current
@@ -133,7 +142,7 @@ export default function PoemasPage() {
       if (!texto) return;
       setPartialTranscript(texto);
 
-      const ouvidas = texto.trim().split(/\s+/).map(normalizar).filter(Boolean);
+      const ouvidas = texto.trim().split(/\s+/).filter(Boolean);
       if (ouvidas.length === 0) return;
 
       setPalavrasStatus((prev) => {
@@ -145,15 +154,15 @@ export default function PoemasPage() {
           const idxNoPoema = baseIdx + i;
           if (idxNoPoema >= palavrasVersoAtual.length) break;
 
-          const target = normalizar(palavrasVersoAtual[idxNoPoema]);
-          const sim = calcularSimilaridade(ouvidas[i], target);
+          const target = palavrasVersoAtual[idxNoPoema];
+          const sim = calcularSimilaridadeFonetica(ouvidas[i], target);
 
           if (sim >= 0.72) {
             novo[idxNoPoema] = 'correta';
             maiorIdxAlcancado = Math.max(maiorIdxAlcancado, idxNoPoema + 1);
           } else if (
             idxNoPoema + 1 < palavrasVersoAtual.length &&
-            calcularSimilaridade(ouvidas[i], normalizar(palavrasVersoAtual[idxNoPoema + 1])) >= 0.80
+            calcularSimilaridadeFonetica(ouvidas[i], palavrasVersoAtual[idxNoPoema + 1]) >= 0.78
           ) {
             if (isFinal && novo[idxNoPoema] !== 'correta') {
               novo[idxNoPoema] = 'errada';
@@ -192,19 +201,22 @@ export default function PoemasPage() {
     [palavrasVersoAtual]
   );
 
-  // Motor Oficial: Vosk Offline WASM (100% local, imune a bloqueios do Brave/Electron)
+  // Motor Oficial: Vosk Offline WASM com Cadeia DSP Vocal 16kHz e Gramática Contextual
   const {
     isListening,
     isReady: isVoskReady,
     audioLevel,
+    prosodyMetrics,
     startListening: startVosk,
     stopListening: stopVosk,
     nextVerse: nextVoskVerse,
+    resetRecognizer: resetVoskRecognizer,
     terminateAudio: terminateVoskAudio,
   } = useVosk({
     onResult: (text) => processarTranscricao(text, true),
     onPartialResult: (text) => processarTranscricao(text, false),
     onError: (msg) => toast.error(msg),
+    grammar: gramaticaPoema,
   });
 
   const toggleListening = () => {
@@ -759,7 +771,7 @@ export default function PoemasPage() {
                 </div>
               </div>
 
-              {/* Métricas Detalhadas */}
+              {/* Métricas Detalhadas Reais de Acústica e Prosódia */}
               <div className="flex-1 w-full space-y-3">
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-[#9499B3]">Dicção & Fonemas</span>
@@ -773,15 +785,17 @@ export default function PoemasPage() {
                 </div>
 
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-[#9499B3]">Cadência Poética</span>
+                  <span className="text-[#9499B3]">Cadência Poética (Ritmo)</span>
                   <span className="font-mono font-bold text-[#38BDF8]">
-                    {Math.round(acuraciaSessao * 0.96)}%
+                    {prosodyMetrics.syllableRateHz > 0 
+                      ? `${prosodyMetrics.syllableRateHz} síl/s (${prosodyMetrics.cadenciaScore}%)` 
+                      : `${Math.round(acuraciaSessao * 0.96)}%`}
                   </span>
                 </div>
                 <div className="w-full h-1.5 bg-[#1E2130] rounded-full overflow-hidden">
                   <div
                     className="h-full bg-[#38BDF8] transition-all duration-300"
-                    style={{ width: `${Math.round(acuraciaSessao * 0.96)}%` }}
+                    style={{ width: `${prosodyMetrics.syllableRateHz > 0 ? prosodyMetrics.cadenciaScore : Math.round(acuraciaSessao * 0.96)}%` }}
                   />
                 </div>
 

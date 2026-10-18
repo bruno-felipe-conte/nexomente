@@ -1,48 +1,43 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import {
+  createVoiceDSPChain,
+  downmixAntiPhase,
+  resampleAndGateAudio,
+  RealtimeProsodyAnalyzer,
+} from '../lib/audio/audioDecoder.js';
 
 // Cache singleton do modelo Vosk WASM para evitar duplo carregamento entre Arena e Modal
 let sharedVoskModel = null;
 let sharedVoskPromise = null;
 
-// Função de reamostragem (downsampling) por decimação para garantir 16000Hz exatos
-function resampleTo16k(audioBuffer, sourceRate) {
-  if (!audioBuffer || audioBuffer.length === 0 || sourceRate === 16000) {
-    return audioBuffer;
-  }
-  const ratio = sourceRate / 16000;
-  const newLength = Math.round(audioBuffer.length / ratio);
-  const result = new Float32Array(newLength);
-  for (let i = 0; i < newLength; i++) {
-    const start = Math.floor(i * ratio);
-    const end = Math.min(Math.floor((i + 1) * ratio), audioBuffer.length);
-    let sum = 0;
-    let count = 0;
-    for (let j = start; j < end; j++) {
-      sum += audioBuffer[j];
-      count++;
-    }
-    result[i] = count > 0 ? sum / count : (audioBuffer[start] || 0);
-  }
-  return result;
-}
-
 /**
  * Hook para reconhecimento de voz OFFLINE usando Vosk-browser.
- * Versão 1.25: Downsampling 16kHz garantido, ciclo de vida seguro de recognizers e latência zero.
+ * Versão 2.0: Decodificador acústico completo, cadeia DSP vocal anti-ruído,
+ * reamostragem anti-aliasing 16kHz, gramática dinâmica contextual Kaldi e
+ * análise de prosódia em tempo real.
  */
-export function useVosk({ onResult, onPartialResult, onError }) {
+export function useVosk({ onResult, onPartialResult, onError, grammar = null }) {
   const [isListening, setIsListening] = useState(false);
   const [isReady, setIsReady] = useState(Boolean(sharedVoskModel));
   const [status, setStatus] = useState(sharedVoskModel ? 'ready' : 'loading');
   const [audioLevel, setAudioLevel] = useState(0);
+  const [prosodyMetrics, setProsodyMetrics] = useState({
+    syllableRateHz: 0,
+    estimatedWpm: 0,
+    voicedRatio: 0,
+    cadenciaScore: 100,
+  });
   
   const modelRef = useRef(sharedVoskModel);
   const recognizerRef = useRef(null);
   const audioContextRef = useRef(null);
   const streamRef = useRef(null);
   const processorRef = useRef(null);
+  const dspChainRef = useRef(null);
+  const prosodyAnalyzerRef = useRef(new RealtimeProsodyAnalyzer(16000));
   const isListeningRef = useRef(false);
   const lastLevelUpdateRef = useRef(0);
+  const grammarRef = useRef(grammar);
   
   const onResultRef = useRef(onResult);
   const onPartialResultRef = useRef(onPartialResult);
@@ -52,7 +47,8 @@ export function useVosk({ onResult, onPartialResult, onError }) {
     onResultRef.current = onResult;
     onPartialResultRef.current = onPartialResult;
     onErrorRef.current = onError;
-  }, [onResult, onPartialResult, onError]);
+    grammarRef.current = grammar;
+  }, [onResult, onPartialResult, onError, grammar]);
 
   const loadVoskModel = useCallback(async () => {
     if (sharedVoskModel) {
@@ -115,13 +111,30 @@ export function useVosk({ onResult, onPartialResult, onError }) {
     }
   }, []);
 
-  const resetRecognizer = useCallback(() => {
+  const resetRecognizer = useCallback((customGrammar = null) => {
     if (!modelRef.current) return;
     cleanupRecognizer();
 
-    // O modelo Vosk Kaldi pt-BR opera estritamente a 16000Hz
-    const rec = new modelRef.current.KaldiRecognizer(16000);
+    const activeGrammar = customGrammar || grammarRef.current;
+    let rec;
+
+    // Se houver gramática contextual do poema (palavras + [unk]), KaldiRecognizer foca estritamente no vocabulário
+    if (activeGrammar && Array.isArray(activeGrammar) && activeGrammar.length > 0) {
+      try {
+        const grammarJson = JSON.stringify(activeGrammar);
+        rec = new modelRef.current.KaldiRecognizer(16000, grammarJson);
+      } catch (grammarErr) {
+        console.warn('[VOSK] Fallback para reconhecimento livre sem gramática restrita:', grammarErr);
+        rec = new modelRef.current.KaldiRecognizer(16000);
+      }
+    } else {
+      rec = new modelRef.current.KaldiRecognizer(16000);
+    }
     
+    try {
+      rec.setWords?.(true);
+    } catch (_) {}
+
     rec.on('result', (m) => {
       const text = m?.result?.text || m?.text || '';
       if (text && isListeningRef.current) {
@@ -145,6 +158,13 @@ export function useVosk({ onResult, onPartialResult, onError }) {
     setIsListening(false);
     setAudioLevel(0);
     setStatus('ready');
+
+    if (dspChainRef.current) {
+      try {
+        dspChainRef.current.disconnect();
+      } catch (_) {}
+      dspChainRef.current = null;
+    }
 
     if (processorRef.current) {
       processorRef.current.onaudioprocess = null;
@@ -180,6 +200,7 @@ export function useVosk({ onResult, onPartialResult, onError }) {
         console.warn('[VOSK] Erro ao recuperar resultado final no verso:', err);
       }
     }
+    prosodyAnalyzerRef.current?.reset();
   }, []);
 
   const startListening = useCallback(async () => {
@@ -190,6 +211,7 @@ export function useVosk({ onResult, onPartialResult, onError }) {
       if (!modelRef.current) return;
 
       terminateAudio();
+      prosodyAnalyzerRef.current?.reset();
 
       const devices = await navigator.mediaDevices.enumerateDevices();
       const mics = devices.filter((d) => d.kind === 'audioinput');
@@ -206,7 +228,7 @@ export function useVosk({ onResult, onPartialResult, onError }) {
       if (ctx.state === 'suspended') await ctx.resume();
       audioContextRef.current = ctx;
       
-      // Inicializa recognizer a 16000Hz fixo
+      // Inicializa recognizer a 16000Hz com suporte opcional a gramática
       resetRecognizer();
 
       let stream;
@@ -214,6 +236,7 @@ export function useVosk({ onResult, onPartialResult, onError }) {
         stream = await navigator.mediaDevices.getUserMedia({ 
           audio: {
             deviceId: targetMic?.deviceId ? { ideal: targetMic.deviceId } : undefined,
+            channelCount: { ideal: 2 }, // Captura 2 canais para anti-cancelamento de fase
             echoCancellation: true,
             noiseSuppression: true,
             autoGainControl: true,
@@ -227,38 +250,47 @@ export function useVosk({ onResult, onPartialResult, onError }) {
       streamRef.current = stream;
 
       const source = ctx.createMediaStreamSource(stream);
-      const gainNode = ctx.createGain();
-      gainNode.gain.value = 0.85; // Calibração para evitar clipping em falas próximas
       
-      // Buffer de 4096 amostras para janela acústica confiável
-      processorRef.current = ctx.createScriptProcessor(4096, 1, 1);
+      // Conecta a cadeia DSP vocal completa (Highpass 85Hz + Boost de presença 2.8kHz + Anti-alias + Compressor)
+      const dsp = createVoiceDSPChain(ctx, source);
+      dspChainRef.current = dsp;
+
+      // Buffer de 4096 amostras para janela acústica com processamento anti-fase e gate de silêncio
+      processorRef.current = ctx.createScriptProcessor(4096, 2, 1);
       
       processorRef.current.onaudioprocess = (event) => {
         const currentRec = recognizerRef.current;
         if (!isListeningRef.current || !currentRec) return;
         
-        const inputData = event.inputBuffer.getChannelData(0);
-        // Garante 16000Hz exatos independente da placa de som
-        const resampled = resampleTo16k(inputData, event.inputBuffer.sampleRate);
+        // 1. Anti-cancelamento de fase para microfones duplos de laptop
+        const ch0 = event.inputBuffer.getChannelData(0);
+        const ch1 = event.inputBuffer.numberOfChannels > 1 
+          ? event.inputBuffer.getChannelData(1) 
+          : null;
+        const monoPcm = downmixAntiPhase(ch0, ch1);
+
+        // 2. Reamostragem com Silence Gate (-50dBFS) para 16000Hz exatos
+        const resampled = resampleAndGateAudio(monoPcm, event.inputBuffer.sampleRate, 16000);
         currentRec.acceptWaveformFloat(resampled, 16000);
 
-        // Medição RMS real para indicador e espectro
+        // 3. Telemetria Acústica de Prosódia & Cadência Poética Real
         const now = performance.now();
         if (now - lastLevelUpdateRef.current >= 75) {
           lastLevelUpdateRef.current = now;
-          let sumSquares = 0;
-          for (let i = 0; i < inputData.length; i++) {
-            const s = inputData[i];
-            sumSquares += s * s;
+          const telemetry = prosodyAnalyzerRef.current?.processFrame(resampled);
+          if (telemetry) {
+            setAudioLevel(telemetry.audioLevel);
+            setProsodyMetrics({
+              syllableRateHz: telemetry.syllableRateHz,
+              estimatedWpm: telemetry.estimatedWpm,
+              voicedRatio: telemetry.voicedRatio,
+              cadenciaScore: telemetry.cadenciaScore,
+            });
           }
-          const rms = Math.sqrt(sumSquares / inputData.length);
-          const level = Math.min(100, Math.round(rms * 450));
-          setAudioLevel(level);
         }
       };
 
-      source.connect(gainNode);
-      gainNode.connect(processorRef.current);
+      dsp.outputNode.connect(processorRef.current);
       processorRef.current.connect(ctx.destination);
       
       isListeningRef.current = true;
@@ -290,6 +322,7 @@ export function useVosk({ onResult, onPartialResult, onError }) {
     isReady,
     status,
     audioLevel,
+    prosodyMetrics,
     startListening,
     stopListening,
     nextVerse,

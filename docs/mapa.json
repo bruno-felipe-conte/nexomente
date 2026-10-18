@@ -141,6 +141,20 @@
         "app/src/pages/Settings.jsx"
       ],
       "impacto_falha": "Intervalos dinâmicos do Anki SRS deixam de sincronizar com a retenção configurada pelo usuário."
+    },
+    {
+      "id": "audio-decoder-engine",
+      "nome": "Decodificador Acústico, DSP Vocal, Anti-Cancelamento de Fase e Fonética PT-BR",
+      "arquivo": "app/src/lib/audio/audioDecoder.js",
+      "linha": 1,
+      "implementacao": "app/src/lib/audio/audioDecoder.js",
+      "usado_por": [
+        "app/src/hooks/useVosk.js",
+        "app/src/pages/Poemas.jsx",
+        "app/src/components/poemas/PoemaRecitacao.jsx",
+        "app/src/components/ai/AICopilotDrawer.jsx"
+      ],
+      "impacto_falha": "Captação do microfone sofre com ruído/cancelamento de fase em notebooks e reconhecimento fonético PT-BR e cadência quebram."
     }
   ],
   "nos": [

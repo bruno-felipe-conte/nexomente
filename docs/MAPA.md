@@ -102,16 +102,16 @@
   - `página: Settings` (`app/src/pages/Settings.jsx`)
 - **Se quebrar**: O agendador Anki SRS volta para intervalos estáticos padrão e as preferências de retenção não são respeitadas.
 
-### HUB: electron-ipc-bridge (Barramento Nativo Desktop)
-- **Arquivo**: `electron/preload.js:3`
-
-- **Implementação**: Processo principal (`electron/main.js`), handlers em `electron/ipc/` (`aiHandlers.js`, `dbHandlers.js`, `windowHandlers.js`) e SQLite nativo (`electron/db/database.js`).
-- **Descrição**: Camada de integração nativa do Electron protegida por `contextIsolation: true`. Disponibiliza controles de janela sem borda, acesso direto a banco local `better-sqlite3` e runtime nativo de inferência local `node-llama-cpp`.
+### HUB: audio-decoder-engine (Decodificador Acústico, DSP Vocal, Anti-Cancelamento de Fase e Fonética PT-BR)
+- **Arquivo**: `app/src/lib/audio/audioDecoder.js:1`
+- **Implementação**: Filtros Web Audio (Highpass 85Hz + Boost Vocal 2.8kHz + Lowpass 7.2kHz + Compressor dinâmico), reamostragem 16kHz com Silence Gate (-50dBFS), proteção anti-fase para laptops, analisador de prosódia em tempo real e decodificador fonético PT-BR (Metaphone).
+- **Descrição**: Central de processamento e decodificação acústica de áudio local. Transforma a voz captada do microfone em sinal limpo de 16.000 Hz nativo do Vosk Kaldi, extrai vocabulário para gramáticas dinâmicas contextuais e calcula cadência física e dicção sonoras.
 - **Usado por**:
-  - `componente: Header` (minimizar, maximizar, fechar)
-  - `serviço: embeddedService` (inferência GGUF local)
-  - `página: Settings` (detecção de execução desktop)
-- **Se quebrar**: O modo desktop perde controle de janela, aceleração nativa de IA fica desativada e chamadas nativas emitem `ERR-IPC-MISSING`.
+  - `hook: useVosk` (`app/src/hooks/useVosk.js`)
+  - `página: Poemas` (`app/src/pages/Poemas.jsx`)
+  - `componente: PoemaRecitacao` (`app/src/components/poemas/PoemaRecitacao.jsx`)
+  - `componente: AICopilotDrawer` (`app/src/components/ai/AICopilotDrawer.jsx`)
+- **Se quebrar**: O microfone volta a captar sinal bruto de 48kHz com ruído e cancelamento de fase estéreo em notebooks, e o reconhecimento fonético poético e do Copiloto perdem tolerância e cadência física.
 
 ---
 

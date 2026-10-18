@@ -7,40 +7,10 @@ import { useDBStore } from '../../store/useDBStore';
 import { toast } from 'react-hot-toast';
 import './PoemaRecitacao.css';
 
-const normalizar = (texto) => {
-  if (!texto) return '';
-  return texto
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"'«»]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-};
-
-function calcularSimilaridade(dita, target) {
-  if (dita === target) return 1.0;
-  if (!dita || !target) return 0;
-
-  // Neutraliza confusão comum de STT entre 'e' e 'i' no final de palavras
-  const d = dita.endsWith('i') && dita.length > 2 ? dita.slice(0, -1) + 'e' : dita;
-  const t = target.endsWith('i') && target.length > 2 ? target.slice(0, -1) + 'e' : target;
-  if (d === t) return 1.0;
-
-  // Prefix match para palavras longas
-  if (d.length >= 3 && t.startsWith(d)) return 0.92;
-  if (t.length >= 3 && d.startsWith(t)) return 0.92;
-
-  // Levenshtein simplificado
-  const lenMax = Math.max(d.length, t.length);
-  let dist = 0;
-  for (let i = 0; i < Math.min(d.length, t.length); i++) {
-    if (d[i] !== t[i]) dist++;
-  }
-  dist += Math.abs(d.length - t.length);
-  const sim = (lenMax - dist) / lenMax;
-  return Math.max(0, sim);
-}
+import {
+  calcularSimilaridadeFonetica,
+  extrairGramaticaContextual,
+} from '../../lib/audio/audioDecoder';
 
 const PoemaRecitacao = ({ poema, onFinish, onClose, onCancel }) => {
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
@@ -63,12 +33,16 @@ const PoemaRecitacao = ({ poema, onFinish, onClose, onCancel }) => {
     currentLine.split(/\s+/).filter(w => w.length > 0)
   , [currentLine]);
 
+  const gramaticaVerso = useMemo(() => {
+    return extrairGramaticaContextual(currentLine);
+  }, [currentLine]);
+
   // Processamento fiel: partialresult pinta verde em tempo real; result consolida acertos/erros (vermelho) e avança o ponteiro
   const processarTranscricao = useCallback((texto, isFinal = false) => {
     if (!texto || isFinished) return;
     setPartialTranscript(texto);
 
-    const ouvidas = texto.trim().split(/\s+/).map(normalizar).filter(Boolean);
+    const ouvidas = texto.trim().split(/\s+/).filter(Boolean);
     if (ouvidas.length === 0) return;
 
     setPalavrasStatus(prev => {
@@ -79,13 +53,13 @@ const PoemaRecitacao = ({ poema, onFinish, onClose, onCancel }) => {
         const idxNoPoema = indicePalavraLocal + i;
         if (idxNoPoema >= palavrasPoema.length) break;
 
-        const target = normalizar(palavrasPoema[idxNoPoema]);
-        const sim = calcularSimilaridade(ouvidas[i], target);
+        const target = palavrasPoema[idxNoPoema];
+        const sim = calcularSimilaridadeFonetica(ouvidas[i], target);
 
-        if (sim >= 0.70) {
+        if (sim >= 0.72) {
           novo[idxNoPoema] = 'correta';
           maiorIndice = Math.max(maiorIndice, idxNoPoema + 1);
-        } else if (idxNoPoema + 1 < palavrasPoema.length && calcularSimilaridade(ouvidas[i], normalizar(palavrasPoema[idxNoPoema + 1])) >= 0.78) {
+        } else if (idxNoPoema + 1 < palavrasPoema.length && calcularSimilaridadeFonetica(ouvidas[i], palavrasPoema[idxNoPoema + 1]) >= 0.78) {
           // Tolerância caso um artigo curto tenha sido aglutinado na fala
           if (isFinal && novo[idxNoPoema] !== 'correta') novo[idxNoPoema] = 'errada';
           novo[idxNoPoema + 1] = 'correta';
@@ -114,7 +88,8 @@ const PoemaRecitacao = ({ poema, onFinish, onClose, onCancel }) => {
   } = useVosk({
     onResult: (text) => processarTranscricao(text, true),
     onPartialResult: (text) => processarTranscricao(text, false),
-    onError: (msg) => toast.error(msg)
+    onError: (msg) => toast.error(msg),
+    grammar: gramaticaVerso,
   });
 
   const toggleListening = () => {

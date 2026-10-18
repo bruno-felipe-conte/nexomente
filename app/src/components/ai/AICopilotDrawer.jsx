@@ -25,6 +25,7 @@ import {
 import { useNotes } from '../../hooks/useNotes';
 import { useUIStore } from '../../store/useUIStore';
 import { useVosk } from '../../hooks/useVosk';
+import { normalizarTranscricaoCopiloto } from '../../lib/audio/audioDecoder';
 import * as aiProvider from '../../lib/ai/aiProvider';
 import toast from 'react-hot-toast';
 
@@ -189,12 +190,13 @@ export default function AICopilotDrawer({ isOpen, onClose, onExpandFullScreen })
     },
     onResult: (finalText) => {
       if (!finalText) return;
+      const textoHigienizado = normalizarTranscricaoCopiloto(finalText);
       setPartialVoice('');
 
       if (autoSendVoice) {
-        handleSendRef.current?.(finalText);
+        handleSendRef.current?.(textoHigienizado);
       } else {
-        setInput((prev) => (prev ? `${prev} ${finalText}` : finalText));
+        setInput((prev) => (prev ? `${prev} ${textoHigienizado}` : textoHigienizado));
         setTimeout(() => inputRef.current?.focus(), 50);
       }
     },
