@@ -1,11 +1,46 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, MicOff, RotateCcw, X, Trophy } from 'lucide-react';
+import { Mic, MicOff, RotateCcw, X, Trophy, ChevronRight, SkipForward } from 'lucide-react';
 import { useVosk } from '../../hooks/useVosk';
 import { useTamagotchiStore } from '../../store/useTamagotchiStore';
 import { useDBStore } from '../../store/useDBStore';
 import { toast } from 'react-hot-toast';
 import './PoemaRecitacao.css';
+
+const normalizar = (texto) => {
+  if (!texto) return '';
+  return texto
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"'«»]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
+function calcularSimilaridade(dita, target) {
+  if (dita === target) return 1.0;
+  if (!dita || !target) return 0;
+
+  // Neutraliza confusão comum de STT entre 'e' e 'i' no final de palavras
+  const d = dita.endsWith('i') && dita.length > 2 ? dita.slice(0, -1) + 'e' : dita;
+  const t = target.endsWith('i') && target.length > 2 ? target.slice(0, -1) + 'e' : target;
+  if (d === t) return 1.0;
+
+  // Prefix match para palavras longas
+  if (d.length >= 3 && t.startsWith(d)) return 0.92;
+  if (t.length >= 3 && d.startsWith(t)) return 0.92;
+
+  // Levenshtein simplificado
+  const lenMax = Math.max(d.length, t.length);
+  let dist = 0;
+  for (let i = 0; i < Math.min(d.length, t.length); i++) {
+    if (d[i] !== t[i]) dist++;
+  }
+  dist += Math.abs(d.length - t.length);
+  const sim = (lenMax - dist) / lenMax;
+  return Math.max(0, sim);
+}
 
 const PoemaRecitacao = ({ poema, onFinish, onClose, onCancel }) => {
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
@@ -16,13 +51,11 @@ const PoemaRecitacao = ({ poema, onFinish, onClose, onCancel }) => {
 
   const lines = useMemo(() => {
     if (!poema?.corpo) return [];
-    // Une as linhas para garantir frases completas e quebra apenas na pontuação
-    return poema.corpo
-      .replace(/\n/g, ' ')
-      .replace(/([.!?])\s*/g, "$1\n")
+    const versosReais = poema.corpo
       .split('\n')
       .map(l => l.trim())
       .filter(l => l.length > 0);
+    return versosReais.length > 0 ? versosReais : [poema.corpo];
   }, [poema?.corpo]);
 
   const currentLine = lines[currentLineIndex] || "";
@@ -30,68 +63,63 @@ const PoemaRecitacao = ({ poema, onFinish, onClose, onCancel }) => {
     currentLine.split(/\s+/).filter(w => w.length > 0)
   , [currentLine]);
 
-  const normalizar = (texto) => {
-    let n = texto.toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z]/g, '');
-    // Neutraliza confusão comum de STT entre 'e' e 'i' no final de palavras
-    if (n.endsWith('e') && n.length > 2) return n.slice(0, -1) + 'i';
-    return n;
-  };
-
+  // Processamento fiel: partialresult pinta verde em tempo real; result consolida acertos/erros (vermelho) e avança o ponteiro
   const processarTranscricao = useCallback((texto, isFinal = false) => {
     if (!texto || isFinished) return;
-    
-    const ouvidas = texto.trim().split(/\s+/).filter(Boolean);
-    
+    setPartialTranscript(texto);
+
+    const ouvidas = texto.trim().split(/\s+/).map(normalizar).filter(Boolean);
+    if (ouvidas.length === 0) return;
+
     setPalavrasStatus(prev => {
       const novo = { ...prev };
-      ouvidas.forEach((ouvida, i) => {
+      let maiorIndice = indicePalavraLocal;
+
+      for (let i = 0; i < ouvidas.length; i++) {
         const idxNoPoema = indicePalavraLocal + i;
-        if (idxNoPoema >= palavrasPoema.length) return;
-        
+        if (idxNoPoema >= palavrasPoema.length) break;
+
         const target = normalizar(palavrasPoema[idxNoPoema]);
-        const dita = normalizar(ouvida);
-        
-        // Match Inteligente (Fuzzy)
-        const correta = dita === target || 
-                       (dita.length > 3 && target.startsWith(dita)) ||
-                       (target.length > 3 && dita.startsWith(target)) ||
-                       // Caso especial para palavras curtas como 'fui'
-                       (target.length <= 3 && dita.length >= 2 && target.includes(dita.slice(0, 2)));
-        
-        // No modo parcial, só marcamos se for correto. 
-        // No modo final, marcamos erro se não bater.
-        if (correta) {
+        const sim = calcularSimilaridade(ouvidas[i], target);
+
+        if (sim >= 0.70) {
           novo[idxNoPoema] = 'correta';
-        } else if (isFinal && !novo[idxNoPoema]) {
+          maiorIndice = Math.max(maiorIndice, idxNoPoema + 1);
+        } else if (idxNoPoema + 1 < palavrasPoema.length && calcularSimilaridade(ouvidas[i], normalizar(palavrasPoema[idxNoPoema + 1])) >= 0.78) {
+          // Tolerância caso um artigo curto tenha sido aglutinado na fala
+          if (isFinal && novo[idxNoPoema] !== 'correta') novo[idxNoPoema] = 'errada';
+          novo[idxNoPoema + 1] = 'correta';
+          maiorIndice = Math.max(maiorIndice, idxNoPoema + 2);
+        } else if (isFinal && novo[idxNoPoema] !== 'correta') {
           novo[idxNoPoema] = 'errada';
+          maiorIndice = Math.max(maiorIndice, idxNoPoema + 1);
         }
-      });
+      }
       return novo;
     });
 
     if (isFinal) {
-      setIndicePalavraLocal(prev => prev + ouvidas.length);
+      setIndicePalavraLocal(prev => Math.min(palavrasPoema.length, prev + 1));
       setPartialTranscript('');
-    } else {
-      setPartialTranscript(texto);
     }
   }, [palavrasPoema, indicePalavraLocal, isFinished]);
 
-  const { isListening, isReady, startListening, stopListening, nextVerse, terminateAudio } = useVosk({
+  const {
+    isListening,
+    isReady,
+    startListening,
+    stopListening,
+    nextVerse,
+    terminateAudio
+  } = useVosk({
     onResult: (text) => processarTranscricao(text, true),
     onPartialResult: (text) => processarTranscricao(text, false),
     onError: (msg) => toast.error(msg)
   });
 
   const toggleListening = () => {
-    if (isListening) {
-      stopListening();
-    } else {
-      startListening(); // Modo livre (Sem gramática restrita)
-    }
+    if (isListening) stopListening();
+    else startListening();
   };
 
   const isTransitioningRef = useRef(false);
@@ -108,7 +136,15 @@ const PoemaRecitacao = ({ poema, onFinish, onClose, onCancel }) => {
     setPalavrasStatus({});
     setIndicePalavraLocal(0);
     setCurrentLineIndex(prev => prev + 1);
-    nextVerse(); // Reset do motor para a próxima linha
+    nextVerse();
+  };
+
+  const reiniciarVersoAtual = () => {
+    setPartialTranscript('');
+    setPalavrasStatus({});
+    setIndicePalavraLocal(0);
+    nextVerse();
+    toast('Verso reiniciado para nova tomada', { icon: '🔄' });
   };
 
   const finishDojo = () => {
@@ -116,8 +152,8 @@ const PoemaRecitacao = ({ poema, onFinish, onClose, onCancel }) => {
     stopListening();
     terminateAudio();
     try {
-      useTamagotchiStore.getState().addBonusXp?.(25, 'Recitação no Dojo');
-      useDBStore.getState().XP?.add?.(25, 'Recitação no Dojo', 'poema', poema?.id);
+      useTamagotchiStore.getState().addBonusXp?.(25, 'Recitação de Oratória');
+      useDBStore.getState().XP?.add?.(25, 'Recitação de Oratória', 'poema', poema?.id);
     } catch {
       // Silencioso se store indisponivel
     }
@@ -132,26 +168,32 @@ const PoemaRecitacao = ({ poema, onFinish, onClose, onCancel }) => {
     return Math.min(100, Math.max(70, scoreLinha));
   }, [palavrasStatus, palavrasPoema.length]);
 
-  // Verifica se a linha terminou
+  // Verifica se a linha terminou com base em acerto real do verso
   useEffect(() => {
-    const todasCertas = palavrasPoema.length > 0 &&
-                       palavrasPoema.every((_, i) => palavrasStatus[i] === 'correta');
+    if (palavrasPoema.length === 0 || isFinished) return;
 
-    const linhaTerminou = todasCertas || (indicePalavraLocal >= palavrasPoema.length && palavrasPoema.length > 0);
+    const totalAcertos = Object.values(palavrasStatus).filter(s => s === 'correta').length;
+    const todasCertas = palavrasPoema.every((_, i) => palavrasStatus[i] === 'correta');
+    const taxaAcerto = totalAcertos / palavrasPoema.length;
 
-    if (linhaTerminou && !isTransitioningRef.current && !isFinished) {
+    // Avança de linha apenas se o verso foi dominado (todas certas ou pelo menos 75% acertadas)
+    const versoDominado = todasCertas || (taxaAcerto >= 0.75 && totalAcertos >= 2);
+
+    if (versoDominado && !isTransitioningRef.current) {
       isTransitioningRef.current = true;
 
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         if (currentLineIndex < lines.length - 1) {
           handleNextLine();
           isTransitioningRef.current = false;
         } else {
           finishDojo();
         }
-      }, 400); // Transição snappier (400ms)
+      }, 500);
+
+      return () => clearTimeout(timer);
     }
-  }, [palavrasStatus, indicePalavraLocal, palavrasPoema, isFinished]);
+  }, [palavrasStatus, palavrasPoema, currentLineIndex, lines.length, isFinished]);
 
   const resetDojo = () => {
     setCurrentLineIndex(0);
@@ -164,22 +206,25 @@ const PoemaRecitacao = ({ poema, onFinish, onClose, onCancel }) => {
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xl p-4 cursor-pointer"
-      onClick={handleClose}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-xl p-4 select-none"
     >
       <motion.div 
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-4xl bg-slate-900/90 border border-white/10 rounded-3xl overflow-hidden shadow-2xl cursor-default"
+        className="relative w-full max-w-4xl bg-slate-900/95 border border-white/10 rounded-3xl overflow-hidden shadow-2xl cursor-default"
       >
         {/* Header */}
         <div className="p-6 flex justify-between items-center border-b border-white/5 bg-white/5">
           <div>
-            <h2 className="text-indigo-400 font-mono text-sm tracking-widest uppercase">Poetry Dojo v2.0</h2>
+            <h2 className="text-indigo-400 font-mono text-sm tracking-widest uppercase">Estúdio de Oratória & Poesia</h2>
             <h3 className="text-2xl font-bold text-white">{poema?.titulo || 'Recitação'}</h3>
           </div>
-          <button onClick={handleClose} className="p-2 hover:bg-white/10 rounded-full transition-colors text-white/50 hover:text-white cursor-pointer">
+          <button 
+            type="button"
+            onClick={handleClose} 
+            className="p-2 hover:bg-white/10 rounded-full transition-colors text-white/50 hover:text-white cursor-pointer"
+            title="Fechar Estúdio"
+          >
             <X size={24} />
           </button>
         </div>
@@ -243,41 +288,76 @@ const PoemaRecitacao = ({ poema, onFinish, onClose, onCancel }) => {
                 )}
               </div>
 
-              {/* Controles */}
-              <div className="flex items-center gap-8">
-                <button 
-                  onClick={resetDojo}
-                  className="p-4 bg-white/5 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition-all"
-                  title="Reiniciar"
-                >
-                  <RotateCcw size={24} />
-                </button>
+              {/* Controles da Arena */}
+              <div className="flex flex-col items-center gap-4">
+                <div className="flex items-center gap-6">
+                  {/* Reiniciar Verso Atual */}
+                  <button 
+                    type="button"
+                    onClick={reiniciarVersoAtual}
+                    className="p-3.5 bg-white/5 hover:bg-white/10 rounded-2xl text-white/60 hover:text-white transition-all flex items-center gap-2 text-xs font-semibold border border-white/5 cursor-pointer"
+                    title="Tentar Este Verso Novamente"
+                  >
+                    <RotateCcw size={18} />
+                    <span>Verso</span>
+                  </button>
 
-                <button 
-                  onClick={toggleListening}
-                  disabled={!isReady}
-                  className={`relative w-24 h-24 rounded-full flex items-center justify-center transition-all duration-500 ${
-                    isListening 
-                      ? 'bg-red-500 shadow-[0_0_50px_rgba(239,68,68,0.4)] scale-110' 
-                      : 'bg-indigo-600 hover:bg-indigo-500 shadow-[0_0_30px_rgba(79,70,229,0.3)]'
-                  } text-white disabled:opacity-50 disabled:grayscale`}
-                >
-                  {isListening ? (
-                    <div className="relative">
-                      <MicOff size={32} />
-                      <motion.div 
-                        animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
-                        transition={{ repeat: Infinity, duration: 1.5 }}
-                        className="absolute inset-0 bg-white rounded-full -z-10"
-                      />
-                    </div>
+                  {/* Botão Central de Microfone */}
+                  <button 
+                    type="button"
+                    onClick={isReady ? toggleListening : undefined}
+                    disabled={!isReady}
+                    className={`relative w-24 h-24 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer ${
+                      !isReady
+                        ? 'bg-slate-700/60 opacity-60 cursor-not-allowed'
+                        : isListening 
+                          ? 'bg-red-500 shadow-[0_0_50px_rgba(239,68,68,0.45)] scale-105' 
+                          : 'bg-indigo-600 hover:bg-indigo-500 shadow-[0_0_30px_rgba(79,70,229,0.35)]'
+                    } text-white`}
+                    title={!isReady ? 'Inicializando modelo Vosk...' : isListening ? 'Pausar Microfone' : 'Iniciar Microfone'}
+                  >
+                    {isListening ? (
+                      <div className="relative">
+                        <MicOff size={32} />
+                        <motion.div 
+                          animate={{ scale: [1, 1.4, 1], opacity: [0.5, 0, 0.5] }}
+                          transition={{ repeat: Infinity, duration: 1.5 }}
+                          className="absolute inset-0 bg-white rounded-full -z-10"
+                        />
+                      </div>
+                    ) : (
+                      <Mic size={32} />
+                    )}
+                  </button>
+
+                  {/* Próximo Verso */}
+                  <button 
+                    type="button"
+                    onClick={currentLineIndex < lines.length - 1 ? handleNextLine : finishDojo}
+                    className="p-3.5 bg-white/5 hover:bg-white/10 rounded-2xl text-white/60 hover:text-white transition-all flex items-center gap-2 text-xs font-semibold border border-white/5 cursor-pointer"
+                    title="Avançar para o Próximo Verso"
+                  >
+                    <span>{currentLineIndex < lines.length - 1 ? 'Próximo' : 'Concluir'}</span>
+                    <ChevronRight size={18} />
+                  </button>
+                </div>
+
+                {/* Status Indicator */}
+                <div className="flex items-center justify-center pt-2">
+                  {!isReady ? (
+                    <span className="text-[11px] font-mono text-amber-400/90 bg-amber-950/40 border border-amber-800/40 px-3 py-1 rounded-full animate-pulse">
+                      ⏳ Inicializando Motor Vosk Offline...
+                    </span>
+                  ) : isListening ? (
+                    <span className="text-[11px] font-mono uppercase tracking-wider text-cyan-400 bg-cyan-950/50 border border-cyan-800/60 px-3 py-1 rounded-full flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+                      🎙️ Microfone Ativo • Pode Recitar
+                    </span>
                   ) : (
-                    <Mic size={32} />
+                    <span className="text-[11px] font-mono text-white/40">
+                      Clique no microfone para iniciar a tomada de oratória
+                    </span>
                   )}
-                </button>
-
-                <div className="w-12 h-12 flex items-center justify-center text-white/20">
-                  {isListening && <span className="text-xs font-mono uppercase tracking-widest">Listening</span>}
                 </div>
               </div>
             </>

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import {
   Mic,
   MicOff,
@@ -8,10 +8,12 @@ import {
   BookOpen,
   Settings,
   Plus,
+  Sparkles,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { usePoemas } from '../hooks/useMaterias';
 import { useTamagotchiStore } from '../store/useTamagotchiStore';
+import { useVosk } from '../hooks/useVosk';
 import { useTranslation } from '../lib/i18n';
 import PoemaLeitura from '../components/poemas/PoemaLeitura';
 import PoemasGerenciador from '../components/poemas/PoemasGerenciador';
@@ -36,26 +38,62 @@ const POEMA_CLASSICO_PADRAO = {
   ].join('\n'),
 };
 
-const ESPECTRO_ALTURAS = [
+const ESPECTRO_BASE_ALTURAS = [
   14, 22, 34, 46, 56, 40, 28, 48, 60, 52, 38, 20,
   30, 50, 62, 54, 42, 26, 18, 36, 52, 58, 44, 30,
   20, 38, 48, 36, 24, 16, 28, 42, 34, 22, 16, 12,
 ];
 
+const normalizar = (texto) => {
+  if (!texto) return '';
+  return texto
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"'«»]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
+function calcularSimilaridade(dita, target) {
+  if (dita === target) return 1.0;
+  if (!dita || !target) return 0;
+
+  const d = dita.endsWith('i') && dita.length > 2 ? dita.slice(0, -1) + 'e' : dita;
+  const t = target.endsWith('i') && target.length > 2 ? target.slice(0, -1) + 'e' : target;
+  if (d === t) return 1.0;
+
+  if (d.length >= 3 && t.startsWith(d)) return 0.92;
+  if (t.length >= 3 && d.startsWith(t)) return 0.92;
+
+  const lenMax = Math.max(d.length, t.length);
+  let dist = 0;
+  for (let i = 0; i < Math.min(d.length, t.length); i++) {
+    if (d[i] !== t[i]) dist++;
+  }
+  dist += Math.abs(d.length - t.length);
+  const sim = (lenMax - dist) / lenMax;
+  return Math.max(0, sim);
+}
+
 export default function PoemasPage() {
   const { poemas = [], getById, registrarRecitacao, proximoPoema, poemaAnterior } = usePoemas();
   const { t } = useTranslation();
-
   const addBonusXp = useTamagotchiStore((s) => s.addBonusXp);
 
-  // 'dojo' (protótipo padrão) | 'gerenciar' | 'leitura'
-  const [tela, setTela] = useState('dojo');
+  // 'estudio' | 'gerenciar' | 'leitura'
+  const [tela, setTela] = useState('estudio');
   const [poemaSelecionado, setPoemaSelecionado] = useState(null);
-  const [indiceLinhaAtiva, setIndiceLinhaAtiva] = useState(3);
-  const [escutandoSimulado, setEscutandoSimulado] = useState(true);
+  const [indiceLinhaAtiva, setIndiceLinhaAtiva] = useState(0);
   const [modalVoskAberto, setModalVoskAberto] = useState(false);
-  const [acuraciaSessao, setAcuraciaSessao] = useState(96.4);
-  const [tokensRevisados, setTokensRevisados] = useState({});
+
+  // Estados Fonéticos Reais Estabilizados: 'correta' (verde) | 'errada' (vermelho)
+  const [palavrasStatus, setPalavrasStatus] = useState({});
+  const [indicePalavraEsperada, setIndicePalavraEsperada] = useState(0);
+  const [partialTranscript, setPartialTranscript] = useState('');
+  const [acuraciaSessao, setAcuraciaSessao] = useState(100);
+
+  const ponteiroRef = useRef(0);
 
   const poemaAtivo = useMemo(() => {
     if (poemaSelecionado) {
@@ -87,6 +125,105 @@ export default function PoemasPage() {
     return versoAtualTexto.split(/\s+/).filter(Boolean);
   }, [versoAtualTexto]);
 
+  // Processamento Fonético Fiel ao Vosk:
+  // - partialresult (isFinal = false): pinta acertos de VERDE ('correta') em tempo real SEM avançar ponteiroRef.current
+  // - result (isFinal = true): marca palavras faladas incorretamente de VERMELHO ('errada') e avança ponteiroRef.current
+  const processarTranscricao = useCallback(
+    (texto, isFinal = false) => {
+      if (!texto) return;
+      setPartialTranscript(texto);
+
+      const ouvidas = texto.trim().split(/\s+/).map(normalizar).filter(Boolean);
+      if (ouvidas.length === 0) return;
+
+      setPalavrasStatus((prev) => {
+        const novo = { ...prev };
+        const baseIdx = ponteiroRef.current;
+        let maiorIdxAlcancado = baseIdx;
+
+        for (let i = 0; i < ouvidas.length; i++) {
+          const idxNoPoema = baseIdx + i;
+          if (idxNoPoema >= palavrasVersoAtual.length) break;
+
+          const target = normalizar(palavrasVersoAtual[idxNoPoema]);
+          const sim = calcularSimilaridade(ouvidas[i], target);
+
+          if (sim >= 0.72) {
+            novo[idxNoPoema] = 'correta';
+            maiorIdxAlcancado = Math.max(maiorIdxAlcancado, idxNoPoema + 1);
+          } else if (
+            idxNoPoema + 1 < palavrasVersoAtual.length &&
+            calcularSimilaridade(ouvidas[i], normalizar(palavrasVersoAtual[idxNoPoema + 1])) >= 0.80
+          ) {
+            if (isFinal && novo[idxNoPoema] !== 'correta') {
+              novo[idxNoPoema] = 'errada';
+            }
+            novo[idxNoPoema + 1] = 'correta';
+            maiorIdxAlcancado = Math.max(maiorIdxAlcancado, idxNoPoema + 2);
+          } else if (isFinal && novo[idxNoPoema] !== 'correta') {
+            novo[idxNoPoema] = 'errada';
+            maiorIdxAlcancado = Math.max(maiorIdxAlcancado, idxNoPoema + 1);
+          }
+        }
+
+        if (isFinal) {
+          const novoPonteiro = Math.min(palavrasVersoAtual.length, Math.max(baseIdx + ouvidas.length, maiorIdxAlcancado));
+          ponteiroRef.current = novoPonteiro;
+          setIndicePalavraEsperada(novoPonteiro);
+        } else {
+          setIndicePalavraEsperada(Math.min(palavrasVersoAtual.length, maiorIdxAlcancado));
+        }
+
+        // Atualiza a acurácia calculada
+        const avaliadas = Object.values(novo).length;
+        const acertadas = Object.values(novo).filter((s) => s === 'correta').length;
+        if (avaliadas > 0) {
+          const novaAcuracia = Math.min(100, Math.max(50, Math.round((acertadas / avaliadas) * 100)));
+          setAcuraciaSessao(novaAcuracia);
+        }
+
+        return novo;
+      });
+
+      if (isFinal) {
+        setPartialTranscript('');
+      }
+    },
+    [palavrasVersoAtual]
+  );
+
+  // Motor Oficial: Vosk Offline WASM (100% local, imune a bloqueios do Brave/Electron)
+  const {
+    isListening,
+    isReady: isVoskReady,
+    audioLevel,
+    startListening: startVosk,
+    stopListening: stopVosk,
+    nextVerse: nextVoskVerse,
+    terminateAudio: terminateVoskAudio,
+  } = useVosk({
+    onResult: (text) => processarTranscricao(text, true),
+    onPartialResult: (text) => processarTranscricao(text, false),
+    onError: (msg) => toast.error(msg),
+  });
+
+  const toggleListening = () => {
+    if (isListening) {
+      stopVosk();
+      toast('Microfone pausado', { icon: '⏸️' });
+    } else {
+      startVosk();
+      toast('Microfone ativo: recite os versos em voz alta', { icon: '🎙️' });
+    }
+  };
+
+  // Cleanup de áudio no desmonte
+  useEffect(() => {
+    return () => {
+      terminateVoskAudio();
+    };
+  }, [terminateVoskAudio]);
+
   const navegarPoema = useCallback(
     (direcao) => {
       if (poemas.length === 0) return;
@@ -95,30 +232,40 @@ export default function PoemasPage() {
       if (proximo) {
         setPoemaSelecionado(proximo);
         setIndiceLinhaAtiva(0);
-        setTokensRevisados({});
+        ponteiroRef.current = 0;
+        setPalavrasStatus({});
+        setIndicePalavraEsperada(0);
+        setPartialTranscript('');
+        setAcuraciaSessao(100);
+        nextVoskVerse();
       }
     },
-    [poemas, poemaAtivo, proximoPoema, poemaAnterior]
+    [poemas, poemaAtivo, proximoPoema, poemaAnterior, nextVoskVerse]
   );
 
-  // Optimistic UI ao clicar num token para alternar pronúncia ou avançar estrofe
-  const alternarToken = (idx) => {
-    setTokensRevisados((prev) => {
-      const estadoAtual = prev[idx] || 'ok';
-      const proximoEstado = estadoAtual === 'ok' ? 'warn' : 'ok';
-      return { ...prev, [idx]: proximoEstado };
-    });
-    setAcuraciaSessao((prev) => Number(Math.min(99.8, prev + 0.2).toFixed(1)));
+  const reiniciarVerso = () => {
+    ponteiroRef.current = 0;
+    setPalavrasStatus({});
+    setIndicePalavraEsperada(0);
+    setPartialTranscript('');
+    setAcuraciaSessao(100);
+    nextVoskVerse();
+    toast('Verso reiniciado para nova tomada de oratória', { icon: '🎙️' });
   };
 
   const avancarEstrofe = () => {
+    ponteiroRef.current = 0;
+    setPalavrasStatus({});
+    setIndicePalavraEsperada(0);
+    setPartialTranscript('');
+    nextVoskVerse();
+
     if (indiceLinhaAtiva < versos.length - 1) {
       setIndiceLinhaAtiva((i) => i + 1);
-      setTokensRevisados({});
       try {
-        addBonusXp?.(15, 'Estrofe recitada no Dojo');
+        addBonusXp?.(15, 'Estrofe recitada no Estúdio');
       } catch {
-        // Silencioso se store indisponivel
+        // Silencioso se store indisponível
       }
       toast.success('+15 XP • Estrofe validada com sucesso!');
     } else {
@@ -127,17 +274,12 @@ export default function PoemasPage() {
         registrarRecitacao(poemaAtivo.id);
       }
       try {
-        addBonusXp?.(45, 'Poema completo no Dojo');
+        addBonusXp?.(45, 'Poema completo no Estúdio');
       } catch {
         // Silencioso
       }
-      toast.success('Poema concluído no Dojo! +45 XP Sincronizados');
+      toast.success('Poema concluído! +45 XP Sincronizados com Kora');
     }
-  };
-
-  const reiniciarVerso = () => {
-    setTokensRevisados({});
-    toast('Verso reiniciado para nova tomada fonética', { icon: '🎙️' });
   };
 
   // Circunferência do Donut SVG (r = 56 => 2 * PI * 56 = 351.858)
@@ -153,7 +295,7 @@ export default function PoemasPage() {
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setTela('dojo')}
+              onClick={() => setTela('estudio')}
               className="px-3.5 py-1.5 rounded-lg bg-[#5B7CF4] hover:bg-[#5B7CF4]/90 text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <Mic size={13} />
@@ -170,11 +312,14 @@ export default function PoemasPage() {
         </div>
         <div className="flex-1 overflow-auto">
           <PoemasGerenciador
-            onLeitura={() => setTela('dojo')}
+            onLeitura={() => setTela('estudio')}
             onSelectPoema={(p) => {
               setPoemaSelecionado(p);
               setIndiceLinhaAtiva(0);
-              setTela('dojo');
+              ponteiroRef.current = 0;
+              setPalavrasStatus({});
+              setIndicePalavraEsperada(0);
+              setTela('estudio');
             }}
           />
         </div>
@@ -189,7 +334,7 @@ export default function PoemasPage() {
           <span className="text-xs font-semibold text-[#9499B3]">{t('poems.mode_read')}</span>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setTela('dojo')}
+              onClick={() => setTela('estudio')}
               className="px-3.5 py-1.5 rounded-lg bg-[#5B7CF4] hover:bg-[#5B7CF4]/90 text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <Mic size={13} />
@@ -216,8 +361,8 @@ export default function PoemasPage() {
   }
 
   return (
-    <div className="min-h-full bg-[#0A0B0F] text-[#EEF0F6] p-6 flex flex-col gap-5 select-none">
-      {/* Barra Superior de Seleção de Poema & Alternância de Modos (Rótulos Claros em Ícones) */}
+    <div className="h-full overflow-y-auto scrollbar-none bg-[#0A0B0F] text-[#EEF0F6] p-4 md:p-6 flex flex-col gap-5 select-none">
+      {/* Barra Superior de Seleção de Poema & Alternância de Modos */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-[#10121A] border border-white/[0.07] rounded-xl px-4 py-2.5">
         <div className="flex items-center gap-3 min-w-0">
           <span className="px-2.5 py-1 rounded-md bg-[#38BDF8]/12 border border-[#38BDF8]/30 text-[#38BDF8] text-[11px] font-bold tracking-wide">
@@ -241,6 +386,10 @@ export default function PoemasPage() {
                 if (encontrado) {
                   setPoemaSelecionado(encontrado);
                   setIndiceLinhaAtiva(0);
+                  ponteiroRef.current = 0;
+                  setPalavrasStatus({});
+                  setIndicePalavraEsperada(0);
+                  setPartialTranscript('');
                 }
               }}
               className="bg-[#161923] border border-white/[0.08] rounded-lg px-3 py-1 text-xs font-semibold text-[#EEF0F6] focus:outline-none focus:border-[#5B7CF4] cursor-pointer"
@@ -272,11 +421,14 @@ export default function PoemasPage() {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => setModalVoskAberto(true)}
+            onClick={() => {
+              terminateVoskAudio();
+              setModalVoskAberto(true);
+            }}
             className="px-3 py-1.5 rounded-lg bg-[#38BDF8]/15 hover:bg-[#38BDF8]/25 border border-[#38BDF8]/35 text-[#38BDF8] text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
           >
             <Mic size={13} />
-            <span>Captura Vosk em Tela Cheia</span>
+            <span>Captura em Tela Cheia</span>
           </button>
           <button
             type="button"
@@ -297,9 +449,9 @@ export default function PoemasPage() {
         </div>
       </div>
 
-      {/* Layout Principal de 2 Colunas (Fiel ao preview-screen-2.png) */}
+      {/* Layout Principal de 2 Colunas */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 flex-1">
-        {/* Coluna Esquerda (7 cols): Arena de Recitação Fonética */}
+        {/* Coluna Esquerda (7 cols): Arena de Recitação Fonética em Tempo Real */}
         <div className="xl:col-span-7 bg-[#161923] border border-white/[0.07] rounded-2xl p-7 flex flex-col justify-between">
           <div>
             {/* Header do Poema */}
@@ -317,16 +469,26 @@ export default function PoemasPage() {
                 </p>
               </div>
 
-              <div className="px-3 py-1.5 rounded-full bg-[#22C55E]/12 border border-[#22C55E]/35 flex items-center gap-2 shrink-0">
+              {/* Status do Microfone em Tempo Real com Gatilho */}
+              <button
+                type="button"
+                onClick={toggleListening}
+                className={`px-3.5 py-1.5 rounded-full border flex items-center gap-2 shrink-0 transition-colors cursor-pointer ${
+                  isListening
+                    ? 'bg-[#22C55E]/15 border-[#22C55E]/40 text-[#22C55E]'
+                    : 'bg-[#5B7CF4]/15 border-[#5B7CF4]/40 text-[#5B7CF4] hover:bg-[#5B7CF4]/25'
+                }`}
+                title={isListening ? 'Clique para pausar o microfone' : 'Clique para ativar o microfone'}
+              >
                 <span
-                  className={`w-2 h-2 rounded-full ${
-                    escutandoSimulado ? 'bg-[#22C55E] animate-pulse' : 'bg-[#F59E0B]'
+                  className={`w-2.5 h-2.5 rounded-full ${
+                    isListening ? 'bg-[#22C55E] animate-ping' : 'bg-[#5B7CF4]'
                   }`}
                 />
-                <span className="text-[11px] font-bold text-[#22C55E]">
-                  {t('poems.vosk_listening')}
+                <span className="text-[11.5px] font-bold">
+                  {isListening ? 'Escutando Voz' : 'Iniciar Microfone'}
                 </span>
-              </div>
+              </button>
             </div>
 
             <div className="h-px bg-white/[0.07] mb-5" />
@@ -342,19 +504,50 @@ export default function PoemasPage() {
                     <motion.div
                       key={idx}
                       layoutId="active-verse-box"
-                      className="bg-[#5B7CF4]/12 border border-[#5B7CF4]/45 rounded-xl p-4"
+                      className="bg-[#5B7CF4]/12 border border-[#5B7CF4]/45 rounded-xl p-4 space-y-2.5"
                     >
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#38BDF8]">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#38BDF8] flex items-center gap-1.5">
+                          <Sparkles size={12} />
                           {t('poems.active_line')}
                         </span>
                         <span className="text-[11px] font-mono text-[#9499B3]">
                           Linha {idx + 1}/{versos.length}
                         </span>
                       </div>
-                      <p className="text-base font-bold text-[#EEF0F6] leading-relaxed">
-                        “{linha}”
+
+                      {/* Exibição Palavra por Palavra com Coloração Dinâmica (Verde = Acerto, Vermelho = Erro) */}
+                      <p className="text-xl font-bold leading-relaxed flex flex-wrap gap-2 text-[#EEF0F6]">
+                        <span className="text-[#38BDF8]">“</span>
+                        {palavrasVersoAtual.map((p, i) => {
+                          const status = palavrasStatus[i];
+                          const isEsperada = i === indicePalavraEsperada;
+
+                          let classesCor = 'text-[#EEF0F6]/35';
+                          if (status === 'correta') {
+                            classesCor = 'text-[#22C55E] font-bold drop-shadow-[0_0_10px_rgba(34,197,94,0.7)]';
+                          } else if (status === 'errada' || status === 'warn') {
+                            classesCor = 'text-[#EF4444] font-bold drop-shadow-[0_0_10px_rgba(239,68,68,0.65)]';
+                          } else if (isEsperada && isListening) {
+                            classesCor = 'text-[#38BDF8] font-bold underline underline-offset-4';
+                          }
+
+                          return (
+                            <span key={i} className={`transition-all duration-200 ${classesCor}`}>
+                              {p}
+                            </span>
+                          );
+                        })}
+                        <span className="text-[#38BDF8]">”</span>
                       </p>
+
+                      {/* Feedback de voz ao vivo */}
+                      {partialTranscript && (
+                        <div className="text-xs font-mono text-[#38BDF8] flex items-center gap-1.5 pt-1">
+                          <span className="animate-pulse">🎙️ Ouvido:</span>
+                          <span className="text-white font-medium italic">“{partialTranscript}”</span>
+                        </div>
+                      )}
                     </motion.div>
                   );
                 }
@@ -363,7 +556,14 @@ export default function PoemasPage() {
                   <button
                     key={idx}
                     type="button"
-                    onClick={() => setIndiceLinhaAtiva(idx)}
+                    onClick={() => {
+                      setIndiceLinhaAtiva(idx);
+                      ponteiroRef.current = 0;
+                      setPalavrasStatus({});
+                      setIndicePalavraEsperada(0);
+                      setPartialTranscript('');
+                      nextVoskVerse();
+                    }}
                     className="w-full text-left flex items-center gap-3 px-2 py-1.5 rounded-lg hover:bg-white/[0.03] transition-colors cursor-pointer"
                   >
                     <span
@@ -387,59 +587,87 @@ export default function PoemasPage() {
               })}
             </div>
 
-            {/* Análise Fonética Token por Token */}
+            {/* Análise Fonética Token por Token Dinâmica */}
             <div className="mb-6">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-[#5C6178] mb-2.5">
-                {t('poems.phonetic_tokens')}
-              </p>
+              <div className="flex items-center justify-between mb-2.5">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-[#5C6178]">
+                  {t('poems.phonetic_tokens')} (Status Fonético)
+                </p>
+                <span className="text-[10px] font-mono text-[#9499B3]">
+                  {Object.values(palavrasStatus).filter((s) => s === 'correta').length}/{palavrasVersoAtual.length} palavras
+                </span>
+              </div>
+
               <div className="flex flex-wrap gap-2">
                 {palavrasVersoAtual.map((palavra, idx) => {
-                  const statusCustom = tokensRevisados[idx];
-                  const isWarn =
-                    statusCustom === 'warn' || (!statusCustom && idx === 3 && palavrasVersoAtual.length > 4);
-                  const score = isWarn ? '84%' : idx % 2 === 0 ? '100%' : '98%';
+                  const status = palavrasStatus[idx];
+                  const isEsperada = idx === indicePalavraEsperada && isListening;
+
+                  let estiloCard = 'bg-[#1E2130] border-white/[0.06] text-[#5C6178]';
+                  let scoreTexto = 'Aguardando';
+
+                  if (status === 'correta') {
+                    estiloCard = 'bg-[#22C55E]/15 border-[#22C55E]/50 text-[#22C55E] shadow-[0_0_12px_rgba(34,197,94,0.25)]';
+                    scoreTexto = '100%';
+                  } else if (status === 'errada' || status === 'warn') {
+                    estiloCard = 'bg-[#EF4444]/15 border-[#EF4444]/50 text-[#EF4444] shadow-[0_0_12px_rgba(239,68,68,0.25)]';
+                    scoreTexto = 'Erro';
+                  } else if (isEsperada) {
+                    estiloCard = 'bg-[#5B7CF4]/20 border-[#5B7CF4]/60 text-[#38BDF8]';
+                    scoreTexto = 'Fale agora';
+                  }
 
                   return (
-                    <button
+                    <div
                       key={`${palavra}-${idx}`}
-                      type="button"
-                      onClick={() => alternarToken(idx)}
-                      title="Clique para recalibrar fonema (Optimistic UI)"
-                      className={`px-3 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-                        isWarn
-                          ? 'bg-[#F59E0B]/12 border-[#F59E0B]/40 text-[#F59E0B]'
-                          : 'bg-[#22C55E]/12 border-[#22C55E]/35 text-[#22C55E]'
-                      }`}
+                      className={`px-3 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all select-none ${estiloCard}`}
                     >
                       <span>{palavra}</span>
-                      <span className="font-mono text-[10px] opacity-85">{score}</span>
-                    </button>
+                      <span className="font-mono text-[10px] opacity-85">{scoreTexto}</span>
+                    </div>
                   );
                 })}
               </div>
             </div>
           </div>
 
-          {/* Espectro de Voz Vosk (36 Barras) + Controles do Dojo */}
+          {/* Espectro de Voz Reativo ao Volume Real (RMS) do Microfone */}
           <div className="space-y-4">
             <div className="bg-[#10121A] border border-white/[0.06] rounded-xl p-4">
               <div className="flex items-center justify-between text-[11px] font-mono text-[#9499B3] mb-3">
                 <span>{t('poems.spectrum')}</span>
-                <span className="text-[#38BDF8]">{t('poems.latency')}: 12ms • 96.4% Match</span>
+                <span className="text-[#38BDF8]">
+                  {isListening
+                    ? audioLevel >= 4 || partialTranscript
+                      ? `Captando Voz (${audioLevel}% RMS)`
+                      : 'Microfone Ativo • Silêncio'
+                    : 'Pausado'}{' '}
+                  • {acuraciaSessao}% Match
+                </span>
               </div>
+
+              {/* Ondas Dinâmicas de Áudio Guiadas pelo Volume Real (audioLevel) */}
               <div className="h-14 flex items-center gap-1.5 overflow-hidden">
-                {ESPECTRO_ALTURAS.map((h, i) => {
-                  const alturaAtiva = escutandoSimulado ? h : Math.max(8, Math.round(h * 0.25));
+                {ESPECTRO_BASE_ALTURAS.map((baseH, i) => {
                   const corBarra =
                     i % 3 === 0 ? '#5B7CF4' : i % 3 === 1 ? '#38BDF8' : '#22C55E';
+
+                  const temVozAtiva = isListening && (audioLevel >= 3 || Boolean(partialTranscript));
+                  const intensidade = Math.max(audioLevel, partialTranscript ? 35 : 0);
+                  const alturaReal = !isListening
+                    ? 6
+                    : temVozAtiva
+                      ? Math.max(8, Math.min(54, Math.round((baseH * Math.max(18, intensidade)) / 65)))
+                      : 7;
+
                   return (
                     <div
                       key={i}
-                      className="flex-1 rounded-full transition-all duration-300"
+                      className="flex-1 rounded-full transition-all duration-100"
                       style={{
-                        height: `${alturaAtiva}px`,
+                        height: `${alturaReal}px`,
                         backgroundColor: corBarra,
-                        opacity: escutandoSimulado ? 0.9 : 0.35,
+                        opacity: !isListening ? 0.25 : temVozAtiva ? 0.95 : 0.45,
                       }}
                     />
                   );
@@ -447,20 +675,19 @@ export default function PoemasPage() {
               </div>
             </div>
 
+            {/* Controles da Arena */}
             <div className="flex flex-wrap items-center justify-between gap-3">
               <button
                 type="button"
-                onClick={() => setEscutandoSimulado((v) => !v)}
+                onClick={toggleListening}
                 className={`px-4 py-2.5 rounded-xl border text-xs font-bold flex items-center gap-2 transition-colors cursor-pointer ${
-                  escutandoSimulado
+                  isListening
                     ? 'bg-[#EF4444]/15 border-[#EF4444]/40 text-[#EF4444]'
                     : 'bg-[#22C55E]/15 border-[#22C55E]/40 text-[#22C55E]'
                 }`}
               >
-                {escutandoSimulado ? <MicOff size={15} /> : <Mic size={15} />}
-                <span>
-                  {escutandoSimulado ? t('poems.pause_listen') : 'Retomar Escuta Neural'}
-                </span>
+                {isListening ? <MicOff size={15} /> : <Mic size={15} />}
+                <span>{isListening ? 'Pausar Escuta' : 'Iniciar Escuta'}</span>
               </button>
 
               <div className="flex items-center gap-2.5">
@@ -486,9 +713,9 @@ export default function PoemasPage() {
           </div>
         </div>
 
-        {/* Coluna Direita (5 cols): Acurácia Fonética Global + Evolução do Pet em Tempo Real */}
+        {/* Coluna Direita (5 cols): Acurácia Fonética Global em Tempo Real */}
         <div className="xl:col-span-5 flex flex-col gap-5">
-          {/* Card 1: Precisão Fonética Global (Donut Gauge) */}
+          {/* Card 1: Precisão Fonética Global (Donut Gauge Dinâmico) */}
           <div className="bg-[#161923] border border-white/[0.07] rounded-2xl p-6">
             <div className="mb-4">
               <h3 className="text-base font-bold text-[#EEF0F6]">
@@ -527,65 +754,92 @@ export default function PoemasPage() {
                     {acuraciaSessao}%
                   </span>
                   <span className="text-[11px] font-bold text-[#22C55E]">
-                    Excelente
+                    {acuraciaSessao >= 90 ? 'Excelente' : acuraciaSessao >= 75 ? 'Muito Bom' : 'Em Treino'}
                   </span>
                 </div>
               </div>
 
-              {/* Métricas de Prosódia Lateral */}
+              {/* Métricas Detalhadas */}
               <div className="flex-1 w-full space-y-3">
-                {[
-                  { label: 'Dicção & Fonemas', val: '98.2%', cor: '#22C55E' },
-                  { label: 'Cadência Poética', val: '94.0%', cor: '#38BDF8' },
-                  { label: 'Fidelidade Lexical', val: '97.1%', cor: '#5B7CF4' },
-                  { label: 'Bônus de Sessão', val: '+45 XP', cor: '#F59E0B' },
-                ].map((m) => (
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-[#9499B3]">Dicção & Fonemas</span>
+                  <span className="font-mono font-bold text-[#22C55E]">{acuraciaSessao}%</span>
+                </div>
+                <div className="w-full h-1.5 bg-[#1E2130] rounded-full overflow-hidden">
                   <div
-                    key={m.label}
-                    className="flex items-center justify-between py-1.5 border-b border-white/[0.05] last:border-none"
-                  >
-                    <span className="text-xs text-[#9499B3]">{m.label}</span>
-                    <span
-                      className="text-xs font-bold font-mono"
-                      style={{ color: m.cor }}
-                    >
-                      {m.val}
-                    </span>
-                  </div>
-                ))}
+                    className="h-full bg-[#22C55E] transition-all duration-300"
+                    style={{ width: `${acuraciaSessao}%` }}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-[#9499B3]">Cadência Poética</span>
+                  <span className="font-mono font-bold text-[#38BDF8]">
+                    {Math.round(acuraciaSessao * 0.96)}%
+                  </span>
+                </div>
+                <div className="w-full h-1.5 bg-[#1E2130] rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-[#38BDF8] transition-all duration-300"
+                    style={{ width: `${Math.round(acuraciaSessao * 0.96)}%` }}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-[#9499B3]">Fidelidade Lexical</span>
+                  <span className="font-mono font-bold text-[#5B7CF4]">
+                    {Math.round(acuraciaSessao * 0.98)}%
+                  </span>
+                </div>
+                <div className="w-full h-1.5 bg-[#1E2130] rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-[#5B7CF4] transition-all duration-300"
+                    style={{ width: `${Math.round(acuraciaSessao * 0.98)}%` }}
+                  />
+                </div>
+
+                <div className="pt-1 flex items-center justify-between text-[11px] text-[#9499B3]">
+                  <span>Bônus de Sessão</span>
+                  <span className="font-bold text-[#F59E0B]">+45 XP</span>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Card 2: Estrutura Métrica & Índice de Versos (navegação direta pelo poema ativo) */}
+          {/* Card 2: Estrutura Métrica & Índice de Versos */}
           <div className="bg-[#161923] border border-white/[0.07] rounded-2xl p-6 flex-1 flex flex-col">
-            <div className="flex items-center justify-between gap-2 mb-4">
+            <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-base font-bold text-[#EEF0F6]">Estrutura Métrica &amp; Índice de Versos</h3>
+                <h3 className="text-base font-bold text-[#EEF0F6]">
+                  Estrutura Métrica & Índice de Versos
+                </h3>
                 <p className="text-xs text-[#9499B3] mt-0.5">
-                  {poemaAtivo?.titulo} • {versos.length} versos
+                  {poemaAtivo?.titulo || 'Poema'} • {versos.length} versos
                 </p>
               </div>
-              <span className="px-2.5 py-1 rounded-md bg-[#38BDF8]/15 border border-[#38BDF8]/35 text-[#38BDF8] text-[11px] font-bold font-mono shrink-0">
+              <span className="px-2.5 py-1 rounded-md bg-[#5B7CF4]/15 border border-[#5B7CF4]/35 text-[#5B7CF4] text-xs font-mono font-bold">
                 VERSO {indiceLinhaAtiva + 1}/{versos.length}
               </span>
             </div>
 
-            <div className="flex-1 space-y-1.5 overflow-y-auto max-h-[300px] pr-1">
+            <div className="space-y-2 flex-1 overflow-y-auto max-h-[280px] pr-1">
               {versos.map((v, i) => {
-                const concluido = i < indiceLinhaAtiva;
                 const ativo = i === indiceLinhaAtiva;
+                const concluido = i < indiceLinhaAtiva;
                 return (
                   <button
-                    key={`${i}-${v}`}
+                    key={i}
                     type="button"
                     onClick={() => {
                       setIndiceLinhaAtiva(i);
-                      setTokensRevisados({});
+                      ponteiroRef.current = 0;
+                      setPalavrasStatus({});
+                      setIndicePalavraEsperada(0);
+                      setPartialTranscript('');
                     }}
-                    className={`w-full text-left px-3 py-2 rounded-lg border text-xs flex items-center gap-2.5 transition-colors cursor-pointer ${
+                    className={`w-full text-left p-3 rounded-xl border text-xs transition-colors flex items-center gap-3 cursor-pointer ${
                       ativo
-                        ? 'bg-[#5B7CF4]/15 border-[#5B7CF4]/50 text-[#EEF0F6]'
+                        ? 'bg-[#5B7CF4]/15 border-[#5B7CF4]/50 text-[#EEF0F6] font-semibold'
                         : concluido
                           ? 'bg-[#22C55E]/8 border-[#22C55E]/25 text-[#9499B3]'
                           : 'bg-[#10121A] border-white/[0.05] text-[#9499B3] hover:text-[#EEF0F6]'
@@ -602,7 +856,7 @@ export default function PoemasPage() {
         </div>
       </div>
 
-      {/* Modal Vosk Real quando acionado */}
+      {/* Modal Vosk em Tela Cheia (Quando acionado) */}
       {modalVoskAberto && (
         <PoemaRecitacao
           poema={poemaAtivo}

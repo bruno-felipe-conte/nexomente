@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { useDBStore } from '../store/useDBStore';
+import { eventBus, DOMAIN_EVENTS } from '@core/events/eventBus';
 
 const selectCards = (repo, v) => (v >= 0 ? repo?.getAll() || [] : []);
 
@@ -27,7 +28,20 @@ export function useFlashcards() {
   }, [Flashcards]);
 
   const revisar = useCallback((id, qualidade) => {
-    return Flashcards.revisar(id, qualidade);
+    const res = Flashcards.revisar(id, qualidade);
+    // Concede XP proporcional ao rating do Anki (Again: 2 XP, Hard: 5 XP, Good: 10 XP, Easy: 15 XP)
+    const xpMap = { 1: 2, 2: 5, 3: 10, 4: 15 };
+    const xpEarned = xpMap[qualidade] ?? 10;
+
+    eventBus.emit(DOMAIN_EVENTS.FLASHCARD_REVIEWED, {
+      cardId: id,
+      rating: qualidade,
+      state: res?.state || 'review',
+      lapses: res?.lapses || 0,
+      isLeech: (res?.lapses || 0) >= 4,
+      xpEarned,
+    });
+    return res;
   }, [Flashcards]);
 
   const getParaRevisao = useCallback(() => {

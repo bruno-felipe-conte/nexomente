@@ -1,6 +1,20 @@
 import { defineConfig } from 'vitest/config';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './app/src'),
+      '@app': path.resolve(__dirname, './app/src/app'),
+      '@core': path.resolve(__dirname, './app/src/core'),
+      '@infra': path.resolve(__dirname, './app/src/infra'),
+      '@shared': path.resolve(__dirname, './app/src/shared'),
+      '@features': path.resolve(__dirname, './app/src/features'),
+    },
+  },
   test: {
     globals: true,
     environment: 'jsdom',
@@ -13,6 +27,8 @@ export default defineConfig({
       include: [
         'app/src/utils/**/*.{js,jsx}',
         'app/src/constants/**/*.{js,jsx}',
+        'app/src/core/**/*.{js,jsx}',
+        'app/src/features/**/domain/**/*.{js,jsx}',
         'app/src/hooks/sm2.js',
         'app/src/hooks/useNotes.js',
       ],

@@ -241,16 +241,22 @@ describe('Validação Comportamental de Tela (Study, Flashcards, Notas)', () => 
       });
       const { getByText, getByLabelText } = utils;
 
-      // 1. Seleciona a biblioteca "Livros"
+      // 1. Abre o seletor de categorias e escolhe "Livros"
+      const btnGatilhoCat = utils.container.querySelector('button[type="button"]');
+      if (btnGatilhoCat) {
+        act(() => {
+          fireEvent.click(btnGatilhoCat);
+        });
+      }
       const btnLivros = getByText('Livros');
       act(() => {
         fireEvent.click(btnLivros);
       });
 
       // 2. Clica em "+ Nova Nota" dentro da biblioteca Livros
-      const btnNovaNota = getByText(/Nova Nota/i);
+      const btnCriarNotaLivros = utils.container.querySelector('button[title*="Criar nova nota em \\"Livros\\""]') || getAllByText(/\+ Nova Nota/i)[0];
       act(() => {
-        fireEvent.click(btnNovaNota);
+        fireEvent.click(btnCriarNotaLivros);
       });
 
       // A nota criada deve aparecer listada na biblioteca Livros (não ficar vazia)
@@ -259,15 +265,10 @@ describe('Validação Comportamental de Tela (Study, Flashcards, Notas)', () => 
       expect(livros).toHaveLength(1);
       expect(livros[0].tipo).toBe('livro');
 
-      // 3. Edita o título da nota e clica em Salvar
+      // 3. Edita o título da nota (autosave contínuo e sincronização em memória)
       const inputTitulo = getByLabelText('Título da nota');
       act(() => {
         fireEvent.change(inputTitulo, { target: { value: 'Dom Casmurro' } });
-      });
-
-      const btnSalvar = getByText('Salvar');
-      act(() => {
-        fireEvent.click(btnSalvar);
       });
 
       const notaSalva = Notas.getById(livros[0].id);

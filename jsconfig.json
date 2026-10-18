@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./app/src/*"],
+      "@app/*": ["./app/src/app/*"],
+      "@core/*": ["./app/src/core/*"],
+      "@infra/*": ["./app/src/infra/*"],
+      "@shared/*": ["./app/src/shared/*"],
+      "@features/*": ["./app/src/features/*"]
+    }
+  },
+  "include": ["app/src/**/*", "electron/**/*"]
+}

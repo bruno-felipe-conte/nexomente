@@ -1,26 +1,28 @@
 /**
- * NotasPage — página principal de notas do NexoMente.
+ * NotasPage — Vault de Notas do NexoMente em 2 Colunas (Estilo Notion / Obsidian Clean)
  *
- * Refatorado (Tarefa 4.1): lógica extraída para:
- *   - useNotaEditor  → editor TipTap + ações de IA
- *   - NotaLista      → painel lateral de busca/listagem
+ * - Coluna 1: Lista e Navegação (Busca, pílulas de pastas/categorias no topo e listagem de notas)
+ * - Coluna 2: Workspace limpo e respirável
+ *   - Barra superior única (Breadcrumb à esquerda, Salvo, Ações IA, Info, Zen e Excluir à direita)
+ *   - Área centralizada (Título grande diretamente acima do texto, sem linhas cortando o conteúdo)
+ *   - Toolbar minimalista em micro-dock
  */
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { EditorContent } from '@tiptap/react';
-import { FileText, Trash2 } from 'lucide-react';
+import {
+  FileText, Trash2, Sparkles, Tag, Layers,
+  Maximize2, Minimize2, Loader2, Info
+} from 'lucide-react';
 import { useNotes } from '../hooks/useNotes';
 import { useNotaEditor } from '../hooks/useNotaEditor';
 import NotaLista from '../components/editor/NotaLista';
 import EditorToolbar from '../components/editor/EditorToolbar';
-import BibliotecaPanel from '../components/editor/BibliotecaPanel';
 import NoteMetadata from '../components/editor/NoteMetadata';
 import TagInput from '../components/editor/TagInput';
-import AIBar from '../components/editor/AIBar';
 import FlashcardApproveModal from '../components/editor/FlashcardApproveModal';
 import TagPickerModal from '../components/editor/TagPickerModal';
 import EditorContextMenus from '../components/editor/EditorContextMenus';
-import { getModel } from '../lib/ai/lmStudioService';
-import Button from '../components/ui/Button';
+import { getModel } from '../lib/ai/aiProvider';
 import { useUIStore } from '../store/useUIStore';
 
 export default function NotasPage() {
@@ -31,7 +33,6 @@ export default function NotasPage() {
   const [editando, setEditando] = useState(true);
   const [busca, setBusca] = useState('');
   const [focoMode, setFocoMode] = useState(false);
-  const [mostrandoTags, setMostrandoTags] = useState(false);
   const [mostrandoMeta, setMostrandoMeta] = useState(false);
 
   const {
@@ -56,54 +57,55 @@ export default function NotasPage() {
     let base = busca ? search(busca) : (notas || []);
     if (categoriaAtiva && categoriaAtiva !== 'pasta_raiz') {
       if (categoriaAtiva === 'inbox') {
-        base = base.filter(n => !n.pasta_id || n.pasta_id === 'inbox');
+        base = base.filter(n => !n.pasta_id || n.pasta_id === 'inbox' || n.tipo === 'inbox');
       } else {
-        base = base.filter(n => n.tipo === categoriaAtiva);
+        base = base.filter(n => n.tipo === categoriaAtiva || n.pasta_id === categoriaAtiva);
       }
     }
     return base;
   }, [notas, busca, search, categoriaAtiva]);
 
   const criarNota = useCallback((tipoCustom) => {
-    const tipoExplicito = typeof tipoCustom === 'string' ? tipoCustom : null;
-    const defaultTipo = categoriaAtiva !== 'pasta_raiz' && categoriaAtiva !== 'inbox'
-      ? categoriaAtiva
-      : 'nota';
-    const tipo = tipoExplicito || defaultTipo;
-    const pasta_id = categoriaAtiva === 'inbox' ? 'inbox' : 'pasta_raiz';
-    const status = categoriaAtiva === 'inbox' ? 'inbox' : 'ativo';
+    const cat = (typeof tipoCustom === 'string' && tipoCustom) ? tipoCustom : categoriaAtiva;
+    let tipo = 'nota';
+    let pasta_id = 'pasta_raiz';
+    let status = 'ativo';
+
+    if (cat && cat !== 'pasta_raiz') {
+      if (cat === 'inbox') {
+        tipo = 'inbox';
+        pasta_id = 'inbox';
+        status = 'inbox';
+      } else {
+        tipo = cat;
+        pasta_id = cat;
+        status = 'ativo';
+      }
+    }
+
     const id = create({ titulo: 'Nova Nota', tipo, pasta_id, status });
     const nova = getById(id) || { id, titulo: 'Nova Nota', tipo, pasta_id, status, conteudo: '', tags: [] };
     setNotaSelecionada(nova);
     setEditando(true);
   }, [create, getById, categoriaAtiva]);
 
-  const salvarNota = useCallback(() => {
-    salvarImediato();
-  }, [salvarImediato]);
-
   // Atalhos de teclado
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Ctrl+S / Cmd+S: Salvar Nota Imediatamente
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
         e.preventDefault();
         salvarImediato();
       }
-      // Ctrl+Shift+N: Nova Nota
       if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'n') {
         e.preventDefault();
         criarNota();
       }
-      // Ctrl+Shift+F: Alternar Modo Foco
       if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'f') {
         e.preventDefault();
         setFocoMode(prev => !prev);
       }
-      // Esc: Fechar painéis/modais
       if (e.key === 'Escape') {
         setMostrandoMeta(false);
-        setMostrandoTags(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -123,7 +125,6 @@ export default function NotasPage() {
     setPendingNoteCategory(null);
   }, [pendingNoteCategory, setPendingNoteCategory]);
 
-  // Consome ação pendente vinda do useUIStore (Dashboard, navegação direta)
   useEffect(() => {
     if (!pendingNoteAction) return;
 
@@ -144,7 +145,6 @@ export default function NotasPage() {
     }
   }, [pendingNoteAction, getById, criarNota, setPendingNoteAction]);
 
-  // Listener fallback para abrir nota via evento customizado
   useEffect(() => {
     const handleOpenNoteEvent = (e) => {
       if (e.detail?.noteId) {
@@ -172,30 +172,18 @@ export default function NotasPage() {
   };
 
   return (
-    <div className={`flex h-full ${focoMode ? 'bg-bg-primary' : ''}`}>
-      {/* Coluna 1: BIBLIOTECAS (Navegação Estrutural) */}
+    <div className={`flex h-full w-full overflow-hidden ${focoMode ? 'bg-bg-primary' : ''}`}>
+      {/* Coluna 1: LISTA E CATEGORIAS (Navegação Unificada em 2 Colunas) */}
       {!focoMode && (
-        <div className="w-64 border-r border-white/5 flex flex-col bg-bg-secondary/20">
-          <BibliotecaPanel
-            pastas={[]}
-            notas={notas}
-            notaSelecionada={notaSelecionada}
-            categoriaAtiva={categoriaAtiva}
-            onSelectCategoria={(catId) => setCategoriaAtiva(catId)}
-            onMoverNota={update}
-            onCriarPasta={() => criarNota()}
-          />
-        </div>
-      )}
-
-      {/* Coluna 2: LISTA DE NOTAS (Navegação de Itens) */}
-      {!focoMode && (
-        <div className="w-72 border-r border-white/5 flex flex-col bg-bg-primary/10">
+        <div className="w-80 md:w-96 border-r border-white/5 flex flex-col bg-bg-secondary/15 shrink-0 h-full">
           <NotaLista
             notas={notasFiltradas}
+            todasNotas={notas || []}
             notaSelecionada={notaSelecionada}
             busca={busca}
             onBuscaChange={setBusca}
+            categoriaAtiva={categoriaAtiva}
+            onSelectCategoria={(catId) => setCategoriaAtiva(catId)}
             onSelect={(n) => {
               const notaAtualizada = getById(n.id) || n;
               setNotaSelecionada(notaAtualizada);
@@ -206,32 +194,101 @@ export default function NotasPage() {
         </div>
       )}
 
-      {/* Coluna 3: EDITOR (Conteúdo) */}
-      <div className="flex-1 flex flex-col relative bg-bg-primary/5">
+      {/* Coluna 2: WORKSPACE DO EDITOR (Notion / Obsidian Clean) */}
+      <div className="flex-1 flex flex-col relative bg-bg-primary/5 min-w-0 h-full overflow-hidden">
         {notaSelecionada ? (
           <>
-            {/* Breadcrumbs & Status */}
-            <div className="h-10 px-6 flex items-center justify-between border-b border-white/5 bg-bg-primary/20">
-              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-text-lo/50">
-                <span>Bibliotecas</span>
+            {/* 1. BARRA SUPERIOR ÚNICA E COMPACTA (Breadcrumb à esquerda | Ações à direita) */}
+            <div className="h-12 px-6 flex items-center justify-between border-b border-white/[0.06] bg-bg-secondary/20 shrink-0 gap-4">
+              {/* Breadcrumb sutil */}
+              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-text-lo/40 truncate">
+                <span>Vault</span>
                 <span className="opacity-30">/</span>
-                <span className="text-text-lo">{notaSelecionada.tipo || 'Nota'}</span>
+                <span className="text-text-lo/70">{notaSelecionada.tipo || 'Nota'}</span>
                 <span className="opacity-30">/</span>
-                <span className="text-text-hi">{notaSelecionada.titulo}</span>
+                <span className="text-text-hi truncate max-w-[160px]">{notaSelecionada.titulo}</span>
               </div>
-              <div className="flex items-center gap-4">
-                <span
-                  data-testid="save-status"
-                  className={`text-[10px] font-mono uppercase tracking-widest ${saveStatus === 'saving' ? 'text-warning' : 'text-text-lo/50'}`}
+
+              {/* Indicadores & Ações agrupados à direita na mesma linha */}
+              <div className="flex items-center gap-2.5">
+                {/* Indicador de Status Auto-Save com micro ponto */}
+                <div className="flex items-center gap-1.5 text-[10px] font-mono text-text-lo/50 mr-2" title="Salvamento contínuo em background">
+                  <span className={`w-1.5 h-1.5 rounded-full ${saveStatus === 'saving' ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'}`} />
+                  <span data-testid="save-status">{saveStatus === 'saving' ? 'Salvando…' : 'Salvo'}</span>
+                </div>
+
+                {/* Ações de IA: Pílulas limpas */}
+                <button
+                  onClick={handleResumoOpen}
+                  disabled={aiLoadingResumo}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-text-hi text-xs font-semibold border border-white/10 transition-all cursor-pointer disabled:opacity-40"
+                  title="Resumo via IA local"
                 >
-                  {saveStatus === 'saving' ? 'Salvando…' : 'Salvo'}
-                </span>
+                  {aiLoadingResumo ? <Loader2 size={12} className="animate-spin text-accent-main" /> : <Sparkles size={12} className="text-accent-main" />}
+                  <span className="hidden sm:inline">Resumo IA</span>
+                </button>
+
+                <button
+                  onClick={handleTagsOpen}
+                  disabled={aiLoadingTags}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-text-hi text-xs font-semibold border border-white/10 transition-all cursor-pointer disabled:opacity-40"
+                  title="Sugerir tags semânticas"
+                >
+                  {aiLoadingTags ? <Loader2 size={12} className="animate-spin text-accent-main" /> : <Tag size={12} className="text-accent-main" />}
+                  <span className="hidden sm:inline">Tags</span>
+                </button>
+
+                <button
+                  onClick={handleCardsOpen}
+                  disabled={aiLoadingCards}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-accent-main/15 hover:bg-accent-main/25 text-accent-main text-xs font-semibold border border-accent-main/30 transition-all cursor-pointer disabled:opacity-40"
+                  title="Forjar flashcards para repetição espaçada"
+                >
+                  {aiLoadingCards ? <Loader2 size={12} className="animate-spin" /> : <Layers size={12} />}
+                  <span className="hidden sm:inline">Forjar Cards</span>
+                </button>
+
+                <div className="h-4 w-px bg-white/10 mx-0.5" />
+
+                {/* Info / Metadados */}
+                <button
+                  onClick={() => setMostrandoMeta(p => !p)}
+                  aria-label="Metadados da nota"
+                  className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
+                    mostrandoMeta ? 'bg-white/10 text-text-hi border-white/20' : 'text-text-lo/40 border-transparent hover:text-text-hi'
+                  }`}
+                  title="Metadados da nota"
+                >
+                  <Info size={15} />
+                  <span className="sr-only">Info</span>
+                </button>
+
+                {/* Modo Foco Zen */}
+                <button
+                  onClick={() => setFocoMode(p => !p)}
+                  className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
+                    focoMode ? 'bg-accent-main/20 text-accent-main border-accent-main/30' : 'text-text-lo/40 border-transparent hover:text-text-hi'
+                  }`}
+                  title={focoMode ? 'Sair do Modo Foco' : 'Modo Foco Zen'}
+                >
+                  {focoMode ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+                </button>
+
+                {/* Excluir Nota */}
+                <button
+                  onClick={() => excluirNota(notaSelecionada.id)}
+                  className="p-1.5 rounded-lg text-text-lo/40 hover:text-rose-400 hover:bg-rose-500/10 transition-all cursor-pointer"
+                  title="Excluir nota"
+                >
+                  <Trash2 size={15} />
+                </button>
               </div>
             </div>
 
-            {/* Barra de título + ações */}
-            {!focoMode && (
-              <div className="p-3 border-b border-border-subtle flex items-center gap-2 bg-bg-secondary/50">
+            {/* 2. ÁREA DE ESCRITA RESPIRÁVEL (Notion / Obsidian Clean) */}
+            <div className="flex-1 overflow-y-auto px-6 py-8 scrollbar-none">
+              <div className="max-w-3xl mx-auto w-full flex flex-col">
+                {/* TÍTULO GRANDE E LIMPO DIRETAMENTE ACIMA DO TEXTO (Sem linhas cortando) */}
                 <input
                   type="text"
                   aria-label="Título da nota"
@@ -242,86 +299,40 @@ export default function NotasPage() {
                     setNotaSelecionada(prev => ({ ...prev, titulo: novoTitulo, conteudo: conteudoAtual }));
                     update(notaSelecionada.id, { titulo: novoTitulo, conteudo: conteudoAtual });
                   }}
-                  className="flex-1 bg-transparent text-lg font-bold text-text-primary focus:outline-none"
-                  placeholder="Título da nota"
+                  className="w-full bg-transparent text-3xl md:text-4xl font-serif font-bold text-text-hi placeholder:text-text-lo/20 focus:outline-none border-none p-0 mb-3 tracking-tight"
+                  placeholder="Título da nota..."
                 />
-                {['Info', 'Tags'].map((label) => {
-                  const show = label === 'Info' ? mostrandoMeta : mostrandoTags;
-                  const toggle = label === 'Info'
-                    ? () => setMostrandoMeta(p => !p)
-                    : () => setMostrandoTags(p => !p);
-                  return (
-                    <Button
-                      key={label}
-                      onClick={toggle}
-                      variant={show ? 'primary' : 'secondary'}
-                      size="sm"
-                    >
-                      {label}
-                    </Button>
-                  );
-                })}
-                <Button
-                  onClick={salvarNota}
-                  variant="primary"
-                  size="sm"
-                  className="bg-success hover:bg-success/90"
-                  title="Salvar nota imediatamente (Ctrl+S)"
-                >
-                  {saveStatus === 'saving' ? 'Salvando...' : 'Salvar'}
-                </Button>
-                <Button
-                  onClick={() => excluirNota(notaSelecionada.id)}
-                  variant="ghost"
-                  size="none"
-                  aria-label="Excluir nota"
-                  title="Excluir nota"
-                  className="text-text-muted hover:text-danger hover:bg-danger/10"
-                >
-                  <Trash2 size={16} />
-                </Button>
+
+                {/* Tags em pílulas logo abaixo do título */}
+                <div className="mb-4">
+                  <TagInput
+                    tags={notaSelecionada.tags || []}
+                    onAdd={(tag) => {
+                      addTag(notaSelecionada.id, tag);
+                      setNotaSelecionada(prev => ({ ...prev, tags: [...(prev.tags || []), tag] }));
+                    }}
+                    onRemove={(tag) => {
+                      removeTag(notaSelecionada.id, tag);
+                      setNotaSelecionada(prev => ({ ...prev, tags: (prev.tags || []).filter(t => t !== tag) }));
+                    }}
+                  />
+                </div>
+
+                {/* Micro-dock minimalista de formatação (Sem barra dura de tela inteira) */}
+                <div className="mb-5 sticky top-0 z-20 py-1 bg-nx-void/90 backdrop-blur-md">
+                  <EditorToolbar editor={editor} />
+                </div>
+
+                {/* Corpo do editor TipTap */}
+                <div className="flex-1 min-h-[420px]">
+                  <EditorContextMenus editor={editor} onAIAction={(action) => action === 'summarize' && handleResumoOpen()} />
+                  <EditorContent editor={editor} className="prose prose-invert max-w-none focus:outline-none min-h-[420px] leading-relaxed text-text-hi" />
+                </div>
               </div>
-            )}
-
-            {/* Barra de tags */}
-            {mostrandoTags && (
-              <div className="px-4 py-2 border-b border-border-subtle bg-bg-secondary/30">
-                <TagInput
-                  tags={notaSelecionada.tags || []}
-                  onAdd={(tag) => {
-                    addTag(notaSelecionada.id, tag);
-                    setNotaSelecionada(prev => ({ ...prev, tags: [...(prev.tags || []), tag] }));
-                  }}
-                  onRemove={(tag) => {
-                    removeTag(notaSelecionada.id, tag);
-                    setNotaSelecionada(prev => ({ ...prev, tags: (prev.tags || []).filter(t => t !== tag) }));
-                  }}
-                />
-              </div>
-            )}
-
-            <EditorToolbar editor={editor} focusMode={focoMode} onToggleFocus={() => setFocoMode(p => !p)} />
-
-            {!focoMode && (
-              <AIBar
-                nota={notaSelecionada}
-                onTagsOpen={handleTagsOpen}
-                onResumoOpen={handleResumoOpen}
-                onCardsOpen={handleCardsOpen}
-                onChatOpen={handleChatOpen}
-                loadingTags={aiLoadingTags}
-                loadingResumo={aiLoadingResumo}
-                loadingCards={aiLoadingCards}
-              />
-            )}
-
-            <div className={`flex-1 overflow-auto relative ${focoMode ? 'max-w-3xl mx-auto w-full px-8 py-12' : ''}`}>
-              <EditorContextMenus editor={editor} onAIAction={(action) => action === 'summarize' && handleResumoOpen()} />
-              <EditorContent editor={editor} className="h-full" />
             </div>
 
-            {/* Barra de Status Inferior (Palavras, Leitura, Salvamento) */}
-            <div className="h-7 px-4 border-t border-white/5 bg-bg-primary/20 flex items-center justify-between text-[11px] text-text-lo/60 font-mono select-none">
+            {/* 3. BARRA DE STATUS INFERIOR DISCRETA */}
+            <div className="h-7 px-6 border-t border-white/[0.05] bg-bg-primary/20 flex items-center justify-between text-[11px] text-text-lo/50 font-mono select-none shrink-0">
               <div className="flex items-center gap-3">
                 {(() => {
                   const texto = editor?.getText() || '';
@@ -350,11 +361,17 @@ export default function NotasPage() {
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-text-muted">
-            <div className="text-center">
-              <FileText size={48} className="mx-auto mb-4 opacity-25" />
-              <p className="text-lg">Selecione uma nota</p>
-              <p className="text-sm mt-1">ou crie uma nova</p>
+          <div className="flex-1 flex items-center justify-center text-text-lo/40 p-10">
+            <div className="text-center space-y-3">
+              <FileText size={48} className="mx-auto opacity-20" />
+              <p className="text-base font-semibold text-text-hi">Selecione uma nota do Vault</p>
+              <p className="text-xs text-text-lo/50">Ou crie uma nova nota para começar a escrever</p>
+              <button
+                onClick={() => criarNota()}
+                className="mt-2 px-4 py-2 rounded-xl bg-accent-main/15 text-accent-main border border-accent-main/30 text-xs font-bold hover:bg-accent-main/25 transition-all cursor-pointer"
+              >
+                + Nova Nota
+              </button>
             </div>
           </div>
         )}
@@ -385,9 +402,11 @@ export default function NotasPage() {
       )}
       {showCardApprove && (
         <FlashcardApproveModal
-          cards={cardsSugeridos} loading={aiLoadingCards}
+          cards={cardsSugeridos}
+          loading={aiLoadingCards}
           onCancel={() => setShowCardApprove(false)}
-          modelo={getModel()} notaTitulo={notaSelecionada?.titulo}
+          modelo={getModel()}
+          notaTitulo={notaSelecionada?.titulo}
         />
       )}
     </div>

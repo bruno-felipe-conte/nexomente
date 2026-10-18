@@ -1,17 +1,15 @@
 /**
  * @module Sidebar
- * @description Barra lateral principal do NexoMente reestruturada:
- * - Brand Header com espaçamento dedicado e sem corte de renderização
- * - Seletor de idiomas limpo e acessível
- * - Navegação única e vertical pelos pilares reais (Dashboard, Vault, Grafo, Flashcards & Forja, Dojo, Configurações)
- * - Pílula compacta do Motor Neural Offline
- * - Card compacto da Kora (sem NaN%)
- * - Rodapé com identidade do Vault
+ * @description Barra lateral principal do NexoMente com Auto-Hide (Hover retrátil) e alinhamento estrito com a Topbar.
+ * - Altura do Brand Header: exatamente h-16 (64px) com border-b border-nx-border/80, nivelado com a Topbar.
+ * - Modo Auto-Hide / Mini-Rail: w-16 no estado recolhido com ícones centralizados; expande suavemente para w-64 no hover (onMouseEnter / onMouseLeave).
+ * - Exibição contextual: rótulos, status do motor neural e Kora revelados com transição fluida ao expandir.
  */
+import { useState } from 'react';
 import PropTypes from 'prop-types';
 import {
   LayoutGrid, Mic, Layers, GitBranch, FileText, Settings,
-  Globe, Sparkles
+  Globe, Sparkles, Pin, PinOff
 } from 'lucide-react';
 import { useAIStore } from '../../store/useAIStore';
 import { useTamagotchiStore, getLevelProgress } from '../../store/useTamagotchiStore';
@@ -19,7 +17,10 @@ import { useFlashcards } from '../../hooks/useFlashcards';
 import { useNotes } from '../../hooks/useNotes';
 import { useTranslation } from '../../lib/i18n';
 
-export default function Sidebar({ isOpen, currentPage, onNavigate, onCloseMobile, className = '' }) {
+export default function Sidebar({ isOpen: isPinnedExternal = true, currentPage, onNavigate, onCloseMobile, className = '' }) {
+  const [isHovered, setIsHovered] = useState(false);
+  const [isPinned, setIsPinned] = useState(false);
+
   const { status } = useAIStore();
   const { player } = useTamagotchiStore();
   const { getParaRevisao } = useFlashcards();
@@ -31,6 +32,9 @@ export default function Sidebar({ isOpen, currentPage, onNavigate, onCloseMobile
   const totalNodes = (notas || []).length;
   const xpInfo = getLevelProgress(player?.xp || 0);
   const progressPct = typeof xpInfo === 'number' ? xpInfo : (xpInfo.progress ?? 0);
+
+  // A barra é considerada expandida se estiver com hover OU se estiver fixada (pinned) OU em mobile aberto
+  const isExpanded = isHovered || isPinned;
 
   const PRIMARY_MODULES = [
     { id: 'dashboard',  label: t('nav.dashboard'),  icon: LayoutGrid, badge: null },
@@ -56,69 +60,101 @@ export default function Sidebar({ isOpen, currentPage, onNavigate, onCloseMobile
 
   return (
     <>
-      {isOpen && (
+      {/* Backdrop Mobile */}
+      {isExpanded && (
         <div
           className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[95] lg:hidden"
           onClick={onCloseMobile}
           aria-hidden="true"
         />
       )}
+
+      {/* Espaçador estático no fluxo para o modo recolhido (Mini-Rail: w-16 = 64px) */}
+      <div className="hidden lg:block w-16 shrink-0 h-full pointer-events-none" />
+
+      {/* Aside com Auto-Hide Flutuante no Hover */}
       <aside
-        className={`${isOpen ? 'fixed inset-y-0 left-0 flex z-[100]' : 'hidden'} lg:relative lg:flex flex-col border-r border-nx-border bg-nx-depth select-none ${className}`}
-        style={{
-          width: isOpen ? '248px' : '72px',
-          transition: 'width 200ms cubic-bezier(0.4,0,0.2,1)',
-          overflow: 'hidden',
-          flexShrink: 0,
-        }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className={`fixed inset-y-0 left-0 z-[100] flex flex-col border-r border-nx-border/80 bg-nx-depth select-none transition-all duration-300 ease-out ${
+          isExpanded
+            ? 'w-64 shadow-[8px_0_30px_rgba(0,0,0,0.6)]'
+            : 'w-16 shadow-none'
+        } ${className}`}
       >
-        {/* 1. BRAND HEADER & SELETOR DE IDIOMA */}
-        <div className="pt-4 pb-2 px-3 flex flex-col gap-2 shrink-0 border-b border-nx-border/40">
-          <div className="flex items-center justify-between">
+        {/* 1. BRAND HEADER (Nivelado perfeitamente com a Topbar em h-16 = 64px) */}
+        <div className="h-16 px-2 flex items-center shrink-0 border-b border-nx-border/80 bg-nx-depth overflow-hidden">
+          <div className="w-full h-full flex items-center min-w-0">
+            {/* Slot Fixo da Logo (48px de largura, centralizado na coluna de 64px) */}
             <button
               onClick={() => handleNavigate('dashboard')}
-              className="flex items-center gap-2.5 text-left group cursor-pointer min-w-0"
+              className="w-12 h-full flex items-center justify-center shrink-0 group cursor-pointer"
+              title="Ir para o Dashboard"
             >
               <div
-                className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0 transition-transform duration-150 group-hover:scale-105 shadow-glow-primary"
+                className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-transform duration-150 group-hover:scale-105 shadow-glow-primary"
                 style={{
                   background: 'linear-gradient(135deg, var(--nx-primary) 0%, var(--nx-secondary) 100%)',
                 }}
               >
                 <span className="text-white font-display font-black text-base leading-none">N</span>
               </div>
-              {isOpen && (
-                <div className="overflow-hidden min-w-0">
-                  <div className="text-[15px] font-display font-bold text-nx-bright tracking-tight leading-tight truncate">
-                    NexoMente
-                  </div>
-                  <div className="text-[8.5px] font-mono font-semibold text-nx-secondary tracking-[0.14em] uppercase truncate">
-                    {t('brand.tagline')}
-                  </div>
-                </div>
-              )}
             </button>
 
-            {isOpen && (
+            {/* Container de Texto & Ações (Clip-reveal com transição suave de opacidade) */}
+            <div
+              className={`flex-1 min-w-0 flex items-center justify-between pr-1 overflow-hidden whitespace-nowrap transition-all duration-200 ${
+                isExpanded ? 'opacity-100 translate-x-0 delay-75' : 'opacity-0 -translate-x-2 pointer-events-none'
+              }`}
+            >
               <button
-                onClick={cycleLocale}
-                title={`Idioma: ${locale} (Clique para alternar pt-BR / en-US / es-ES)`}
-                className="px-2 py-1 rounded-md bg-nx-surface hover:bg-nx-overlay border border-nx-border text-[9.5px] font-mono font-bold text-nx-dim hover:text-nx-bright hover:border-nx-primary transition-colors flex items-center gap-1 cursor-pointer shrink-0"
+                onClick={() => handleNavigate('dashboard')}
+                className="overflow-hidden min-w-0 pr-2 text-left cursor-pointer"
+                title="Ir para o Dashboard"
               >
-                <Globe size={11} className="text-nx-secondary" />
-                <span>{locale.split('-')[0].toUpperCase()}</span>
+                <div className="text-[15px] font-display font-bold text-nx-bright tracking-tight leading-tight truncate">
+                  NexoMente
+                </div>
+                <div className="text-[8.5px] font-mono font-semibold text-nx-secondary tracking-[0.14em] uppercase truncate">
+                  {t('brand.tagline')}
+                </div>
               </button>
-            )}
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  onClick={cycleLocale}
+                  title={`Idioma: ${locale} (Clique para alternar pt-BR / en-US / es-ES)`}
+                  className="px-2 py-1 rounded-md bg-nx-surface hover:bg-nx-overlay border border-nx-border text-[9.5px] font-mono font-bold text-nx-dim hover:text-nx-bright hover:border-nx-primary transition-colors flex items-center gap-1 cursor-pointer"
+                >
+                  <Globe size={11} className="text-nx-secondary" />
+                  <span>{locale.split('-')[0].toUpperCase()}</span>
+                </button>
+
+                <button
+                  onClick={() => setIsPinned(!isPinned)}
+                  title={isPinned ? 'Desafixar barra lateral (Auto-Hide ativo)' : 'Fixar barra lateral aberta'}
+                  className={`p-1.5 rounded-md border transition-colors cursor-pointer ${
+                    isPinned
+                      ? 'bg-nx-primary/20 border-nx-primary/50 text-nx-primary'
+                      : 'bg-nx-surface border-nx-border text-nx-dim hover:text-nx-bright'
+                  }`}
+                >
+                  {isPinned ? <Pin size={12} /> : <PinOff size={12} />}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* 2. NAVIGATION ITEMS (Adeus Grid 2x2 - Lista Única e Limpa) */}
-        <div className={`flex-1 ${isOpen ? 'overflow-y-auto px-3' : 'overflow-hidden px-2'} py-3 space-y-1 scrollbar-none`}>
-          {isOpen && (
-            <div className="px-2 pt-1 pb-1.5 text-[9px] font-mono font-bold uppercase tracking-[0.18em] text-nx-subtle">
-              {t('sidebar.ecosystem')}
-            </div>
-          )}
+        {/* 2. NAVIGATION ITEMS */}
+        <div className="flex-1 overflow-y-auto px-2 py-3 space-y-1 scrollbar-none overflow-x-hidden">
+          <div
+            className={`px-3 text-[9px] font-mono font-bold uppercase tracking-[0.18em] text-nx-subtle overflow-hidden whitespace-nowrap transition-all duration-200 ${
+              isExpanded ? 'opacity-100 max-h-6 pt-1 pb-1.5' : 'opacity-0 max-h-0 py-0 pointer-events-none'
+            }`}
+          >
+            {t('sidebar.ecosystem')}
+          </div>
 
           {PRIMARY_MODULES.map((item) => {
             const Icon = item.icon;
@@ -127,90 +163,128 @@ export default function Sidebar({ isOpen, currentPage, onNavigate, onCloseMobile
               <button
                 key={item.id}
                 onClick={() => handleNavigate(item.id)}
-                title={!isOpen ? item.label : undefined}
-                className={`w-full flex items-center ${isOpen ? 'justify-between px-3' : 'justify-center px-0'} h-[40px] rounded-[10px] transition-all duration-150 relative group cursor-pointer ${
+                title={!isExpanded ? item.label : undefined}
+                className={`w-full h-11 flex items-center justify-start rounded-xl px-0 relative group cursor-pointer transition-colors duration-150 ${
                   isActive
                     ? 'bg-nx-overlay border border-nx-primary text-nx-bright shadow-glow-sm'
                     : 'border border-transparent text-nx-dim hover:text-nx-bright hover:bg-nx-surface/70'
                 }`}
               >
-                {isActive && isOpen && (
-                  <span className="absolute left-0 top-2 bottom-2 w-[3.5px] rounded-r bg-nx-primary" />
-                )}
-                <div className="flex items-center gap-3 min-w-0">
+                {/* Indicador Ativo Lateral */}
+                <span
+                  className={`absolute left-0 top-2 bottom-2 w-[3.5px] rounded-r bg-nx-primary transition-opacity duration-200 ${
+                    isActive ? 'opacity-100' : 'opacity-0'
+                  }`}
+                />
+
+                {/* Slot Fixo do Ícone: Rigid 48px, ícone nunca sai do lugar */}
+                <div className="w-12 h-full flex items-center justify-center shrink-0">
                   <Icon
-                    size={17}
+                    size={18}
                     className={isActive ? 'text-nx-primary shrink-0' : 'text-nx-subtle group-hover:text-nx-text shrink-0'}
                   />
-                  {isOpen && (
-                    <span className={`text-[13px] truncate ${isActive ? 'font-semibold text-nx-bright' : 'font-medium'}`}>
-                      {item.label}
+                </div>
+
+                {/* Container de Rótulo e Badge com Clip-Reveal Suave */}
+                <div
+                  className={`flex-1 min-w-0 flex items-center justify-between pr-3 overflow-hidden whitespace-nowrap transition-all duration-200 ${
+                    isExpanded
+                      ? 'opacity-100 translate-x-0 delay-75'
+                      : 'opacity-0 -translate-x-2 pointer-events-none'
+                  }`}
+                >
+                  <span className={`text-[13px] truncate ${isActive ? 'font-semibold text-nx-bright' : 'font-medium'}`}>
+                    {item.label}
+                  </span>
+
+                  {item.badge && (
+                    <span
+                      className={`px-2 py-0.5 rounded-[6px] text-[10px] font-mono font-bold shrink-0 ${
+                        isActive
+                          ? 'bg-nx-primary text-white'
+                          : 'bg-nx-surface text-nx-dim border border-nx-border/60'
+                      }`}
+                    >
+                      {item.badge}
                     </span>
                   )}
                 </div>
-
-                {isOpen && item.badge && (
-                  <span
-                    className={`px-2 py-0.5 rounded-[6px] text-[10px] font-mono font-bold shrink-0 ${
-                      isActive
-                        ? 'bg-nx-primary text-white'
-                        : 'bg-nx-surface text-nx-dim border border-nx-border/60'
-                    }`}
-                  >
-                    {item.badge}
-                  </span>
-                )}
               </button>
             );
           })}
         </div>
 
-        {/* 3. RODAPÉ COMPACTO (Motor Neural + Kora Sem NaN% + Identidade) */}
-        {isOpen ? (
-          <div className="px-3 pb-3 pt-1 space-y-2 shrink-0 border-t border-nx-border/40">
-            {/* Pílula Compacta do Motor Neural Offline */}
-            <div
-              className="px-2.5 py-1.5 rounded-[9px] bg-nx-surface border border-nx-border flex items-center justify-between text-[10.5px] font-mono"
-              title="Inferência local privada com Gemma 4 e reconhecimento de voz Vosk"
-            >
-              <div className="flex items-center gap-2 truncate">
-                <span
-                  className="w-2 h-2 rounded-full shrink-0"
-                  style={{
-                    backgroundColor: isOnline ? 'var(--nx-success)' : 'var(--nx-accent)',
-                    boxShadow: isOnline ? '0 0 6px var(--nx-success)' : 'none',
-                  }}
-                />
-                <span className="text-nx-bright truncate font-sans font-semibold">
-                  {isOnline ? 'Gemma 4 • Vosk Ativo' : 'Motor Local Pronto'}
-                </span>
-              </div>
-              <span className="text-[9px] text-nx-secondary font-bold uppercase shrink-0">100% OFF</span>
+        {/* 3. RODAPÉ ESTÁVEL (Slot Fixo de 48px + Clip-Reveal sem desmontagem) */}
+        <div className="px-2 pb-3 pt-2 space-y-2 shrink-0 border-t border-nx-border/60 bg-nx-depth overflow-hidden">
+          {/* Status do Motor Neural Offline */}
+          <div
+            className="w-full h-8 rounded-[9px] bg-nx-surface/80 border border-nx-border flex items-center text-[10.5px] font-mono overflow-hidden transition-colors"
+            title="Inferência local privada com Gemma 4 e reconhecimento de voz Vosk"
+          >
+            {/* Slot Fixo do Led de Status */}
+            <div className="w-12 h-full flex items-center justify-center shrink-0">
+              <span
+                className="w-2.5 h-2.5 rounded-full shrink-0"
+                style={{
+                  backgroundColor: isOnline ? 'var(--nx-success)' : 'var(--nx-accent)',
+                  boxShadow: isOnline ? '0 0 6px var(--nx-success)' : 'none',
+                }}
+              />
             </div>
 
-            {/* Card Compacto da Kora (Reduzido em 40% com avatar ao lado e sem NaN%) */}
+            {/* Texto do Motor com Transição Suave */}
             <div
-              onClick={() => handleNavigate('dashboard')}
-              className="p-2.5 rounded-[12px] bg-nx-surface border border-nx-border hover:border-nx-primary/50 transition-colors cursor-pointer space-y-1.5 shadow-sm"
+              className={`flex-1 min-w-0 flex items-center justify-between pr-2.5 overflow-hidden whitespace-nowrap transition-all duration-200 ${
+                isExpanded
+                  ? 'opacity-100 translate-x-0 delay-75'
+                  : 'opacity-0 -translate-x-2 pointer-events-none'
+              }`}
             >
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-nx-overlay border border-nx-secondary flex items-center justify-center shrink-0 shadow-glow-cyan">
-                  <Sparkles size={14} className="text-nx-secondary" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11.5px] font-bold text-nx-bright truncate">Kora</span>
-                    <span className="text-[9px] font-mono font-bold text-nx-accent px-1.5 py-0.2 rounded bg-nx-overlay border border-nx-accent/40">
-                      NV {player?.level || 1}
-                    </span>
-                  </div>
-                  <div className="text-[9.5px] text-nx-dim truncate font-mono">
-                    {player?.xp || 0} XP • {Math.round(progressPct)}%
-                  </div>
-                </div>
+              <span className="text-nx-bright truncate font-sans font-semibold text-[11px]">
+                {isOnline ? 'Gemma 4 • Vosk Ativo' : 'Motor Local Pronto'}
+              </span>
+              <span className="text-[9px] text-nx-secondary font-bold uppercase shrink-0">100% OFF</span>
+            </div>
+          </div>
+
+          {/* Card da Kora */}
+          <div
+            onClick={() => handleNavigate('dashboard')}
+            className="w-full p-1.5 rounded-[12px] bg-nx-surface/80 border border-nx-border hover:border-nx-primary/50 transition-colors cursor-pointer space-y-1 shadow-sm overflow-hidden"
+            title={!isExpanded ? `Kora NV ${player?.level || 1} (${Math.round(progressPct)}% XP)` : undefined}
+          >
+            <div className="flex items-center">
+              {/* Slot do Avatar da Kora */}
+              <div className="w-9 h-9 rounded-xl bg-nx-overlay border border-nx-secondary/60 flex items-center justify-center shrink-0 shadow-glow-cyan ml-0.5">
+                <Sparkles size={16} className="text-nx-secondary" />
               </div>
 
-              {/* Barra de XP */}
+              {/* Informações da Kora com Transição Suave */}
+              <div
+                className={`flex-1 min-w-0 pr-1.5 pl-2.5 overflow-hidden whitespace-nowrap transition-all duration-200 ${
+                  isExpanded
+                    ? 'opacity-100 translate-x-0 delay-75'
+                    : 'opacity-0 -translate-x-2 pointer-events-none'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[12px] font-bold text-nx-bright truncate">Kora</span>
+                  <span className="text-[9px] font-mono font-bold text-nx-accent px-1.5 py-0.2 rounded bg-nx-overlay border border-nx-accent/40">
+                    NV {player?.level || 1}
+                  </span>
+                </div>
+                <div className="text-[9.5px] text-nx-dim truncate font-mono">
+                  {player?.xp || 0} XP • {Math.round(progressPct)}%
+                </div>
+              </div>
+            </div>
+
+            {/* Barra de XP com Expansão Vertical Suave */}
+            <div
+              className={`w-full overflow-hidden transition-all duration-200 ${
+                isExpanded ? 'max-h-4 opacity-100 delay-75' : 'max-h-0 opacity-0 pointer-events-none'
+              }`}
+            >
               <div className="w-full h-1.5 rounded-full bg-nx-void overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all duration-300"
@@ -222,17 +296,7 @@ export default function Sidebar({ isOpen, currentPage, onNavigate, onCloseMobile
               </div>
             </div>
           </div>
-        ) : (
-          <div className="mt-auto p-2 flex flex-col items-center gap-2 border-t border-nx-border">
-            <button
-              onClick={cycleLocale}
-              className="w-9 h-9 rounded-lg bg-nx-surface border border-nx-border flex items-center justify-center text-[10px] font-mono font-bold text-nx-secondary"
-              title={`Idioma: ${locale}`}
-            >
-              {locale.split('-')[0].toUpperCase()}
-            </button>
-          </div>
-        )}
+        </div>
       </aside>
     </>
   );

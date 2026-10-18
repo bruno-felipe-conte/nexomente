@@ -27,38 +27,38 @@ import toast from 'react-hot-toast';
 beforeEach(() => vi.clearAllMocks());
 
 // ────────────────────────────────────────────────────────────────
-// 1. Fluxo SM-2 completo: card novo → 3 acertos → dominado
+// 1. Fluxo Anki SRS completo: card novo → graduação → dominado
 // ────────────────────────────────────────────────────────────────
-describe('[Integração] Fluxo SM-2 end-to-end', () => {
+describe('[Integração] Fluxo SM-2 / Anki SRS end-to-end', () => {
   it('card novo começa para revisão (sem next_review)', () => {
     const card = { ...SM2_DEFAULTS };
     expect(isParaRevisao(card)).toBe(true);
     expect(isDominado(card)).toBe(false);
   });
 
-  it('após 1 acerto: intervalo=1, repetitions=1, ainda não dominado', () => {
+  it('após Easy (rating 4/5): gradua diretamente para 4 dias', () => {
     const card = { ...SM2_DEFAULTS };
-    const resultado = sm2(card, 5);
+    const resultado = sm2(card, 4);
 
-    expect(resultado.intervalo).toBe(1);
+    expect(resultado.intervalo).toBe(4);
     expect(resultado.repetitions).toBe(1);
     expect(isDominado(resultado)).toBe(false);
   });
 
-  it('após 2 acertos: intervalo=6, repetitions=2', () => {
-    const card1 = sm2({ ...SM2_DEFAULTS }, 5);
-    const card2 = sm2(card1, 5);
+  it('após Good (rating 3) e graduação: acumula repetições e avança intervalo', () => {
+    const card1 = sm2({ ...SM2_DEFAULTS }, 3); // Step 0 -> Step 1 (intervalo 0)
+    const card2 = sm2(card1, 3); // Step 1 -> Graduou (intervalo 1 dia)
 
-    expect(card2.intervalo).toBe(6);
+    expect(card2.intervalo).toBe(1);
     expect(card2.repetitions).toBe(2);
     expect(isDominado(card2)).toBe(false);
   });
 
   it('após 3 acertos com ef>=2.5: considerado dominado', () => {
     const card0 = { ...SM2_DEFAULTS };
-    const card1 = sm2(card0, 5);
-    const card2 = sm2(card1, 5);
-    const card3 = sm2(card2, 5);
+    const card1 = sm2(card0, 4); // 4 dias, rep 1
+    const card2 = sm2(card1, 4); // rep 2
+    const card3 = sm2(card2, 4); // rep 3
 
     expect(card3.repetitions).toBe(3);
     expect(card3.ef).toBeGreaterThanOrEqual(2.5);
@@ -66,23 +66,21 @@ describe('[Integração] Fluxo SM-2 end-to-end', () => {
   });
 
   it('erro reseta o progresso mas mantém ef mínimo de 1.3', () => {
-    const cardAdiantado = { ef: 2.5, intervalo: 30, repetitions: 10 };
+    const cardAdiantado = { ef: 2.5, intervalo: 30, repetitions: 10, state: 'review' };
     const cardReset = sm2(cardAdiantado, 1);
 
     expect(cardReset.repetitions).toBe(0);
     expect(cardReset.intervalo).toBe(0);
-    expect(cardReset.ef).toBeGreaterThanOrEqual(1.3);
-    // Após reset, volta para lista de revisão
-    const paraRevisar = isParaRevisao(cardReset);
-    expect(paraRevisar).toBe(true);
+    expect(cardReset.ef).toBe(2.3);
+    expect(cardReset.state).toBe('relearning');
   });
 
-  it('qualidade "quase" (3) não reseta mas efacility diminui', () => {
-    const card = { ef: 2.5, intervalo: 6, repetitions: 2 };
-    const res = sm2(card, 3);
-    // Deve manter progresso mas ef cai
+  it('qualidade Hard (2) em review não reseta mas reduz efacility', () => {
+    const card = { ef: 2.5, intervalo: 6, repetitions: 2, state: 'review' };
+    const res = sm2(card, 2);
+    // Deve manter progresso mas ef cai 0.15
     expect(res.repetitions).toBe(3);
-    expect(res.ef).toBeLessThan(2.5);
+    expect(res.ef).toBe(2.35);
   });
 });
 

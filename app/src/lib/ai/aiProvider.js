@@ -80,3 +80,18 @@ export async function listModels() {
   const res = await embedded.checkStatus();
   return res.models;
 }
+
+export function getModel() {
+  return localStorage.getItem('nexomente_embedded_model') || 'gemma-4-E2B-it (Motor Interno)';
+}
+
+export async function askAI(pergunta, contexto = '') {
+  const prompt = contexto
+    ? `Contexto Atual:\n${contexto}\n\nPergunta do Usuário:\n${pergunta}`
+    : pergunta;
+
+  const res = await chat([{ role: 'user', content: prompt }]);
+  return res.response || res.content || 'Sem resposta do modelo.';
+}
+
+

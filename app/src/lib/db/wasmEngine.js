@@ -1,6 +1,10 @@
 // ============================================================================
-// NexoMente SQL.js WASM Database Engine
+// NexoMente SQL.js WASM Database Engine + DatabaseAdapter (IndexedDB + IPC)
 // ============================================================================
+import {
+  loadSnapshotFromIndexedDB,
+  scheduleBackgroundPersist,
+} from '@infra/db/DatabaseAdapter';
 
 let dbInstance = null;
 let initResolve = null;
@@ -50,6 +54,8 @@ export async function initDB() {
     });
 
     const savedData = typeof localStorage !== 'undefined' ? localStorage.getItem('nexomente_db') : null;
+    const idbData = !savedData ? await loadSnapshotFromIndexedDB() : null;
+
     if (savedData) {
       try {
         const data = Uint8Array.from(atob(savedData), c => c.charCodeAt(0));
@@ -57,6 +63,12 @@ export async function initDB() {
       } catch (dbErr) {
         console.error("Banco de dados corrompido, reiniciando...", dbErr);
         if (typeof localStorage !== 'undefined') localStorage.removeItem('nexomente_db');
+        dbInstance = new SQL.Database();
+      }
+    } else if (idbData instanceof Uint8Array) {
+      try {
+        dbInstance = new SQL.Database(idbData);
+      } catch {
         dbInstance = new SQL.Database();
       }
     } else {
@@ -234,6 +246,9 @@ export function saveDB() {
     const base64 = btoa(binary);
     localStorage.setItem('nexomente_db', base64);
 
+    // Persistência não-bloqueante espelhada no IndexedDB via DatabaseAdapter
+    scheduleBackgroundPersist(() => bytes);
+
     setTimeout(() => {
       if (typeof onSaveCallback === 'function') {
         onSaveCallback();
@@ -241,8 +256,9 @@ export function saveDB() {
     }, 0);
   } catch (err) {
     console.error('Erro crítico ao salvar banco de dados:', err);
-    if (err?.name === 'QuotaExceededError' && typeof alert === 'function') {
-      alert('Aviso: Espaço de armazenamento cheio. Remova alguns itens para continuar salvando.');
+    if (err?.name === 'QuotaExceededError') {
+      // Se localStorage estourar a cota de 5MB, garante persistência no IndexedDB (sem limite de 5MB)
+      scheduleBackgroundPersist(() => new Uint8Array(dbInstance.export()));
     }
   }
 }

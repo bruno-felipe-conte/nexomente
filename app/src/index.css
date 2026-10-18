@@ -153,14 +153,29 @@
   .shadow-glow-accent { box-shadow: 0 0 20px var(--nx-accent-glow); }
 }
 
-/* ── SCROLLBAR v1.0 (Fina e Minimalista) ── */
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: var(--nx-depth); }
-::-webkit-scrollbar-thumb { 
-  background: var(--nx-border); 
-  border-radius: 2px;
+/* ── SCROLLBAR ZERO GLOBAL (Invisível com rolagem nativa fluida em 100% do app) ── */
+*, *::before, *::after {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
 }
-::-webkit-scrollbar-thumb:hover { background: var(--nx-muted); }
+*::-webkit-scrollbar,
+*::-webkit-scrollbar-thumb,
+*::-webkit-scrollbar-track {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+}
+
+.scrollbar-none {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
 
 /* ── TIPTAP / PROSEMIRROR RICH TEXT STYLING ── */
 .ProseMirror {

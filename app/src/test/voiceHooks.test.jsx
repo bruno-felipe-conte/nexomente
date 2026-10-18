@@ -1,20 +1,28 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, renderHook } from '@testing-library/react';
+import { render, renderHook, act, fireEvent } from '@testing-library/react';
 import React from 'react';
 import { useWhisper } from '../hooks/useWhisper';
 import PoemaRecitacao from '../components/poemas/PoemaRecitacao';
+import PoemasPage from '../pages/Poemas';
 
-// Mock do hook useVosk para teste determinístico de interface
+let capturedOnResult = null;
+let capturedOnPartialResult = null;
+
+// Mock do hook useVosk para teste determinístico de interface e fluxo partialresult vs result
 vi.mock('../hooks/useVosk', () => ({
-  useVosk: ({ onPartialResult }) => ({
-    isListening: true,
-    isReady: true,
-    startListening: vi.fn(),
-    stopListening: vi.fn(),
-    nextVerse: vi.fn(),
-    terminateAudio: vi.fn(),
-    simulateVoice: (text) => onPartialResult?.(text),
-  }),
+  useVosk: ({ onResult, onPartialResult }) => {
+    capturedOnResult = onResult;
+    capturedOnPartialResult = onPartialResult;
+    return {
+      isListening: true,
+      isReady: true,
+      audioLevel: 42,
+      startListening: vi.fn(),
+      stopListening: vi.fn(),
+      nextVerse: vi.fn(),
+      terminateAudio: vi.fn(),
+    };
+  },
 }));
 
 describe('Voz — Testes de Interface e Hooks de Áudio', () => {
@@ -30,7 +38,7 @@ describe('Voz — Testes de Interface e Hooks de Áudio', () => {
     expect(typeof result.current.stopRecording).toBe('function');
   });
 
-  it('PoemaRecitacao renderiza palavras do poema, barra de progresso e texto reconhecido', () => {
+  it('PoemaRecitacao colore palavras de verde em partialresult sem avançar ponteiro e vermelho em result incorreto', () => {
     const poemaMock = {
       id: 'p1',
       titulo: 'Canção do Exílio',
@@ -46,15 +54,51 @@ describe('Voz — Testes de Interface e Hooks de Áudio', () => {
       />
     );
 
-    // 1. Título do poema exibido
     expect(utils.getByText('Canção do Exílio')).toBeDefined();
 
-    // 2. Palavras do verso renderizadas para recitação
-    expect(utils.getByText(/Minha/i)).toBeDefined();
-    expect(utils.getByText(/palmeiras/i)).toBeDefined();
-    expect(utils.getByText(/sabiá/i)).toBeDefined();
+    // Emite 2 partialresults consecutivos para a mesma frase ("minha", depois "minha terra")
+    act(() => {
+      capturedOnPartialResult?.('minha');
+      capturedOnPartialResult?.('minha terra');
+    });
 
-    // 3. Botão de microfone presente
-    expect(utils.container.querySelector('button')).not.toBeNull();
+    const spanMinha = utils.getByText(/^Minha$/i);
+    const spanTerra = utils.getByText(/^terra$/i);
+    expect(spanMinha.className).toContain('palavra--correta');
+    expect(spanTerra.className).toContain('palavra--correta');
+
+    // Agora fecha a frase no Vosk com a 3ª palavra errada ("minha terra xpto")
+    act(() => {
+      capturedOnResult?.('minha terra xpto');
+    });
+
+    const spanTem = utils.getByText(/^tem$/i);
+    expect(spanTem.className).toContain('palavra--errada');
+  });
+
+  it('PoemasPage (Estúdio de Oratória) colore verde/vermelho, exibe RMS e reseta ao clicar em Reiniciar Verso', () => {
+    const utils = render(<PoemasPage />);
+
+    // Emite resultado com "não sou erro" para o verso "Não sou nada."
+    act(() => {
+      capturedOnPartialResult?.('nao sou');
+    });
+
+    expect(utils.getAllByText('100%').length).toBeGreaterThanOrEqual(2);
+
+    act(() => {
+      capturedOnResult?.('nao sou xpto');
+    });
+
+    expect(utils.getByText('Erro')).toBeDefined();
+
+    // Clica em Reiniciar Verso e verifica que limpou os tokens fonéticos
+    const btnReiniciar = utils.getByText(/Reiniciar Verso/i);
+    act(() => {
+      fireEvent.click(btnReiniciar);
+    });
+
+    expect(utils.queryByText('Erro')).toBeNull();
   });
 });
+

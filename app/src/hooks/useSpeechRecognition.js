@@ -1,14 +1,24 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
+/**
+ * Hook de Reconhecimento de Fala via Web Speech API nativa.
+ * Blindado com referências estáveis para evitar reinicializações e conflitos de áudio.
+ */
 export function useSpeechRecognition({ onResult, onEnd, onError, language = 'pt-BR' }) {
   const [isListening, setIsListening] = useState(false);
   const [error, setError] = useState(null);
   const recognitionRef = useRef(null);
-  const isListeningRef = useRef(isListening);
+  const isListeningRef = useRef(false);
+
+  const onResultRef = useRef(onResult);
+  const onEndRef = useRef(onEnd);
+  const onErrorRef = useRef(onError);
 
   useEffect(() => {
-    isListeningRef.current = isListening;
-  }, [isListening]);
+    onResultRef.current = onResult;
+    onEndRef.current = onEnd;
+    onErrorRef.current = onError;
+  }, [onResult, onEnd, onError]);
 
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -20,71 +30,116 @@ export function useSpeechRecognition({ onResult, onEnd, onError, language = 'pt-
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
     recognition.lang = language;
 
     recognition.onstart = () => {
+      isListeningRef.current = true;
       setIsListening(true);
+      setError(null);
       console.log('── SPEECH RECOGNITION STARTED ──');
     };
+
     recognition.onend = () => {
       console.log('── SPEECH RECOGNITION ENDED ──');
-      // Tenta reiniciar automaticamente se ainda deveríamos estar ouvindo (ex: após silêncio)
       if (isListeningRef.current) {
         try {
           recognition.start();
           console.log('── AUTO-RESTARTING SPEECH ──');
         } catch {
+          isListeningRef.current = false;
           setIsListening(false);
-          if (onEnd) onEnd();
+          if (onEndRef.current) onEndRef.current();
         }
       } else {
         setIsListening(false);
-        if (onEnd) onEnd();
+        if (onEndRef.current) onEndRef.current();
       }
     };
+
     recognition.onerror = (event) => {
-      console.error('── SPEECH RECOGNITION ERROR ──');
-      console.error('Error Code:', event.error);
+      console.warn('── SPEECH RECOGNITION ERROR ──', event.error);
       
-      let friendlyMessage = 'Erro desconhecido no reconhecimento de voz.';
-      if (event.error === 'not-allowed') friendlyMessage = 'Acesso ao microfone negado pelo navegador.';
-      if (event.error === 'no-speech') friendlyMessage = 'Nenhuma voz detectada. Tente falar mais alto.';
-      if (event.error === 'network') friendlyMessage = 'Erro de rede. Verifique sua conexão.';
-      
-      setError(friendlyMessage);
-      if (onError) onError(friendlyMessage, event.error);
-    };
-    recognition.onresult = (event) => {
-      let transcript = '';
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        transcript += event.results[i][0].transcript;
+      if (event.error === 'no-speech') return; // Silencioso em pausas normais de fala
+
+      // Desativa auto-restart imediatamente em erros terminais (Brave/Electron bloqueiam Google Speech com 'aborted')
+      isListeningRef.current = false;
+      setIsListening(false);
+
+      let friendlyMessage = 'Erro no reconhecimento de voz.';
+      if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+        friendlyMessage = 'Microfone bloqueado. Permita o acesso ao microfone no navegador.';
+      } else if (event.error === 'network' || event.error === 'aborted') {
+        friendlyMessage = 'Reconhecimento online indisponível. Usando motor offline local.';
       }
-      if (onResult) onResult(transcript, event.results[event.results.length - 1].isFinal);
+
+      setError(friendlyMessage);
+      if (onErrorRef.current) onErrorRef.current(friendlyMessage, event.error);
+    };
+
+    recognition.onresult = (event) => {
+      let interim = '';
+      let final = '';
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const item = event.results[i];
+        if (item.isFinal) {
+          final += item[0].transcript;
+        } else {
+          interim += item[0].transcript;
+        }
+      }
+
+      const text = (final || interim).trim();
+      if (text && onResultRef.current) {
+        onResultRef.current(text, Boolean(final));
+      }
     };
 
     recognitionRef.current = recognition;
-  }, [language, onResult, onEnd, onError]);
+
+    return () => {
+      isListeningRef.current = false;
+      setIsListening(false);
+      try {
+        recognition.onstart = null;
+        recognition.onend = null;
+        recognition.onerror = null;
+        recognition.onresult = null;
+        recognition.abort();
+      } catch {
+        // Silencioso no desmonte
+      }
+    };
+  }, [language]);
 
   const startListening = useCallback(() => {
-    if (recognitionRef.current && !isListening) {
+    if (recognitionRef.current && !isListeningRef.current) {
       try {
+        isListeningRef.current = true;
         recognitionRef.current.start();
       } catch (err) {
         console.warn('[Speech] Error starting:', err.message);
       }
     }
-  }, [isListening]);
+  }, []);
 
   const stopListening = useCallback(() => {
-    if (recognitionRef.current && isListening) {
-      recognitionRef.current.stop();
+    isListeningRef.current = false;
+    setIsListening(false);
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch (err) {
+        console.warn('[Speech] Error stopping:', err.message);
+      }
     }
-  }, [isListening]);
+  }, []);
 
   return {
     isListening,
     error,
     startListening,
-    stopListening
+    stopListening,
   };
 }

@@ -5,16 +5,19 @@ import { create } from 'zustand';
  * Focado apenas em estados de UI (Navegação, Sidebar, Modais).
  * Dados reais residem no useDBStore.
  */
+const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+const initialUrlTab = urlParams?.get('tab');
+
 export const useUIStore = create((set) => ({
   // Layout
   sidebarOpen: localStorage.getItem('nexomente_sidebar_open') !== 'false',
   loadingGlobal: false,
   
   // Navegação
-  activeTab: 'dashboard', // dashboard, notes, cards, study, chat, stats, settings
+  activeTab: initialUrlTab || 'dashboard', // dashboard, notes, cards, study, chat, stats, settings, poemas
   
   // Onboarding
-  onboardingCompleted: localStorage.getItem('nexomente_onboarding_done') === 'true',
+  onboardingCompleted: Boolean(initialUrlTab) || localStorage.getItem('nexomente_onboarding_done') === 'true',
 
   // Identidade do Usuário
   userName: localStorage.getItem('nexomente_user_name') || 'Visitante',

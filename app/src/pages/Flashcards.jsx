@@ -269,7 +269,7 @@ export default function FlashcardsPage() {
         className="hidden"
       />
 
-      <div className="flex-1 p-5 md:p-6 space-y-5 overflow-auto">
+      <div className="flex-1 p-5 md:p-6 space-y-5 overflow-auto scrollbar-none">
         {/* Barra de Abas do Estúdio de Flashcards & Forja */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.08] pb-4">
           <div className="flex items-center gap-2">

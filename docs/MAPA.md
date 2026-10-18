@@ -92,8 +92,19 @@
   - `página: Onboarding` (`app/src/pages/Onboarding.jsx`)
 - **Se quebrar**: O roteamento do app para de responder, atalhos de navegação não funcionam e deep links entre Dashboard/Grafo e Editor falham.
 
+### HUB: fsrs-config-engine (Parâmetros FSRS & Repetição Espaçada)
+- **Arquivo**: `app/src/store/useFSRSConfigStore.js:34`
+- **Implementação**: Estado Zustand com middleware `persist` em `localStorage('nexomente_fsrs_config')`.
+- **Descrição**: Controla a taxa de retenção desejada (0.80 a 0.97), passos de aprendizado e reaprendizado, intervalos de graduação/fácil, multiplicadores de facilidade e limite de sanguessugas (leech).
+- **Usado por**:
+  - `algoritmo: sm2` (`app/src/hooks/sm2.js`)
+  - `componente: FSRSSettings` (`app/src/components/settings/FSRSSettings.jsx`)
+  - `página: Settings` (`app/src/pages/Settings.jsx`)
+- **Se quebrar**: O agendador Anki SRS volta para intervalos estáticos padrão e as preferências de retenção não são respeitadas.
+
 ### HUB: electron-ipc-bridge (Barramento Nativo Desktop)
 - **Arquivo**: `electron/preload.js:3`
+
 - **Implementação**: Processo principal (`electron/main.js`), handlers em `electron/ipc/` (`aiHandlers.js`, `dbHandlers.js`, `windowHandlers.js`) e SQLite nativo (`electron/db/database.js`).
 - **Descrição**: Camada de integração nativa do Electron protegida por `contextIsolation: true`. Disponibiliza controles de janela sem borda, acesso direto a banco local `better-sqlite3` e runtime nativo de inferência local `node-llama-cpp`.
 - **Usado por**:
@@ -202,10 +213,10 @@
 - **Usa**: Armazenamento local, acervo de poemas
 - **Afeta**: Listagem filtrada de poemas na aba de leitura e no gerenciador.
 
-### NÓ: Biblioteca Poética - Dojo de Recitação com IA de Voz
-- **Arquivo**: `app/src/components/poemas/PoemaRecitacao.jsx:87`
-- **Fluxo**: Clique em "Iniciar Recitação" → `useVosk.startListening()` carrega modelo WASM offline do Vosk → microfone transcreve fala em tempo real → algoritmo compara texto falado com a estrofe original → cálculo de acurácia percentual → término chama `onFinish(poema.id)` que registra recitação, concede `+25 XP` ao jogador (`useTamagotchiStore` e `XP.add`) e atualiza `streak_recitacao`.
-- **Usa**: Vosk Browser (modelo de fala local), `tamagotchi-engine`, `db-store`
+### NÓ: Biblioteca Poética - Estúdio de Recitação & Oratória com IA de Voz
+- **Arquivo**: `app/src/components/poemas/PoemaRecitacao.jsx:67`
+- **Fluxo**: Clique em "Iniciar Microfone" / "Iniciar Escuta" (em `Poemas.jsx` ou `PoemaRecitacao.jsx`) → `useVosk.startListening()` carrega singleton WASM offline do Vosk (`/models/vosk/model.zip`), aplica downsampling nativo a 16kHz e mede amplitude RMS real (`audioLevel`) para o espectro de 36 barras → eventos `partialresult` pintam palavras corretas de verde em tempo real sem corromper o ponteiro → eventos `result` consolidam acertos sem avançar erroneamente → transição entre versos utiliza `retrieveFinalResult` sem reiniciar instâncias WASM → término chama `onFinish(poema.id)` que registra recitação, concede `+25 XP` / `+45 XP` ao jogador (`useTamagotchiStore` e `XP.add`) e atualiza `streak_recitacao`.
+- **Usa**: Vosk Browser (modelo de fala local WASM singleton com downsample a 16kHz + RMS `audioLevel`), `tamagotchi-engine`, `db-store`
 - **Afeta**: Streak de declamação do poema (`streak_recitacao`), ganho de XP e evolução do pet.
 
 ### NÓ: Forja de Questões - Geração de Simulado por IA
@@ -219,6 +230,12 @@
 - **Fluxo**: Digitação no campo de prompt → clique em "Enviar" ou `Enter` → mensagem adicionada à conversa via `useAIChat` → histórico enviado para `aiProvider.chat()` com o contexto da nota conectada → resposta renderizada e um resumo conciso da conversa é anexado/atualizado automaticamente no final da própria nota (`gravarResumoConversaNaNota`).
 - **Usa**: `ai-provider`, `hook: useAIModel`, `hook: useNotes`, `ui-store`
 - **Afeta**: Histórico da sessão de chat neural, conteúdo HTML e `resumo_ia` da nota conectada.
+
+### NÓ: Copiloto Neural - Conversação Bidirecional por Áudio (STT + TTS)
+- **Arquivo**: `app/src/components/ai/AICopilotDrawer.jsx:195`
+- **Fluxo**: Clique no ícone de Microfone ao lado do input do Copiloto → `useVosk.startListening()` captura fala com energia RMS e transcreve em tempo real (`onPartialResult`/`onResult`) → no modo Ditado insere no campo e no modo Auto-Envio despacha direto para `aiProvider.askAI()` → resposta gerada pelo Gemma 4 Local é sintetizada em áudio pt-BR nativo (`window.speechSynthesis`) com pausa automática da escuta durante a fala da IA para prevenção de eco.
+- **Usa**: `ai-provider`, `ui-store`, Vosk Browser (modelo de fala local WASM)
+- **Afeta**: Entrada de voz acessível em qualquer tela via gaveta Copiloto (`Ctrl+J`) e acessibilidade por áudio.
 
 ### NÓ: Grafo de Conhecimento - Câmera Cytoscape & Deep Link
 - **Arquivo**: `app/src/pages/Graph.jsx:195`
@@ -307,14 +324,15 @@
 
 | Se alterar... | Componentes e Arquivos Afetados que Devem Ser Verificados |
 |---|---|
-| **`wasmEngine.js`** *(Schema SQLite / `saveDB`)* | `useDBStore.js`, todos os 7 repositórios em `app/src/lib/db/repositories/`, `useNotes.js`, `useFlashcards.js`, `useMaterias.js`, testes `useDBStore.test.js`, `integration.test.js`, `smoke.test.jsx`. |
-| **`aiProvider.js`** *(Contratos `chat` e `generate`)* | `useAIStore.js`, `useAIModel.js`, `lmStudioService.js`, `geminiService.js`, `embeddedService.js`, `AIChat.jsx`, `parser.js`, `useGerador.js`, `AIBar.jsx`, `AIPanel.jsx`, teste `aiService.test.js`. |
-| **`useTamagotchiStore.js`** *(Níveis, XP, HP e Passivas)* | `TamagotchiWidget.jsx`, `LevelCard.jsx`, `Header.jsx`, `Dashboard.jsx`, `Statistics.jsx`, `useStudyTimerStore.js`. |
+| **`wasmEngine.js` / `DatabaseAdapter.js`** *(Schema SQLite / IndexedDB / `saveDB`)* | `useDBStore.js`, todos os 7 repositórios em `app/src/lib/db/repositories/`, `useNotes.js`, `useFlashcards.js`, `useMaterias.js`, testes `useDBStore.test.js`, `integration.test.js`, `smoke.test.jsx`. |
+| **`aiProvider.js`** *(Contratos `chat`, `generate` e `getModel`)* | `useAIStore.js`, `useAIModel.js`, `embeddedService.js`, `AIChat.jsx`, `parser.js`, `useGerador.js`, `AIBar.jsx`, `Notas.jsx`, teste `aiService.test.js`. |
+| **`eventBus.js` (`@core/events`)** *(Eventos de Domínio)* | `useFlashcards.js`, `useTamagotchiStore.js`, teste `aiService.test.js`. |
+| **`useTamagotchiStore.js`** *(Níveis, XP, HP e Passivas)* | `TamagotchiWidget.jsx`, `LevelCard.jsx`, `Header.jsx`, `Dashboard.jsx`, `Statistics.jsx`, `useStudyTimerStore.js`, `eventBus.js`. |
 | **`useStudyTimerStore.js`** *(Timer, Estados de Estudo e Sessões)* | `Study.jsx`, `MiniTimerWidget.jsx`, `CircularTimer.jsx`, `App.jsx`, `Statistics.jsx`, teste `miniTimer.test.jsx`, `behavioralScreen.test.jsx`. |
 | **`useUIStore.jsx`** *(Abas, Ações Pendentes, Categorias, Nome)* | `App.jsx`, `Sidebar.jsx`, `Header.jsx`, `Dashboard.jsx`, `Notas.jsx`, `Graph.jsx`, `Statistics.jsx`, `Settings.jsx`, `AIChat.jsx`, `Onboarding.jsx`, teste `useUIStore.test.js`. |
-| **`useNotes.js`** *(CRUD de Notas e Tags)* | `Notas.jsx`, `NotaLista.jsx`, `BibliotecaPanel.jsx`, `useNotaEditor.js`, `Graph.jsx`, `Statistics.jsx`, `Dashboard.jsx`, `Header.jsx`, teste `useNotes.test.js`, `smoke.test.jsx`. |
-| **`useFlashcards.js`** / **`sm2.js`** *(Algoritmo SM-2)* | `Flashcards.jsx`, `FlashcardViewer.jsx`, `useGerador.js`, `Statistics.jsx`, `Header.jsx`, teste `sm2.test.js`. |
-| **`electron/preload.js`** / **Handlers IPC** | `electron/main.js`, `electron/ipc/dbHandlers.js`, `electron/ipc/aiHandlers.js`, `electron/ipc/windowHandlers.js`, `Header.jsx`, `embeddedService.js`, `geminiService.js`. |
+| **`useNotes.js`** *(CRUD de Notas e Tags)* | `Notas.jsx`, `NotaLista.jsx`, `CategoriaSelector.jsx`, `BibliotecaPanel.jsx`, `useNotaEditor.js`, `Graph.jsx`, `Statistics.jsx`, `Dashboard.jsx`, `Header.jsx`, teste `useNotes.test.js`, `smoke.test.jsx`. |
+| **`useFlashcards.js`** / **`ankiSrsEngine.js`** *(Algoritmo Anki SRS)* | `Flashcards.jsx`, `FlashcardViewer.jsx`, `useGerador.js`, `Statistics.jsx`, `Header.jsx`, teste `sm2.test.js`. |
+| **`electron/preload.js`** / **Handlers IPC** | `electron/main.js`, `electron/ipc/dbHandlers.js`, `electron/ipc/aiHandlers.js`, `electron/ipc/windowHandlers.js`, `Header.jsx`, `embeddedService.js`. |
 
 ---
 

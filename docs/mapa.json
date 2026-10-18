@@ -12,6 +12,7 @@
       "usado_por": [
         "app/src/components/layout/Sidebar.jsx",
         "app/src/components/layout/Header.jsx",
+        "app/src/components/settings/GeneralSettings.jsx",
         "app/src/pages/Dashboard.jsx",
         "app/src/pages/Poemas.jsx",
         "app/src/pages/Flashcards.jsx",
@@ -21,10 +22,13 @@
     },
     {
       "id": "db-store",
-      "nome": "WASM Engine & Repositórios Zustand",
+      "nome": "WASM Engine, DatabaseAdapter & Repositórios Zustand",
       "arquivo": "app/src/store/useDBStore.js",
       "linha": 13,
-      "implementacao": "app/src/lib/db/wasmEngine.js",
+      "implementacao": [
+        "app/src/lib/db/wasmEngine.js",
+        "app/src/infra/db/DatabaseAdapter.js"
+      ],
       "usado_por": [
         "app/src/hooks/useNotes.js",
         "app/src/hooks/useMaterias.js",
@@ -124,6 +128,19 @@
         "app/src/pages/Settings.jsx"
       ],
       "impacto_falha": "Modo desktop perde controle de janela, aceleração nativa de IA fica desativada e chamadas nativas falham."
+    },
+    {
+      "id": "fsrs-config-engine",
+      "nome": "Parâmetros FSRS & Repetição Espaçada",
+      "arquivo": "app/src/store/useFSRSConfigStore.js",
+      "linha": 34,
+      "implementacao": "app/src/store/useFSRSConfigStore.js",
+      "usado_por": [
+        "app/src/hooks/sm2.js",
+        "app/src/components/settings/FSRSSettings.jsx",
+        "app/src/pages/Settings.jsx"
+      ],
+      "impacto_falha": "Intervalos dinâmicos do Anki SRS deixam de sincronizar com a retenção configurada pelo usuário."
     }
   ],
   "nos": [
@@ -222,7 +239,7 @@
       "nome": "Editor de Notas - Botão AI Tag#",
       "arquivo": "app/src/components/editor/AIBar.jsx",
       "linha": 22,
-      "fluxo": "Clique em Tag# -> useNotaEditor.handleTagsOpen() -> lmStudioService.suggestTags(nota) -> TagPickerModal -> addTag(id, tag)",
+      "fluxo": "Clique em Tag# -> useNotaEditor.handleTagsOpen() -> aiProvider.generate(prompt) -> TagPickerModal -> addTag(id, tag)",
       "usa": ["ai-provider", "db-store"],
       "afeta": ["Notas", "Graph"]
     },
@@ -231,7 +248,7 @@
       "nome": "Editor de Notas - Botão AI Resumir",
       "arquivo": "app/src/components/editor/AIBar.jsx",
       "linha": 32,
-      "fluxo": "Clique em Resumir -> useNotaEditor.handleResumoOpen() -> lmStudioService.summarizeContent(conteudo) -> confirmação insere blockquote no topo do TipTap -> salvarNota()",
+      "fluxo": "Clique em Resumir -> useNotaEditor.handleResumoOpen() -> aiProvider.generate(prompt) -> confirmação insere blockquote no topo do TipTap -> salvarNota()",
       "usa": ["ai-provider", "db-store"],
       "afeta": ["Notas"]
     },
@@ -249,9 +266,9 @@
       "nome": "Central de Flashcards - Avaliação Anki SRS & Atalhos",
       "arquivo": "app/src/components/flashcards/FlashcardViewer.jsx",
       "linha": 131,
-      "fluxo": "Clique no card ou Space/Enter -> Flip 3D -> clique no rating (Again, Hard, Good, Easy) ou teclas 1-4 -> revisar(card.id, rating) -> sm2.js (ankiSRS) calcula intervalo/ease/learning steps/lapses -> atualiza SQLite/WASM",
-      "usa": ["db-store"],
-      "afeta": ["Flashcards", "Statistics"]
+      "fluxo": "Clique no card ou Space/Enter -> Flip 3D -> clique no rating (Again, Hard, Good, Easy) ou teclas 1-4 -> revisar(card.id, rating) -> ankiSrsEngine.js calcula intervalo/ease/learning steps/lapses -> atualiza SQLite/IndexedDB e emite FLASHCARD_REVIEWED no DomainEventBus (+XP para Kora)",
+      "usa": ["db-store", "tamagotchi-engine"],
+      "afeta": ["Flashcards", "TamagotchiWidget", "Dashboard"]
     },
     {
       "id": "flashcards-undo",
@@ -273,10 +290,10 @@
     },
     {
       "id": "poemas-dojo-voice",
-      "nome": "Biblioteca Poética - Dojo de Recitação com IA de Voz",
+      "nome": "Biblioteca Poética - Estúdio de Recitação & Oratória com IA de Voz",
       "arquivo": "app/src/components/poemas/PoemaRecitacao.jsx",
-      "linha": 87,
-      "fluxo": "Clique em Iniciar Recitação -> useVosk transcreve fala em tempo real -> cálculo de acurácia com estrofe original -> conclusão chama onFinish e concede +25 XP ao jogador",
+      "linha": 67,
+      "fluxo": "Clique em Iniciar Microfone -> useVosk (singleton WASM com downsampling nativo a 16kHz + telemetria RMS audioLevel) transcreve fala em tempo real -> partialresult pinta verde e result consolida acertos sem corromper ponteiro -> transição de versos usa retrieveFinalResult sem reiniciar WASM -> conclusão chama onFinish e concede XP ao jogador",
       "usa": ["db-store", "tamagotchi-engine"],
       "afeta": ["Poemas", "TamagotchiWidget"]
     },
@@ -297,6 +314,15 @@
       "fluxo": "Digitação do prompt -> Enviar / Enter -> useAIChat adiciona mensagem com nota conectada como contexto -> aiProvider.chat() -> gera e anexa resumo conciso da conversa no final da própria nota (gravarResumoConversaNaNota)",
       "usa": ["ai-provider", "db-store", "ui-store"],
       "afeta": ["AIChat", "Notas"]
+    },
+    {
+      "id": "copilot-voice-chat",
+      "nome": "Copiloto Neural - Conversação Bidirecional por Áudio (STT + TTS)",
+      "arquivo": "app/src/components/ai/AICopilotDrawer.jsx",
+      "linha": 195,
+      "fluxo": "Clique no Mic -> useVosk transcreve fala em tempo real (onPartialResult/onResult) -> envia pergunta para aiProvider.askAI -> leitura em voz alta via Web Speech Synthesis (TTS pt-BR) com prevenção de eco",
+      "usa": ["ai-provider", "ui-store"],
+      "afeta": ["AICopilotDrawer"]
     },
     {
       "id": "graph-open-in-editor",

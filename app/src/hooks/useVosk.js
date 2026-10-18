@@ -1,162 +1,259 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 
+// Cache singleton do modelo Vosk WASM para evitar duplo carregamento entre Arena e Modal
+let sharedVoskModel = null;
+let sharedVoskPromise = null;
+
+// Função de reamostragem (downsampling) por decimação para garantir 16000Hz exatos
+function resampleTo16k(audioBuffer, sourceRate) {
+  if (!audioBuffer || audioBuffer.length === 0 || sourceRate === 16000) {
+    return audioBuffer;
+  }
+  const ratio = sourceRate / 16000;
+  const newLength = Math.round(audioBuffer.length / ratio);
+  const result = new Float32Array(newLength);
+  for (let i = 0; i < newLength; i++) {
+    const start = Math.floor(i * ratio);
+    const end = Math.min(Math.floor((i + 1) * ratio), audioBuffer.length);
+    let sum = 0;
+    let count = 0;
+    for (let j = start; j < end; j++) {
+      sum += audioBuffer[j];
+      count++;
+    }
+    result[i] = count > 0 ? sum / count : (audioBuffer[start] || 0);
+  }
+  return result;
+}
+
 /**
  * Hook para reconhecimento de voz OFFLINE usando Vosk-browser.
- * Versão 1.22: Latência Zero (Buffer 2048) e Fala Livre.
+ * Versão 1.25: Downsampling 16kHz garantido, ciclo de vida seguro de recognizers e latência zero.
  */
 export function useVosk({ onResult, onPartialResult, onError }) {
   const [isListening, setIsListening] = useState(false);
-  const [isReady, setIsReady] = useState(false);
-  const [status, setStatus] = useState('loading');
+  const [isReady, setIsReady] = useState(Boolean(sharedVoskModel));
+  const [status, setStatus] = useState(sharedVoskModel ? 'ready' : 'loading');
+  const [audioLevel, setAudioLevel] = useState(0);
   
-  const modelRef = useRef(null);
+  const modelRef = useRef(sharedVoskModel);
   const recognizerRef = useRef(null);
   const audioContextRef = useRef(null);
   const streamRef = useRef(null);
   const processorRef = useRef(null);
   const isListeningRef = useRef(false);
-  const currentSampleRateRef = useRef(16000);
+  const lastLevelUpdateRef = useRef(0);
   
   const onResultRef = useRef(onResult);
   const onPartialResultRef = useRef(onPartialResult);
+  const onErrorRef = useRef(onError);
 
   useEffect(() => { 
     onResultRef.current = onResult;
     onPartialResultRef.current = onPartialResult;
-  }, [onResult, onPartialResult]);
+    onErrorRef.current = onError;
+  }, [onResult, onPartialResult, onError]);
 
-  useEffect(() => {
-    let cancelled = false;
-    async function initVosk() {
-      if (modelRef.current) return;
-      try {
-        const VoskModule = await import('vosk-browser');
-        const Vosk = VoskModule.createModel ? VoskModule : window.Vosk;
-        const model = await Vosk.createModel('/models/vosk/model.zip');
-        if (cancelled) {
-          if (model.terminate) model.terminate();
-          return; 
-        }
-        modelRef.current = model;
-        setIsReady(true);
-        setStatus('ready');
-      } catch (err) {
-        console.error('[VOSK] ❌ Erro Init:', err);
-        setStatus('error');
-        if (onError) onError('Falha ao carregar modelo.');
-      }
+  const loadVoskModel = useCallback(async () => {
+    if (sharedVoskModel) {
+      modelRef.current = sharedVoskModel;
+      setIsReady(true);
+      setStatus((prev) => (prev === 'listening' ? 'listening' : 'ready'));
+      return sharedVoskModel;
     }
-    initVosk();
-    return () => { cancelled = true; };
+    if (!sharedVoskPromise) {
+      sharedVoskPromise = (async () => {
+        const VoskModule = await import('vosk-browser');
+        const Vosk = VoskModule?.createModel
+          ? VoskModule
+          : VoskModule?.default?.createModel
+            ? VoskModule.default
+            : window.Vosk;
+        const model = await Vosk.createModel('/models/vosk/model.zip');
+        sharedVoskModel = model;
+        return model;
+      })();
+    }
+    const model = await sharedVoskPromise;
+    modelRef.current = model;
+    setIsReady(true);
+    setStatus((prev) => (prev === 'listening' ? 'listening' : 'ready'));
+    return model;
   }, []);
 
-  const resetRecognizer = useCallback((sampleRate) => {
-    if (!modelRef.current) return;
-    const rate = sampleRate || currentSampleRateRef.current;
-    currentSampleRateRef.current = rate;
+  useEffect(() => {
+    let mounted = true;
+    loadVoskModel()
+      .then((model) => {
+        if (mounted && model) {
+          modelRef.current = model;
+          setIsReady(true);
+          setStatus((prev) => (prev === 'listening' ? 'listening' : 'ready'));
+        }
+      })
+      .catch((err) => {
+        sharedVoskPromise = null;
+        console.error('[VOSK] ❌ Erro Init:', err);
+        if (mounted) {
+          setStatus('error');
+          onErrorRef.current?.('Falha ao carregar modelo de voz local.');
+        }
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [loadVoskModel]);
 
-    console.log(`[VOSK] 🔄 Criando Recognizer Livre (${rate}Hz)`);
-    
-    // Voltamos ao modo livre para permitir fala conectada e natural
-    const rec = new modelRef.current.KaldiRecognizer(rate);
+  const cleanupRecognizer = useCallback(() => {
+    if (recognizerRef.current) {
+      try {
+        recognizerRef.current.remove?.();
+      } catch (err) {
+        console.warn('[VOSK] Falha ao desalocar recognizer antigo:', err);
+      }
+      recognizerRef.current = null;
+    }
+  }, []);
+
+  const resetRecognizer = useCallback(() => {
+    if (!modelRef.current) return;
+    cleanupRecognizer();
+
+    // O modelo Vosk Kaldi pt-BR opera estritamente a 16000Hz
+    const rec = new modelRef.current.KaldiRecognizer(16000);
     
     rec.on('result', (m) => {
-      if (m.result?.text && isListeningRef.current) {
-        console.log('[VOSK] 🟢 Final:', m.result.text);
-        onResultRef.current?.(m.result.text);
+      const text = m?.result?.text || m?.text || '';
+      if (text && isListeningRef.current) {
+        console.log('[VOSK] 🟢 Final:', text);
+        onResultRef.current?.(text);
       }
     });
 
     rec.on('partialresult', (m) => {
-      if (m.result?.partial && isListeningRef.current) {
-        // Não logamos parciais vazias para não poluir
-        onPartialResultRef.current?.(m.result.partial);
+      const partial = m?.result?.partial || m?.partial || '';
+      if (partial && isListeningRef.current) {
+        onPartialResultRef.current?.(partial);
       }
     });
 
     recognizerRef.current = rec;
-  }, []);
+  }, [cleanupRecognizer]);
 
   const terminateAudio = useCallback(() => {
     isListeningRef.current = false;
     setIsListening(false);
+    setAudioLevel(0);
     setStatus('ready');
 
     if (processorRef.current) {
       processorRef.current.onaudioprocess = null;
-      processorRef.current.disconnect();
+      try {
+        processorRef.current.disconnect();
+      } catch (_) {}
       processorRef.current = null;
     }
 
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(t => t.stop());
+      try {
+        streamRef.current.getTracks().forEach((t) => t.stop());
+      } catch (_) {}
       streamRef.current = null;
     }
 
     if (audioContextRef.current) {
       if (audioContextRef.current.state !== 'closed') {
-        audioContextRef.current.close().catch(console.error);
+        audioContextRef.current.close().catch(() => {});
       }
       audioContextRef.current = null;
+    }
+
+    cleanupRecognizer();
+  }, [cleanupRecognizer]);
+
+  // Transição rápida de verso: limpa buffers sem recriar objetos WASM
+  const nextVerse = useCallback(() => {
+    if (recognizerRef.current) {
+      try {
+        recognizerRef.current.retrieveFinalResult?.();
+      } catch (err) {
+        console.warn('[VOSK] Erro ao recuperar resultado final no verso:', err);
+      }
     }
   }, []);
 
   const startListening = useCallback(async () => {
-    if (!isReady) return;
-
     try {
+      if (!modelRef.current) {
+        await loadVoskModel();
+      }
+      if (!modelRef.current) return;
+
       terminateAudio();
 
       const devices = await navigator.mediaDevices.enumerateDevices();
-      const mics = devices.filter(d => d.kind === 'audioinput');
-      const targetMic = mics.find(m => m.deviceId !== 'default' && m.deviceId !== 'communications') || mics[0];
+      const mics = devices.filter((d) => d.kind === 'audioinput');
+      const targetMic = mics.find((m) => m.deviceId !== 'default' && m.deviceId !== 'communications') || mics[0];
       
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      let ctx;
+      try {
+        ctx = new AudioContextClass({ sampleRate: 16000 });
+      } catch {
+        ctx = new AudioContextClass();
+      }
+
       if (ctx.state === 'suspended') await ctx.resume();
       audioContextRef.current = ctx;
       
-      const rate = ctx.sampleRate;
-      resetRecognizer(rate);
+      // Inicializa recognizer a 16000Hz fixo
+      resetRecognizer();
 
       let stream;
       try {
         stream = await navigator.mediaDevices.getUserMedia({ 
           audio: {
-            deviceId: targetMic.deviceId ? { ideal: targetMic.deviceId } : undefined,
-            echoCancellation: false,
-            noiseSuppression: false,
+            deviceId: targetMic?.deviceId ? { ideal: targetMic.deviceId } : undefined,
+            echoCancellation: true,
+            noiseSuppression: true,
             autoGainControl: true,
-            sampleRate: { ideal: 48000 }
+            sampleRate: { ideal: 16000 }
           } 
         });
       } catch (audioErr) {
-        // Fallback resiliente se o dispositivo ou taxa ideal forem rejeitados
-        console.warn('[useVosk] Fallback para constraints de áudio padrão:', audioErr?.message);
+        console.warn('[useVosk] Fallback para microfone padrão:', audioErr?.message);
         stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       }
       streamRef.current = stream;
 
       const source = ctx.createMediaStreamSource(stream);
       const gainNode = ctx.createGain();
-      gainNode.gain.value = 4.0; 
+      gainNode.gain.value = 0.85; // Calibração para evitar clipping em falas próximas
       
-      // Buffer reduzido para 2048 (Latência mínima)
-      processorRef.current = ctx.createScriptProcessor(2048, 1, 1);
+      // Buffer de 4096 amostras para janela acústica confiável
+      processorRef.current = ctx.createScriptProcessor(4096, 1, 1);
       
-      let pulseCount = 0;
       processorRef.current.onaudioprocess = (event) => {
         const currentRec = recognizerRef.current;
         if (!isListeningRef.current || !currentRec) return;
         
         const inputData = event.inputBuffer.getChannelData(0);
-        const bufferCopy = new Float32Array(inputData);
-        currentRec.acceptWaveformFloat(bufferCopy, event.inputBuffer.sampleRate);
+        // Garante 16000Hz exatos independente da placa de som
+        const resampled = resampleTo16k(inputData, event.inputBuffer.sampleRate);
+        currentRec.acceptWaveformFloat(resampled, 16000);
 
-        pulseCount++;
-        if (pulseCount % 100 === 0) {
-          let max = 0;
-          for(let i=0; i<bufferCopy.length; i++) if(Math.abs(bufferCopy[i]) > max) max = Math.abs(bufferCopy[i]);
-          if (max > 0.95) console.warn('[VOSK] ⚠️ Clipping!');
+        // Medição RMS real para indicador e espectro
+        const now = performance.now();
+        if (now - lastLevelUpdateRef.current >= 75) {
+          lastLevelUpdateRef.current = now;
+          let sumSquares = 0;
+          for (let i = 0; i < inputData.length; i++) {
+            const s = inputData[i];
+            sumSquares += s * s;
+          }
+          const rms = Math.sqrt(sumSquares / inputData.length);
+          const level = Math.min(100, Math.round(rms * 450));
+          setAudioLevel(level);
         }
       };
 
@@ -171,15 +268,32 @@ export function useVosk({ onResult, onPartialResult, onError }) {
     } catch (err) {
       console.error('[VOSK] ❌ Erro Start:', err);
       terminateAudio();
-      if (onError) onError('Erro no microfone.');
+      onErrorRef.current?.('Erro ao acessar o microfone.');
     }
-  }, [isReady, resetRecognizer, terminateAudio, onError]);
+  }, [loadVoskModel, resetRecognizer, terminateAudio]);
 
   const stopListening = useCallback(() => {
     isListeningRef.current = false;
     setIsListening(false);
+    setAudioLevel(0);
     setStatus('ready');
   }, []);
 
-  return { isListening, isReady, status, startListening, stopListening, nextVerse: resetRecognizer, terminateAudio };
+  useEffect(() => {
+    return () => {
+      terminateAudio();
+    };
+  }, [terminateAudio]);
+
+  return {
+    isListening,
+    isReady,
+    status,
+    audioLevel,
+    startListening,
+    stopListening,
+    nextVerse,
+    resetRecognizer,
+    terminateAudio,
+  };
 }

@@ -53,7 +53,12 @@ function App() {
     setPendingNoteAction
   } = useUIStore();
 
-  const [isCopilotOpen, setIsCopilotOpen] = useState(false);
+  const [isCopilotOpen, setIsCopilotOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return new URLSearchParams(window.location.search).get('copilot') === 'open';
+    }
+    return false;
+  });
 
   const studyRodando = useStudyTimerStore((s) => s.rodando);
   const studySessaoId = useStudyTimerStore((s) => s.sessaoId);
@@ -247,9 +252,6 @@ function App() {
       />
 
       <div className="flex flex-col flex-1 min-w-0 relative h-full overflow-hidden">
-        {/* LINHA DE HORIZONTE v1.0 */}
-        <div className="absolute top-20 left-0 right-0 h-[1px] bg-nx-border/30 z-0 pointer-events-none" />
-
         <Header
           title={currentPage}
           onToggleSidebar={toggleSidebar}

@@ -1,54 +1,65 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import * as LMStudio from '../../src/lib/ai/lmStudioService';
-import * as Ollama from '../../src/lib/ai/ollamaService';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import * as aiProvider from '../lib/ai/aiProvider';
+import { eventBus, DOMAIN_EVENTS } from '@core/events/eventBus';
 
-describe('AI Services Integration (MSW)', () => {
+describe('AI Provider Interno (Embedded GGUF) & DomainEventBus', () => {
   beforeEach(() => {
     localStorage.clear();
+    eventBus.clear();
   });
 
-  describe('LMStudio Service', () => {
-    it('checkLMStudioStatus retorna online e os modelos', async () => {
-      const res = await LMStudio.checkLMStudioStatus();
-      expect(res.status).toBe('online');
-      expect(res.models.length).toBeGreaterThan(0);
-      expect(res.models[0].name || res.models[0].id).toBe('lmstudio-model-1');
+  describe('aiProvider (Motor Interno)', () => {
+    it('getActiveProvider retorna sempre embedded', () => {
+      expect(aiProvider.getActiveProvider()).toBe('embedded');
     });
 
-    it('generate completa um prompt com sucesso', async () => {
-      const res = await LMStudio.generate('Resuma isso', { model: 'test' });
-      expect(res.success).toBe(true);
-      expect(res.response).toContain('[MOCK_LMSTUDIO]');
+    it('getAIConfig retorna configurações padrão com idioma em Português Brasileiro', () => {
+      const cfg = aiProvider.getAIConfig();
+      expect(cfg.temperature).toBe(0.7);
+      expect(cfg.max_tokens).toBe(512);
+      expect(cfg.language).toBe('Português Brasileiro');
+      expect(cfg.system_prompt).toContain('Português Brasileiro');
     });
 
-    it('chat completa um histórico com sucesso', async () => {
-      const msgs = [{ role: 'user', content: 'Olá IA' }];
-      const res = await LMStudio.chat(msgs, { model: 'test' });
-      expect(res.success).toBe(true);
-      expect(res.response).toContain('[MOCK_LMSTUDIO]');
-    });
-    
-    it('suggestTags retorna lista de tags', async () => {
-      // It tries to parse JSON from the mock. Let's make sure the mock returns valid json if it contains suggestTags prompt.
-      // Wait, our mock returns a simple string right now. suggestTags tries to parse JSON.
-      // Since the mock returns a string that is not JSON, suggestTags will fallback to quotes match or return [].
-      // For a robust test, we can just assert it doesn't crash and returns an array.
-      const tags = await LMStudio.suggestTags({ titulo: 'Test', conteudo: 'test content' });
-      expect(Array.isArray(tags)).toBe(true);
+    it('getModel retorna o modelo GGUF configurado ou padrão', () => {
+      expect(aiProvider.getModel()).toContain('gemma-4-E2B-it');
+      localStorage.setItem('nexomente_embedded_model', 'custom-model.gguf');
+      expect(aiProvider.getModel()).toBe('custom-model.gguf');
     });
   });
 
-  describe('Ollama Service', () => {
-    it('checkOllamaStatus retorna online e modelos', async () => {
-      const res = await Ollama.checkOllamaStatus();
-      expect(res.status).toBe('online');
-      expect(res.models[0].name).toBe('llama3:latest');
+  describe('DomainEventBus (@core/events/eventBus)', () => {
+    it('inscreve, emite eventos com metadados e permite unsubscribe', () => {
+      const handler = vi.fn();
+      const unsubscribe = eventBus.on(DOMAIN_EVENTS.FLASHCARD_REVIEWED, handler);
+
+      eventBus.emit(DOMAIN_EVENTS.FLASHCARD_REVIEWED, { cardId: 'c1', rating: 3, xpEarned: 15 });
+
+      expect(handler).toHaveBeenCalledTimes(1);
+      expect(handler.mock.calls[0][0]).toMatchObject({
+        cardId: 'c1',
+        rating: 3,
+        xpEarned: 15,
+      });
+      expect(handler.mock.calls[0][0]._meta.event).toBe(DOMAIN_EVENTS.FLASHCARD_REVIEWED);
+
+      unsubscribe();
+      eventBus.emit(DOMAIN_EVENTS.FLASHCARD_REVIEWED, { cardId: 'c2', rating: 4 });
+      expect(handler).toHaveBeenCalledTimes(1);
     });
 
-    it('generate completa um prompt com sucesso', async () => {
-      const res = await Ollama.generate('Escreva um poema', { model: 'test' });
-      expect(res.success).toBe(true);
-      expect(res.response).toContain('[MOCK_OLLAMA]');
+    it('isola falhas de um listener para não quebrar outros listeners do mesmo evento', () => {
+      const spyConsole = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const badListener = () => { throw new Error('Falha isolada'); };
+      const goodListener = vi.fn();
+
+      eventBus.on(DOMAIN_EVENTS.STUDY_SESSION_COMPLETED, badListener);
+      eventBus.on(DOMAIN_EVENTS.STUDY_SESSION_COMPLETED, goodListener);
+
+      eventBus.emit(DOMAIN_EVENTS.STUDY_SESSION_COMPLETED, { minutos: 25 });
+
+      expect(goodListener).toHaveBeenCalledTimes(1);
+      spyConsole.mockRestore();
     });
   });
 });

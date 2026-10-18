@@ -331,4 +331,14 @@ export const useTamagotchiStore = create(
   )
 );
 
+// Inscreve a Gamificação (Kora) no DomainEventBus de forma desacoplada
+import { eventBus, DOMAIN_EVENTS } from '@core/events/eventBus';
+
+eventBus.on(DOMAIN_EVENTS.FLASHCARD_REVIEWED, ({ xpEarned }) => {
+  if (xpEarned > 0) {
+    useTamagotchiStore.getState().addBonusXp(xpEarned);
+  }
+});
+
 export { TAMAGOTCHI_LEVELS, getLevelData, getLevelProgress };
+

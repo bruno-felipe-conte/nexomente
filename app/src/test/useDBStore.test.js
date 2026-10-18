@@ -117,10 +117,10 @@ describe('useDBStore & Repositories (WASM SQLite Integration)', () => {
     Flashcards.update(id, { frente: 'O que significa SM-2?' });
     expect(Flashcards.getAll()[0].frente).toBe('O que significa SM-2?');
 
-    Flashcards.revisar(id, 5);
+    Flashcards.revisar(id, 4);
     const revisado = Flashcards.getAll()[0];
     expect(revisado.repeticoes).toBe(1);
-    expect(revisado.intervalo).toBe(1);
+    expect(revisado.intervalo).toBe(4);
 
     Flashcards.delete(id);
     expect(Flashcards.getAll()).toHaveLength(0);

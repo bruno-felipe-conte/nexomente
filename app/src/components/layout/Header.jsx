@@ -153,11 +153,11 @@ export default function Header({ title, onToggleSidebar, onNavigate, onToggleCop
 
   return (
     <header
-      className="sticky top-0 z-[90] flex flex-col bg-nx-void/95 backdrop-blur-md border-b border-nx-border/80"
+      className="sticky top-0 z-[90] h-16 shrink-0 flex items-center bg-nx-void/95 backdrop-blur-md border-b border-nx-border/80"
       style={{ WebkitAppRegion: 'drag' }}
     >
       <div
-        className="flex items-center justify-between px-4 md:px-7 py-3 gap-3"
+        className="w-full h-full flex items-center justify-between px-4 md:px-6 gap-3"
         style={{ WebkitAppRegion: 'no-drag' }}
       >
         {/* Left: Toggle + Screen Title & Subtitle */}

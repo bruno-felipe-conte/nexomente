@@ -255,7 +255,7 @@ export default function Dashboard() {
   const waveformHeights = [14, 22, 36, 48, 30, 54, 42, 26, 40, 58, 46, 32, 50, 38, 24, 18, 34, 48, 28, 16];
 
   return (
-    <div className="h-full overflow-y-auto px-4 md:px-7 py-5 flex flex-col gap-5 max-w-[1440px] mx-auto w-full pb-20 lg:pb-6" style={{ scrollbarWidth: 'thin' }}>
+    <div className="h-full overflow-y-auto scrollbar-none px-4 md:px-7 py-4 md:py-5 flex flex-col gap-3.5 md:gap-4 max-w-[1440px] mx-auto w-full pb-8 lg:pb-4">
       {showDojo && poemaVigente && (
         <PoemaRecitacao
           poema={poemaVigente}
@@ -270,13 +270,13 @@ export default function Dashboard() {
 
       {/* Barra de ferramentas da seção: único gatilho de criação + alternador analítico */}
       <div className="flex items-center justify-between gap-2 shrink-0">
-        <div className="text-xs text-nx-dim font-medium">
+        <div className="text-xs text-nx-dim font-medium truncate">
           Visão geral do seu Segundo Cérebro • Retenção FSRS e Sinapses Ativas
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={handleQuickCreateNote}
-            className="px-3 py-1.5 rounded-[8px] bg-nx-surface border border-nx-border hover:border-nx-primary text-[11px] font-semibold text-nx-text hover:text-nx-bright flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="px-3 py-1.5 rounded-[8px] bg-nx-surface border border-nx-border hover:border-nx-primary text-[11px] font-semibold text-nx-text hover:text-nx-bright flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm"
           >
             <Edit size={12} className="text-nx-primary" />
             <span>+ Nova Nota</span>
@@ -284,59 +284,62 @@ export default function Dashboard() {
           <button
             onClick={() => setShowAnual((v) => !v)}
             aria-expanded={showAnual}
-            className="px-3 py-1.5 rounded-[8px] bg-nx-surface border border-nx-border hover:border-nx-secondary text-[11px] font-semibold text-nx-text hover:text-nx-bright flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="px-3 py-1.5 rounded-[8px] bg-nx-surface border border-nx-border hover:border-nx-secondary text-[11px] font-semibold text-nx-text hover:text-nx-bright flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm"
           >
             <TrendingUp size={12} className="text-nx-secondary" />
-            <span>{showAnual ? 'Ocultar Consistência Anual' : 'Consistência Anual & Metas'}</span>
+            <span className="hidden sm:inline">{showAnual ? 'Ocultar Consistência Anual' : 'Consistência Anual & Metas'}</span>
+            <span className="sm:hidden">Metas</span>
           </button>
         </div>
       </div>
 
-      {/* ── ROW 1: 4 KPI CARDS WITH SPARKLINES (Protótipo Tela 1) ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      {/* ── ROW 1: 4 KPI CARDS WITH SPARKLINES (Responsivo 2x2 em telas médias e 4x1 em desktop) ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         {kpiCards.map((kpi) => (
           <div
             key={kpi.id}
             onClick={kpi.onClick}
-            className="relative rounded-[16px] bg-nx-surface border border-nx-border hover:border-nx-primary/60 p-5 transition-all cursor-pointer shadow-sm group overflow-hidden"
+            className="relative rounded-[16px] bg-nx-surface border border-nx-border hover:border-nx-primary/60 p-4 md:p-5 transition-all cursor-pointer shadow-sm group overflow-hidden"
           >
             {/* Top accent strip */}
             <div
-              className="absolute top-0 left-5 w-12 h-[3px] rounded-b"
+              className="absolute top-0 left-4 md:left-5 w-10 md:w-12 h-[3px] rounded-b"
               style={{ backgroundColor: kpi.color }}
             />
-            <div className="text-[12px] font-medium text-nx-dim mb-2 truncate">
+            <div className="text-[11px] md:text-[12px] font-medium text-nx-dim mb-1.5 truncate">
               {kpi.label}
             </div>
             <div className="flex items-end justify-between gap-2">
-              <div>
-                <div className="text-[26px] font-display font-bold text-nx-bright tracking-tight leading-none mb-2.5">
+              <div className="min-w-0">
+                <div className="text-[22px] md:text-[26px] font-display font-bold text-nx-bright tracking-tight leading-none mb-1.5 md:mb-2 truncate">
                   {kpi.value}
                 </div>
-                <div className="text-[11px] font-semibold" style={{ color: kpi.color }}>
+                <div className="text-[10px] md:text-[11px] font-semibold truncate" style={{ color: kpi.color }}>
                   {kpi.delta}
                 </div>
               </div>
-              <SparklineSVG values={kpi.series} color={kpi.color} id={kpi.id} />
+              <div className="shrink-0 hidden xs:block">
+                <SparklineSVG values={kpi.series} color={kpi.color} id={kpi.id} />
+              </div>
             </div>
           </div>
         ))}
       </div>
 
       {/* ── ROW 2: RITMO DE ESTUDO (7 DIAS) + ESTABILIDADE DA MEMÓRIA DONUT ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-4.5">
         {/* Left: Grouped Bar Chart (8 cols) */}
-        <div className="lg:col-span-8 rounded-[16px] bg-nx-surface border border-nx-border p-6 flex flex-col justify-between shadow-sm">
-          <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
+        <div className="lg:col-span-8 rounded-[16px] bg-nx-surface border border-nx-border p-5 md:p-6 flex flex-col justify-between shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
             <div>
-              <h2 className="text-[16px] font-display font-bold text-nx-bright">
+              <h2 className="text-[15px] md:text-[16px] font-display font-bold text-nx-bright">
                 {t('dash.chart.title')}
               </h2>
-              <p className="text-[12px] text-nx-dim mt-0.5">
+              <p className="text-[11.5px] md:text-[12px] text-nx-dim mt-0.5">
                 {t('dash.chart.sub')}
               </p>
             </div>
-            <div className="flex items-center gap-4 text-[11.5px]">
+            <div className="flex items-center gap-4 text-[11px] md:text-[11.5px]">
               <div className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-nx-primary" />
                 <span className="text-nx-text font-medium">{t('dash.chart.leg.fsrs')}</span>
@@ -349,7 +352,7 @@ export default function Dashboard() {
           </div>
 
           {/* Bars Plot */}
-          <div className="relative h-[210px] flex items-end justify-between pt-4 pb-6 px-4 border-b border-nx-border">
+          <div className="relative h-[180px] flex items-end justify-between pt-3 pb-5 px-3 md:px-4 border-b border-nx-border">
             {/* Horizontal grid lines */}
             {[60, 45, 30, 15].map((lvl, idx) => (
               <div
@@ -362,13 +365,13 @@ export default function Dashboard() {
             ))}
 
             {weeklyBars.map((d) => {
-              const hFsrs = Math.round((d.fsrs / 60) * 165);
-              const hDojo = Math.round((d.dojo / 60) * 165);
+              const hFsrs = Math.round((d.fsrs / 60) * 135);
+              const hDojo = Math.round((d.dojo / 60) * 135);
               return (
-                <div key={d.day} className="relative z-10 flex flex-col items-center gap-2 flex-1">
-                  <div className="flex items-end gap-1.5 h-[170px]">
+                <div key={d.day} className="relative z-10 flex flex-col items-center gap-1.5 flex-1">
+                  <div className="flex items-end gap-1.5 h-[140px]">
                     <div
-                      className="w-4 sm:w-5 rounded-t-[5px] transition-all duration-300 hover:brightness-110"
+                      className="w-3.5 sm:w-5 rounded-t-[5px] transition-all duration-300 hover:brightness-110"
                       style={{
                         height: `${hFsrs}px`,
                         background: 'linear-gradient(180deg, var(--nx-primary) 0%, #3B53B8 100%)',
@@ -376,7 +379,7 @@ export default function Dashboard() {
                       title={`${d.day}: ${d.fsrs} Flashcards`}
                     />
                     <div
-                      className="w-4 sm:w-5 rounded-t-[5px] transition-all duration-300 hover:brightness-110"
+                      className="w-3.5 sm:w-5 rounded-t-[5px] transition-all duration-300 hover:brightness-110"
                       style={{
                         height: `${hDojo}px`,
                         background: 'linear-gradient(180deg, var(--nx-secondary) 0%, #1D7FA8 100%)',
@@ -384,7 +387,7 @@ export default function Dashboard() {
                       title={`${d.day}: ${d.dojo} Versos`}
                     />
                   </div>
-                  <span className="text-[11.5px] font-medium text-nx-dim -mb-5">{d.day}</span>
+                  <span className="text-[11px] font-medium text-nx-dim -mb-4">{d.day}</span>
                 </div>
               );
             })}
@@ -392,7 +395,7 @@ export default function Dashboard() {
         </div>
 
         {/* Right: FSRS Memory Stability Donut Card (4 cols) */}
-        <div className="lg:col-span-4 rounded-[16px] bg-nx-surface border border-nx-border p-6 flex flex-col justify-between shadow-sm">
+        <div className="lg:col-span-4 rounded-[16px] bg-nx-surface border border-nx-border p-5 md:p-6 flex flex-col justify-between shadow-sm">
           <div>
             <h2 className="text-[16px] font-display font-bold text-nx-bright">
               {t('dash.donut.title')}
@@ -452,9 +455,9 @@ export default function Dashboard() {
       </div>
 
       {/* ── ROW 3: NOTAS RECENTES DO VAULT + DOJO DE RECITAÇÃO SPOTLIGHT ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-4.5">
         {/* Left: Recent Notes & AI Connections (8 cols) */}
-        <div className="lg:col-span-8 rounded-[16px] bg-nx-surface border border-nx-border p-6 flex flex-col justify-between shadow-sm">
+        <div className="lg:col-span-8 rounded-[16px] bg-nx-surface border border-nx-border p-5 md:p-6 flex flex-col justify-between shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-[16px] font-display font-bold text-nx-bright">
               {t('dash.notes.title')}

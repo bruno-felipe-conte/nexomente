@@ -78,6 +78,11 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './app/src'),
+      '@app': path.resolve(__dirname, './app/src/app'),
+      '@core': path.resolve(__dirname, './app/src/core'),
+      '@infra': path.resolve(__dirname, './app/src/infra'),
+      '@shared': path.resolve(__dirname, './app/src/shared'),
+      '@features': path.resolve(__dirname, './app/src/features'),
     },
   },
   esbuild: {
