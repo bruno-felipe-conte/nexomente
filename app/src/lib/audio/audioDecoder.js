@@ -76,7 +76,11 @@ export function createVoiceDSPChain(audioContext, sourceNode) {
     nodes,
     disconnect: () => {
       for (const node of nodes) {
-        try { node.disconnect(); } catch (_) {}
+        try {
+          node.disconnect();
+        } catch {
+          // ignora nós já desconectados
+        }
       }
     }
   };
@@ -373,18 +377,18 @@ export function calcularSimilaridadeFonetica(palavraOuvida, palavraEsperada) {
   if (normOuvida === normEsperada) return 1.0;
   if (!normOuvida || !normEsperada) return 0.0;
 
-  // 1. Similaridade Lexical direta
-  const simLexical = calcularSimilaridadeLexical(normOuvida, normEsperada);
-  if (simLexical >= 0.82) return simLexical;
-
-  // 2. Comparação Fonética PT-BR (usa strings originais para preservar 'ç' antes do NFD)
+  // 1. Comparação Fonética PT-BR prioritária (usa strings originais para preservar 'ç' antes do NFD)
   const foneOuvida = codificarFoneticaPtBr(palavraOuvida);
   const foneEsperada = codificarFoneticaPtBr(palavraEsperada);
+
+  const simLexical = calcularSimilaridadeLexical(normOuvida, normEsperada);
 
   if (foneOuvida && foneOuvida === foneEsperada) {
     // Códigos fonéticos idênticos (ex: salgado/salgadu, coracao/corassao) garantem acerto com 92%
     return Math.max(0.92, simLexical);
   }
+
+  if (simLexical >= 0.82) return simLexical;
 
   const maxFoneLen = Math.max(foneOuvida.length, foneEsperada.length);
   const distFone = levenshteinDistance(foneOuvida, foneEsperada);

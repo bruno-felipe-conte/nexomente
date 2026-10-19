@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, MicOff, RotateCcw, X, Trophy, ChevronRight, SkipForward } from 'lucide-react';
+import { Mic, MicOff, RotateCcw, X, Trophy, ChevronRight } from 'lucide-react';
 import { useVosk } from '../../hooks/useVosk';
 import { useTamagotchiStore } from '../../store/useTamagotchiStore';
 import { useDBStore } from '../../store/useDBStore';
@@ -222,7 +222,10 @@ const PoemaRecitacao = ({ poema, onFinish, onClose, onCancel }) => {
               </div>
 
               <div className="flex gap-4 justify-center pt-6">
-                <button onClick={onFinish} className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-indigo-500/20 cursor-pointer">
+                <button type="button" onClick={resetDojo} className="px-6 py-3 bg-white/10 hover:bg-white/15 text-white rounded-xl font-bold transition-all border border-white/10 cursor-pointer">
+                  Recitar Novamente
+                </button>
+                <button type="button" onClick={onFinish} className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-indigo-500/20 cursor-pointer">
                   Coletar Recompensa & Salvar
                 </button>
               </div>

@@ -82,7 +82,7 @@ export default function AICopilotDrawer({ isOpen, onClose, onExpandFullScreen })
 
     const textoLimpo = texto
       .replace(/<[^>]*>/g, '')
-      .replace(/[*_#`~>\[\]]/g, '')
+      .replace(/[*_#`~>[\]]/g, '')
       .trim();
 
     if (!textoLimpo) return;

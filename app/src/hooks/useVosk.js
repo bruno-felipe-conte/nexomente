@@ -133,7 +133,9 @@ export function useVosk({ onResult, onPartialResult, onError, grammar = null }) 
     
     try {
       rec.setWords?.(true);
-    } catch (_) {}
+    } catch {
+      // ignora se a versão do vosk não suportar setWords
+    }
 
     rec.on('result', (m) => {
       const text = m?.result?.text || m?.text || '';
@@ -162,7 +164,9 @@ export function useVosk({ onResult, onPartialResult, onError, grammar = null }) 
     if (dspChainRef.current) {
       try {
         dspChainRef.current.disconnect();
-      } catch (_) {}
+      } catch {
+        // ignora se dsp já foi desconectado
+      }
       dspChainRef.current = null;
     }
 
@@ -170,14 +174,18 @@ export function useVosk({ onResult, onPartialResult, onError, grammar = null }) 
       processorRef.current.onaudioprocess = null;
       try {
         processorRef.current.disconnect();
-      } catch (_) {}
+      } catch {
+        // ignora se nó já foi desconectado
+      }
       processorRef.current = null;
     }
 
     if (streamRef.current) {
       try {
         streamRef.current.getTracks().forEach((t) => t.stop());
-      } catch (_) {}
+      } catch {
+        // ignora se tracks já foram paradas
+      }
       streamRef.current = null;
     }
 

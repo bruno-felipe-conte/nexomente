@@ -1,5 +1,5 @@
 import React from 'react';
-import { Globe, Palette, Keyboard, Check, ShieldCheck } from 'lucide-react';
+import { Globe, Palette, Keyboard, Check } from 'lucide-react';
 import { useTranslation } from '../../lib/i18n';
 import toast from 'react-hot-toast';
 
@@ -10,7 +10,7 @@ const LANGUAGES = [
 ];
 
 export default function GeneralSettings() {
-  const { locale, setLocale, t } = useTranslation();
+  const { locale, setLocale } = useTranslation();
 
   const handleSelectLanguage = (langId) => {
     setLocale(langId);

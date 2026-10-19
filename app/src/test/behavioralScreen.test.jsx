@@ -239,7 +239,7 @@ describe('Validação Comportamental de Tela (Study, Flashcards, Notas)', () => 
       await act(async () => {
         utils = render(<NotasPage />);
       });
-      const { getByText, getByLabelText } = utils;
+      const { getByText, getAllByText, getByLabelText } = utils;
 
       // 1. Abre o seletor de categorias e escolhe "Livros"
       const btnGatilhoCat = utils.container.querySelector('button[type="button"]');

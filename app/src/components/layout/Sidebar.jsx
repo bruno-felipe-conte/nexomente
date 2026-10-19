@@ -17,7 +17,7 @@ import { useFlashcards } from '../../hooks/useFlashcards';
 import { useNotes } from '../../hooks/useNotes';
 import { useTranslation } from '../../lib/i18n';
 
-export default function Sidebar({ isOpen: isPinnedExternal = true, currentPage, onNavigate, onCloseMobile, className = '' }) {
+export default function Sidebar({ isOpen: _isPinnedExternal = true, currentPage, onNavigate, onCloseMobile, className = '' }) {
   const [isHovered, setIsHovered] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
 

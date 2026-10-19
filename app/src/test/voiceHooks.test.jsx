@@ -17,6 +17,12 @@ vi.mock('../hooks/useVosk', () => ({
       isListening: true,
       isReady: true,
       audioLevel: 42,
+      prosodyMetrics: {
+        syllableRateHz: 3.2,
+        estimatedWpm: 120,
+        voicedRatio: 85,
+        cadenciaScore: 95,
+      },
       startListening: vi.fn(),
       stopListening: vi.fn(),
       nextVerse: vi.fn(),

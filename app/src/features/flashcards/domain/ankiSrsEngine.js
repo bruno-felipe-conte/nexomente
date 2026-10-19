@@ -62,9 +62,6 @@ export default function ankiSRS(card, rating) {
       ef = Math.max(1.3, ef - 0.20); // Penalidade de Ease no Anki (-20%)
     }
     state = state === 'review' ? 'relearning' : 'learning';
-    stepIdx = 0;
-    interval = 0;
-    rep = 0;
     // Agenda para o primeiro passo (1 minuto)
     nextReview.setMinutes(nextReview.getMinutes() + LEARNING_STEPS_MINUTES[0]);
 

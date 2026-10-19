@@ -18,7 +18,6 @@ import { useTranslation } from '../lib/i18n';
 import {
   calcularSimilaridadeFonetica,
   extrairGramaticaContextual,
-  normalizarTexto,
 } from '../lib/audio/audioDecoder';
 import PoemaLeitura from '../components/poemas/PoemaLeitura';
 import PoemasGerenciador from '../components/poemas/PoemasGerenciador';
@@ -48,38 +47,6 @@ const ESPECTRO_BASE_ALTURAS = [
   30, 50, 62, 54, 42, 26, 18, 36, 52, 58, 44, 30,
   20, 38, 48, 36, 24, 16, 28, 42, 34, 22, 16, 12,
 ];
-
-const normalizar = (texto) => {
-  if (!texto) return '';
-  return texto
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"'«»]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-};
-
-function calcularSimilaridade(dita, target) {
-  if (dita === target) return 1.0;
-  if (!dita || !target) return 0;
-
-  const d = dita.endsWith('i') && dita.length > 2 ? dita.slice(0, -1) + 'e' : dita;
-  const t = target.endsWith('i') && target.length > 2 ? target.slice(0, -1) + 'e' : target;
-  if (d === t) return 1.0;
-
-  if (d.length >= 3 && t.startsWith(d)) return 0.92;
-  if (t.length >= 3 && d.startsWith(t)) return 0.92;
-
-  const lenMax = Math.max(d.length, t.length);
-  let dist = 0;
-  for (let i = 0; i < Math.min(d.length, t.length); i++) {
-    if (d[i] !== t[i]) dist++;
-  }
-  dist += Math.abs(d.length - t.length);
-  const sim = (lenMax - dist) / lenMax;
-  return Math.max(0, sim);
-}
 
 export default function PoemasPage() {
   const { poemas = [], getById, registrarRecitacao, proximoPoema, poemaAnterior } = usePoemas();
@@ -204,13 +171,11 @@ export default function PoemasPage() {
   // Motor Oficial: Vosk Offline WASM com Cadeia DSP Vocal 16kHz e Gramática Contextual
   const {
     isListening,
-    isReady: isVoskReady,
     audioLevel,
     prosodyMetrics,
     startListening: startVosk,
     stopListening: stopVosk,
     nextVerse: nextVoskVerse,
-    resetRecognizer: resetVoskRecognizer,
     terminateAudio: terminateVoskAudio,
   } = useVosk({
     onResult: (text) => processarTranscricao(text, true),
@@ -787,15 +752,15 @@ export default function PoemasPage() {
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-[#9499B3]">Cadência Poética (Ritmo)</span>
                   <span className="font-mono font-bold text-[#38BDF8]">
-                    {prosodyMetrics.syllableRateHz > 0 
-                      ? `${prosodyMetrics.syllableRateHz} síl/s (${prosodyMetrics.cadenciaScore}%)` 
+                    {prosodyMetrics?.syllableRateHz > 0 
+                      ? `${prosodyMetrics.syllableRateHz} síl/s (${prosodyMetrics.cadenciaScore || 100}%)` 
                       : `${Math.round(acuraciaSessao * 0.96)}%`}
                   </span>
                 </div>
                 <div className="w-full h-1.5 bg-[#1E2130] rounded-full overflow-hidden">
                   <div
                     className="h-full bg-[#38BDF8] transition-all duration-300"
-                    style={{ width: `${prosodyMetrics.syllableRateHz > 0 ? prosodyMetrics.cadenciaScore : Math.round(acuraciaSessao * 0.96)}%` }}
+                    style={{ width: `${prosodyMetrics?.syllableRateHz > 0 ? (prosodyMetrics.cadenciaScore || 100) : Math.round(acuraciaSessao * 0.96)}%` }}
                   />
                 </div>
 

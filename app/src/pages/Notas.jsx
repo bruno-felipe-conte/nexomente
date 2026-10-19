@@ -48,7 +48,7 @@ export default function NotasPage() {
     showCardApprove,
     setShowTagPicker,
     setShowCardApprove,
-    handleTagsOpen, handleResumoOpen, handleCardsOpen, handleChatOpen,
+    handleTagsOpen, handleResumoOpen, handleCardsOpen,
     handleTagsConfirm,
     salvarImediato,
   } = useNotaEditor({ notaSelecionada, editando, update, addTag, setNotaSelecionada });
