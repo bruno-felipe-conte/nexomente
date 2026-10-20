@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useFlashcards } from './useFlashcards';
+import { useDBStore } from '../store/useDBStore';
 import { parseArquivo, gerarQuestoesComIA } from '../lib/parser';
 
 const QUESTOES_KEY = 'nexomente_questoes';
@@ -206,6 +207,9 @@ export function useGerador() {
       verso: `Gabarito: ${questao.resposta_correta}\n\n${questao.opcoes.find(o => o.correta)?.justificativa_correta || ''}`,
       materia: questao.materia,
     });
+
+    // I10: Sincroniza imediatamente o store de flashcards
+    useDBStore.getState().incrementVersion();
     
     return cardId;
   }, [questoes, createFlashcard]);
@@ -229,6 +233,9 @@ export function useGerador() {
       });
       if (cardId) criados.push(cardId);
     }
+
+    // I10: Sincroniza imediatamente o store de flashcards
+    useDBStore.getState().incrementVersion();
     
     return criados.length;
   }, [questoes, createFlashcard]);

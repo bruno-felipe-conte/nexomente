@@ -10,38 +10,57 @@ import { createPoemasRepository } from '../lib/db/repositories/poemasRepo';
 
 export { initDB, saveDB, getDB, createTables, dbPromise };
 
-export const useDBStore = create((set, get) => ({
-  db: null,
-  loading: true,
-  error: null,
-  totalXP: 0,
-  version: 0,
+let defaultRepositoryFactory = (get, save) => ({
+  Notas: createNotasRepository(get, save),
+  Pastas: createPastasRepository(get, save),
+  Materias: createMateriasRepository(get, save),
+  SessoesEstudo: createSessoesRepository(get, save),
+  Flashcards: createFlashcardsRepository(get, save),
+  XP: createXpRepository(get, save),
+  Poemas: createPoemasRepository(get, save),
+});
 
-  incrementVersion: () => set(state => ({ version: state.version + 1 })),
+export const useDBStore = create((set, get) => {
+  const repos = defaultRepositoryFactory(get, saveDB);
 
-  init: async () => {
-    try {
-      const db = await initDB();
-      set({ db, loading: false });
-      get().syncXP();
-    } catch (error) {
-      set({ error: error.message, loading: false });
-    }
-  },
+  return {
+    db: null,
+    loading: true,
+    error: null,
+    totalXP: 0,
+    version: 0,
 
-  syncXP: () => {
-    const total = get().XP.getTotal();
-    set({ totalXP: total });
-  },
+    incrementVersion: () => set(state => ({ version: state.version + 1 })),
 
-  Notas: createNotasRepository(get, saveDB),
-  Pastas: createPastasRepository(get, saveDB),
-  Materias: createMateriasRepository(get, saveDB),
-  SessoesEstudo: createSessoesRepository(get, saveDB),
-  Flashcards: createFlashcardsRepository(get, saveDB),
-  XP: createXpRepository(get, saveDB),
-  Poemas: createPoemasRepository(get, saveDB),
-}));
+    init: async () => {
+      try {
+        const db = await initDB();
+        set({ db, loading: false });
+        get().syncXP();
+      } catch (error) {
+        set({ error: error.message, loading: false });
+      }
+    },
+
+    syncXP: () => {
+      const total = get().XP.getTotal();
+      set({ totalXP: total });
+    },
+
+    setRepositoryFactory: (customFactory) => {
+      const customRepos = customFactory(get, saveDB);
+      set(customRepos);
+    },
+
+    Notas: repos.Notas,
+    Pastas: repos.Pastas,
+    Materias: repos.Materias,
+    SessoesEstudo: repos.SessoesEstudo,
+    Flashcards: repos.Flashcards,
+    XP: repos.XP,
+    Poemas: repos.Poemas,
+  };
+});
 
 setOnSaveCallback(() => {
   if (useDBStore.getState().incrementVersion) {
