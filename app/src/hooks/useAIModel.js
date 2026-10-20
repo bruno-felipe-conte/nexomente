@@ -1,10 +1,10 @@
-import { useEffect, useCallback } from 'react';
-import { useAIStore } from '../store/useAIStore';
+import { useState, useLayoutEffect, useCallback } from "react";
+import { useAIStore } from "../store/useAIStore";
 
 export function useAIModel() {
   const store = useAIStore();
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     store.verificarStatus();
   }, [store.provider]); // Re-verifica sempre que o provedor mudar
 
@@ -24,20 +24,33 @@ export function useAIModel() {
     // Compatibilidade com nomes antigos
     trocarProvedor: store.setProvider,
     trocarModelo: store.setModeloAtual,
-    trocarTemperatura: store.setTemperatura
+    trocarTemperatura: store.setTemperatura,
   };
 }
 
-const CHAT_KEY_PREFIX = 'nexomente_ai_chat_';
-
-import { useState } from 'react';
+const CHAT_KEY_PREFIX = "nexomente_ai_chat_";
 
 export function useAIChat(notaId) {
-  const [mensagens, setMensagens] = useState([]);
+  const [mensagens, setMensagens] = useState(() => {
+    // Lazy initialization — evita setState síncrono em useEffect
+    if (typeof window === "undefined") return [];
+    const storageKey = notaId ? `${CHAT_KEY_PREFIX}${notaId}` : `${CHAT_KEY_PREFIX}livre`;
+    const stored = localStorage.getItem(storageKey);
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  });
+
   const [loading, setLoading] = useState(false);
   const storageKey = notaId ? `${CHAT_KEY_PREFIX}${notaId}` : `${CHAT_KEY_PREFIX}livre`;
 
-  useEffect(() => {
+  // Sincroniza com localStorage se a notaId mudar
+  useLayoutEffect(() => {
     const stored = localStorage.getItem(storageKey);
     if (stored) {
       try {
@@ -50,25 +63,25 @@ export function useAIChat(notaId) {
     }
   }, [storageKey]);
 
-  const persistir = useCallback((msgs) => {
-    const trimmed = msgs.slice(-40);
-    localStorage.setItem(storageKey, JSON.stringify(trimmed));
-    setMensagens(trimmed);
-  }, [storageKey]);
+  const persistir = useCallback(
+    (msgs) => {
+      const trimmed = msgs.slice(-40);
+      localStorage.setItem(storageKey, JSON.stringify(trimmed));
+      setMensagens(trimmed);
+    },
+    [storageKey]
+  );
 
-  const adicionar = useCallback((role, texto, errorCode = null) => {
-    setMensagens(prev => {
-      const updated = [...prev, { 
-        role, 
-        texto, 
-        errorCode, 
-        isError: !!errorCode,
-        ts: Date.now() 
-      }];
-      persistir(updated);
-      return updated;
-    });
-  }, [persistir]);
+  const adicionar = useCallback(
+    (role, texto, errorCode = null) => {
+      setMensagens((prev) => {
+        const updated = [...prev, { role, texto, errorCode, isError: !!errorCode, ts: Date.now() }];
+        persistir(updated);
+        return updated;
+      });
+    },
+    [persistir]
+  );
 
   const limpar = useCallback(() => {
     localStorage.removeItem(storageKey);

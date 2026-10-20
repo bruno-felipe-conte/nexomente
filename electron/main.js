@@ -6,7 +6,6 @@ import { registerWindowHandlers } from './ipc/windowHandlers.js';
 import { registerDbHandlers } from './ipc/dbHandlers.js';
 import { registerAiHandlers } from './ipc/aiHandlers.js';
 
-// Tratamento global de exceções não capturadas no processo principal
 process.on('uncaughtException', (err) => {
   console.error('[MAIN] Excecao nao capturada:', err);
 });
@@ -20,9 +19,12 @@ const isDev = process.env.NODE_ENV === 'development';
 
 let mainWindow = null;
 
-// ==========================================
-// CONFIGURAÇÃO DE SEGURANÇA E CORS
-// ==========================================
+const ALLOWED_ORIGINS = ['file://', 'http://localhost:5173', 'http://127.0.0.1:5173'];
+
+function isAllowedOrigin(origin) {
+  return ALLOWED_ORIGINS.some(allowed => origin.startsWith(allowed));
+}
+
 app.whenReady().then(() => {
   console.log('====================================');
   console.log('NEXOMENTE MAIN PROCESS STARTING...');
@@ -30,14 +32,47 @@ app.whenReady().then(() => {
 
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     const responseHeaders = { ...details.responseHeaders };
+    const requestOrigin = details.requestHeaders?.Origin || details.requestHeaders?.origin;
+    const origin = Array.isArray(requestOrigin) ? requestOrigin[0] : requestOrigin;
+    const allowedOrigin = isAllowedOrigin(origin) ? origin : 'file://';
+
     if (responseHeaders['Access-Control-Allow-Origin']) delete responseHeaders['Access-Control-Allow-Origin'];
     if (responseHeaders['access-control-allow-origin']) delete responseHeaders['access-control-allow-origin'];
 
     callback({
       responseHeaders: {
         ...responseHeaders,
-        'Access-Control-Allow-Origin': ['*'],
-        'Access-Control-Allow-Headers': ['*'],
+        'Access-Control-Allow-Origin': [allowedOrigin],
+        'Access-Control-Allow-Headers': ['Content-Type', 'Authorization'],
+        'Access-Control-Allow-Methods': ['GET', 'POST', 'OPTIONS'],
+        'Access-Control-Allow-Credentials': ['true'],
+      },
+    });
+  });
+
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    const responseHeaders = { ...details.responseHeaders };
+    const csp = [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob:",
+      "font-src 'self' data:",
+      "connect-src 'self' http://localhost:1234 http://localhost:11434 ws://localhost:5173",
+      "media-src 'self' blob:",
+      "object-src 'none'",
+      "base-uri 'none'",
+      "frame-ancestors 'none'",
+      "form-action 'self'",
+    ].join('; ');
+
+    callback({
+      responseHeaders: {
+        ...responseHeaders,
+        'Content-Security-Policy': [csp],
+        'X-Content-Type-Options': ['nosniff'],
+        'X-Frame-Options': ['DENY'],
+        'Referrer-Policy': ['strict-origin-when-cross-origin'],
       },
     });
   });
@@ -49,7 +84,7 @@ async function waitForUrl(url, maxAttempts = 30) {
       const res = await fetch(url, { signal: AbortSignal.timeout(1000) });
       if (res.ok || res.status) return true;
     } catch {
-      // Falha transitória esperada durante o polling enquanto o servidor Vite inicializa
+      // Ignora erro de conexão enquanto Vite inicializa
     }
     await new Promise(r => setTimeout(r, 500));
   }
@@ -96,20 +131,12 @@ function createWindow() {
   });
 }
 
-// ==========================================
-// INICIALIZAÇÃO DE SERVIÇOS E HANDLERS
-// ==========================================
 async function bootstrap() {
   try {
-    // 1. Inicializa o banco de dados SQLite nativo
     await initDB();
-
-    // 2. Registra os barramentos IPC desacoplados
     registerWindowHandlers(() => mainWindow);
     registerDbHandlers();
     registerAiHandlers();
-
-    // 3. Cria a interface
     createWindow();
   } catch (error) {
     console.error('[BOOTSTRAP] Falha critica na inicializacao:', error);

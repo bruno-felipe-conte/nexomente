@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+﻿import { useState, useMemo, useEffect, useLayoutEffect, useCallback, useRef } from "react";
 import {
   Mic,
   MicOff,
@@ -27,18 +27,18 @@ import toast from 'react-hot-toast';
 const POEMA_CLASSICO_PADRAO = {
   id: 'tabacaria_pessoa',
   titulo: 'Tabacaria',
-  autor: 'Álvaro de Campos (Fernando Pessoa)',
+  autor: 'Ãlvaro de Campos (Fernando Pessoa)',
   ano: '1928',
-  epoca: 'Modernismo Português',
+  epoca: 'Modernismo PortuguÃªs',
   forma: 'Ode / Verso Livre',
   streak_recitacao: 12,
   corpo: [
-    'Não sou nada.',
+    'NÃ£o sou nada.',
     'Nunca serei nada.',
-    'Não posso querer ser nada.',
-    'À parte isso, tenho em mim todos os sonhos do mundo.',
+    'NÃ£o posso querer ser nada.',
+    'Ã€ parte isso, tenho em mim todos os sonhos do mundo.',
     'Janelas do meu quarto,',
-    'Do meu quarto de um dos milhões do mundo que ninguém sabe quem é...',
+    'Do meu quarto de um dos milhÃµes do mundo que ninguÃ©m sabe quem Ã©...',
   ].join('\n'),
 };
 
@@ -59,7 +59,7 @@ export default function PoemasPage() {
   const [indiceLinhaAtiva, setIndiceLinhaAtiva] = useState(0);
   const [modalVoskAberto, setModalVoskAberto] = useState(false);
 
-  // Estados Fonéticos Reais Estabilizados: 'correta' (verde) | 'errada' (vermelho)
+  // Estados FonÃ©ticos Reais Estabilizados: 'correta' (verde) | 'errada' (vermelho)
   const [palavrasStatus, setPalavrasStatus] = useState({});
   const [indicePalavraEsperada, setIndicePalavraEsperada] = useState(0);
   const [partialTranscript, setPartialTranscript] = useState('');
@@ -86,11 +86,7 @@ export default function PoemasPage() {
     return linhas.length > 0 ? linhas : POEMA_CLASSICO_PADRAO.corpo.split('\n');
   }, [poemaAtivo]);
 
-  useEffect(() => {
-    if (indiceLinhaAtiva >= versos.length) {
-      setIndiceLinhaAtiva(0);
-    }
-  }, [versos.length, indiceLinhaAtiva]);
+  useLayoutEffect(() => {    if (indiceLinhaAtiva >= versos.length) {      setIndiceLinhaAtiva(0);    }  }, [versos.length, indiceLinhaAtiva]);
 
   const versoAtualTexto = versos[indiceLinhaAtiva] || versos[0] || '';
   const palavrasVersoAtual = useMemo(() => {
@@ -101,9 +97,9 @@ export default function PoemasPage() {
     return extrairGramaticaContextual(versoAtualTexto);
   }, [versoAtualTexto]);
 
-  // Processamento Fonético Fiel ao Vosk:
-  // - partialresult (isFinal = false): pinta acertos de VERDE ('correta') em tempo real SEM avançar ponteiroRef.current
-  // - result (isFinal = true): marca palavras faladas incorretamente de VERMELHO ('errada') e avança ponteiroRef.current
+  // Processamento FonÃ©tico Fiel ao Vosk:
+  // - partialresult (isFinal = false): pinta acertos de VERDE ('correta') em tempo real SEM avanÃ§ar ponteiroRef.current
+  // - result (isFinal = true): marca palavras faladas incorretamente de VERMELHO ('errada') e avanÃ§a ponteiroRef.current
   const processarTranscricao = useCallback(
     (texto, isFinal = false) => {
       if (!texto) return;
@@ -150,7 +146,7 @@ export default function PoemasPage() {
           setIndicePalavraEsperada(Math.min(palavrasVersoAtual.length, maiorIdxAlcancado));
         }
 
-        // Atualiza a acurácia calculada
+        // Atualiza a acurÃ¡cia calculada
         const avaliadas = Object.values(novo).length;
         const acertadas = Object.values(novo).filter((s) => s === 'correta').length;
         if (avaliadas > 0) {
@@ -168,7 +164,7 @@ export default function PoemasPage() {
     [palavrasVersoAtual]
   );
 
-  // Motor Oficial: Vosk Offline WASM com Cadeia DSP Vocal 16kHz e Gramática Contextual
+  // Motor Oficial: Vosk Offline WASM com Cadeia DSP Vocal 16kHz e GramÃ¡tica Contextual
   const {
     isListening,
     audioLevel,
@@ -187,14 +183,14 @@ export default function PoemasPage() {
   const toggleListening = () => {
     if (isListening) {
       stopVosk();
-      toast('Microfone pausado', { icon: '⏸️' });
+      toast('Microfone pausado', { icon: 'â¸ï¸' });
     } else {
       startVosk();
-      toast('Microfone ativo: recite os versos em voz alta', { icon: '🎙️' });
+      toast('Microfone ativo: recite os versos em voz alta', { icon: 'ðŸŽ™ï¸' });
     }
   };
 
-  // Cleanup de áudio no desmonte
+  // Cleanup de Ã¡udio no desmonte
   useEffect(() => {
     return () => {
       terminateVoskAudio();
@@ -227,7 +223,7 @@ export default function PoemasPage() {
     setPartialTranscript('');
     setAcuraciaSessao(100);
     nextVoskVerse();
-    toast('Verso reiniciado para nova tomada de oratória', { icon: '🎙️' });
+    toast('Verso reiniciado para nova tomada de oratÃ³ria', { icon: 'ðŸŽ™ï¸' });
   };
 
   const avancarEstrofe = () => {
@@ -240,26 +236,26 @@ export default function PoemasPage() {
     if (indiceLinhaAtiva < versos.length - 1) {
       setIndiceLinhaAtiva((i) => i + 1);
       try {
-        addBonusXp?.(15, 'Estrofe recitada no Estúdio');
+        addBonusXp?.(15, 'Estrofe recitada no EstÃºdio');
       } catch {
-        // Silencioso se store indisponível
+        // Silencioso se store indisponÃ­vel
       }
-      toast.success('+15 XP • Estrofe validada com sucesso!');
+      toast.success('+15 XP â€¢ Estrofe validada com sucesso!');
     } else {
       setIndiceLinhaAtiva(0);
       if (poemaAtivo?.id && poemaAtivo.id !== 'tabacaria_pessoa') {
         registrarRecitacao(poemaAtivo.id);
       }
       try {
-        addBonusXp?.(45, 'Poema completo no Estúdio');
+        addBonusXp?.(45, 'Poema completo no EstÃºdio');
       } catch {
         // Silencioso
       }
-      toast.success('Poema concluído! +45 XP Sincronizados com Kora');
+      toast.success('Poema concluÃ­do! +45 XP Sincronizados com Kora');
     }
   };
 
-  // Circunferência do Donut SVG (r = 56 => 2 * PI * 56 = 351.858)
+  // CircunferÃªncia do Donut SVG (r = 56 => 2 * PI * 56 = 351.858)
   const circunferenciaDonut = 2 * Math.PI * 56;
   const dashAcierto = (acuraciaSessao / 100) * circunferenciaDonut;
 
@@ -339,7 +335,7 @@ export default function PoemasPage() {
 
   return (
     <div className="h-full overflow-y-auto scrollbar-none bg-[#0A0B0F] text-[#EEF0F6] p-4 md:p-6 flex flex-col gap-5 select-none">
-      {/* Barra Superior de Seleção de Poema & Alternância de Modos */}
+      {/* Barra Superior de SeleÃ§Ã£o de Poema & AlternÃ¢ncia de Modos */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-[#10121A] border border-white/[0.07] rounded-xl px-4 py-2.5">
         <div className="flex items-center gap-3 min-w-0">
           <span className="px-2.5 py-1 rounded-md bg-[#38BDF8]/12 border border-[#38BDF8]/30 text-[#38BDF8] text-[11px] font-bold tracking-wide">
@@ -356,7 +352,7 @@ export default function PoemasPage() {
               <span>Anterior</span>
             </button>
             <select
-              aria-label="Selecionar Poema para Recitação"
+              aria-label="Selecionar Poema para RecitaÃ§Ã£o"
               value={poemaAtivo?.id || ''}
               onChange={(e) => {
                 const encontrado = poemas.find((p) => String(p.id) === e.target.value);
@@ -373,12 +369,12 @@ export default function PoemasPage() {
             >
               {poemas.length === 0 ? (
                 <option value={POEMA_CLASSICO_PADRAO.id}>
-                  {POEMA_CLASSICO_PADRAO.titulo} — {POEMA_CLASSICO_PADRAO.autor}
+                  {POEMA_CLASSICO_PADRAO.titulo} â€” {POEMA_CLASSICO_PADRAO.autor}
                 </option>
               ) : (
                 poemas.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.titulo} {p.autor ? `— ${p.autor}` : ''}
+                    {p.titulo} {p.autor ? `â€” ${p.autor}` : ''}
                   </option>
                 ))
               )}
@@ -386,10 +382,10 @@ export default function PoemasPage() {
             <button
               type="button"
               onClick={() => navegarPoema('prox')}
-              title="Próximo Poema"
+              title="PrÃ³ximo Poema"
               className="px-2 py-1 rounded-md bg-[#161923] hover:bg-[#1E2130] text-[#9499B3] hover:text-[#EEF0F6] text-xs font-medium flex items-center gap-1 transition-colors cursor-pointer"
             >
-              <span>Próximo</span>
+              <span>PrÃ³ximo</span>
               <ChevronRight size={13} />
             </button>
           </div>
@@ -428,7 +424,7 @@ export default function PoemasPage() {
 
       {/* Layout Principal de 2 Colunas */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 flex-1">
-        {/* Coluna Esquerda (7 cols): Arena de Recitação Fonética em Tempo Real */}
+        {/* Coluna Esquerda (7 cols): Arena de RecitaÃ§Ã£o FonÃ©tica em Tempo Real */}
         <div className="xl:col-span-7 bg-[#161923] border border-white/[0.07] rounded-2xl p-7 flex flex-col justify-between">
           <div>
             {/* Header do Poema */}
@@ -441,8 +437,8 @@ export default function PoemasPage() {
                   {poemaAtivo?.titulo || POEMA_CLASSICO_PADRAO.titulo}
                 </h2>
                 <p className="text-xs text-[#9499B3] mt-1">
-                  {poemaAtivo?.autor || POEMA_CLASSICO_PADRAO.autor} •{' '}
-                  {poemaAtivo?.epoca || 'Verso Livre'} • Estrofe {indiceLinhaAtiva + 1} de {versos.length}
+                  {poemaAtivo?.autor || POEMA_CLASSICO_PADRAO.autor} â€¢{' '}
+                  {poemaAtivo?.epoca || 'Verso Livre'} â€¢ Estrofe {indiceLinhaAtiva + 1} de {versos.length}
                 </p>
               </div>
 
@@ -493,9 +489,9 @@ export default function PoemasPage() {
                         </span>
                       </div>
 
-                      {/* Exibição Palavra por Palavra com Coloração Dinâmica (Verde = Acerto, Vermelho = Erro) */}
+                      {/* ExibiÃ§Ã£o Palavra por Palavra com ColoraÃ§Ã£o DinÃ¢mica (Verde = Acerto, Vermelho = Erro) */}
                       <p className="text-xl font-bold leading-relaxed flex flex-wrap gap-2 text-[#EEF0F6]">
-                        <span className="text-[#38BDF8]">“</span>
+                        <span className="text-[#38BDF8]">â€œ</span>
                         {palavrasVersoAtual.map((p, i) => {
                           const status = palavrasStatus[i];
                           const isEsperada = i === indicePalavraEsperada;
@@ -515,14 +511,14 @@ export default function PoemasPage() {
                             </span>
                           );
                         })}
-                        <span className="text-[#38BDF8]">”</span>
+                        <span className="text-[#38BDF8]">â€</span>
                       </p>
 
                       {/* Feedback de voz ao vivo */}
                       {partialTranscript && (
                         <div className="text-xs font-mono text-[#38BDF8] flex items-center gap-1.5 pt-1">
-                          <span className="animate-pulse">🎙️ Ouvido:</span>
-                          <span className="text-white font-medium italic">“{partialTranscript}”</span>
+                          <span className="animate-pulse">ðŸŽ™ï¸ Ouvido:</span>
+                          <span className="text-white font-medium italic">â€œ{partialTranscript}â€</span>
                         </div>
                       )}
                     </motion.div>
@@ -550,7 +546,7 @@ export default function PoemasPage() {
                           : 'bg-[#1E2130] text-[#5C6178]'
                       }`}
                     >
-                      {concluida ? '100%' : '•••'}
+                      {concluida ? '100%' : 'â€¢â€¢â€¢'}
                     </span>
                     <span
                       className={`text-sm truncate ${
@@ -564,11 +560,11 @@ export default function PoemasPage() {
               })}
             </div>
 
-            {/* Análise Fonética Token por Token Dinâmica */}
+            {/* AnÃ¡lise FonÃ©tica Token por Token DinÃ¢mica */}
             <div className="mb-6">
               <div className="flex items-center justify-between mb-2.5">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-[#5C6178]">
-                  {t('poems.phonetic_tokens')} (Status Fonético)
+                  {t('poems.phonetic_tokens')} (Status FonÃ©tico)
                 </p>
                 <span className="text-[10px] font-mono text-[#9499B3]">
                   {Object.values(palavrasStatus).filter((s) => s === 'correta').length}/{palavrasVersoAtual.length} palavras
@@ -617,13 +613,13 @@ export default function PoemasPage() {
                   {isListening
                     ? audioLevel >= 4 || partialTranscript
                       ? `Captando Voz (${audioLevel}% RMS)`
-                      : 'Microfone Ativo • Silêncio'
+                      : 'Microfone Ativo â€¢ SilÃªncio'
                     : 'Pausado'}{' '}
-                  • {acuraciaSessao}% Match
+                  â€¢ {acuraciaSessao}% Match
                 </span>
               </div>
 
-              {/* Ondas Dinâmicas de Áudio Guiadas pelo Volume Real (audioLevel) */}
+              {/* Ondas DinÃ¢micas de Ãudio Guiadas pelo Volume Real (audioLevel) */}
               <div className="h-14 flex items-center gap-1.5 overflow-hidden">
                 {ESPECTRO_BASE_ALTURAS.map((baseH, i) => {
                   const corBarra =
@@ -690,9 +686,9 @@ export default function PoemasPage() {
           </div>
         </div>
 
-        {/* Coluna Direita (5 cols): Acurácia Fonética Global em Tempo Real */}
+        {/* Coluna Direita (5 cols): AcurÃ¡cia FonÃ©tica Global em Tempo Real */}
         <div className="xl:col-span-5 flex flex-col gap-5">
-          {/* Card 1: Precisão Fonética Global (Donut Gauge Dinâmico) */}
+          {/* Card 1: PrecisÃ£o FonÃ©tica Global (Donut Gauge DinÃ¢mico) */}
           <div className="bg-[#161923] border border-white/[0.07] rounded-2xl p-6">
             <div className="mb-4">
               <h3 className="text-base font-bold text-[#EEF0F6]">
@@ -736,10 +732,10 @@ export default function PoemasPage() {
                 </div>
               </div>
 
-              {/* Métricas Detalhadas Reais de Acústica e Prosódia */}
+              {/* MÃ©tricas Detalhadas Reais de AcÃºstica e ProsÃ³dia */}
               <div className="flex-1 w-full space-y-3">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-[#9499B3]">Dicção & Fonemas</span>
+                  <span className="text-[#9499B3]">DicÃ§Ã£o & Fonemas</span>
                   <span className="font-mono font-bold text-[#22C55E]">{acuraciaSessao}%</span>
                 </div>
                 <div className="w-full h-1.5 bg-[#1E2130] rounded-full overflow-hidden">
@@ -750,10 +746,10 @@ export default function PoemasPage() {
                 </div>
 
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-[#9499B3]">Cadência Poética (Ritmo)</span>
+                  <span className="text-[#9499B3]">CadÃªncia PoÃ©tica (Ritmo)</span>
                   <span className="font-mono font-bold text-[#38BDF8]">
                     {prosodyMetrics?.syllableRateHz > 0 
-                      ? `${prosodyMetrics.syllableRateHz} síl/s (${prosodyMetrics.cadenciaScore || 100}%)` 
+                      ? `${prosodyMetrics.syllableRateHz} sÃ­l/s (${prosodyMetrics.cadenciaScore || 100}%)` 
                       : `${Math.round(acuraciaSessao * 0.96)}%`}
                   </span>
                 </div>
@@ -778,22 +774,22 @@ export default function PoemasPage() {
                 </div>
 
                 <div className="pt-1 flex items-center justify-between text-[11px] text-[#9499B3]">
-                  <span>Bônus de Sessão</span>
+                  <span>BÃ´nus de SessÃ£o</span>
                   <span className="font-bold text-[#F59E0B]">+45 XP</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Card 2: Estrutura Métrica & Índice de Versos */}
+          {/* Card 2: Estrutura MÃ©trica & Ãndice de Versos */}
           <div className="bg-[#161923] border border-white/[0.07] rounded-2xl p-6 flex-1 flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-base font-bold text-[#EEF0F6]">
-                  Estrutura Métrica & Índice de Versos
+                  Estrutura MÃ©trica & Ãndice de Versos
                 </h3>
                 <p className="text-xs text-[#9499B3] mt-0.5">
-                  {poemaAtivo?.titulo || 'Poema'} • {versos.length} versos
+                  {poemaAtivo?.titulo || 'Poema'} â€¢ {versos.length} versos
                 </p>
               </div>
               <span className="px-2.5 py-1 rounded-md bg-[#5B7CF4]/15 border border-[#5B7CF4]/35 text-[#5B7CF4] text-xs font-mono font-bold">
@@ -826,7 +822,7 @@ export default function PoemasPage() {
                   >
                     <span className="font-mono text-[10px] w-5 shrink-0 text-[#5C6178]">{i + 1}</span>
                     <span className="truncate flex-1">{v}</span>
-                    {concluido && <span className="text-[#22C55E] text-[10px] font-bold shrink-0">✓</span>}
+                    {concluido && <span className="text-[#22C55E] text-[10px] font-bold shrink-0">âœ“</span>}
                   </button>
                 );
               })}
@@ -851,3 +847,6 @@ export default function PoemasPage() {
     </div>
   );
 }
+
+
+
