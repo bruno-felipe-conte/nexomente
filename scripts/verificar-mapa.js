@@ -82,13 +82,29 @@ if (arquivosFaltantes.length > 0) {
 // 3. Extrai todos os canais IPC declarados no código do Electron (ipcMain.handle)
 console.log('\n📡 Verificando paridade dos canais IPC do Electron...');
 const ipcDir = path.join(ROOT_DIR, 'electron', 'ipc');
-const ipcFiles = fs.readdirSync(ipcDir).filter(f => f.endsWith('.js'));
+
+function getAllJsFiles(dir) {
+  let results = [];
+  const list = fs.readdirSync(dir);
+  for (const file of list) {
+    const fullPath = path.join(dir, file);
+    const stat = fs.statSync(fullPath);
+    if (stat && stat.isDirectory()) {
+      results = results.concat(getAllJsFiles(fullPath));
+    } else if (file.endsWith('.js')) {
+      results.push(fullPath);
+    }
+  }
+  return results;
+}
+
+const ipcFiles = getAllJsFiles(ipcDir);
 const canaisNoCodigo = new Set();
 
 const regexIpcHandle = /ipcMain\.handle\(\s*['"]([^'"]+)['"]/g;
 
-for (const f of ipcFiles) {
-  const content = fs.readFileSync(path.join(ipcDir, f), 'utf-8');
+for (const filePath of ipcFiles) {
+  const content = fs.readFileSync(filePath, 'utf-8');
   let match;
   while ((match = regexIpcHandle.exec(content)) !== null) {
     canaisNoCodigo.add(match[1]);
