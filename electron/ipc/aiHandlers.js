@@ -1,4 +1,4 @@
-﻿import electronPkg from "electron";
+import electronPkg from "electron";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
@@ -289,7 +289,22 @@ export async function runEmbeddedInference({ modelPath, messages = [], options =
       }
     }
 
-    const meta = await session.promptWithMeta(lastMessage, promptOptions);
+    // C8: Timeout configurável com AbortSignal (default 30s)
+    const timeoutMs = Number(options.timeoutMs || process.env.AI_INFERENCE_TIMEOUT_MS) || 30000;
+    const abortController = new AbortController();
+    const timeoutHandle = setTimeout(() => {
+      abortController.abort(new Error("Timeout: modelo não respondeu no tempo limite de " + (timeoutMs / 1000) + "s"));
+    }, timeoutMs);
+
+    let meta;
+    try {
+      meta = await session.promptWithMeta(lastMessage, {
+        ...promptOptions,
+        signal: abortController.signal,
+      });
+    } finally {
+      clearTimeout(timeoutHandle);
+    }
     let response = (meta?.responseText || "").trim();
     if (!response && Array.isArray(meta?.response)) {
       response = meta.response

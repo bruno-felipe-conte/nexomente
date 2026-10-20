@@ -34,24 +34,11 @@ app.whenReady().then(() => {
     const responseHeaders = { ...details.responseHeaders };
     const requestOrigin = details.requestHeaders?.Origin || details.requestHeaders?.origin;
     const origin = Array.isArray(requestOrigin) ? requestOrigin[0] : requestOrigin;
-    const allowedOrigin = isAllowedOrigin(origin) ? origin : 'file://';
+    const allowedOrigin = origin && isAllowedOrigin(origin) ? origin : 'file://';
 
     if (responseHeaders['Access-Control-Allow-Origin']) delete responseHeaders['Access-Control-Allow-Origin'];
     if (responseHeaders['access-control-allow-origin']) delete responseHeaders['access-control-allow-origin'];
 
-    callback({
-      responseHeaders: {
-        ...responseHeaders,
-        'Access-Control-Allow-Origin': [allowedOrigin],
-        'Access-Control-Allow-Headers': ['Content-Type', 'Authorization'],
-        'Access-Control-Allow-Methods': ['GET', 'POST', 'OPTIONS'],
-        'Access-Control-Allow-Credentials': ['true'],
-      },
-    });
-  });
-
-  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
-    const responseHeaders = { ...details.responseHeaders };
     const csp = [
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
@@ -69,6 +56,10 @@ app.whenReady().then(() => {
     callback({
       responseHeaders: {
         ...responseHeaders,
+        'Access-Control-Allow-Origin': [allowedOrigin],
+        'Access-Control-Allow-Headers': ['Content-Type', 'Authorization'],
+        'Access-Control-Allow-Methods': ['GET', 'POST', 'OPTIONS'],
+        'Access-Control-Allow-Credentials': ['true'],
         'Content-Security-Policy': [csp],
         'X-Content-Type-Options': ['nosniff'],
         'X-Frame-Options': ['DENY'],

@@ -116,5 +116,6 @@
       "createStartMenuShortcut": true,
       "shortcutName": "NexoMente"
     }
-  }
+  },
+  "sideEffects": false
 }

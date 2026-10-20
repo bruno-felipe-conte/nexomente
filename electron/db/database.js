@@ -96,6 +96,12 @@ export async function initDB() {
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP
       );
+
+      -- I5: Índices de Alta Performance SQLite
+      CREATE INDEX IF NOT EXISTS idx_notas_pasta_id ON notas (pasta_id);
+      CREATE INDEX IF NOT EXISTS idx_flashcards_next_review ON flashcards (next_review);
+      CREATE INDEX IF NOT EXISTS idx_sessoes_materia_started ON sessoes_estudo (materia_id, started_at);
+      CREATE INDEX IF NOT EXISTS idx_flashcards_materia ON flashcards (materia_id);
     `);
 
     // Insert root pasta if it doesn't exist
@@ -133,6 +139,12 @@ export async function initDB() {
     }
 
     console.log('[DATABASE] SQLite nativo inicializado com sucesso em:', dbPath);
+
+    // Agenda backup automático diário
+    import('./backupService.js').then(({ performDatabaseBackup }) => {
+      performDatabaseBackup().catch(err => console.warn('[DATABASE] Backup diário falhou:', err.message));
+    }).catch(() => {});
+
     return db;
   } catch (error) {
     console.error('[DATABASE] Erro ao inicializar SQLite:', error);

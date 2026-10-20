@@ -15,10 +15,10 @@ graphify-out/
 *.pyc
 __pycache__/
 
-# AI Models (Libertados para portabilidade total)
-# assets/models/
-# electron/models/
-electron/models/gemma-4-E2B-it-GGUF/
+# AI Models
+assets/models/
+electron/models/
+*.gguf
 
 # Tooling & Cache
 .codegraph/
