@@ -171,13 +171,23 @@ export default function NotaLista({
 }
 
 NotaLista.propTypes = {
-  notas: PropTypes.array,
+  notas: PropTypes.arrayOf(PropTypes.shape({
+    id: PropTypes.string.isRequired,
+    titulo: PropTypes.string,
+    conteudo: PropTypes.string,
+    tipo: PropTypes.string,
+    tags: PropTypes.array,
+    atualizado_em: PropTypes.string,
+  })),
   todasNotas: PropTypes.array,
-  notaSelecionada: PropTypes.object,
+  notaSelecionada: PropTypes.shape({
+    id: PropTypes.string,
+    titulo: PropTypes.string,
+  }),
   busca: PropTypes.string,
-  onBuscaChange: PropTypes.func,
-  onSelect: PropTypes.func,
-  onCriar: PropTypes.func,
+  onBuscaChange: PropTypes.func.isRequired,
+  onSelect: PropTypes.func.isRequired,
+  onCriar: PropTypes.func.isRequired,
   categoriaAtiva: PropTypes.string,
-  onSelectCategoria: PropTypes.func,
+  onSelectCategoria: PropTypes.func.isRequired,
 };

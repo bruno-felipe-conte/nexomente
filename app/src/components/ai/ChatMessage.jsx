@@ -133,11 +133,16 @@ const ChatMessage = memo(function ChatMessage({ msg, idx, copiadoIdx, onCopiar, 
 
 
 ChatMessage.propTypes = {
-  msg: PropTypes.any,
-  idx: PropTypes.any,
-  copiadoIdx: PropTypes.any,
-  onCopiar: PropTypes.func,
-  onInserir: PropTypes.func,
+  msg: PropTypes.shape({
+    role: PropTypes.string,
+    texto: PropTypes.string,
+    timestamp: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    isError: PropTypes.bool,
+  }).isRequired,
+  idx: PropTypes.number.isRequired,
+  copiadoIdx: PropTypes.number,
+  onCopiar: PropTypes.func.isRequired,
+  onInserir: PropTypes.func.isRequired,
 };
 
 export default ChatMessage;
