@@ -1,4 +1,4 @@
-import ankiSRS from '../../../hooks/sm2';
+import ankiSRS from '../../../hooks/sm2.js';
 
 export function createFlashcardsRepository(get, saveDB) {
   return {

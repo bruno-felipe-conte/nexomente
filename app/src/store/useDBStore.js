@@ -1,12 +1,12 @@
 import { create } from 'zustand';
-import { initDB, saveDB, getDB, createTables, dbPromise, setOnSaveCallback } from '../lib/db/wasmEngine';
-import { createNotasRepository } from '../lib/db/repositories/notasRepo';
-import { createPastasRepository } from '../lib/db/repositories/pastasRepo';
-import { createMateriasRepository } from '../lib/db/repositories/materiasRepo';
-import { createSessoesRepository } from '../lib/db/repositories/sessoesRepo';
-import { createFlashcardsRepository } from '../lib/db/repositories/flashcardsRepo';
-import { createXpRepository } from '../lib/db/repositories/xpRepo';
-import { createPoemasRepository } from '../lib/db/repositories/poemasRepo';
+import { initDB, saveDB, getDB, createTables, dbPromise, setOnSaveCallback } from '../lib/db/wasmEngine.js';
+import { createNotasRepository } from '../lib/db/repositories/notasRepo.js';
+import { createPastasRepository } from '../lib/db/repositories/pastasRepo.js';
+import { createMateriasRepository } from '../lib/db/repositories/materiasRepo.js';
+import { createSessoesRepository } from '../lib/db/repositories/sessoesRepo.js';
+import { createFlashcardsRepository } from '../lib/db/repositories/flashcardsRepo.js';
+import { createXpRepository } from '../lib/db/repositories/xpRepo.js';
+import { createPoemasRepository } from '../lib/db/repositories/poemasRepo.js';
 
 export { initDB, saveDB, getDB, createTables, dbPromise };
 
