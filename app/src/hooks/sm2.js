@@ -1,8 +1,3 @@
-/**
- * Módulo puro SM-2 / Anki SRS para o NexoMente.
- * Exporta calculateNextReview e re-exporta o motor de domínio ankiSrsEngine.
- */
-
 export {
   default,
   default as sm2,
@@ -17,7 +12,7 @@ export {
   isDominado,
   previewIntervalo,
   parseCloze,
-} from '../features/flashcards/domain/ankiSrsEngine.js';
+} from '@features/flashcards/domain/ankiSrsEngine';
 
 export function calculateNextReview(card, qualidade) {
   let ef = Number(card.ease_factor || 2.5);
