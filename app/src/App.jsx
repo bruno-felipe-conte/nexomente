@@ -148,21 +148,24 @@ function App() {
       return;
     }
     const acao = LEGACY_ROUTES[currentPage];
-    if (acao === "copilot") {
-      setCurrentPage(lastValidPageRef.current);
-      setIsCopilotOpen(true);
-    } else if (acao === "pomodoro") {
-      setCurrentPage(lastValidPageRef.current);
-      window.dispatchEvent(new CustomEvent("toggle-pomodoro"));
-    } else if (acao === "forja") {
-      sessionStorage.setItem("nexomente_flashcards_tab", "forja");
-      setCurrentPage("flashcards");
-      window.dispatchEvent(new CustomEvent("flashcards-tab", { detail: "forja" }));
-    } else if (acao === "anual") {
-      sessionStorage.setItem("nexomente_dashboard_anual", "1");
-      setCurrentPage("dashboard");
-      window.dispatchEvent(new CustomEvent("dashboard-anual"));
-    }
+    const targetPage = lastValidPageRef.current;
+    queueMicrotask(() => {
+      if (acao === "copilot") {
+        setCurrentPage(targetPage);
+        setIsCopilotOpen(true);
+      } else if (acao === "pomodoro") {
+        setCurrentPage(targetPage);
+        window.dispatchEvent(new CustomEvent("toggle-pomodoro"));
+      } else if (acao === "forja") {
+        sessionStorage.setItem("nexomente_flashcards_tab", "forja");
+        setCurrentPage("flashcards");
+        window.dispatchEvent(new CustomEvent("flashcards-tab", { detail: "forja" }));
+      } else if (acao === "anual") {
+        sessionStorage.setItem("nexomente_dashboard_anual", "1");
+        setCurrentPage("dashboard");
+        window.dispatchEvent(new CustomEvent("dashboard-anual"));
+      }
+    });
   }, [currentPage, setCurrentPage]);
 
   // Atalhos de teclado globais (Tarefa 6.1)

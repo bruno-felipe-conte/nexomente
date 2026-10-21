@@ -185,17 +185,16 @@ export default function ActivityHeatmap({ sessoes }) {
   }, [sessoes]);
 
   const months = useMemo(() => {
+    const base = new Date();
     const arr = [];
+    for (let i = 5; i >= 1; i--) {
+      arr.push(addMonths(base, i));
+    }
     for (let i = 0; i <= 12; i++) {
-      arr.push(subMonths(today, i));
+      arr.push(subMonths(base, i));
     }
-    for (let i = 1; i <= 5; i++) {
-      arr.push(addMonths(today, i));
-    }
-    // Ordem final após reverse: [+5, +4, +3, +2, +1, hoje, -1, ..., -12]
-    // Renderizado da esquerda para a direita no scroll
-    return arr.reverse();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    return arr;
+  }, []);
 
   // ✅ FIX 6: Centralizar scroll no mês atual ao montar o componente
   useEffect(() => {

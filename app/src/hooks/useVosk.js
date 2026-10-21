@@ -16,10 +16,10 @@ let sharedVoskPromise = null;
  * reamostragem anti-aliasing 16kHz, gramática dinâmica contextual Kaldi e
  * análise de prosódia em tempo real.
  */
-export function useVosk({ onResult, onPartialResult, onError, grammar = null }) {
+export function useVosk({ onResult, onPartialResult, onError, grammar = null, autoLoad = false }) {
   const [isListening, setIsListening] = useState(false);
   const [isReady, setIsReady] = useState(Boolean(sharedVoskModel));
-  const [status, setStatus] = useState(sharedVoskModel ? 'ready' : 'loading');
+  const [status, setStatus] = useState(sharedVoskModel ? 'ready' : (autoLoad ? 'loading' : 'idle'));
   const [audioLevel, setAudioLevel] = useState(0);
   const [prosodyMetrics, setProsodyMetrics] = useState({
     syllableRateHz: 0,
@@ -78,6 +78,7 @@ export function useVosk({ onResult, onPartialResult, onError, grammar = null }) 
   }, []);
 
   useEffect(() => {
+    if (!autoLoad) return;
     let mounted = true;
     loadVoskModel()
       .then((model) => {
@@ -98,7 +99,7 @@ export function useVosk({ onResult, onPartialResult, onError, grammar = null }) 
     return () => {
       mounted = false;
     };
-  }, [loadVoskModel]);
+  }, [loadVoskModel, autoLoad]);
 
   const cleanupRecognizer = useCallback(() => {
     if (recognizerRef.current) {

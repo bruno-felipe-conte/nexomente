@@ -5,20 +5,12 @@
  */
 import { useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Brain, RotateCcw, Check, ChevronLeft, ChevronRight, Edit, Flame, AlertCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Edit, AlertCircle } from 'lucide-react';
 import PropTypes from 'prop-types';
 
 import Button from '../ui/Button';
 import Card from '../ui/Card';
-import { previewIntervalo, parseCloze } from '../../hooks/sm2';
-
-// 4 Botões Oficiais do Anki (Cores e Teclas de 1 a 4)
-const ANKI_BUTTONS = {
-  1: { label: 'Errei (Again)', cor: '#ef4444', border: 'border-red-500/30', bg: 'hover:bg-red-500/10' },
-  2: { label: 'Difícil (Hard)', cor: '#f59e0b', border: 'border-amber-500/30', bg: 'hover:bg-amber-500/10' },
-  3: { label: 'Bom (Good)',    cor: '#10b981', border: 'border-emerald-500/30', bg: 'hover:bg-emerald-500/10' },
-  4: { label: 'Fácil (Easy)',  cor: '#3b82f6', border: 'border-blue-500/30', bg: 'hover:bg-blue-500/10' },
-};
+import { parseCloze } from '../../features/flashcards/domain/ankiSrsEngine';
 
 export default function FlashcardViewer({
   cardAtual, paraRevisao, idxRevisao, mostrandoFrente,
@@ -28,238 +20,169 @@ export default function FlashcardViewer({
   useEffect(() => {
     if (!cardAtual) return;
     const handleKey = (e) => {
-      if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
-      if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); onViraCard(); }
-      else if (mostrandoFrente) return;
-      else if (['1', '2', '3', '4'].includes(e.key)) {
-        e.preventDefault();
-        onRevisar(parseInt(e.key));
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+      switch (e.key) {
+        case ' ': e.preventDefault(); onViraCard(); break;
+        case '1': onRevisar(1); break;
+        case '2': onRevisar(2); break;
+        case '3': onRevisar(3); break;
+        case '4': onRevisar(4); break;
+        case 'ArrowLeft': onAnterior(); break;
+        case 'ArrowRight': onProximo(); break;
+        case 'e': onEditar(); break;
+        case 'n': onCriar(); break;
       }
-      else if (e.key === 'ArrowLeft') { e.preventDefault(); onAnterior(); }
-      else if (e.key === 'ArrowRight') { e.preventDefault(); onProximo(); }
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [cardAtual, onViraCard, onRevisar, onAnterior, onProximo, mostrandoFrente]);
+  }, [cardAtual, onViraCard, onRevisar, onAnterior, onProximo, onEditar, onCriar]);
 
-  // Suporte automático a Cloze Deletion (Omissão de Palavras)
-  const frenteHtml = useMemo(() => {
-    if (!cardAtual?.frente) return '';
-    return parseCloze(cardAtual.frente, true);
-  }, [cardAtual]);
-
-  const versoHtml = useMemo(() => {
-    if (!cardAtual) return '';
-    // Se o card for Cloze (contém {{c1::...}} na frente), renderiza o cloze revelado no verso
-    if (cardAtual.frente && /\{\{c\d+::/.test(cardAtual.frente)) {
-      const clozeRevelado = parseCloze(cardAtual.frente, false);
-      return cardAtual.verso ? `${clozeRevelado}<hr class="my-4 border-white/10" /><div class="text-sm text-text-lo/80 font-normal">${cardAtual.verso}</div>` : clozeRevelado;
-    }
-    return cardAtual.verso || '';
-  }, [cardAtual]);
-
-  const ehLeech = Boolean((cardAtual?.lapses || 0) >= 4);
-
-  if (!cardAtual) {
-    return (
-      <div className="bg-bg-secondary/50 backdrop-blur-xl rounded-3xl p-16 border border-white/5 text-center max-w-xl mx-auto animate-in fade-in zoom-in-95 duration-500">
-        <div className="w-20 h-20 bg-accent-main/10 rounded-2xl flex items-center justify-center mx-auto mb-6 text-accent-main">
-           <Brain size={40} />
-        </div>
-        <h2 className="text-2xl font-display font-bold text-text-hi mb-2">Parabéns! Decks em dia.</h2>
-        <p className="text-text-mid text-sm mb-8">Você concluiu todos os cards devidos para hoje neste baralho.</p>
-        <Button onClick={onCriar} variant="primary" size="lg" className="rounded-2xl px-10">
-          Criar Novo Card
-        </Button>
-      </div>
-    );
-  }
+  const cardContent = useMemo(() => {
+    if (!cardAtual) return { frente: '', verso: '' };
+    return parseCloze(cardAtual.frente || '', mostrandoFrente);
+  }, [cardAtual, mostrandoFrente]);
 
   return (
-    <div className="max-w-4xl mx-auto w-full flex flex-col items-center animate-in fade-in slide-in-from-bottom-4 duration-700">
-      {/* Barra de Status estilo Anki (Novos em azul, Aprendendo em vermelho/laranja, Revisão em verde) */}
-      <div className="w-full flex justify-between items-center mb-6 px-2">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-400 font-mono text-xs font-bold" title="Novos">
-            <span>●</span> {contadoresAnki.novos || 0}
-          </div>
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 font-mono text-xs font-bold" title="Aprendendo">
-            <span>▲</span> {contadoresAnki.aprendendo || 0}
-          </div>
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono text-xs font-bold" title="Para Revisar">
-            <span>✓</span> {contadoresAnki.devidos || 0}
-          </div>
-          {ehLeech && (
-            <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-red-500/15 border border-red-500/30 text-red-400 text-[10px] font-bold uppercase tracking-wider">
-              <AlertCircle size={12} /> Sanguessuga ({cardAtual.lapses} erros)
+    <AnimatePresence mode='wait'>
+      <motion.div
+        key={cardAtual?.id}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        transition={{ duration: 0.2 }}
+        className='flex flex-col items-center justify-center h-full p-4 gap-4'
+      >
+        <div className='relative w-full max-w-2xl'>
+          <Card className='relative overflow-hidden bg-white dark:bg-gray-800 shadow-xl border-0 rounded-2xl p-8 min-h-[300px] flex flex-col items-center justify-center'>
+            <div className='absolute top-4 right-4 flex gap-2'>
+              <Button variant='ghost' size='sm' onClick={onEditar} title='Editar card (E)' aria-label='Editar card'>
+                <Edit className='w-5 h-5' />
+              </Button>
+            </div>
+
+            <div className='flex-1 flex flex-col items-center justify-center text-center w-full px-4'>
+              <div className='mb-4 text-sm text-gray-500 dark:text-gray-400'>
+                {mostrandoFrente ? 'FRENTE' : 'VERSO'}
+              </div>
+
+              <div
+                className='prose prose-invert dark:prose-invert max-w-none text-left whitespace-pre-wrap break-words'
+                style={{ fontSize: '1.25rem', lineHeight: '1.8' }}
+              >
+                {cardContent.html}
+              </div>
+            </div>
+
+            <div className='absolute bottom-4 left-1/2 -translate-x-1/2 text-xs text-gray-400 dark:text-gray-500 flex gap-4'>
+              <kbd className='px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600'>Espaço</kbd>
+              <span>virar</span>
+              <kbd className='px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600'>1-4</kbd>
+              <span>responder</span>
+              <kbd className='px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600'>← →</kbd>
+              <span>navegar</span>
+            </div>
+          </Card>
+
+          {cardAtual?.lapses && cardAtual.lapses > 0 && (
+            <div className='absolute -top-3 -right-3 flex items-center gap-1 px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-full text-xs font-medium border border-red-300 dark:border-red-700'>
+              <AlertCircle className='w-3 h-3' />
+              <span>{cardAtual.lapses} lapses</span>
             </div>
           )}
         </div>
 
-        <div className="flex items-center gap-3">
-          <span className="text-xs font-bold text-text-lo">
-            {idxRevisao + 1} de {paraRevisao.length}
-          </span>
-          <div className="h-1.5 w-24 bg-white/5 rounded-full overflow-hidden">
-            <motion.div
-              className="h-full bg-accent-main"
-              initial={{ width: 0 }}
-              animate={{ width: `${((idxRevisao + 1) / Math.max(1, paraRevisao.length)) * 100}%` }}
-            />
-          </div>
+        <div className='flex flex-wrap gap-3 justify-center w-full max-w-2xl'>
+          <Button
+            variant='outline'
+            size='lg'
+            className='flex-1 min-w-[120px] border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-500/10'
+            onClick={() => onRevisar(1)}
+            disabled={!cardAtual}
+          >
+            <span className='flex items-center gap-2'>
+              <span className='font-mono text-xl'>1</span>
+              <span>Errei</span>
+            </span>
+          </Button>
+          <Button
+            variant='outline'
+            size='lg'
+            className='flex-1 min-w-[120px] border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10'
+            onClick={() => onRevisar(2)}
+            disabled={!cardAtual}
+          >
+            <span className='flex items-center gap-2'>
+              <span className='font-mono text-xl'>2</span>
+              <span>Difícil</span>
+            </span>
+          </Button>
+          <Button
+            variant='outline'
+            size='lg'
+            className='flex-1 min-w-[120px] border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10'
+            onClick={() => onRevisar(3)}
+            disabled={!cardAtual}
+          >
+            <span className='flex items-center gap-2'>
+              <span className='font-mono text-xl'>3</span>
+              <span>Bom</span>
+            </span>
+          </Button>
+          <Button
+            variant='outline'
+            size='lg'
+            className='flex-1 min-w-[120px] border-blue-500/30 text-blue-600 dark:text-blue-400 hover:bg-blue-500/10'
+            onClick={() => onRevisar(4)}
+            disabled={!cardAtual}
+          >
+            <span className='flex items-center gap-2'>
+              <span className='font-mono text-xl'>4</span>
+              <span>Fácil</span>
+            </span>
+          </Button>
         </div>
-      </div>
 
-      {/* Container do Flip 3D */}
-      <div
-        className="w-full aspect-[16/10] relative cursor-pointer group perspective-2000 mb-8"
-        onClick={onViraCard}
-      >
-        <motion.div
-          className="w-full h-full relative preserve-3d"
-          animate={{ rotateY: mostrandoFrente ? 0 : 180 }}
-          transition={{ duration: 0.6, type: "spring", stiffness: 100, damping: 15 }}
-          style={{ transformStyle: "preserve-3d" }}
-        >
-          {/* Lado da Frente */}
-          <Card
-            className="absolute inset-0 w-full h-full p-10 flex flex-col items-center justify-center text-center m-0 backface-hidden glass-panel border-white/5 shadow-2xl"
-            style={{ backfaceVisibility: "hidden" }}
-          >
-            <div className="absolute top-6 left-6 flex items-center gap-2">
-               <div className="w-1.5 h-1.5 rounded-full bg-accent-main animate-pulse" />
-               <span className="text-[10px] font-bold text-text-lo uppercase tracking-widest">
-                 {cardAtual.materia || 'Pergunta'}
-               </span>
-            </div>
-            <div
-              className="text-2xl md:text-4xl font-display font-bold text-text-hi leading-relaxed tracking-tight px-4 select-text"
-              dangerouslySetInnerHTML={{ __html: frenteHtml }}
-            />
-            <div className="absolute bottom-8 flex items-center gap-2 opacity-40 group-hover:opacity-100 transition-opacity">
-               <span className="text-[10px] font-bold uppercase tracking-widest text-text-lo">Mostrar Resposta</span>
-               <div className="px-1.5 py-0.5 rounded bg-white/10 text-[9px] font-mono text-text-hi">SPACE / ENTER</div>
-            </div>
-          </Card>
+        <div className='flex gap-3 justify-center w-full max-w-2xl mt-4'>
+          <Button variant='ghost' onClick={onAnterior} disabled={idxRevisao <= 0}>
+            <ChevronLeft className='w-5 h-5 mr-1' /> Anterior
+          </Button>
+          <div className='flex items-center text-sm text-gray-500 dark:text-gray-400 px-4'>
+            {idxRevisao + 1} / {paraRevisao.length}
+          </div>
+          <Button variant='ghost' onClick={onProximo} disabled={idxRevisao >= paraRevisao.length - 1}>
+            Próximo <ChevronRight className='w-5 h-5 ml-1' />
+          </Button>
+        </div>
 
-          {/* Lado de Trás */}
-          <Card
-            className="absolute inset-0 w-full h-full p-10 flex flex-col items-start justify-start text-left m-0 backface-hidden bg-[#121422] border-white/10 shadow-2xl overflow-y-auto custom-scrollbar"
-            style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
-          >
-            <div className="w-full flex items-center justify-between pb-4 border-b border-white/5 mb-6">
-              <span className="text-[10px] font-black text-accent-main uppercase tracking-[0.2em]">Resposta (Anki SRS)</span>
-              <span className="text-[10px] font-mono text-text-lo/60">
-                Fase: <strong className="text-text-hi uppercase">{cardAtual.state || 'learning'}</strong> | Ease: {((cardAtual.ease_factor || 2.5) * 100).toFixed(0)}%
-              </span>
-            </div>
-            <div
-              className="prose prose-invert max-w-none text-xl md:text-2xl font-medium text-text-hi leading-relaxed px-2 select-text w-full"
-              dangerouslySetInnerHTML={{ __html: versoHtml }}
-            />
-          </Card>
-        </motion.div>
-      </div>
-
-      {/* 4 Botões Oficiais do Anki */}
-      <AnimatePresence>
-        {!mostrandoFrente && (
-          <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 15 }}
-            className="w-full space-y-3"
-          >
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full">
-              {Object.entries(ANKI_BUTTONS).map(([btnKey, info]) => {
-                const rating = parseInt(btnKey);
-                const intervaloEstimado = previewIntervalo(cardAtual, rating);
-
-                return (
-                  <button
-                    key={btnKey}
-                    onClick={(e) => { e.stopPropagation(); onRevisar(rating); }}
-                    className={`group relative flex flex-col items-center justify-center p-4 rounded-2xl border transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl cursor-pointer ${info.border} ${info.bg} bg-white/[0.02]`}
-                  >
-                    <span className="text-[11px] font-mono font-bold mb-0.5" style={{ color: info.cor }}>
-                      {intervaloEstimado}
-                    </span>
-                    <span className="font-bold text-sm mb-1 text-text-hi">
-                      {info.label}
-                    </span>
-                    <div className="flex items-center gap-1 opacity-50 group-hover:opacity-100 transition-opacity">
-                       <span className="text-[9px] font-bold text-text-lo">Tecla</span>
-                       <span className="px-1.5 py-0.2 bg-white/10 rounded text-[9px] font-mono text-text-hi">{btnKey}</span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Rodapé de Meta */}
-      {mostrandoFrente && (
-         <div className="flex gap-4 mt-2">
-            <div className="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/5 text-[10px] font-bold text-text-lo">
-               <RotateCcw size={12} className="text-warning" />
-               <span>Repetições: {cardAtual.repeticoes || 0}</span>
-            </div>
-            <div className="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/5 text-[10px] font-bold text-text-lo">
-               <Check size={12} className="text-success" />
-               <span>Facilidade: {((cardAtual.ease_factor || 2.5) * 100).toFixed(0)}%</span>
-            </div>
-            {cardAtual.lapses > 0 && (
-              <div className="flex items-center gap-2 px-3 py-1 bg-red-500/10 rounded-full border border-red-500/20 text-[10px] font-bold text-red-400">
-                 <Flame size={12} />
-                 <span>Erros: {cardAtual.lapses}</span>
-              </div>
-            )}
-         </div>
-      )}
-
-      {/* Navegação e Atalhos Rápidos */}
-      <div className="w-full mt-6 pt-4 border-t border-white/5 flex items-center justify-between">
-         <button
-           onClick={onAnterior}
-           disabled={idxRevisao === 0}
-           className="p-3 text-text-lo hover:text-text-hi disabled:opacity-20 transition-all cursor-pointer"
-           title="Card anterior (Seta Esquerda)"
-         >
-           <ChevronLeft size={22} />
-         </button>
-
-         <button
-           onClick={() => onEditar(cardAtual)}
-           className="px-4 py-2 bg-white/5 rounded-xl text-[10px] font-black uppercase tracking-widest text-text-lo hover:text-text-hi hover:bg-white/10 transition-all flex items-center gap-2 cursor-pointer"
-         >
-           <Edit size={12} /> Editar Card
-         </button>
-
-         <button
-           onClick={onProximo}
-           disabled={idxRevisao >= paraRevisao.length - 1}
-           className="p-3 text-text-lo hover:text-text-hi disabled:opacity-20 transition-all cursor-pointer"
-           title="Próximo card (Seta Direita)"
-         >
-           <ChevronRight size={22} />
-         </button>
-      </div>
-    </div>
+        <div className='flex gap-2 justify-center w-full max-w-2xl mt-2 text-xs text-gray-500 dark:text-gray-400'>
+          {contadoresAnki.novos > 0 && <span className='px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded'>Novos: {contadoresAnki.novos}</span>}
+          {contadoresAnki.aprendendo > 0 && <span className='px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded'>Aprendendo: {contadoresAnki.aprendendo}</span>}
+          {contadoresAnki.devidos > 0 && <span className='px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded'>Devidos: {contadoresAnki.devidos}</span>}
+        </div>
+      </motion.div>
+    </AnimatePresence>
   );
 }
 
 FlashcardViewer.propTypes = {
-  cardAtual: PropTypes.object,
-  paraRevisao: PropTypes.array,
-  idxRevisao: PropTypes.number,
-  mostrandoFrente: PropTypes.bool,
-  onViraCard: PropTypes.func,
-  onRevisar: PropTypes.func,
-  onAnterior: PropTypes.func,
-  onProximo: PropTypes.func,
-  onEditar: PropTypes.func,
-  onCriar: PropTypes.func,
-  contadoresAnki: PropTypes.object,
+  cardAtual: PropTypes.shape({
+    id: PropTypes.string.isRequired,
+    frente: PropTypes.string,
+    verso: PropTypes.string,
+    lapses: PropTypes.number,
+  }),
+  paraRevisao: PropTypes.arrayOf(PropTypes.object).isRequired,
+  idxRevisao: PropTypes.number.isRequired,
+  mostrandoFrente: PropTypes.bool.isRequired,
+  onViraCard: PropTypes.func.isRequired,
+  onRevisar: PropTypes.func.isRequired,
+  onAnterior: PropTypes.func.isRequired,
+  onProximo: PropTypes.func.isRequired,
+  onEditar: PropTypes.func.isRequired,
+  onCriar: PropTypes.func.isRequired,
+  contadoresAnki: PropTypes.shape({
+    novos: PropTypes.number,
+    aprendendo: PropTypes.number,
+    devidos: PropTypes.number,
+  }),
 };
