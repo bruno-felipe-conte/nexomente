@@ -76,50 +76,17 @@ function App() {
     }
   }, [currentPage, studyRodando, studySessaoId, setIsMiniaturized]);
 
-  // Configurações Padrão de Inicialização (GitHub/Fresh Install) — useLayoutEffect para evitar warning
+  // Configurações Padrão de Inicialização desacopladas via bootstrap modular
   useLayoutEffect(() => {
-    const defaults = {
-      nexomente_ai_provider: "embedded",
-      nexomente_ai_language: "Português Brasileiro",
-      nexomente_tema: "dark",
-      nexomente_ai_temp: "0.7",
-      nexomente_ai_max_tokens: "1024",
-      nexomente_embedded_path: "./electron/models/gemma-4-E2B-it-GGUF/gemma-4-E2B-it-Q4_K_M.gguf",
-      nexomente_ai_system_prompt: "Você é o NexoMente, um assistente de estudos de alto desempenho. Responda de forma lógica, profunda e estruturada.",
-    };
+    import("./lib/bootstrap/appDefaults.js").then((m) => {
+      m.initAppDefaults();
+    }).catch(() => {});
 
-    Object.entries(defaults).forEach(([key, val]) => {
-      if (!localStorage.getItem(key)) {
-        localStorage.setItem(key, val);
+    import("./store/useDBStore.js").then((m) => {
+      if (m.useDBStore.getState().init) {
+        m.useDBStore.getState().init();
       }
-    });
-
-    // Atualiza caminhos legados ou externos para a pasta própria do Gemma 4 dentro do projeto
-    const currentEmbeddedPath = localStorage.getItem("nexomente_embedded_path");
-    if (
-      currentEmbeddedPath === "./electron/models/llama-3-8b-instruct.gguf" ||
-      currentEmbeddedPath === "./electron/models/llama-3.2-1b.gguf" ||
-      currentEmbeddedPath?.includes(".lmstudio")
-    ) {
-      localStorage.setItem(
-        "nexomente_embedded_path",
-        "./electron/models/gemma-4-E2B-it-GGUF/gemma-4-E2B-it-Q4_K_M.gguf"
-      );
-    }
-
-    try {
-      import("./store/useDBStore").then((m) => {
-        if (m.useDBStore.getState().init) {
-          m.useDBStore.getState().init();
-        }
-      }).catch((err) => console.error("Erro ao carregar DBStore:", err));
-    } catch (e) {
-      console.error("Falha crítica na inicialização:", e);
-    }
-
-    const savedTema = localStorage.getItem("nexomente_tema") || "dark";
-    document.documentElement.classList.remove("dark", "light");
-    document.documentElement.classList.add(savedTema);
+    }).catch(() => {});
   }, []);
 
   // Event listeners para navegação
