@@ -1,7 +1,23 @@
 /**
- * Algoritmo puro SM-2 / Anki para cálculo de agendamento de repetição espaçada.
- * Sem efeitos colaterais, 100% testável.
+ * Módulo puro SM-2 / Anki SRS para o NexoMente.
+ * Exporta calculateNextReview e re-exporta o motor de domínio ankiSrsEngine.
  */
+
+export {
+  default,
+  default as sm2,
+  SM2_DEFAULTS,
+  ANKI_DEFAULTS,
+  LEARNING_STEPS_MINUTES,
+  GRADUATING_INTERVAL_DAYS,
+  EASY_INTERVAL_DAYS,
+  HARD_INTERVAL_MULTIPLIER,
+  EASY_BONUS,
+  isParaRevisao,
+  isDominado,
+  previewIntervalo,
+  parseCloze,
+} from '../features/flashcards/domain/ankiSrsEngine.js';
 
 export function calculateNextReview(card, qualidade) {
   let ef = Number(card.ease_factor || 2.5);
