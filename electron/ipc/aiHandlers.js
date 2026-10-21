@@ -5,6 +5,7 @@ import { fileURLToPath } from "url";
 import { detectHardware } from "../ai/hardwareDetector.js";
 import diagnostics from "../ai/diagnostics.js";
 import { SmartContextManager } from "../ai/SmartContextManager.js";
+import { createErrorResponse, createSuccessResponse, ErrorCodes } from "./utils/errorResponse.js";
 
 const { ipcMain, app } = electronPkg || {};
 
@@ -27,7 +28,7 @@ export const DEFAULT_GEMMA_FILE = path.join(DEFAULT_GEMMA_DIR, "gemma-4-E2B-it-Q
 
 /**
  * Token Bucket Rate Limiter para ai:embeddedChat
- * Permite até 3 requisições por segundo com burst de 5
+ * Permite at? 3 requisi?es por segundo com burst de 5
  */
 class RateLimiter {
   constructor({ maxTokens = 5, refillRate = 3 } = {}) {
@@ -56,7 +57,7 @@ class RateLimiter {
     return { allowed: false, remaining: Math.floor(bucket.tokens), retryAfterMs: Math.ceil((cost - bucket.tokens) / this.refillRate * 1000) };
   }
 
-  // Limpeza periódica de buckets inativos
+  // Limpeza peri?dica de buckets inativos
   cleanup() {
     const now = Date.now();
     for (const [key, bucket] of this.buckets.entries()) {
@@ -148,9 +149,9 @@ export async function ensureEmbeddedEngineReady(requestedModelPath) {
 
   if (!finalModelPath || !fs.existsSync(finalModelPath)) {
     const partMsg = resolvedInfo.downloadingPartDetected
-      ? ` O arquivo "${path.basename(resolvedInfo.downloadingPartDetected)}" ainda está incompleto (.part).`
+      ? ` O arquivo "${path.basename(resolvedInfo.downloadingPartDetected)}" ainda est? incompleto (.part).`
       : "";
-    throw new Error(`Modelo GGUF não encontrado para o caminho "${requestedModelPath || DEFAULT_GEMMA_DIR}".${partMsg}`);
+    throw new Error(`Modelo GGUF n?o encontrado para o caminho "${requestedModelPath || DEFAULT_GEMMA_DIR}".${partMsg}`);
   }
 
   if (!modelInstance || currentModelPath !== finalModelPath) {
@@ -217,7 +218,7 @@ export async function ensureEmbeddedEngineReady(requestedModelPath) {
       if (persistentSequence.nextTokenIndex > 0) {
         await persistentSequence.eraseContextTokenRanges([{ start: 0, end: persistentSequence.nextTokenIndex }]);
       }
-      console.log("[AI ENGINE] Shaders GPU aquecidos e prontos para resposta instantânea.");
+      console.log("[AI ENGINE] Shaders GPU aquecidos e prontos para resposta instant?nea.");
     } catch (warmErr) {
       console.warn("[AI ENGINE] Aviso no aquecimento de shaders:", warmErr.message);
     }
@@ -289,11 +290,11 @@ export async function runEmbeddedInference({ modelPath, messages = [], options =
       }
     }
 
-    // C8: Timeout configurável com AbortSignal (default 30s)
+    // C8: Timeout configur?vel com AbortSignal (default 30s)
     const timeoutMs = Number(options.timeoutMs || process.env.AI_INFERENCE_TIMEOUT_MS) || 30000;
     const abortController = new AbortController();
     const timeoutHandle = setTimeout(() => {
-      abortController.abort(new Error("Timeout: modelo não respondeu no tempo limite de " + (timeoutMs / 1000) + "s"));
+      abortController.abort(new Error("Timeout: modelo n?o respondeu no tempo limite de " + (timeoutMs / 1000) + "s"));
     }, timeoutMs);
 
     let meta;
@@ -318,29 +319,15 @@ export async function runEmbeddedInference({ modelPath, messages = [], options =
 
     await smartContext.addMessage("assistant", response);
 
-    return {
-      success: true,
+    return createSuccessResponse({
       response,
       modelName: path.basename(currentModelPath),
       modelPath: currentModelPath,
-    };
+    });
   } catch (error) {
     console.error("[AI ENGINE] ERRO CRITICO:", error);
 
-    let errorCode = "ERR-AI-500";
-    if (error.message.includes("not found") || error.message.includes("não encontrado")) errorCode = "ERR-AI-001";
-    if (error.message.includes("VRAM") || error.message.includes("out of memory")) errorCode = "ERR-AI-002";
-    if (error.message.includes("Failed to load model")) errorCode = "ERR-AI-003";
-    if (error.message.includes("context size")) errorCode = "ERR-AI-004";
-    if (error.message.includes("permission denied")) errorCode = "ERR-SYS-001";
-
-    return {
-      success: false,
-      error: error.message,
-      code: errorCode,
-      details: `Consulte o manual para o codigo ${errorCode}`,
-      stack: isDev ? error.stack : undefined,
-    };
+    return createErrorResponse(error, null, "Consulte o manual para o c?digo de erro", isDev);
   }
 }
 
@@ -351,18 +338,16 @@ export function registerAiHandlers() {
 
   // Embedded LLM (node-llama-cpp) com Rate Limiting e Streaming
   ipcMain.handle("ai:embeddedChat", async (event, payload) => {
-    // Rate limit por session (senderFrameId) ou IP se disponível
+    // Rate limit por session (senderFrameId) ou IP se dispon?vel
     const key = event.senderFrameId || "default";
     const rateLimit = rateLimiter.tryConsume(key);
     if (!rateLimit.allowed) {
       console.warn(`[AI RATE LIMIT] Bloqueado: ${key}, retry after ${rateLimit.retryAfterMs}ms`);
-      return {
-        success: false,
-        error: "Rate limit excedido. Aguarde um momento antes de tentar novamente.",
-        code: "ERR-AI-429",
-        details: `Tente novamente em ${Math.ceil(rateLimit.retryAfterMs / 1000)}s`,
-        retryAfterMs: rateLimit.retryAfterMs,
-      };
+      return createErrorResponse(
+        new Error("Rate limit excedido. Aguarde um momento antes de tentar novamente."),
+        ErrorCodes.AI_RATE_LIMIT,
+        `Tente novamente em ${Math.ceil(rateLimit.retryAfterMs / 1000)}s`
+      );
     }
 
     const streamChannel = payload?.options?.streamChannel;
@@ -380,17 +365,17 @@ export function registerAiHandlers() {
       if (!cachedHardware) {
         cachedHardware = await detectHardware();
       }
-      return cachedHardware;
+      return createSuccessResponse(cachedHardware);
     } catch (error) {
-      return { error: error.message };
+      return createErrorResponse(error);
     }
   });
 
   ipcMain.handle("ai:getContextStats", async () => {
-    if (!smartContext) return { activeTokens: 0, maxTokens: 4096 };
-    return {
+    if (!smartContext) return createSuccessResponse({ activeTokens: 0, maxTokens: 4096 });
+    return createSuccessResponse({
       activeTokens: smartContext.getTotalActiveTokens(),
       maxTokens: smartContext.maxActiveTokens,
-    };
+    });
   });
 }

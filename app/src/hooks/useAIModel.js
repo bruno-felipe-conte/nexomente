@@ -1,12 +1,13 @@
 import { useState, useLayoutEffect, useCallback } from "react";
 import { useAIStore } from "../store/useAIStore";
+import { secureStorage } from "../lib/storage/secureStorage";
 
 export function useAIModel() {
   const store = useAIStore();
 
   useLayoutEffect(() => {
     store.verificarStatus();
-  }, [store.provider]); // Re-verifica sempre que o provedor mudar
+  }, [store.provider]);
 
   return {
     status: store.status,
@@ -21,7 +22,6 @@ export function useAIModel() {
     setTemperatura: store.setTemperatura,
     setApiKey: store.setApiKey,
     verificar: store.verificarStatus,
-    // Compatibilidade com nomes antigos
     trocarProvedor: store.setProvider,
     trocarModelo: store.setModeloAtual,
     trocarTemperatura: store.setTemperatura,
@@ -32,16 +32,15 @@ const CHAT_KEY_PREFIX = "nexomente_ai_chat_";
 
 export function useAIChat(notaId) {
   const [mensagens, setMensagens] = useState(() => {
-    // Lazy initialization — evita setState síncrono em useEffect
     if (typeof window === "undefined") return [];
     const storageKey = notaId ? `${CHAT_KEY_PREFIX}${notaId}` : `${CHAT_KEY_PREFIX}livre`;
-    const stored = localStorage.getItem(storageKey);
-    if (stored) {
-      try {
+    try {
+      const stored = localStorage.getItem(storageKey);
+      if (stored) {
         return JSON.parse(stored);
-      } catch {
-        return [];
       }
+    } catch {
+      return [];
     }
     return [];
   });
@@ -49,24 +48,31 @@ export function useAIChat(notaId) {
   const [loading, setLoading] = useState(false);
   const storageKey = notaId ? `${CHAT_KEY_PREFIX}${notaId}` : `${CHAT_KEY_PREFIX}livre`;
 
-  // Sincroniza com localStorage se a notaId mudar
+  // Sincroniza com secureStorage se a notaId mudar
   useLayoutEffect(() => {
-    const stored = localStorage.getItem(storageKey);
-    if (stored) {
+    (async () => {
       try {
-        setMensagens(JSON.parse(stored));
+        const decrypted = await secureStorage.getItem(storageKey);
+        if (decrypted) {
+          setMensagens(decrypted);
+        } else {
+          setMensagens([]);
+        }
       } catch {
         setMensagens([]);
       }
-    } else {
-      setMensagens([]);
-    }
+    })();
   }, [storageKey]);
 
   const persistir = useCallback(
-    (msgs) => {
+    async (msgs) => {
       const trimmed = msgs.slice(-40);
-      localStorage.setItem(storageKey, JSON.stringify(trimmed));
+      try {
+        await secureStorage.setItem(storageKey, trimmed);
+      } catch (error) {
+        console.warn("[AIChat] Falha ao persistir mensagens criptografadas, fallback para localStorage:", error);
+        localStorage.setItem(storageKey, JSON.stringify(trimmed));
+      }
       setMensagens(trimmed);
     },
     [storageKey]
@@ -83,10 +89,15 @@ export function useAIChat(notaId) {
     [persistir]
   );
 
-  const limpar = useCallback(() => {
-    localStorage.removeItem(storageKey);
+  const limpar = useCallback(async () => {
+    try {
+      await secureStorage.removeItem(storageKey);
+    } catch {
+      localStorage.removeItem(storageKey);
+    }
     setMensagens([]);
   }, [storageKey]);
 
   return { mensagens, adicionar, limpar, loading, setLoading };
 }
+

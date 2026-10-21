@@ -1,20 +1,21 @@
-import { ipcMain } from 'electron';
-import { getDB } from '../../db/database.js';
-import { calculateNextReview } from '../../../app/src/hooks/sm2.js';
+import { ipcMain } from "electron";
+import { getDB } from "../../db/database.js";
+import { calculateNextReview } from "../../../app/src/hooks/sm2.js";
+import { createErrorResponse, createSuccessResponse } from "../utils/errorResponse.js";
 
 export function registerFlashcardsHandlers() {
-  // MatÃ©rias
-  ipcMain.handle('db-materias:getAll', () => {
+  // Matérias
+  ipcMain.handle("db-materias:getAll", () => {
     try {
       const db = getDB();
-      return db.prepare('SELECT * FROM materias ORDER BY nome ASC').all();
+      return createSuccessResponse(db.prepare("SELECT * FROM materias ORDER BY nome ASC").all());
     } catch (error) {
-      console.error('[DB] Erro ao buscar materias:', error);
-      throw error;
+      console.error("[DB] Erro ao buscar materias:", error);
+      return createErrorResponse(error);
     }
   });
 
-  ipcMain.handle('db-materias:create', (event, materia) => {
+  ipcMain.handle("db-materias:create", (event, materia) => {
     try {
       const db = getDB();
       const stmt = db.prepare(`
@@ -25,35 +26,35 @@ export function registerFlashcardsHandlers() {
       stmt.run(
         materia.id,
         materia.nome,
-        materia.cor || '#6C63FF',
-        materia.icone || 'book',
+        materia.cor || "#6C63FF",
+        materia.icone || "book",
         materia.meta_horas || 0
       );
 
-      return materia;
+      return createSuccessResponse(materia);
     } catch (error) {
-      console.error('[DB] Erro ao criar materia:', error);
-      throw error;
+      console.error("[DB] Erro ao criar materia:", error);
+      return createErrorResponse(error);
     }
   });
 
-  // SessÃµes de Estudo
-  ipcMain.handle('db-sessoes:getAll', () => {
+  // Sessões de Estudo
+  ipcMain.handle("db-sessoes:getAll", () => {
     try {
       const db = getDB();
-      return db.prepare(`
+      return createSuccessResponse(db.prepare(`
         SELECT s.*, m.nome as materia_nome, m.cor as materia_cor
         FROM sessoes_estudo s
         LEFT JOIN materias m ON s.materia_id = m.id
         ORDER BY s.criado_em DESC
-      `).all();
+      `).all());
     } catch (error) {
-      console.error('[DB] Erro ao buscar sessoes:', error);
-      throw error;
+      console.error("[DB] Erro ao buscar sessoes:", error);
+      return createErrorResponse(error);
     }
   });
 
-  ipcMain.handle('db-sessoes:create', (event, sessao) => {
+  ipcMain.handle("db-sessoes:create", (event, sessao) => {
     try {
       const db = getDB();
       const stmt = db.prepare(`
@@ -64,21 +65,21 @@ export function registerFlashcardsHandlers() {
       stmt.run(
         sessao.id,
         sessao.materia_id || null,
-        sessao.tipo || 'pomodoro',
+        sessao.tipo || "pomodoro",
         sessao.duracao_minutos || 25,
         sessao.concluida ? 1 : 0,
         sessao.started_at || new Date().toISOString(),
         sessao.ended_at || null
       );
 
-      return sessao;
+      return createSuccessResponse(sessao);
     } catch (error) {
-      console.error('[DB] Erro ao criar sessao:', error);
-      throw error;
+      console.error("[DB] Erro ao criar sessao:", error);
+      return createErrorResponse(error);
     }
   });
 
-  ipcMain.handle('db-sessoes:completar', (event, id) => {
+  ipcMain.handle("db-sessoes:completar", (event, id) => {
     try {
       const db = getDB();
       const stmt = db.prepare(`
@@ -88,46 +89,46 @@ export function registerFlashcardsHandlers() {
       `);
 
       const result = stmt.run(id);
-      return result.changes > 0;
+      return createSuccessResponse({ success: result.changes > 0 });
     } catch (error) {
-      console.error('[DB] Erro ao completar sessao:', error);
-      throw error;
+      console.error("[DB] Erro ao completar sessao:", error);
+      return createErrorResponse(error);
     }
   });
 
   // Flashcards
-  ipcMain.handle('db-flashcards:getAll', () => {
+  ipcMain.handle("db-flashcards:getAll", () => {
     try {
       const db = getDB();
-      return db.prepare(`
+      return createSuccessResponse(db.prepare(`
         SELECT f.*, m.nome as materia_nome, m.cor as materia_cor
         FROM flashcards f
         LEFT JOIN materias m ON f.materia_id = m.id
         ORDER BY f.criado_em DESC
-      `).all();
+      `).all());
     } catch (error) {
-      console.error('[DB] Erro ao buscar flashcards:', error);
-      throw error;
+      console.error("[DB] Erro ao buscar flashcards:", error);
+      return createErrorResponse(error);
     }
   });
 
-  ipcMain.handle('db-flashcards:getParaRevisao', () => {
+  ipcMain.handle("db-flashcards:getParaRevisao", () => {
     try {
       const db = getDB();
-      return db.prepare(`
+      return createSuccessResponse(db.prepare(`
         SELECT f.*, m.nome as materia_nome, m.cor as materia_cor
         FROM flashcards f
         LEFT JOIN materias m ON f.materia_id = m.id
-        WHERE f.next_review IS NULL OR f.next_review <= datetime('now', 'localtime')
+        WHERE f.next_review IS NULL OR f.next_review <= datetime("now", "localtime")
         ORDER BY f.next_review ASC
-      `).all();
+      `).all());
     } catch (error) {
-      console.error('[DB] Erro ao buscar flashcards para revisao:', error);
-      throw error;
+      console.error("[DB] Erro ao buscar flashcards para revisao:", error);
+      return createErrorResponse(error);
     }
   });
 
-  ipcMain.handle('db-flashcards:create', (event, card) => {
+  ipcMain.handle("db-flashcards:create", (event, card) => {
     try {
       const db = getDB();
       const stmt = db.prepare(`
@@ -147,19 +148,19 @@ export function registerFlashcardsHandlers() {
         card.next_review || null
       );
 
-      return card;
+      return createSuccessResponse(card);
     } catch (error) {
-      console.error('[DB] Erro ao criar flashcard:', error);
-      throw error;
+      console.error("[DB] Erro ao criar flashcard:", error);
+      return createErrorResponse(error);
     }
   });
 
-  // I2: Usa mÃ³dulo puro sm2.js
-  ipcMain.handle('db-flashcards:revisar', (event, { id, qualidade }) => {
+  // I2: Usa módulo puro sm2.js
+  ipcMain.handle("db-flashcards:revisar", (event, { id, qualidade }) => {
     try {
       const db = getDB();
-      const row = db.prepare('SELECT * FROM flashcards WHERE id = ?').get(id);
-      if (!row) return false;
+      const row = db.prepare("SELECT * FROM flashcards WHERE id = ?").get(id);
+      if (!row) return createSuccessResponse(false);
 
       const calc = calculateNextReview(row, qualidade);
 
@@ -184,21 +185,21 @@ export function registerFlashcardsHandlers() {
         id
       );
 
-      return info.changes > 0;
+      return createSuccessResponse({ success: info.changes > 0 });
     } catch (error) {
-      console.error('[DB] Erro ao revisar flashcard:', error);
-      throw error;
+      console.error("[DB] Erro ao revisar flashcard:", error);
+      return createErrorResponse(error);
     }
   });
 
-  ipcMain.handle('db-flashcards:update', (event, { id, updates }) => {
+  ipcMain.handle("db-flashcards:update", (event, { id, updates }) => {
     try {
       const db = getDB();
       const fields = [];
       const values = [];
 
       Object.entries(updates).forEach(([key, value]) => {
-        if (key !== 'id') {
+        if (key !== "id") {
           fields.push(`${key} = ?`);
           values.push(value);
         }
@@ -208,27 +209,28 @@ export function registerFlashcardsHandlers() {
 
       const stmt = db.prepare(`
         UPDATE flashcards
-        SET ${fields.join(', ')}
+        SET ${fields.join(", ")}
         WHERE id = ?
       `);
 
       const result = stmt.run(...values);
-      return result.changes > 0;
+      return createSuccessResponse({ success: result.changes > 0 });
     } catch (error) {
-      console.error('[DB] Erro ao atualizar flashcard:', error);
-      throw error;
+      console.error("[DB] Erro ao atualizar flashcard:", error);
+      return createErrorResponse(error);
     }
   });
 
-  ipcMain.handle('db-flashcards:delete', (event, id) => {
+  ipcMain.handle("db-flashcards:delete", (event, id) => {
     try {
       const db = getDB();
-      const stmt = db.prepare('DELETE FROM flashcards WHERE id = ?');
+      const stmt = db.prepare("DELETE FROM flashcards WHERE id = ?");
       const result = stmt.run(id);
-      return result.changes > 0;
+      return createSuccessResponse({ success: result.changes > 0 });
     } catch (error) {
-      console.error('[DB] Erro ao deletar flashcard:', error);
-      throw error;
+      console.error("[DB] Erro ao deletar flashcard:", error);
+      return createErrorResponse(error);
     }
   });
 }
+
