@@ -301,6 +301,9 @@ export async function runEmbeddedInference({ modelPath, messages = [], options =
       meta = await session.promptWithMeta(lastMessage, {
         ...promptOptions,
         signal: abortController.signal,
+        onTextChunk: options.onChunk
+          ? (chunk) => options.onChunk(chunk)
+          : undefined,
       });
     } finally {
       clearTimeout(timeoutHandle);
@@ -346,7 +349,7 @@ export function registerAiHandlers() {
     warmupEmbeddedModel();
   }, 1500);
 
-  // Embedded LLM (node-llama-cpp) com Rate Limiting
+  // Embedded LLM (node-llama-cpp) com Rate Limiting e Streaming
   ipcMain.handle("ai:embeddedChat", async (event, payload) => {
     // Rate limit por session (senderFrameId) ou IP se disponível
     const key = event.senderFrameId || "default";
@@ -359,6 +362,13 @@ export function registerAiHandlers() {
         code: "ERR-AI-429",
         details: `Tente novamente em ${Math.ceil(rateLimit.retryAfterMs / 1000)}s`,
         retryAfterMs: rateLimit.retryAfterMs,
+      };
+    }
+
+    const streamChannel = payload?.options?.streamChannel;
+    if (streamChannel && event.sender) {
+      payload.options.onChunk = (chunk) => {
+        event.sender.send(streamChannel, { chunk });
       };
     }
 
