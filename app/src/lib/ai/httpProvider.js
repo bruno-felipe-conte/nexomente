@@ -18,6 +18,7 @@ export const httpProvider = {
       const data = await res.json();
       const models = Array.isArray(data.data) ? data.data.map(m => m.id) : ['default'];
       return {
+        status: 'online',
         available: true,
         provider: 'http',
         models,
@@ -25,6 +26,7 @@ export const httpProvider = {
       };
     } catch (e) {
       return {
+        status: 'offline',
         available: false,
         provider: 'http',
         error: e.message,

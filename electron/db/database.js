@@ -1,5 +1,10 @@
 import { app } from 'electron';
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+import { runMigrations } from './migrator.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 let db = null;
 
@@ -139,6 +144,14 @@ export async function initDB() {
     }
 
     console.log('[DATABASE] SQLite nativo inicializado com sucesso em:', dbPath);
+
+    // I4 & E2: Executa migrações versionadas de schema SQLite (001, 002, 003...)
+    try {
+      const migrationsDir = join(__dirname, 'migrations');
+      runMigrations(db, migrationsDir);
+    } catch (migErr) {
+      console.warn('[DATABASE] Aviso ao aplicar migrações:', migErr.message);
+    }
 
     // Agenda backup automático diário
     import('./backupService.js').then(({ performDatabaseBackup }) => {

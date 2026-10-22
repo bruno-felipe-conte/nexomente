@@ -1,8 +1,9 @@
 import { useState, useCallback } from 'react';
 import { useDBStore } from '../store/useDBStore';
+import { LocalStorageAdapter } from '../lib/storage/localAdapter';
 
-const STORAGE_KEY = 'nexomente_notas';
-const PASTAS_KEY = 'nexomente_pastas';
+const notasStorage = new LocalStorageAdapter('notas', []);
+const pastasStorage = new LocalStorageAdapter('pastas', []);
 
 function generateId() {
   return `nota_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
@@ -10,13 +11,7 @@ function generateId() {
 
 export function useNotes() {
   const { Notas, loading: dbLoading, db } = useDBStore();
-  const [localNotas, setLocalNotas] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-    } catch {
-      return [];
-    }
-  });
+  const [localNotas, setLocalNotas] = useState(() => notasStorage.getAll());
 
   const isDBReady = Boolean(Notas && !dbLoading && db && typeof Notas.getAll === 'function');
   const notas = isDBReady ? (Notas.getAll() || []) : localNotas;
@@ -25,7 +20,7 @@ export function useNotes() {
   const persistLocal = useCallback((updater) => {
     setLocalNotas(prev => {
       const updated = typeof updater === 'function' ? updater(prev) : updater;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      notasStorage.saveAll(updated);
       return updated;
     });
   }, []);
@@ -80,12 +75,11 @@ export function useNotes() {
     if (isDBReady) {
       return Notas.getById(id);
     }
-    const current = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-    return current.find(n => n.id === id) || null;
+    return notasStorage.getById(id);
   }, [isDBReady, Notas]);
 
   const search = useCallback((query) => {
-    const list = isDBReady ? (Notas.getAll() || []) : JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    const list = isDBReady ? (Notas.getAll() || []) : notasStorage.getAll();
     if (!query) return list;
     const q = query.toLowerCase();
     return list.filter(n =>
@@ -126,13 +120,7 @@ export function useNotes() {
 
 export function usePastas() {
   const { Pastas, loading: dbLoading, db } = useDBStore();
-  const [localPastas, setLocalPastas] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem(PASTAS_KEY) || '[]');
-    } catch {
-      return [];
-    }
-  });
+  const [localPastas, setLocalPastas] = useState(() => pastasStorage.getAll());
 
   const isDBReady = Boolean(Pastas && !dbLoading && db && typeof Pastas.getAll === 'function');
   const pastas = isDBReady ? (Pastas.getAll() || []) : localPastas;
@@ -155,7 +143,7 @@ export function usePastas() {
     };
     setLocalPastas(prev => {
       const updated = [...prev, nova];
-      localStorage.setItem(PASTAS_KEY, JSON.stringify(updated));
+      pastasStorage.saveAll(updated);
       return updated;
     });
     return id;

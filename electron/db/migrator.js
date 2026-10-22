@@ -38,7 +38,20 @@ export function runMigrations(db, migrationsDir) {
       const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
       
       const runTransaction = db.transaction(() => {
-        db.exec(sql);
+        const statements = sql
+          .split(';')
+          .map(s => s.trim())
+          .filter(s => s.length > 0 && !s.startsWith('--'));
+
+        for (const stmt of statements) {
+          try {
+            db.exec(stmt + ';');
+          } catch (err) {
+            if (!String(err.message).includes('duplicate column name')) {
+              throw err;
+            }
+          }
+        }
         db.prepare('INSERT INTO schema_migrations (version, name) VALUES (?, ?)').run(version, name);
       });
 
