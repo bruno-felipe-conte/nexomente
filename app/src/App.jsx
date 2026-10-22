@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @module App
  * @description Ponto de entrada do frontend do NexoMente.
  * Responsável por orquestrar o layout principal (Sidebar + Header + Main),

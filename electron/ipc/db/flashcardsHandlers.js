@@ -4,7 +4,7 @@ import { calculateNextReview } from "../../../app/src/hooks/sm2.js";
 import { createErrorResponse, createSuccessResponse } from "../utils/errorResponse.js";
 
 export function registerFlashcardsHandlers() {
-  // Matérias
+  // MatÃ©rias
   ipcMain.handle("db-materias:getAll", () => {
     try {
       const db = getDB();
@@ -38,7 +38,7 @@ export function registerFlashcardsHandlers() {
     }
   });
 
-  // Sessões de Estudo
+  // SessÃµes de Estudo
   ipcMain.handle("db-sessoes:getAll", () => {
     try {
       const db = getDB();
@@ -155,7 +155,7 @@ export function registerFlashcardsHandlers() {
     }
   });
 
-  // I2: Usa módulo puro sm2.js
+  // I2: Usa mÃ³dulo puro sm2.js
   ipcMain.handle("db-flashcards:revisar", (event, { id, qualidade }) => {
     try {
       const db = getDB();

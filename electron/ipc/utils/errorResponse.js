@@ -1,7 +1,7 @@
 
 /**
- * Utilit·rio padronizado para respostas de erro IPC.
- * Formato canÙnico: { success: false, error: { code, message, details?, stack? } }
+ * Utilit√°rio padronizado para respostas de erro IPC.
+ * Formato can√¥nico: { success: false, error: { code, message, details?, stack? } }
  */
 
 export const ErrorCodes = {
@@ -35,7 +35,7 @@ export const ErrorCodes = {
 function mapErrorToCode(error) {
   const message = error?.message || String(error);
   
-  if (message.includes("not found") || message.includes("n„o encontrado")) {
+  if (message.includes("not found") || message.includes("n√£o encontrado")) {
     return ErrorCodes.DB_NOT_FOUND;
   }
   if (message.includes("constraint") || message.includes("UNIQUE constraint")) {
@@ -56,7 +56,7 @@ function mapErrorToCode(error) {
   if (message.includes("Rate limit")) {
     return ErrorCodes.AI_RATE_LIMIT;
   }
-  if (message.includes("Invalid") || message.includes("inv·lid")) {
+  if (message.includes("Invalid") || message.includes("inv√°lid")) {
     return ErrorCodes.SYS_INVALID_INPUT;
   }
   
@@ -88,6 +88,18 @@ export function createErrorResponse(error, customCode = null, details = null, in
 }
 
 export function createSuccessResponse(data) {
+  if (Array.isArray(data)) {
+    return {
+      success: true,
+      data,
+    };
+  }
+  if (data === null || typeof data !== "object") {
+    return {
+      success: true,
+      data,
+    };
+  }
   return {
     success: true,
     ...data,

@@ -1,5 +1,5 @@
 /**
- * embeddedService.js ó Provedor de IA embutido usando node-llama-cpp.
+ * embeddedService.js ‚Äî Provedor de IA embutido usando node-llama-cpp.
  * Carrega modelos GGUF locais diretamente no processo do Electron ou via bridge local do Vite.
  */
 
@@ -19,18 +19,18 @@ export const getModelPath = () => {
 };
 
 function extractErrorMessage(res) {
-  if (!res?.error) return "O motor interno de IA n„o respondeu.";
-  // Novo formato canÙnico: { error: { code, message, details?, stack? } }
+  if (!res?.error) return "O motor interno de IA n√£o respondeu.";
+  // Novo formato can√¥nico: { error: { code, message, details?, stack? } }
   if (typeof res.error === "object" && res.error.message) {
     return res.error.message;
   }
-  // Formato legado: error È string
+  // Formato legado: error √© string
   return String(res.error);
 }
 
 function extractErrorCode(res) {
   if (!res?.error) return "ERR-AI-500";
-  // Novo formato canÙnico
+  // Novo formato can√¥nico
   if (typeof res.error === "object" && res.error.code) {
     return res.error.code;
   }
@@ -85,7 +85,7 @@ export async function chat(messages, options = {}) {
     return {
       success: false,
       code: "ERR-IPC-500",
-      error: `Erro de conex„o com o motor interno: ${error.message}`
+      error: `Erro de conex√£o com o motor interno: ${error.message}`
     };
   }
 }

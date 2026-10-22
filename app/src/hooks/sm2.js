@@ -12,7 +12,7 @@ export {
   isDominado,
   previewIntervalo,
   parseCloze,
-} from '@features/flashcards/domain/ankiSrsEngine';
+} from '../features/flashcards/domain/ankiSrsEngine.js';
 
 export function calculateNextReview(card, qualidade) {
   let ef = Number(card.ease_factor || 2.5);

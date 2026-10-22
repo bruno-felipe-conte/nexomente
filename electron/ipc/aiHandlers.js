@@ -28,7 +28,7 @@ export const DEFAULT_GEMMA_FILE = path.join(DEFAULT_GEMMA_DIR, "gemma-4-E2B-it-Q
 
 /**
  * Token Bucket Rate Limiter para ai:embeddedChat
- * Permite at? 3 requisi?es por segundo com burst de 5
+ * Permite até 3 requisições por segundo com burst de 5
  */
 class RateLimiter {
   constructor({ maxTokens = 5, refillRate = 3 } = {}) {
@@ -57,7 +57,7 @@ class RateLimiter {
     return { allowed: false, remaining: Math.floor(bucket.tokens), retryAfterMs: Math.ceil((cost - bucket.tokens) / this.refillRate * 1000) };
   }
 
-  // Limpeza peri?dica de buckets inativos
+  // Limpeza periódica de buckets inativos
   cleanup() {
     const now = Date.now();
     for (const [key, bucket] of this.buckets.entries()) {
@@ -149,9 +149,9 @@ export async function ensureEmbeddedEngineReady(requestedModelPath) {
 
   if (!finalModelPath || !fs.existsSync(finalModelPath)) {
     const partMsg = resolvedInfo.downloadingPartDetected
-      ? ` O arquivo "${path.basename(resolvedInfo.downloadingPartDetected)}" ainda est? incompleto (.part).`
+      ? ` O arquivo "${path.basename(resolvedInfo.downloadingPartDetected)}" ainda está incompleto (.part).`
       : "";
-    throw new Error(`Modelo GGUF n?o encontrado para o caminho "${requestedModelPath || DEFAULT_GEMMA_DIR}".${partMsg}`);
+    throw new Error(`Modelo GGUF não encontrado para o caminho "${requestedModelPath || DEFAULT_GEMMA_DIR}".${partMsg}`);
   }
 
   if (!modelInstance || currentModelPath !== finalModelPath) {
@@ -218,7 +218,7 @@ export async function ensureEmbeddedEngineReady(requestedModelPath) {
       if (persistentSequence.nextTokenIndex > 0) {
         await persistentSequence.eraseContextTokenRanges([{ start: 0, end: persistentSequence.nextTokenIndex }]);
       }
-      console.log("[AI ENGINE] Shaders GPU aquecidos e prontos para resposta instant?nea.");
+      console.log("[AI ENGINE] Shaders GPU aquecidos e prontos para resposta instantânea.");
     } catch (warmErr) {
       console.warn("[AI ENGINE] Aviso no aquecimento de shaders:", warmErr.message);
     }
@@ -290,11 +290,11 @@ export async function runEmbeddedInference({ modelPath, messages = [], options =
       }
     }
 
-    // C8: Timeout configur?vel com AbortSignal (default 30s)
+    // C8: Timeout configurável com AbortSignal (default 30s)
     const timeoutMs = Number(options.timeoutMs || process.env.AI_INFERENCE_TIMEOUT_MS) || 30000;
     const abortController = new AbortController();
     const timeoutHandle = setTimeout(() => {
-      abortController.abort(new Error("Timeout: modelo n?o respondeu no tempo limite de " + (timeoutMs / 1000) + "s"));
+      abortController.abort(new Error("Timeout: modelo não respondeu no tempo limite de " + (timeoutMs / 1000) + "s"));
     }, timeoutMs);
 
     let meta;
@@ -327,7 +327,7 @@ export async function runEmbeddedInference({ modelPath, messages = [], options =
   } catch (error) {
     console.error("[AI ENGINE] ERRO CRITICO:", error);
 
-    return createErrorResponse(error, null, "Consulte o manual para o c?digo de erro", isDev);
+    return createErrorResponse(error, null, "Consulte o manual para o código de erro", isDev);
   }
 }
 
@@ -338,7 +338,7 @@ export function registerAiHandlers() {
 
   // Embedded LLM (node-llama-cpp) com Rate Limiting e Streaming
   ipcMain.handle("ai:embeddedChat", async (event, payload) => {
-    // Rate limit por session (senderFrameId) ou IP se dispon?vel
+    // Rate limit por session (senderFrameId) ou IP se disponível
     const key = event.senderFrameId || "default";
     const rateLimit = rateLimiter.tryConsume(key);
     if (!rateLimit.allowed) {

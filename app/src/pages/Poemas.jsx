@@ -1,4 +1,4 @@
-﻿import { useState, useMemo, useEffect, useLayoutEffect, useCallback, useRef } from "react";
+import { useState, useMemo, useEffect, useLayoutEffect, useCallback, useRef } from "react";
 import {
   Mic,
   MicOff,

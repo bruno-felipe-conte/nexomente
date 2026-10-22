@@ -1,4 +1,4 @@
-﻿// src/hooks/useWhisper.js
+// src/hooks/useWhisper.js
 import { useState, useRef, useEffect, useCallback } from "react";
 
 export function useWhisper({ language = "portuguese", _onResult }) {
