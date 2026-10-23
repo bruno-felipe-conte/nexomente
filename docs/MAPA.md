@@ -207,6 +207,12 @@
 - **Usa**: `hook: useFlashcards`, `db-store`
 - **Afeta**: Previne classificações incorretas acidentais pelo teclado preservando o histórico SM-2.
 
+### NÓ: Importador Unificado de Conteúdo (Notas `.md` & Flashcards em Lote `frente;verso`)
+- **Arquivo**: `app/src/components/common/ImporterModal.jsx:1`
+- **Fluxo**: Acionado na barra superior de `Flashcards.jsx` ("Importar em Lote") ou no cabeçalho de `NotaLista.jsx` / `Notas.jsx` → aba **Importar Notas (.md)** lê arquivos locais `.md`/`.markdown` via `FileReader`, extrai o nome como título, converte Markdown para HTML compatível com TipTap (`markdownToTipTapHtml`) e persiste via `useNotes.create()` → aba **Importar Flashcards (frente;verso)** faz parsing linha a linha tolerante a múltiplos `;` no verso (`trimmed.indexOf(';')`), valida em tempo real (`cardStats.valid`/`invalid`) e cria cartões em lote via `useFlashcards.create()`.
+- **Usa**: `hook: useNotes`, `hook: useFlashcards`, `db-store`
+- **Afeta**: População rápida do Vault de Notas, do Grafo de Conhecimento, da fila FSRS e das curvas de retenção de Ebbinghaus.
+
 ### NÓ: Biblioteca Poética - Favoritar Poema
 - **Arquivo**: `app/src/components/poemas/PoemasListaTab.jsx:119`
 - **Fluxo**: Clique no ícone de estrela de um poema → alternância do ID no array de favoritos salvo em `localStorage('nexomente_poemas_favs')` → atualização reativa do filtro de favoritos no acervo.

@@ -14,6 +14,7 @@ import {
   Maximize2, Minimize2, Loader2, Info
 } from 'lucide-react';
 import { useNotes } from '../hooks/useNotes';
+import { useFlashcards } from '../hooks/useFlashcards';
 import { useNotaEditor } from '../hooks/useNotaEditor';
 import NotaLista from '../components/editor/NotaLista';
 import EditorToolbar from '../components/editor/EditorToolbar';
@@ -22,11 +23,14 @@ import TagInput from '../components/editor/TagInput';
 import FlashcardApproveModal from '../components/editor/FlashcardApproveModal';
 import TagPickerModal from '../components/editor/TagPickerModal';
 import EditorContextMenus from '../components/editor/EditorContextMenus';
+import ImporterModal from '../components/common/ImporterModal';
 import { getModel } from '../lib/ai/aiProvider';
 import { useUIStore } from '../store/useUIStore';
+import toast from 'react-hot-toast';
 
 export default function NotasPage() {
   const { notas, create, update, remove, search, getById, addTag, removeTag } = useNotes();
+  const { create: createCard } = useFlashcards();
 
   const [categoriaAtiva, setCategoriaAtiva] = useState('pasta_raiz');
   const [notaSelecionada, setNotaSelecionada] = useState(null);
@@ -34,6 +38,7 @@ export default function NotasPage() {
   const [busca, setBusca] = useState('');
   const [focoMode, setFocoMode] = useState(false);
   const [mostrandoMeta, setMostrandoMeta] = useState(false);
+  const [showImporter, setShowImporter] = useState(false);
 
   const {
     editor,
@@ -190,6 +195,7 @@ export default function NotasPage() {
               setEditando(true);
             }}
             onCriar={() => criarNota()}
+            onImport={() => setShowImporter(true)}
           />
         </div>
       )}
@@ -409,6 +415,52 @@ export default function NotasPage() {
           notaTitulo={notaSelecionada?.titulo}
         />
       )}
+      <ImporterModal
+        isOpen={showImporter}
+        onClose={() => setShowImporter(false)}
+        initialTab="notes"
+        onImportNotes={(parsedNotes) => {
+          let lastCreated = null;
+          const tipo = categoriaAtiva && categoriaAtiva !== 'pasta_raiz' ? categoriaAtiva : 'nota';
+          const pasta_id = categoriaAtiva || 'pasta_raiz';
+          parsedNotes.forEach((n) => {
+            const html = n.htmlContent || n.content || '';
+            const id = create({
+              titulo: n.title || 'Nota Importada',
+              conteudo: html,
+              tipo,
+              pasta_id,
+              status: tipo === 'inbox' ? 'inbox' : 'ativo',
+            });
+            lastCreated = getById(id) || {
+              id,
+              titulo: n.title || 'Nota Importada',
+              conteudo: html,
+              tipo,
+              pasta_id,
+              tags: [],
+            };
+          });
+          if (lastCreated) {
+            setNotaSelecionada(lastCreated);
+            setEditando(true);
+          }
+          toast.success(`${parsedNotes.length} nota(s) Markdown importada(s) no Vault!`);
+          setShowImporter(false);
+        }}
+        onImportCards={(validCards) => {
+          validCards.forEach((c) => {
+            createCard({
+              frente: c.front,
+              verso: c.back,
+              materia_id: (c.deck || 'geral').toLowerCase(),
+              nota_id: notaSelecionada?.id || null,
+            });
+          });
+          toast.success(`${validCards.length} flashcard(s) importado(s) com sucesso!`);
+          setShowImporter(false);
+        }}
+      />
     </div>
   );
 }

@@ -19,22 +19,30 @@ import {
   Brain,
   Layers,
   TrendingUp,
+  UploadCloud,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useFlashcards } from '../hooks/useFlashcards';
+import { useNotes } from '../hooks/useNotes';
 import { useGerador } from '../hooks/useGerador';
 import { useMaterias } from '../hooks/useMaterias';
 import { extrairTextoDePDF } from '../lib/parser';
 import GeradorForjaTab from '../components/gerador/GeradorForjaTab';
 import { useTranslation } from '../lib/i18n';
 import FlashcardViewer from '../components/flashcards/FlashcardViewer';
+import ImporterModal from '../components/common/ImporterModal';
+import ankiSRS from '../features/flashcards/domain/ankiSrsEngine';
+import { useFSRSConfigStore } from '../store/useFSRSConfigStore';
 import toast from 'react-hot-toast';
 
 
 
 export default function FlashcardsPage() {
   const { cards, create, update, remove, revisar, getParaRevisao, stats } = useFlashcards();
+  const { create: createNote } = useNotes();
   const { t } = useTranslation();
+  const desiredRetention = useFSRSConfigStore((s) => s.desiredRetention) || 0.90;
+  const [showImporter, setShowImporter] = useState(false);
 
   const [modo, setModo] = useState(() => {
     const pedido = sessionStorage.getItem('nexomente_flashcards_tab');
@@ -53,6 +61,19 @@ export default function FlashcardsPage() {
   const [cardAtual, setCardAtual] = useState(() => (paraRevisao.length > 0 ? paraRevisao[0] : null));
   const [mostrandoFrente, setMostrandoFrente] = useState(true);
   const [idxRevisao, setIdxRevisao] = useState(0);
+  const [revisadosSessao, setRevisadosSessao] = useState(0);
+
+  // Sincroniza cardAtual quando novos cards são criados ou a fila muda
+  useEffect(() => {
+    if (modo !== 'revisao') return;
+    if (!cardAtual && paraRevisao.length > 0) {
+      setCardAtual(paraRevisao[0]);
+      setIdxRevisao(0);
+      setMostrandoFrente(true);
+    } else if (cardAtual && !cards.some((c) => c.id === cardAtual.id)) {
+      setCardAtual(paraRevisao[0] || null);
+    }
+  }, [cards, paraRevisao, cardAtual, modo]);
 
   const [showCriar, setShowCriar] = useState(false);
   const [novaFrente, setNovaFrente] = useState('');
@@ -222,6 +243,7 @@ export default function FlashcardsPage() {
     setUndoCard({ ...cards.find((c) => c.id === cardAtual.id), _q: qualidade });
     setUndoCountdown(5);
     revisar(cardAtual.id, qualidade);
+    setRevisadosSessao((r) => r + 1);
     avancar();
   };
 
@@ -255,9 +277,93 @@ export default function FlashcardsPage() {
     return true;
   });
 
-  const totalSessao = Math.max(1, paraRevisao.length || stats.total || 25);
-  const atualSessao = Math.min(totalSessao, idxRevisao + 1);
-  const pctSessao = Math.min(100, Math.round((atualSessao / totalSessao) * 100));
+  const totalSessao = revisadosSessao + paraRevisao.length;
+  const atualSessao = revisadosSessao;
+  const pctSessao = totalSessao > 0 ? Math.min(100, Math.round((atualSessao / totalSessao) * 100)) : 0;
+
+  // Cálculo matemático 100% real da Curva de Esquecimento de Ebbinghaus / FSRS
+  const ebbinghausData = useMemo(() => {
+    const retentionTarget = Math.max(0.70, Math.min(0.98, Number(desiredRetention) || 0.90));
+    const targetPct = Math.round(retentionTarget * 100);
+    const yFromRetention = (r) => {
+      const clamped = Math.max(0.58, Math.min(1.0, r));
+      return Number((20 + ((1.0 - clamped) / 0.40) * 125).toFixed(1));
+    };
+    const targetY = yFromRetention(retentionTarget);
+
+    if (cards.length === 0) {
+      return {
+        hasData: false,
+        targetPct,
+        targetY,
+        sAtual: 0,
+        sBom: 0,
+        pathAtual: '',
+        pathBom: '',
+        pointAtual: null,
+        pointBom: null,
+        sourceLabel: 'Sem cards cadastrados',
+      };
+    }
+
+    let sAtual = 1;
+    let sBom = 2.5;
+    let sourceLabel = 'Média do baralho';
+
+    if (cardAtual) {
+      sAtual = Number(cardAtual.intervalo) > 0 ? Number(cardAtual.intervalo) : 1;
+      const simBom = ankiSRS(cardAtual, 3);
+      const ef = Number(cardAtual.ease_factor ?? cardAtual.ef ?? 2.5);
+      sBom = Number(simBom.intervalo) > sAtual
+        ? Number(simBom.intervalo)
+        : Number(Math.max(sAtual + 1, sAtual * ef).toFixed(1));
+      sourceLabel = 'Card em foco';
+    } else {
+      const sumS = cards.reduce((acc, c) => acc + (Number(c.intervalo) > 0 ? Number(c.intervalo) : 1), 0);
+      const sumEf = cards.reduce((acc, c) => acc + Number(c.ease_factor ?? c.ef ?? 2.5), 0);
+      sAtual = Number((sumS / cards.length).toFixed(1));
+      const avgEf = sumEf / cards.length;
+      sBom = Number(Math.max(sAtual + 1, sAtual * avgEf).toFixed(1));
+    }
+
+    const tMax = Math.max(5, sBom * 1.22);
+    const xStart = 38;
+    const xEnd = 355;
+    const xSpan = xEnd - xStart;
+    const xFromT = (t) => Number((xStart + Math.min(1, t / tMax) * xSpan).toFixed(1));
+
+    // Decaimento exponencial calibrado para R(S, S) = retentionTarget
+    const retentionAt = (t, s) => Math.pow(retentionTarget, t / Math.max(0.2, s));
+
+    const steps = 28;
+    const buildPath = (s) => {
+      const pts = [];
+      for (let i = 0; i <= steps; i++) {
+        const t = (tMax * i) / steps;
+        const x = xFromT(t);
+        const y = yFromRetention(retentionAt(t, s));
+        pts.push(`${i === 0 ? 'M' : 'L'} ${x} ${y}`);
+      }
+      return pts.join(' ');
+    };
+
+    const formatDays = (d) => (Number.isInteger(d) ? `${d}d` : `${d.toFixed(1)}d`);
+
+    return {
+      hasData: true,
+      targetPct,
+      targetY,
+      sAtual,
+      sBom,
+      sAtualLabel: formatDays(sAtual),
+      sBomLabel: formatDays(sBom),
+      pathAtual: buildPath(sAtual),
+      pathBom: buildPath(sBom),
+      pointAtual: { x: xFromT(sAtual), y: targetY },
+      pointBom: { x: xFromT(sBom), y: targetY },
+      sourceLabel,
+    };
+  }, [cards, cardAtual, desiredRetention]);
 
   return (
     <div className="flex h-full bg-[#0A0B0F] text-[#EEF0F6]">
@@ -306,6 +412,14 @@ export default function FlashcardsPage() {
 
           <div className="flex items-center gap-2">
             <button
+              onClick={() => setShowImporter(true)}
+              className="px-3.5 py-2 bg-[#161923] hover:bg-[#1E2130] border border-white/[0.08] text-[#EEF0F6] rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5"
+              title="Importar Flashcards (frente;verso) ou Notas (.md)"
+            >
+              <UploadCloud size={14} className="text-[#38BDF8]" />
+              <span>Importar em Lote</span>
+            </button>
+            <button
               onClick={() => setShowCriar(!showCriar)}
               className="px-3.5 py-2 bg-[#5B7CF4] hover:bg-[#5B7CF4]/90 text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-md"
             >
@@ -314,6 +428,35 @@ export default function FlashcardsPage() {
             </button>
           </div>
         </div>
+
+        <ImporterModal
+          isOpen={showImporter}
+          onClose={() => setShowImporter(false)}
+          initialTab="flashcards"
+          onImportCards={(validCards) => {
+            validCards.forEach((c) => {
+              create({
+                frente: c.front,
+                verso: c.back,
+                materia_id: (c.deck || 'geral').toLowerCase(),
+              });
+            });
+            toast.success(`${validCards.length} flashcard(s) importado(s) com sucesso!`);
+            setShowImporter(false);
+          }}
+          onImportNotes={(parsedNotes) => {
+            parsedNotes.forEach((n) => {
+              createNote({
+                titulo: n.title,
+                conteudo: n.htmlContent || n.content,
+                tipo: 'nota',
+                pasta_id: 'pasta_raiz',
+              });
+            });
+            toast.success(`${parsedNotes.length} nota(s) Markdown importada(s)!`);
+            setShowImporter(false);
+          }}
+        />
 
         {/* Barra de Progresso da Sessão (Protótipo Tela 3) */}
         <div className="bg-[#161923] border border-white/[0.07] rounded-xl px-5 py-3.5 flex flex-wrap items-center justify-between gap-4">
@@ -331,13 +474,13 @@ export default function FlashcardsPage() {
 
           <div className="flex items-center gap-2 flex-wrap">
             <span className="px-2.5 py-1 rounded-md bg-[#38BDF8]/12 text-[#38BDF8] text-[11px] font-mono font-bold">
-              Novos: {stats.novos ?? 4}
+              Novos: {stats.novos ?? 0}
             </span>
             <span className="px-2.5 py-1 rounded-md bg-[#F59E0B]/12 text-[#F59E0B] text-[11px] font-mono font-bold">
-              Aprendendo: {stats.paraRevisar ?? 3}
+              Aprendendo: {stats.aprendendo ?? 0}
             </span>
             <span className="px-2.5 py-1 rounded-md bg-[#22C55E]/12 text-[#22C55E] text-[11px] font-mono font-bold">
-              Revisão: {stats.dominados ?? 18}
+              Revisão: {stats.devidos ?? 0}
             </span>
           </div>
         </div>
@@ -463,18 +606,23 @@ export default function FlashcardsPage() {
             <div className="xl:col-span-5 flex flex-col gap-5">
               {/* Card 1: Projeção da Curva de Esquecimento (Ebbinghaus) */}
               <div className="bg-[#161923] border border-white/[0.07] rounded-2xl p-6">
-                <div className="mb-3">
-                  <h3 className="text-base font-bold text-[#EEF0F6]">
-                    {t('flashcards.ebbinghaus_title')}
-                  </h3>
-                  <p className="text-xs text-[#9499B3] mt-0.5">
-                    {t('flashcards.ebbinghaus_sub')}
-                  </p>
+                <div className="mb-3 flex items-start justify-between gap-2">
+                  <div>
+                    <h3 className="text-base font-bold text-[#EEF0F6]">
+                      {t('flashcards.ebbinghaus_title')}
+                    </h3>
+                    <p className="text-xs text-[#9499B3] mt-0.5">
+                      {t('flashcards.ebbinghaus_sub')}
+                    </p>
+                  </div>
+                  <span className="px-2 py-0.5 rounded bg-[#10121A] border border-white/[0.07] text-[10px] font-mono text-[#9499B3]">
+                    {ebbinghausData.sourceLabel}
+                  </span>
                 </div>
 
                 <div className="bg-[#10121A] border border-white/[0.06] rounded-xl p-4">
                   <svg viewBox="0 0 380 175" className="w-full h-40 overflow-visible">
-                    {/* Eixos e Linha de Limiar 90% */}
+                    {/* Eixos e Linha de Limiar de Retenção Configurada */}
                     <line
                       x1="36"
                       y1="20"
@@ -485,9 +633,9 @@ export default function FlashcardsPage() {
                     />
                     <line
                       x1="36"
-                      y1="52"
+                      y1={ebbinghausData.targetY}
                       x2="360"
-                      y2="52"
+                      y2={ebbinghausData.targetY}
                       stroke="#F59E0B"
                       strokeWidth="1"
                       strokeDasharray="4 4"
@@ -504,52 +652,98 @@ export default function FlashcardsPage() {
                     <text x="4" y="24" fill="#9499B3" fontSize="9" fontFamily="monospace">
                       100%
                     </text>
-                    <text x="4" y="55" fill="#F59E0B" fontSize="9" fontFamily="monospace">
-                      90%
+                    <text x="4" y={ebbinghausData.targetY + 3} fill="#F59E0B" fontSize="9" fontFamily="monospace">
+                      {ebbinghausData.targetPct}%
                     </text>
                     <text x="8" y="148" fill="#5C6178" fontSize="9" fontFamily="monospace">
                       60%
                     </text>
 
-                    {/* Curva Atual (S = 14.2d) */}
-                    <path
-                      d="M 38 20 Q 105 48, 175 95 T 350 140"
-                      fill="none"
-                      stroke="#EF4444"
-                      strokeWidth="2"
-                      opacity="0.75"
-                    />
+                    {ebbinghausData.hasData ? (
+                      <>
+                        {/* Curva Atual (S = sAtual) */}
+                        <path
+                          d={ebbinghausData.pathAtual}
+                          fill="none"
+                          stroke="#EF4444"
+                          strokeWidth="2"
+                          opacity="0.8"
+                        />
 
-                    {/* Curva Pós-Revisão Bom (S = 39.8d) */}
-                    <path
-                      d="M 38 20 Q 160 28, 255 44 T 355 58"
-                      fill="none"
-                      stroke="#22C55E"
-                      strokeWidth="3"
-                    />
-                    <circle cx="38" cy="20" r="4" fill="#22C55E" />
-                    <circle cx="285" cy="52" r="4.5" fill="#38BDF8" />
+                        {/* Curva Pós-Revisão Bom (S = sBom) */}
+                        <path
+                          d={ebbinghausData.pathBom}
+                          fill="none"
+                          stroke="#22C55E"
+                          strokeWidth="3"
+                        />
+                        <circle cx="38" cy="20" r="4" fill="#22C55E" />
+                        {ebbinghausData.pointAtual && (
+                          <circle
+                            cx={ebbinghausData.pointAtual.x}
+                            cy={ebbinghausData.pointAtual.y}
+                            r="3.5"
+                            fill="#EF4444"
+                          />
+                        )}
+                        {ebbinghausData.pointBom && (
+                          <circle
+                            cx={ebbinghausData.pointBom.x}
+                            cy={ebbinghausData.pointBom.y}
+                            r="4.5"
+                            fill="#38BDF8"
+                          />
+                        )}
 
-                    {/* Rótulos eixo X */}
-                    <text x="36" y="164" fill="#5C6178" fontSize="9" fontFamily="monospace">
-                      Hoje
-                    </text>
-                    <text x="135" y="164" fill="#5C6178" fontSize="9" fontFamily="monospace">
-                      +14d (S atual)
-                    </text>
-                    <text x="260" y="164" fill="#22C55E" fontSize="9" fontFamily="monospace">
-                      +40d (Bom)
-                    </text>
+                        {/* Rótulos eixo X dinâmicos */}
+                        <text x="36" y="164" fill="#5C6178" fontSize="9" fontFamily="monospace">
+                          Hoje
+                        </text>
+                        <text
+                          x={Math.max(75, Math.min(200, (ebbinghausData.pointAtual?.x || 135) - 24))}
+                          y="164"
+                          fill="#5C6178"
+                          fontSize="9"
+                          fontFamily="monospace"
+                        >
+                          +{ebbinghausData.sAtualLabel} (S atual)
+                        </text>
+                        <text
+                          x={Math.max(205, Math.min(285, (ebbinghausData.pointBom?.x || 260) - 25))}
+                          y="164"
+                          fill="#22C55E"
+                          fontSize="9"
+                          fontFamily="monospace"
+                        >
+                          +{ebbinghausData.sBomLabel} (Bom)
+                        </text>
+                      </>
+                    ) : (
+                      <text
+                        x="198"
+                        y="92"
+                        textAnchor="middle"
+                        fill="#5C6178"
+                        fontSize="10"
+                        fontFamily="monospace"
+                      >
+                        Crie seu 1º card para calcular a curva real
+                      </text>
+                    )}
                   </svg>
 
                   <div className="flex items-center justify-between text-[11px] pt-2 border-t border-white/[0.05] mt-1">
                     <span className="flex items-center gap-1.5 text-[#EF4444]">
                       <span className="w-2 h-2 rounded-full bg-[#EF4444]" />
-                      Sem revisão (S=14d)
+                      {ebbinghausData.hasData
+                        ? `Sem revisão (S=${ebbinghausData.sAtualLabel})`
+                        : 'Sem revisão (S=0d)'}
                     </span>
                     <span className="flex items-center gap-1.5 text-[#22C55E] font-semibold">
                       <span className="w-2 h-2 rounded-full bg-[#22C55E]" />
-                      Após &apos;Bom&apos; (S=40d)
+                      {ebbinghausData.hasData
+                        ? `Após 'Bom' (S=${ebbinghausData.sBomLabel})`
+                        : "Após 'Bom' (S=0d)"}
                     </span>
                   </div>
                 </div>
@@ -565,7 +759,7 @@ export default function FlashcardsPage() {
                     </h3>
                   </div>
                   <span className="px-2.5 py-1 rounded-md bg-[#22C55E]/12 text-[#22C55E] text-[10px] font-bold font-mono">
-                    90% RETENÇÃO ALVO
+                    {ebbinghausData.targetPct}% RETENÇÃO ALVO
                   </span>
                 </div>
 

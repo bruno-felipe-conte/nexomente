@@ -2,7 +2,7 @@
  * Componente NotaLista — painel lateral em 2 colunas com busca, seletor de pastas estilo LLM e lista de notas.
  */
 import { useState, useCallback } from 'react';
-import { FileText, Plus, Search } from 'lucide-react';
+import { FileText, Plus, Search, UploadCloud } from 'lucide-react';
 import PropTypes from 'prop-types';
 import Input from '../ui/Input';
 import CategoriaSelector, { CATEGORIAS_VAULT } from './CategoriaSelector';
@@ -15,6 +15,7 @@ export default function NotaLista({
   onBuscaChange,
   onSelect,
   onCriar,
+  onImport,
   categoriaAtiva = 'pasta_raiz',
   onSelectCategoria
 }) {
@@ -61,6 +62,15 @@ export default function NotaLista({
               className="bg-bg-secondary/50 !border-white/5 !rounded-xl text-xs py-2"
             />
           </div>
+          {onImport && (
+            <button
+              onClick={onImport}
+              title="Importar arquivos Markdown (.md) ou Flashcards"
+              className="p-2.5 rounded-xl bg-bg-secondary/70 border border-white/10 text-text-hi hover:border-accent-main/60 transition-all shrink-0 cursor-pointer shadow-sm"
+            >
+              <UploadCloud size={16} />
+            </button>
+          )}
           <button
             onClick={() => onCriar(categoriaAtiva)}
             title={`Criar nova nota em "${catAtualObj.nome}"`}

@@ -176,69 +176,202 @@ export default function Dashboard() {
     setActiveTab('notes');
   };
 
-  // Métricas reais do banco + fallback para visualização do estado inicial
+  // Métricas 100% reais do banco de dados (sem valores fictícios)
   const dueCards = (getParaRevisao?.() || []).length;
   const totalCards = (cards || []).length;
   const reviewedToday = Math.max(0, totalCards - dueCards);
 
-  // Distribuição de maturidade FSRS
+  // Distribuição de maturidade FSRS real + geometria SVG dinâmica do Donut
   const maturity = useMemo(() => {
+    const circumference = 2 * Math.PI * 54; // ~339.292
     if (!cards || cards.length === 0) {
-      return { mature: 371, young: 154, learning: 77, newCards: 38, total: 640, retention: '94.2%' };
+      return {
+        mature: 0,
+        young: 0,
+        learning: 0,
+        newCards: 0,
+        total: 0,
+        retention: '0%',
+        segments: [],
+      };
     }
     let mature = 0;
     let young = 0;
     let learning = 0;
     let newCards = 0;
+    let retentionSum = 0;
+    let reviewedCount = 0;
+    const now = Date.now();
+
     cards.forEach((c) => {
       const ivl = Number(c.intervalo || 0);
       const reps = Number(c.repeticoes || 0);
-      if (reps === 0) newCards++;
-      else if (ivl > 21) mature++;
-      else if (ivl >= 4) young++;
-      else learning++;
+      if (reps === 0) {
+        newCards++;
+      } else {
+        reviewedCount++;
+        const s = Math.max(1, ivl);
+        const lastRev = c.updated_at ? new Date(c.updated_at).getTime() : now;
+        const elapsedDays = Math.max(0, (now - lastRev) / 86400000);
+        const r = Math.pow(0.9, elapsedDays / s);
+        retentionSum += r;
+
+        if (ivl > 21) mature++;
+        else if (ivl >= 4) young++;
+        else learning++;
+      }
     });
-    const tot = Math.max(1, cards.length);
-    const ret = Math.min(99.5, Math.max(82.0, 88 + (mature / tot) * 10)).toFixed(1);
-    return { mature, young, learning, newCards, total: tot, retention: `${ret}%` };
+
+    const tot = cards.length;
+    const avgRet = reviewedCount > 0 ? ((retentionSum / reviewedCount) * 100).toFixed(1) : '0.0';
+
+    const rawParts = [
+      { key: 'mature', val: mature, color: '#22C55E' },
+      { key: 'young', val: young, color: '#5B7CF4' },
+      { key: 'learning', val: learning, color: '#F59E0B' },
+      { key: 'new', val: newCards, color: '#38BDF8' },
+    ];
+
+    let offsetAcc = 0;
+    const segments = rawParts
+      .filter((p) => p.val > 0)
+      .map((p) => {
+        const len = (p.val / tot) * circumference;
+        const seg = {
+          key: p.key,
+          color: p.color,
+          strokeDasharray: `${len.toFixed(2)} ${circumference.toFixed(2)}`,
+          strokeDashoffset: (-offsetAcc).toFixed(2),
+        };
+        offsetAcc += len;
+        return seg;
+      });
+
+    return {
+      mature,
+      young,
+      learning,
+      newCards,
+      total: tot,
+      retention: reviewedCount > 0 ? `${avgRet}%` : '0%',
+      segments,
+    };
   }, [cards]);
 
-  const weeklyBars = [
-    { day: 'Seg', fsrs: 34, dojo: 18 },
-    { day: 'Ter', fsrs: 42, dojo: 26 },
-    { day: 'Qua', fsrs: 38, dojo: 22 },
-    { day: 'Qui', fsrs: 51, dojo: 35 },
-    { day: 'Sex', fsrs: 46, dojo: 30 },
-    { day: 'Sáb', fsrs: 56, dojo: 42 },
-    { day: 'Dom', fsrs: 49, dojo: 39 },
-  ];
+  // Agregação real dos últimos 7 dias para o gráfico de barras e sparklines
+  const { weeklyBars, maxWeeklyVal, focusSeries7d, notesSeries7d } = useMemo(() => {
+    const diasNomes = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    const hoje = new Date();
+    const bars = [];
+    const focus7d = [];
+    const notes7d = [];
+
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(hoje);
+      d.setDate(hoje.getDate() - i);
+      const dateStr = d.toISOString().slice(0, 10);
+      const dayLabel = diasNomes[d.getDay()];
+
+      const cardsDia = (cards || []).filter((c) => {
+        const dt = (c.updated_at || c.created_at || '').slice(0, 10);
+        return dt === dateStr && Number(c.repeticoes || 0) > 0;
+      }).length;
+
+      const sessoesDia = (sessoes || []).filter(
+        (s) => (s.started_at || '').slice(0, 10) === dateStr
+      );
+      const minutosDia = sessoesDia.reduce((acc, s) => acc + Number(s.duracao_minutos || 0), 0);
+
+      const recitacoesDia = poemasValidos.filter(
+        (p) => (p.ultima_recitacao || '').slice(0, 10) === dateStr
+      ).length;
+
+      const notasDia = (notas || []).filter((n) => {
+        const dt = (n.atualizado_em || n.criado_em || '').slice(0, 10);
+        return dt === dateStr;
+      }).length;
+
+      const notasAteDia = (notas || []).filter((n) => {
+        const dt = (n.criado_em || n.atualizado_em || '').slice(0, 10);
+        return !dt || dt <= dateStr;
+      }).length;
+
+      bars.push({
+        day: dayLabel,
+        dateStr,
+        fsrs: cardsDia + sessoesDia.length,
+        dojo: recitacoesDia + notasDia,
+      });
+      focus7d.push(minutosDia);
+      notes7d.push(notasAteDia);
+    }
+
+    const maxVal = Math.max(8, ...bars.flatMap((b) => [b.fsrs, b.dojo]));
+    const roundedMax = Math.ceil(maxVal / 4) * 4;
+    return {
+      weeklyBars: bars,
+      maxWeeklyVal: roundedMax,
+      focusSeries7d: focus7d,
+      notesSeries7d: notes7d,
+    };
+  }, [cards, sessoes, poemasValidos, notas]);
+
+  // Sinapses reais no Grafo (conexões [[wikilinks]] + tags compartilhadas)
+  const sinapsesReais = useMemo(() => {
+    if (!notas || notas.length === 0) return 0;
+    let links = 0;
+    notas.forEach((n) => {
+      const matches = (n.conteudo || '').match(/\[\[([^\]]+)\]\]/g);
+      if (matches) links += matches.length;
+    });
+    return links;
+  }, [notas]);
+
+  // Telemetria real do Dojo de Oratória
+  const dojoMetrics = useMemo(() => {
+    const totalStreaks = poemasValidos.reduce((acc, p) => acc + Number(p.streak_recitacao || 0), 0);
+    const savedAcc = Number(localStorage.getItem('nexomente_last_whisper_acc') || 0);
+    if (totalStreaks === 0 && savedAcc === 0) {
+      return {
+        value: '0%',
+        delta: 'Nenhuma recitação realizada',
+        series: [0, 0, 0, 0, 0, 0, 0],
+      };
+    }
+    const displayAcc = savedAcc > 0 ? `${savedAcc.toFixed(1)}%` : `${totalStreaks} recitações`;
+    return {
+      value: displayAcc,
+      delta: `${poemasValidos.length} ${poemasValidos.length === 1 ? 'poema no Dojo' : 'poemas no Dojo'}`,
+      series: weeklyBars.map((b) => b.dojo),
+    };
+  }, [poemasValidos, weeklyBars]);
 
   const kpiCards = [
     {
       id: 'fsrs',
       label: t('dash.kpi.fsrs'),
-      value: totalCards > 0 ? `${reviewedToday} / ${totalCards}` : '42 / 50',
-      delta: t('dash.kpi.fsrs.delta'),
+      value: `${reviewedToday} / ${totalCards}`,
+      delta: totalCards > 0 ? `${dueCards} pendente(s) hoje` : 'Nenhum card cadastrado',
       color: '#5B7CF4',
-      series: [18, 24, 22, 31, 29, 38, 42],
+      series: weeklyBars.map((b) => b.fsrs),
       onClick: () => setActiveTab('flashcards'),
     },
     {
       id: 'whisper',
       label: t('dash.kpi.whisper'),
-      value: '96.4%',
-      delta: t('dash.kpi.whisper.delta'),
+      value: dojoMetrics.value,
+      delta: dojoMetrics.delta,
       color: '#22C55E',
-      series: [88, 90, 89, 92, 94, 95, 96.4],
+      series: dojoMetrics.series,
       onClick: () => setActiveTab('poemas'),
     },
     {
       id: 'graph',
       label: t('dash.kpi.graph'),
-      value: notas.length > 0 ? String(notas.length) : '1.284',
-      delta: t('dash.kpi.graph.delta'),
+      value: String(notas.length),
+      delta: `${sinapsesReais} sinapse(s) • +${notasEstaSemana} na semana`,
       color: '#38BDF8',
-      series: [980, 1020, 1080, 1120, 1190, 1240, 1284],
+      series: notesSeries7d,
       onClick: () => setActiveTab('graph'),
     },
     {
@@ -247,7 +380,7 @@ export default function Dashboard() {
       value: `${minutosEsteMes} min`,
       delta: `Meta: 500 min (${Math.min(100, Math.round((minutosEsteMes / 500) * 100))}%)`,
       color: '#F59E0B',
-      series: [0, 0, 0, 0, 0, 0, 0].map((_, i, arr) => Math.round((minutosEsteMes * (i + 1)) / arr.length)),
+      series: focusSeries7d,
       onClick: () => setShowAnual(true),
     },
   ];
@@ -354,9 +487,14 @@ export default function Dashboard() {
           {/* Bars Plot */}
           <div className="relative h-[180px] flex items-end justify-between pt-3 pb-5 px-3 md:px-4 border-b border-nx-border">
             {/* Horizontal grid lines */}
-            {[60, 45, 30, 15].map((lvl, idx) => (
+            {[
+              maxWeeklyVal,
+              Math.round(maxWeeklyVal * 0.75),
+              Math.round(maxWeeklyVal * 0.5),
+              Math.round(maxWeeklyVal * 0.25),
+            ].map((lvl, idx) => (
               <div
-                key={lvl}
+                key={`${lvl}-${idx}`}
                 className="absolute left-0 right-0 border-t border-nx-border/50 flex items-center pointer-events-none"
                 style={{ top: `${idx * 25}%` }}
               >
@@ -365,26 +503,28 @@ export default function Dashboard() {
             ))}
 
             {weeklyBars.map((d) => {
-              const hFsrs = Math.round((d.fsrs / 60) * 135);
-              const hDojo = Math.round((d.dojo / 60) * 135);
+              const hFsrs = d.fsrs > 0 ? Math.max(6, Math.round((d.fsrs / maxWeeklyVal) * 135)) : 2;
+              const hDojo = d.dojo > 0 ? Math.max(6, Math.round((d.dojo / maxWeeklyVal) * 135)) : 2;
               return (
-                <div key={d.day} className="relative z-10 flex flex-col items-center gap-1.5 flex-1">
+                <div key={d.dateStr} className="relative z-10 flex flex-col items-center gap-1.5 flex-1">
                   <div className="flex items-end gap-1.5 h-[140px]">
                     <div
                       className="w-3.5 sm:w-5 rounded-t-[5px] transition-all duration-300 hover:brightness-110"
                       style={{
                         height: `${hFsrs}px`,
+                        opacity: d.fsrs > 0 ? 1 : 0.25,
                         background: 'linear-gradient(180deg, var(--nx-primary) 0%, #3B53B8 100%)',
                       }}
-                      title={`${d.day}: ${d.fsrs} Flashcards`}
+                      title={`${d.day} (${d.dateStr}): ${d.fsrs} revisões/sessões`}
                     />
                     <div
                       className="w-3.5 sm:w-5 rounded-t-[5px] transition-all duration-300 hover:brightness-110"
                       style={{
                         height: `${hDojo}px`,
+                        opacity: d.dojo > 0 ? 1 : 0.25,
                         background: 'linear-gradient(180deg, var(--nx-secondary) 0%, #1D7FA8 100%)',
                       }}
-                      title={`${d.day}: ${d.dojo} Versos`}
+                      title={`${d.day} (${d.dateStr}): ${d.dojo} notas/recitações`}
                     />
                   </div>
                   <span className="text-[11px] font-medium text-nx-dim -mb-4">{d.day}</span>
@@ -406,14 +546,23 @@ export default function Dashboard() {
           </div>
 
           <div className="flex items-center justify-between gap-4 my-4">
-            {/* SVG Multi-Segment Donut */}
+            {/* SVG Multi-Segment Donut Dinâmico */}
             <div className="relative w-[144px] h-[144px] flex items-center justify-center shrink-0">
               <svg width="144" height="144" viewBox="0 0 144 144" className="-rotate-90">
                 <circle cx="72" cy="72" r="54" fill="none" stroke="var(--nx-overlay)" strokeWidth="18" />
-                <circle cx="72" cy="72" r="54" fill="none" stroke="#22C55E" strokeWidth="18" strokeDasharray="196 340" strokeDashoffset="0" />
-                <circle cx="72" cy="72" r="54" fill="none" stroke="#5B7CF4" strokeWidth="18" strokeDasharray="82 340" strokeDashoffset="-196" />
-                <circle cx="72" cy="72" r="54" fill="none" stroke="#F59E0B" strokeWidth="18" strokeDasharray="41 340" strokeDashoffset="-278" />
-                <circle cx="72" cy="72" r="54" fill="none" stroke="#38BDF8" strokeWidth="18" strokeDasharray="21 340" strokeDashoffset="-319" />
+                {maturity.segments.map((seg) => (
+                  <circle
+                    key={seg.key}
+                    cx="72"
+                    cy="72"
+                    r="54"
+                    fill="none"
+                    stroke={seg.color}
+                    strokeWidth="18"
+                    strokeDasharray={seg.strokeDasharray}
+                    strokeDashoffset={seg.strokeDashoffset}
+                  />
+                ))}
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
                 <span className="text-[21px] font-display font-bold text-nx-bright leading-none">
@@ -486,6 +635,7 @@ export default function Dashboard() {
               {notas.slice(0, 3).map((nota, idx) => {
                 const colors = ['#5B7CF4', '#22C55E', '#38BDF8'];
                 const barColor = colors[idx % colors.length];
+                const cardsDaNota = (cards || []).filter((c) => c.nota_id === nota.id).length;
                 return (
                   <button
                     key={nota.id}
@@ -510,10 +660,10 @@ export default function Dashboard() {
                         className="px-2.5 py-1 rounded-[7px] bg-nx-surface text-[11px] font-semibold"
                         style={{ color: barColor }}
                       >
-                        FSRS Ativo
+                        {cardsDaNota > 0 ? 'FSRS Ativo' : 'Markdown'}
                       </span>
                       <span className="px-2.5 py-1 rounded-[7px] bg-nx-surface text-[11px] font-medium text-nx-text">
-                        98% Retenção
+                        {cardsDaNota} {cardsDaNota === 1 ? 'card' : 'cards'}
                       </span>
                       <ChevronRight size={14} className="text-nx-dim group-hover:text-nx-primary transition-transform group-hover:translate-x-0.5" />
                     </div>
@@ -560,12 +710,12 @@ export default function Dashboard() {
             </div>
 
             <h2 className="text-[20px] font-display font-bold text-nx-bright leading-tight">
-              {poemaVigente ? poemaVigente.titulo : t('dash.dojo.title')}
+              {poemaVigente ? poemaVigente.titulo : 'Nenhum poema cadastrado'}
             </h2>
             <p className="text-[12.5px] text-nx-text italic line-clamp-2 mt-2 leading-relaxed">
               {poemaVigente
                 ? `“${poemaVigente.corpo.split('\n').slice(0, 2).join(' / ')}”`
-                : '“De tudo, ao meu amor serei atento / Antes, e com tal zelo, e sempre, e tanto...”'}
+                : 'Cadastre seu primeiro poema ou discurso no Dojo de Oratória para treinar recitação e dicção.'}
             </p>
           </div>
 
@@ -576,8 +726,8 @@ export default function Dashboard() {
                 key={idx}
                 className="w-1.5 rounded-full transition-all duration-300"
                 style={{
-                  height: `${bh}px`,
-                  backgroundColor: idx < 13 ? 'var(--nx-secondary)' : 'var(--nx-muted)',
+                  height: poemaVigente ? `${bh}px` : '6px',
+                  backgroundColor: poemaVigente && idx < 13 ? 'var(--nx-secondary)' : 'var(--nx-muted)',
                 }}
               />
             ))}
@@ -591,7 +741,7 @@ export default function Dashboard() {
                 background: 'linear-gradient(90deg, var(--nx-primary) 0%, var(--nx-secondary) 100%)',
               }}
             >
-              {t('dash.dojo.cta')}
+              {poemaVigente ? t('dash.dojo.cta') : 'Adicionar Poema no Dojo'}
             </button>
           </div>
         </div>

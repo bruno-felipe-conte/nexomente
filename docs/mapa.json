@@ -294,6 +294,15 @@
       "afeta": ["Flashcards"]
     },
     {
+      "id": "content-importer-modal",
+      "nome": "Importador Unificado de Conteúdo (Notas .md & Flashcards em Lote frente;verso)",
+      "arquivo": "app/src/components/common/ImporterModal.jsx",
+      "linha": 1,
+      "fluxo": "Clique em Importar em Lote (Flashcards.jsx ou Notas.jsx) -> leitura de arquivos .md via FileReader ou parsing de linhas frente;verso via indexOf(';') -> validação em tempo real -> gravação em lote em useNotes.create() e useFlashcards.create()",
+      "usa": ["db-store"],
+      "afeta": ["Notas", "Flashcards", "Dashboard", "Graph"]
+    },
+    {
       "id": "poemas-favorite",
       "nome": "Biblioteca Poética - Favoritar Poema",
       "arquivo": "app/src/components/poemas/PoemasListaTab.jsx",

@@ -26,17 +26,6 @@ const tipoCores = {
   lembrete: '#EF4444',
 };
 
-const NOTA_HUB_FALLBACK = {
-  id: 'hub_fsrs',
-  titulo: 'Algoritmo FSRS v4',
-  tipo: 'estudo',
-  conteudo:
-    'O Free Spaced Repetition Scheduler modela a memória humana através de 3 variáveis de estado (Dificuldade, Estabilidade e Retenção). Conectado a [[Curva de Ebbinghaus]], [[Consolidação Sináptica]], [[Gemma 4 Local RAG]] e [[Tabacaria - Pessoa]].',
-  tags: ['neurociencia', 'fsrs', 'memoria'],
-};
-
-
-
 export default function Graph() {
   const { notas } = useNotes();
   const { t } = useTranslation();
@@ -263,7 +252,8 @@ export default function Graph() {
   };
 
   const abrirNoEditor = (nota) => {
-    if (!nota || nota.id === 'hub_fsrs') {
+    if (!nota?.id) {
+      setPendingNoteAction({ action: 'create' });
       setActiveTab('notes');
       return;
     }
@@ -275,12 +265,16 @@ export default function Graph() {
     return notas.filter((n) => filtros[n.tipo] !== false).length;
   }, [notas, filtros]);
 
-  const noInspecionado = notaSelecionada || notas[0] || NOTA_HUB_FALLBACK;
+  const noInspecionado = notaSelecionada || notas[0] || null;
   const backlinksExtraidos = useMemo(() => {
-    const links = extrairLinks(noInspecionado?.conteudo);
-    if (links.length > 0) return links.slice(0, 4);
-    return ['Curva de Ebbinghaus', 'Consolidação Sináptica', 'Gemma 4 Local RAG', 'Tabacaria - Pessoa'];
+    if (!noInspecionado) return [];
+    return extrairLinks(noInspecionado.conteudo);
   }, [noInspecionado, extrairLinks]);
+
+  const tagsInspecionadas = useMemo(() => {
+    if (!noInspecionado) return [];
+    return extrairTags(noInspecionado);
+  }, [noInspecionado, extrairTags]);
 
 
 
@@ -360,10 +354,7 @@ export default function Graph() {
           <div className="p-3.5 border-b border-white/[0.06] bg-[#10121A]/90 flex flex-wrap items-center justify-between gap-2 z-10">
             <div className="flex flex-wrap items-center gap-1.5">
               {[
-                { id: 'todos', label: `${t('graph.all_clusters')} (${Math.max(128, totalNotas)})`, cor: '#5B7CF4' },
-                { id: 'neuro', label: '● Neurociência & FSRS', cor: '#5B7CF4' },
-                { id: 'ia', label: '● IA Local & RAG', cor: '#38BDF8' },
-                { id: 'poesia', label: '● Poesia & Oratória', cor: '#F59E0B' },
+                { id: 'todos', label: `${t('graph.all_clusters')} (${totalNotas})`, cor: '#5B7CF4' },
               ].map((cl) => {
                 const ativo = clusterAtivo === cl.id;
                 return (
@@ -403,50 +394,28 @@ export default function Graph() {
             </div>
           </div>
 
-          {/* Canvas Cytoscape ou Grafo SVG Interativo de Demonstração quando Vault vazio */}
+          {/* Canvas Cytoscape ou Estado Vazio Limpo quando Vault vazio */}
           {notas.length === 0 ? (
-            <div className="flex-1 relative flex flex-col items-center justify-center bg-[#0A0B0F] p-6">
-              {/* Grafo Neural SVG Interativo de Pré-visualização */}
-              <svg viewBox="0 0 640 360" className="w-full h-full max-h-[340px]">
-                {/* Arestas Sinápticas */}
-                <line x1="310" y1="175" x2="175" y2="95" stroke="#5B7CF4" strokeOpacity="0.45" strokeWidth="2" />
-                <line x1="310" y1="175" x2="455" y2="90" stroke="#38BDF8" strokeOpacity="0.45" strokeWidth="2" />
-                <line x1="310" y1="175" x2="165" y2="260" stroke="#22C55E" strokeOpacity="0.45" strokeWidth="2" />
-                <line x1="310" y1="175" x2="465" y2="255" stroke="#F59E0B" strokeOpacity="0.45" strokeWidth="2" />
-                <line x1="175" y1="95" x2="165" y2="260" stroke="#9499B3" strokeOpacity="0.2" strokeWidth="1.5" />
-                <line x1="455" y1="90" x2="465" y2="255" stroke="#9499B3" strokeOpacity="0.2" strokeWidth="1.5" />
-
-                {/* Nós Satélites */}
-                <g className="cursor-pointer" onClick={() => setNotaSelecionada({ id: 'n_ebb', titulo: 'Curva de Ebbinghaus', tipo: 'estudo', conteudo: 'Decaimento exponencial da memória R = e^(-t/S) descoberto por Hermann Ebbinghaus.', tags: ['memoria', 'fsrs'] })}>
-                  <circle cx="175" cy="95" r="14" fill="#161923" stroke="#5B7CF4" strokeWidth="3" />
-                  <text x="175" y="122" textAnchor="middle" fill="#EEF0F6" fontSize="11" fontWeight="600">Curva de Ebbinghaus</text>
-                </g>
-
-                <g className="cursor-pointer" onClick={() => setNotaSelecionada({ id: 'n_rag', titulo: 'Gemma 4 Local RAG', tipo: 'ideia', conteudo: 'Pipeline de indexação semântica local SQLite WASM + LLM embarcado sem envio para nuvem.', tags: ['ia', 'rag'] })}>
-                  <circle cx="455" cy="90" r="14" fill="#161923" stroke="#38BDF8" strokeWidth="3" />
-                  <text x="455" y="117" textAnchor="middle" fill="#EEF0F6" fontSize="11" fontWeight="600">Gemma 4 Local RAG</text>
-                </g>
-
-                <g className="cursor-pointer" onClick={() => setNotaSelecionada({ id: 'n_sin', titulo: 'Consolidação Sináptica', tipo: 'diario', conteudo: 'Potenciação de longa duração (LTP) durante sono REM e repetição espaçada.', tags: ['neurociencia'] })}>
-                  <circle cx="165" cy="260" r="13" fill="#161923" stroke="#22C55E" strokeWidth="3" />
-                  <text x="165" y="286" textAnchor="middle" fill="#EEF0F6" fontSize="11" fontWeight="600">Consolidação Sináptica</text>
-                </g>
-
-                <g className="cursor-pointer" onClick={() => setNotaSelecionada({ id: 'n_tab', titulo: 'Tabacaria - Pessoa', tipo: 'biblia', conteudo: 'Poema existencialista de Álvaro de Campos conectado ao Dojo Fonético.', tags: ['poesia', 'dojo'] })}>
-                  <circle cx="465" cy="255" r="13" fill="#161923" stroke="#F59E0B" strokeWidth="3" />
-                  <text x="465" y="281" textAnchor="middle" fill="#EEF0F6" fontSize="11" fontWeight="600">Tabacaria - Pessoa</text>
-                </g>
-
-                {/* Nó Central Selecionado */}
-                <g className="cursor-pointer" onClick={() => setNotaSelecionada(NOTA_HUB_FALLBACK)}>
-                  <circle cx="310" cy="175" r="28" fill="#5B7CF4" fillOpacity="0.18" />
-                  <circle cx="310" cy="175" r="18" fill="#5B7CF4" stroke="#EEF0F6" strokeWidth="3" />
-                  <text x="310" y="215" textAnchor="middle" fill="#EEF0F6" fontSize="12" fontWeight="700">Algoritmo FSRS v4</text>
-                </g>
-              </svg>
-              <p className="text-xs text-[#9499B3] mt-1">
-                Nenhuma nota ainda no banco — exibindo topologia neural de referência (clique nos nós para inspecionar)
+            <div className="flex-1 relative flex flex-col items-center justify-center bg-[#0A0B0F] p-8 text-center">
+              <div className="w-14 h-14 rounded-2xl bg-[#161923] border border-white/[0.08] flex items-center justify-center mb-3 text-[#5B7CF4]">
+                <GitBranch size={26} />
+              </div>
+              <h3 className="text-sm font-bold text-[#EEF0F6] mb-1">
+                Seu Grafo Neural está vazio
+              </h3>
+              <p className="text-xs text-[#9499B3] max-w-sm mb-4">
+                Crie notas no Vault e conecte conceitos usando <code className="text-[#38BDF8] font-mono">[[WikiLinks]]</code> ou tags para visualizar suas sinapses aqui.
               </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setPendingNoteAction({ action: 'create' });
+                  setActiveTab('notes');
+                }}
+                className="px-4 py-2 rounded-xl bg-[#5B7CF4] hover:bg-[#5B7CF4]/90 text-white text-xs font-bold transition-colors cursor-pointer"
+              >
+                + Criar Primeira Nota
+              </button>
             </div>
           ) : (
             <div ref={containerRef} className="flex-1 bg-[#0A0B0F] min-h-[380px]" />
@@ -455,13 +424,15 @@ export default function Graph() {
           {/* HUD Inferior do Grafo */}
           <div className="px-4 py-2.5 bg-[#10121A] border-t border-white/[0.06] flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono text-[#9499B3]">
             <span>
-              Zoom: 1.25x • Gravidade: 0.42 • Repulsão: 280 • Nós: {Math.max(notas.length, 5)}
+              Nós: {totalNotas} • Conexões: {totalArestas}
             </span>
-            <span className="text-[#38BDF8]">Clique em qualquer nó para inspecionar</span>
+            <span className="text-[#38BDF8]">
+              {notas.length > 0 ? 'Clique em qualquer nó para inspecionar' : 'Aguardando criação de notas'}
+            </span>
           </div>
         </div>
 
-        {/* Coluna Direita (5 cols): Inspetor do Nó Selecionado + Backlinks + Chat IA Local */}
+        {/* Coluna Direita (5 cols): Inspetor do Nó Selecionado + Backlinks */}
         <div className="xl:col-span-5 flex flex-col gap-5">
           {/* Card 1: Inspetor de Nó & Backlinks Bidirecionais */}
           <div className="bg-[#161923] border border-white/[0.07] rounded-2xl p-6">
@@ -471,7 +442,7 @@ export default function Graph() {
                   {t('graph.selected_node')}
                 </span>
                 <h3 className="text-lg font-bold text-[#EEF0F6]">
-                  {noInspecionado.titulo}
+                  {noInspecionado ? noInspecionado.titulo || 'Sem título' : 'Nenhum nó selecionado'}
                 </h3>
               </div>
 
@@ -481,14 +452,14 @@ export default function Graph() {
                 className="px-3 py-1.5 rounded-xl bg-[#5B7CF4] hover:bg-[#5B7CF4]/90 text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
               >
                 <ExternalLink size={13} />
-                <span>{t('graph.open_note')}</span>
+                <span>{noInspecionado ? t('graph.open_note') : '+ Nova Nota'}</span>
               </button>
             </div>
 
             <p className="text-xs text-[#9499B3] leading-relaxed line-clamp-3 mb-4">
-              {(noInspecionado.conteudo || '')
-                .replace(/<[^>]*>/g, '')
-                .substring(0, 220) || 'Nota conectada à rede de conhecimento Zettelkasten.'}
+              {noInspecionado
+                ? (noInspecionado.conteudo || '').replace(/<[^>]*>/g, '').substring(0, 220) || 'Nota sem conteúdo textual.'
+                : 'Crie ou selecione uma nota no grafo para inspecionar seu conteúdo e suas conexões.'}
             </p>
 
             {/* Backlinks Bidirecionais [[WikiLinks]] */}
@@ -499,27 +470,33 @@ export default function Graph() {
                   {t('graph.backlinks')} ({backlinksExtraidos.length})
                 </span>
               </p>
-              <div className="flex flex-wrap gap-1.5">
-                {backlinksExtraidos.map((link) => (
-                  <button
-                    key={link}
-                    type="button"
-                    onClick={() => {
-                      const encontrada = notas.find(
-                        (n) => n.titulo?.toLowerCase() === link.toLowerCase()
-                      );
-                      if (encontrada) {
-                        setNotaSelecionada(encontrada);
-                      } else {
-                        toast(`WikiLink [[${link}]] selecionado no inspetor`, { icon: '🔗' });
-                      }
-                    }}
-                    className="px-2.5 py-1 rounded-lg bg-[#10121A] hover:bg-[#1E2130] border border-white/[0.07] text-[#38BDF8] text-[11px] font-mono transition-colors cursor-pointer"
-                  >
-                    [[{link}]]
-                  </button>
-                ))}
-              </div>
+              {backlinksExtraidos.length === 0 ? (
+                <p className="text-[11px] text-[#5C6178] italic">
+                  Nenhum [[WikiLink]] encontrado nesta nota.
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-1.5">
+                  {backlinksExtraidos.map((link) => (
+                    <button
+                      key={link}
+                      type="button"
+                      onClick={() => {
+                        const encontrada = notas.find(
+                          (n) => n.titulo?.toLowerCase() === link.toLowerCase()
+                        );
+                        if (encontrada) {
+                          setNotaSelecionada(encontrada);
+                        } else {
+                          toast(`WikiLink [[${link}]] ainda não possui nota criada`, { icon: '🔗' });
+                        }
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-[#10121A] hover:bg-[#1E2130] border border-white/[0.07] text-[#38BDF8] text-[11px] font-mono transition-colors cursor-pointer"
+                    >
+                      [[{link}]]
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -534,7 +511,9 @@ export default function Graph() {
                       Sinapses & Topologia da Rede
                     </h3>
                     <p className="text-[11px] text-[#9499B3]">
-                      Exploração profunda do cluster de [[{noInspecionado.titulo}]]
+                      {noInspecionado
+                        ? `Exploração do nó [[${noInspecionado.titulo || 'Sem título'}]]`
+                        : 'Topologia em tempo real'}
                     </p>
                   </div>
                 </div>
@@ -549,7 +528,13 @@ export default function Graph() {
                     Densidade Conceitual
                   </span>
                   <p className="text-[#EEF0F6]">
-                    Este nó atua como um polo de convergência entre <strong>{backlinksExtraidos.length} conceitos</strong> da sua base de conhecimento.
+                    {noInspecionado ? (
+                      <>
+                        Este nó possui <strong>{backlinksExtraidos.length} conexões diretas</strong> na sua base de conhecimento.
+                      </>
+                    ) : (
+                      'Adicione notas para calcular a densidade conceitual.'
+                    )}
                   </p>
                 </div>
 
@@ -558,11 +543,15 @@ export default function Graph() {
                     Tags Semânticas
                   </span>
                   <div className="flex flex-wrap gap-1 mt-1">
-                    {(noInspecionado.tags?.length ? (Array.isArray(noInspecionado.tags) ? noInspecionado.tags : [noInspecionado.tags]) : ['zettelkasten', 'conhecimento']).map((tag) => (
-                      <span key={tag} className="px-2 py-0.5 rounded-md bg-white/[0.05] text-[#9499B3] text-[10px] font-mono">
-                        #{tag}
-                      </span>
-                    ))}
+                    {tagsInspecionadas.length > 0 ? (
+                      tagsInspecionadas.map((tag) => (
+                        <span key={tag} className="px-2 py-0.5 rounded-md bg-white/[0.05] text-[#9499B3] text-[10px] font-mono">
+                          #{tag}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-[11px] text-[#5C6178] italic">Sem tags cadastradas</span>
+                    )}
                   </div>
                 </div>
               </div>
