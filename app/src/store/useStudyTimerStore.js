@@ -52,21 +52,22 @@ export const useStudyTimerStore = create((set, get) => ({
 
   iniciar: (customMateriaId) => {
     const state = get();
-    const materiaId = customMateriaId !== undefined ? customMateriaId : state.materiaAtiva;
-    if (!materiaId && state.modo !== 'descanso') {
-      toast.error('Selecione uma matéria antes de começar!');
-      return false;
-    }
+    // Sanitiza se o parâmetro foi um evento React ou tipo inválido
+    const materiaId = (typeof customMateriaId === 'string' || typeof customMateriaId === 'number')
+      ? customMateriaId
+      : state.materiaAtiva;
 
     const currentModo = MODOS_ESTUDO.find(m => m.id === state.modo) || MODOS_ESTUDO[0];
-    const initialTime = state.timer <= 0 ? currentModo.minutos * 60 : state.timer;
+    const initialTime = (!state.timer || state.timer <= 0 || isNaN(state.timer))
+      ? currentModo.minutos * 60
+      : state.timer;
     const targetEnd = Date.now() + initialTime * 1000;
 
     let currentSessaoId = state.sessaoId;
     if (!currentSessaoId) {
       const { SessoesEstudo } = useDBStore.getState();
       currentSessaoId = SessoesEstudo?.create?.({
-        materia_id: materiaId,
+        materia_id: materiaId || null,
         tipo: state.modo,
         duracao_minutos: currentModo.minutos
       });
@@ -79,7 +80,7 @@ export const useStudyTimerStore = create((set, get) => ({
       targetEndTime: targetEnd,
       sessaoId: currentSessaoId,
       completed: false,
-      materiaAtiva: materiaId
+      materiaAtiva: materiaId || null
     });
 
     if (globalTimerInterval) clearInterval(globalTimerInterval);
@@ -98,6 +99,29 @@ export const useStudyTimerStore = create((set, get) => ({
     set({
       rodando: false,
       targetEndTime: null
+    });
+    if (typeof document !== 'undefined') {
+      document.title = 'NexoMente';
+    }
+  },
+
+  concluirSessao: () => {
+    get().handleComplete();
+  },
+
+  resetar: () => {
+    const state = get();
+    if (globalTimerInterval) {
+      clearInterval(globalTimerInterval);
+      globalTimerInterval = null;
+    }
+    const currentModo = MODOS_ESTUDO.find(m => m.id === state.modo) || MODOS_ESTUDO[0];
+    set({
+      rodando: false,
+      targetEndTime: null,
+      timer: currentModo.minutos * 60,
+      totalSeconds: currentModo.minutos * 60,
+      completed: false
     });
     if (typeof document !== 'undefined') {
       document.title = 'NexoMente';
@@ -163,7 +187,7 @@ export const useStudyTimerStore = create((set, get) => ({
     set({ sessaoId: null });
   },
 
-  trocarModo: (modoObj) => {
+  trocarModo: (modoParam) => {
     const state = get();
     if (globalTimerInterval) {
       clearInterval(globalTimerInterval);
@@ -173,10 +197,18 @@ export const useStudyTimerStore = create((set, get) => ({
     if (state.sessaoId && !state.completed) {
       SessoesEstudo?.abandonar?.(state.sessaoId);
     }
+
+    // Suporta tanto string ('pomodoro', 'foco', 'descanso') quanto objeto ({ id, minutos, ... })
+    const modoObj = typeof modoParam === 'string'
+      ? MODOS_ESTUDO.find(m => m.id === modoParam) || MODOS_ESTUDO[0]
+      : (modoParam && modoParam.id ? modoParam : MODOS_ESTUDO[0]);
+
+    const duracaoSegundos = (modoObj.minutos || 25) * 60;
+
     set({
       modo: modoObj.id,
-      timer: modoObj.minutos * 60,
-      totalSeconds: modoObj.minutos * 60,
+      timer: duracaoSegundos,
+      totalSeconds: duracaoSegundos,
       rodando: false,
       targetEndTime: null,
       sessaoId: null,

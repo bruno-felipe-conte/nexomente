@@ -21,6 +21,9 @@ export const useUIStore = create((set) => ({
   sidebarOpen: typeof window !== 'undefined' && window.innerWidth < 1024
     ? false
     : localStorage.getItem('nexomente_sidebar_open') !== 'false',
+  sidebarPinned: typeof window !== 'undefined'
+    ? localStorage.getItem('nexomente_sidebar_pinned') === 'true'
+    : false,
   loadingGlobal: false,
   theme: getInitialTheme(),
 
@@ -73,6 +76,18 @@ export const useUIStore = create((set) => ({
       const newState = !state.sidebarOpen;
       localStorage.setItem('nexomente_sidebar_open', String(newState));
       return { sidebarOpen: newState };
+    }),
+
+  setSidebarPinned: (pinned) => {
+    localStorage.setItem('nexomente_sidebar_pinned', String(pinned));
+    set({ sidebarPinned: Boolean(pinned) });
+  },
+
+  toggleSidebarPinned: () =>
+    set((state) => {
+      const next = !state.sidebarPinned;
+      localStorage.setItem('nexomente_sidebar_pinned', String(next));
+      return { sidebarPinned: next };
     }),
 
   setActiveTab: (tab) => set({ activeTab: tab }),

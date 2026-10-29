@@ -1,15 +1,27 @@
-import * as embedded from './embeddedService';
-import { httpProvider } from './httpProvider';
+import * as embedded from './embeddedService.js';
+import { httpProvider } from './httpProvider.js';
 
 export const MAX_COPILOT_CHARS = 1500;
 
-export const DEFAULT_COPILOT_SYSTEM_PROMPT = `Você é o Copiloto Neural, um assistente local de estudos, ciências exatas, humanidades e gestão de conhecimento altamente analítico e dedutivo.
+export const DEFAULT_COPILOT_SYSTEM_PROMPT = `Você é o Copiloto Neural, um assistente local de estudos, ciências exatas, humanidades e gestão de conhecimento altamente analítico, dedutivo e visual.
 
 REGRAS DE OURO DE INTERPRETAÇÃO E RESPOSTA:
-1. ANCORAGEM E CORREÇÃO FONÉTICA: O usuário pode digitar rápido, sem acentos ou com erros fonéticos (ex: "bascar" -> Fórmula de Bhaskara; "tutancamom" -> Faraó Tutancâmon; "pitagora" -> Teorema de Pitágoras). SEMPRE inicie a resposta identificando explicitamente o conceito correto antes de explicá-lo (ex: "Referindo-se à **Fórmula de Bhaskara** (equação do 2º grau): ..."). NUNCA confunda termos matemáticos ou científicos com funções de Excel/planilhas, a menos que o usuário peça explicitamente sobre planilhas.
-2. CORREÇÃO DE PREMISSAS COM DEDUÇÃO: Se a pergunta contiver uma premissa tecnicamente inexata (ex: perguntar o "sobrenome" de uma figura da Antiguidade que não usava sobrenomes modernos), NUNCA responda "Não tenho informações" ou "Forneça mais contexto". Em vez disso, explique por que a premissa não se aplica e entregue o dado histórico/conceitual equivalente (como o nome de nascimento, nome de trono ou epíteto dinástico).
-3. PRECISÃO EM EXATAS: Ao fornecer fórmulas matemáticas, físicas ou químicas, escreva a equação completa de forma clara (usando LaTeX ou notação legível) e defina brevemente o que cada variável representa.
-4. CONCISÃO INTELIGENTE: Seja direto, denso e sem cumprimentos robóticos repetitivos, mas nunca sacrifique a precisão da resposta para economizar palavras.`;
+1. ANCORAGEM E CORREÇÃO FONÉTICA: O usuário pode digitar rápido, com erros de digitação ou fonéticos (ex: "baskar", "bascar", "bhaskara" -> Fórmula de Bhaskara; "tutancamom" -> Faraó Tutancâmon; "pitagora" -> Teorema de Pitágoras). SEMPRE inicie a resposta identificando e ancorando explicitamente o conceito correto no 1º token (ex: "Referindo-se à **Fórmula de Bhaskara** (equação do 2º grau): ..."). NUNCA confunda nomes de cientistas ou fórmulas com busca binária, métodos de Excel ou funções de planilha, a menos que o usuário mencione explicitamente programação ou planilhas.
+2. CORREÇÃO DE PREMISSAS COM DEDUÇÃO: Se a pergunta contiver uma premissa inexata, entregue a resposta histórica/científica equivalente explicando o contexto sem recusar.
+3. PRECISÃO MATEMÁTICA E RENDERIZAÇÃO LATEX: O aplicativo possui renderizador KaTeX nativo. SEMPRE escreva fórmulas matemáticas em LaTeX: use $$...$$ em blocos destacados para a fórmula principal (ex: $$x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$) e $...$ para variáveis e termos inline (ex: $a$, $b$, $c$, $\\Delta = b^2 - 4ac$).
+4. HABILIDADE DE GRÁFICOS VISUAIS: O aplicativo possui plotter SVG nativo para funções matemáticas e gráficos comparativos. Quando o usuário pedir para "ver", visualizar ou pedir o gráfico de uma função quadrática ou polinomial, inclua um bloco declarativo de plot no formato:
+\`\`\`plot
+f(x) = x^2 - 4x + 3
+raizes: [1, 3]
+vertice: [2, -1]
+titulo: Parábola de Bhaskara
+\`\`\`
+Para dados comparativos ou estatísticos, use:
+\`\`\`chart
+Item A: 10
+Item B: 25
+\`\`\`
+5. CONCISÃO INTELIGENTE: Vá direto ao ponto, com rigor e clareza, sem preâmbulos redundantes.`;
 
 /**
  * Interface AIProvider (Plugin System para IA - E1)
@@ -83,14 +95,31 @@ export function enforceCharLimit(rawText, maxChars = MAX_COPILOT_CHARS) {
  */
 export function getAIConfig() {
   const defaultLanguage = localStorage.getItem('nexomente_ai_language') || 'Português Brasileiro';
-  let sysPrompt =
-    localStorage.getItem('nexomente_ai_system_prompt') ||
-    DEFAULT_COPILOT_SYSTEM_PROMPT;
+  let sysPrompt = localStorage.getItem('nexomente_ai_system_prompt');
 
-  sysPrompt += `\n\n[REGRA ESTRITA]: Responda exclusivamente em ${defaultLanguage}, sem preâmbulos redundantes ("Como assistente..."), em até ${MAX_COPILOT_CHARS} caracteres mantendo total rigor técnico.`;
+  // Sobrescreve automaticamente versões legadas ou prompts truncados gravados anteriormente no navegador
+  if (
+    !sysPrompt ||
+    sysPrompt.includes('alto desempenho') ||
+    sysPrompt.includes('em no máximo 2 frases curtas') ||
+    !sysPrompt.includes('ANCORAGEM E CORREÇÃO FONÉTICA')
+  ) {
+    sysPrompt = DEFAULT_COPILOT_SYSTEM_PROMPT;
+    localStorage.setItem('nexomente_ai_system_prompt', DEFAULT_COPILOT_SYSTEM_PROMPT);
+  }
+
+  sysPrompt += `\n\n[REGRA ESTRITA]: Responda exclusivamente em ${defaultLanguage}, formatando equações em LaTeX ($$..$$ e $..$) e blocos de plot quando solicitado, sem preâmbulos redundantes ("Como assistente...").`;
+
+  // Garante temperatura de 0.35 se estivesse com o legado de 0.7
+  const storedTemp = localStorage.getItem('nexomente_ai_temp');
+  let temp = parseFloat(storedTemp);
+  if (isNaN(temp) || storedTemp === '0.7' || storedTemp === '0.45') {
+    temp = 0.35;
+    localStorage.setItem('nexomente_ai_temp', '0.35');
+  }
 
   return {
-    temperature: parseFloat(localStorage.getItem('nexomente_ai_temp')) || 0.35,
+    temperature: temp,
     top_p: 0.90,
     min_p: 0.05,
     repeat_penalty: 1.10,

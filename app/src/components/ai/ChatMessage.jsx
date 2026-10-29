@@ -5,66 +5,11 @@
  */
 import { memo } from 'react';
 import { motion } from 'framer-motion';
-import { useState } from 'react';
-import { Copy, Check, Plus, Bot, Terminal, Clock } from 'lucide-react';
+import { Copy, Plus, Bot, Clock } from 'lucide-react';
 import PropTypes from 'prop-types';
+import CopilotMessageContent from './CopilotMessageContent';
 
-function CodeBlock({ code, language }) {
-  const [copiado, setCopiado] = useState(false);
 
-  const copiarCodigo = () => {
-    navigator.clipboard.writeText(code);
-    setCopiado(true);
-    setTimeout(() => setCopiado(false), 2000);
-  };
-
-  return (
-    <div className="my-2 rounded-xl overflow-hidden border border-white/10 bg-black/40 font-mono text-xs">
-      <div className="flex items-center justify-between px-3 py-1.5 bg-white/5 border-b border-white/5 text-[11px] text-text-lo/60">
-        <div className="flex items-center gap-1.5 font-medium">
-          <Terminal size={12} className="text-accent-main" />
-          <span>{language || 'código'}</span>
-        </div>
-        <button
-          onClick={copiarCodigo}
-          className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold text-text-lo hover:text-text-hi hover:bg-white/5 transition-all cursor-pointer"
-        >
-          {copiado ? <Check size={11} className="text-emerald-400" /> : <Copy size={11} />}
-          <span>{copiado ? 'Copiado!' : 'Copiar'}</span>
-        </button>
-      </div>
-      <pre className="p-3 overflow-x-auto text-emerald-300 leading-relaxed custom-scrollbar">
-        <code>{code}</code>
-      </pre>
-    </div>
-  );
-}
-
-CodeBlock.propTypes = {
-  code: PropTypes.string.isRequired,
-  language: PropTypes.string,
-};
-
-function renderMessageContent(texto) {
-  if (!texto) return null;
-  // Divide o texto por blocos de código ```linguagem\nconteúdo```
-  const parts = texto.split(/(```[\w-]*\n[\s\S]*?```)/g);
-
-  return parts.map((part, index) => {
-    if (part.startsWith('```') && part.endsWith('```')) {
-      const match = part.match(/^```([\w-]*)\n([\s\S]*?)```$/);
-      if (match) {
-        const [, language, code] = match;
-        return <CodeBlock key={index} language={language} code={code.replace(/\n$/, '')} />;
-      }
-    }
-    return (
-      <span key={index} className="whitespace-pre-wrap leading-relaxed">
-        {part}
-      </span>
-    );
-  });
-}
 
 const ChatMessage = memo(function ChatMessage({ msg, idx, copiadoIdx, onCopiar, onInserir }) {
   const isUser = msg.role === 'user';
@@ -98,7 +43,7 @@ const ChatMessage = memo(function ChatMessage({ msg, idx, copiadoIdx, onCopiar, 
           ) : (
             <div className="flex flex-col gap-1">
               <div className="text-[13px] font-medium">
-                {renderMessageContent(msg.texto)}
+                <CopilotMessageContent content={msg.texto} isUser={isUser} />
               </div>
               {isUser && msg.ts && (
                 <span className="text-[9px] text-text-lo/20 mt-1 self-end font-mono">

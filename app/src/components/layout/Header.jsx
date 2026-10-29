@@ -49,8 +49,10 @@ export default function Header({ title, onToggleSidebar, onNavigate, onToggleCop
 
   const currentModoTimer = MODOS_ESTUDO.find(m => m.id === modoTimer) || MODOS_ESTUDO[0];
   const formatTimer = (s) => {
-    const min = Math.floor(s / 60);
-    const sec = s % 60;
+    const total = Number(s);
+    if (isNaN(total) || total < 0) return '25:00';
+    const min = Math.floor(total / 60);
+    const sec = total % 60;
     return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
   };
 
@@ -365,7 +367,7 @@ export default function Header({ title, onToggleSidebar, onNavigate, onToggleCop
                     {/* Controles do Timer */}
                     <div className="flex items-center gap-2 pt-1">
                       <button
-                        onClick={rodando ? pausarTimer : iniciarTimer}
+                        onClick={() => (rodando ? pausarTimer() : iniciarTimer())}
                         className="flex-1 py-2 rounded-xl bg-nx-primary hover:bg-nx-primary/90 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                       >
                         {rodando ? <Pause size={14} /> : <Play size={14} />}

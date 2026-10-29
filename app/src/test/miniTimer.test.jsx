@@ -90,4 +90,36 @@ describe('MiniTimerWidget & useStudyTimerStore', () => {
     expect(useStudyTimerStore.getState().sessaoId).toBeNull();
     expect(useStudyTimerStore.getState().rodando).toBe(false);
   });
+
+  it('permite trocar modo via string ID, iniciar sem matéria e concluir sessão', () => {
+    // 1. Troca modo passando string ID (como no Header)
+    act(() => {
+      useStudyTimerStore.getState().trocarModo('foco');
+    });
+    expect(useStudyTimerStore.getState().modo).toBe('foco');
+    expect(useStudyTimerStore.getState().timer).toBe(50 * 60);
+    expect(useStudyTimerStore.getState().totalSeconds).toBe(50 * 60);
+
+    // 2. Inicia estudo geral/livre sem matéria selecionada
+    act(() => {
+      const ok = useStudyTimerStore.getState().iniciar();
+      expect(ok).toBe(true);
+    });
+    expect(useStudyTimerStore.getState().rodando).toBe(true);
+    expect(useStudyTimerStore.getState().sessaoId).toBeTruthy();
+
+    // 3. Conclui sessão com sucesso
+    act(() => {
+      useStudyTimerStore.getState().concluirSessao();
+    });
+    expect(useStudyTimerStore.getState().rodando).toBe(false);
+    expect(useStudyTimerStore.getState().completed).toBe(true);
+
+    // 4. Troca para descanso via string
+    act(() => {
+      useStudyTimerStore.getState().trocarModo('descanso');
+    });
+    expect(useStudyTimerStore.getState().modo).toBe('descanso');
+    expect(useStudyTimerStore.getState().timer).toBe(5 * 60);
+  });
 });

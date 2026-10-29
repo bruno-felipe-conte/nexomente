@@ -12,6 +12,7 @@ import {
   Globe, Sparkles, Pin, PinOff
 } from 'lucide-react';
 import { useAIStore } from '../../store/useAIStore';
+import { useUIStore } from '../../store/useUIStore';
 import { useTamagotchiStore, getLevelProgress } from '../../store/useTamagotchiStore';
 import { useFlashcards } from '../../hooks/useFlashcards';
 import { useNotes } from '../../hooks/useNotes';
@@ -19,7 +20,8 @@ import { useTranslation } from '../../lib/i18n';
 
 export default function Sidebar({ isOpen = false, currentPage, onNavigate, onCloseMobile, className = '' }) {
   const [isHovered, setIsHovered] = useState(false);
-  const [isPinned, setIsPinned] = useState(false);
+  const { sidebarPinned, toggleSidebarPinned } = useUIStore();
+  const isPinned = Boolean(sidebarPinned);
 
   const { status } = useAIStore();
   const { player } = useTamagotchiStore();
@@ -70,8 +72,12 @@ export default function Sidebar({ isOpen = false, currentPage, onNavigate, onClo
         />
       )}
 
-      {/* Espaçador estático no fluxo para o modo recolhido (Mini-Rail: w-16 = 64px) no Desktop */}
-      <div className="hidden lg:block w-16 shrink-0 h-full pointer-events-none" />
+      {/* Espaçador estático no fluxo para desktop: w-64 quando fixada com Pin, w-16 no modo auto-hide recolhido */}
+      <div
+        className={`hidden lg:block shrink-0 h-full pointer-events-none transition-[width] duration-300 ease-out ${
+          isPinned ? 'w-64' : 'w-16'
+        }`}
+      />
 
       {/* Aside com Auto-Hide Flutuante no Hover para desktop e Drawer deslizante para telas < 1024px */}
       <aside
@@ -80,7 +86,11 @@ export default function Sidebar({ isOpen = false, currentPage, onNavigate, onClo
         className={`fixed inset-y-0 left-0 z-[100] flex flex-col border-r border-nx-border/80 bg-nx-depth select-none transition-all duration-300 ease-out ${
           isOpen ? 'translate-x-0 w-64 shadow-2xl' : '-translate-x-full lg:translate-x-0'
         } ${
-          isExpandedDesktop ? 'lg:w-64 lg:shadow-[6px_0_24px_rgba(44,38,35,0.10)]' : 'lg:w-16 lg:shadow-none'
+          isExpandedDesktop
+            ? isPinned
+              ? 'lg:w-64 lg:shadow-none'
+              : 'lg:w-64 lg:shadow-[6px_0_24px_rgba(44,38,35,0.10)]'
+            : 'lg:w-16 lg:shadow-none'
         } ${className}`}
       >
         {/* 1. BRAND HEADER (Nivelado perfeitamente com a Topbar em h-16 = 64px) */}
@@ -132,7 +142,7 @@ export default function Sidebar({ isOpen = false, currentPage, onNavigate, onClo
                 </button>
 
                 <button
-                  onClick={() => setIsPinned(!isPinned)}
+                  onClick={toggleSidebarPinned}
                   title={isPinned ? 'Desafixar barra lateral (Auto-Hide ativo)' : 'Fixar barra lateral aberta'}
                   className={`p-1.5 rounded-md border transition-colors cursor-pointer ${
                     isPinned

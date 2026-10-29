@@ -28,6 +28,7 @@ import { useUIStore } from '../../store/useUIStore';
 import { useVosk } from '../../hooks/useVosk';
 import { normalizarTranscricaoCopiloto } from '../../lib/audio/audioDecoder';
 import * as aiProvider from '../../lib/ai/aiProvider';
+import CopilotMessageContent from './CopilotMessageContent';
 import toast from 'react-hot-toast';
 
 const MAX_CHARS = aiProvider.MAX_COPILOT_CHARS || 1500;
@@ -87,7 +88,15 @@ export default function AICopilotDrawer({ isOpen, onClose, onExpandFullScreen })
 
     const textoLimpo = texto
       .replace(/<[^>]*>/g, '')
+      .replace(/```[\s\S]*?```/g, '') // remove blocos de código/gráfico da leitura de voz
+      .replace(/\$\$([\s\S]*?)\$\$/g, 'fórmula: $1')
+      .replace(/\$([^$]+)\$/g, '$1')
+      .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '$1 sobre $2')
+      .replace(/\\sqrt\{([^}]+)\}/g, 'raiz de $1')
+      .replace(/\\pm/g, 'mais ou menos')
+      .replace(/\\Delta/g, 'delta')
       .replace(/[*_#`~>[\]]/g, '')
+      .replace(/\s+/g, ' ')
       .trim();
 
     if (!textoLimpo) return;
@@ -427,7 +436,7 @@ export default function AICopilotDrawer({ isOpen, onClose, onExpandFullScreen })
                           : 'bg-nx-surface border border-nx-border text-nx-bright rounded-bl-none'
                       }`}
                     >
-                      <p className="whitespace-pre-wrap">{m.text}</p>
+                      <CopilotMessageContent content={m.text} isUser={isUser} />
 
                       {/* Rodapé da mensagem: Contador de tempo de resposta + Caracteres + Botão de voz */}
                       {!isUser && (

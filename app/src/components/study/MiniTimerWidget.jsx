@@ -21,8 +21,10 @@ export default function MiniTimerWidget({ onExpand }) {
   const materiaObj = materias.find(m => m.id === materiaAtiva);
 
   const formatTime = (s) => {
-    const min = Math.floor(s / 60);
-    const sec = s % 60;
+    const total = Number(s);
+    if (isNaN(total) || total < 0) return '25:00';
+    const min = Math.floor(total / 60);
+    const sec = total % 60;
     return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
   };
 
