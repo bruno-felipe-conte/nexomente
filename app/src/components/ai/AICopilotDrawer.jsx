@@ -22,11 +22,13 @@ import {
   Volume2,
   VolumeX,
   Clock,
+  Sliders,
 } from 'lucide-react';
 import { useNotes } from '../../hooks/useNotes';
 import { useUIStore } from '../../store/useUIStore';
 import { useVosk } from '../../hooks/useVosk';
 import { normalizarTranscricaoCopiloto } from '../../lib/audio/audioDecoder';
+import { neuralTTS, NEURAL_VOICES } from '../../lib/audio/neuralTTS';
 import * as aiProvider from '../../lib/ai/aiProvider';
 import CopilotMessageContent from './CopilotMessageContent';
 import toast from 'react-hot-toast';
@@ -55,6 +57,20 @@ export default function AICopilotDrawer({ isOpen, onClose, onExpandFullScreen })
   const [autoSendVoice, setAutoSendVoice] = useState(
     () => localStorage.getItem('nexomente_copilot_voice_autosend') === 'true'
   );
+  const [selectedVoice, setSelectedVoice] = useState(
+    () => localStorage.getItem('nexomente_copilot_voice') || 'pt-BR-FranciscaNeural'
+  );
+  const [speechRate, setSpeechRate] = useState(
+    () => parseFloat(localStorage.getItem('nexomente_copilot_voice_speed') || '1.05')
+  );
+  const [voiceMenuOpen, setVoiceMenuOpen] = useState(false);
+
+  // Sincroniza estado de reprodução do motor de áudio neural
+  useEffect(() => {
+    return neuralTTS.subscribe((state) => {
+      setSpeakingMessageId(state?.isPlaying ? state.messageId : null);
+    });
+  }, []);
 
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
@@ -76,61 +92,20 @@ export default function AICopilotDrawer({ isOpen, onClose, onExpandFullScreen })
     return `Tela ativa: ${activeTab}. Total de notas no Vault: ${notas.length}.`;
   }, [activeTab, pendingNoteAction, notas]);
 
-  // Síntese de Voz (TTS) em Português nativo
-  const speakText = useCallback((texto, msgId) => {
-    if (!('speechSynthesis' in window)) return;
-
-    window.speechSynthesis.cancel();
-    if (speakingMessageId === msgId) {
-      setSpeakingMessageId(null);
-      return;
-    }
-
-    const textoLimpo = texto
-      .replace(/<[^>]*>/g, '')
-      .replace(/```[\s\S]*?```/g, '') // remove blocos de código/gráfico da leitura de voz
-      .replace(/\$\$([\s\S]*?)\$\$/g, 'fórmula: $1')
-      .replace(/\$([^$]+)\$/g, '$1')
-      .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '$1 sobre $2')
-      .replace(/\\sqrt\{([^}]+)\}/g, 'raiz de $1')
-      .replace(/\\pm/g, 'mais ou menos')
-      .replace(/\\Delta/g, 'delta')
-      .replace(/[*_#`~>[\]]/g, '')
-      .replace(/\s+/g, ' ')
-      .trim();
-
-    if (!textoLimpo) return;
-
-    const utterance = new SpeechSynthesisUtterance(textoLimpo);
-    utterance.lang = 'pt-BR';
-    utterance.rate = 1.05;
-
-    const voices = window.speechSynthesis.getVoices();
-    const ptVoice =
-      voices.find((v) => v.lang.startsWith('pt') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Luciana') || v.name.includes('Maria'))) ||
-      voices.find((v) => v.lang.startsWith('pt'));
-    if (ptVoice) utterance.voice = ptVoice;
-
-    utterance.onstart = () => {
-      setSpeakingMessageId(msgId);
-    };
-
-    utterance.onend = () => {
-      setSpeakingMessageId(null);
-    };
-
-    utterance.onerror = () => {
-      setSpeakingMessageId(null);
-    };
-
-    window.speechSynthesis.speak(utterance);
-  }, [speakingMessageId]);
+  // Síntese de Voz Neural em Português de Alta Fidelidade
+  const speakText = useCallback(
+    (texto, msgId) => {
+      neuralTTS.speak(texto, {
+        messageId: msgId,
+        voice: selectedVoice,
+        rate: speechRate,
+      });
+    },
+    [selectedVoice, speechRate]
+  );
 
   const stopSpeaking = useCallback(() => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-    }
-    setSpeakingMessageId(null);
+    neuralTTS.stop();
   }, []);
 
   // Cronômetro em tempo real durante a geração da resposta
@@ -349,6 +324,20 @@ export default function AICopilotDrawer({ isOpen, onClose, onExpandFullScreen })
               </div>
 
               <div className="flex items-center gap-1">
+                {/* Seletor de Voz Neural e Velocidade */}
+                <button
+                  type="button"
+                  onClick={() => setVoiceMenuOpen(!voiceMenuOpen)}
+                  title="Configurar Voz Neural e Velocidade"
+                  className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                    voiceMenuOpen
+                      ? 'text-nx-primary bg-nx-primary/20 border border-nx-primary/40'
+                      : 'text-nx-dim hover:text-nx-bright hover:bg-nx-surface'
+                  }`}
+                >
+                  <Sliders size={15} />
+                </button>
+
                 {/* Botão de Síntese de Voz (TTS) */}
                 <button
                   type="button"
@@ -413,6 +402,83 @@ export default function AICopilotDrawer({ isOpen, onClose, onExpandFullScreen })
               </div>
             </div>
 
+            {/* Painel Expansível de Configuração de Voz Neural */}
+            <AnimatePresence>
+              {voiceMenuOpen && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="border-b border-nx-border bg-nx-surface/95 px-4 py-3 space-y-2.5 backdrop-blur-md overflow-hidden shrink-0"
+                >
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-nx-bright flex items-center gap-1.5">
+                      <Sparkles size={13} className="text-nx-primary" />
+                      Voz do Copiloto Neural
+                    </span>
+                    <span className="text-[10px] text-nx-dim font-mono">Alta Fidelidade</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {NEURAL_VOICES.map((v) => {
+                      const isSelected = selectedVoice === v.id;
+                      return (
+                        <button
+                          key={v.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedVoice(v.id);
+                            localStorage.setItem('nexomente_copilot_voice', v.id);
+                            toast.success(`Voz: ${v.name}`);
+                          }}
+                          className={`p-2 rounded-lg text-left border text-[11px] transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-nx-primary/20 border-nx-primary text-nx-bright shadow-sm'
+                              : 'bg-nx-overlay/40 border-nx-border/60 text-nx-dim hover:text-nx-bright hover:bg-nx-overlay'
+                          }`}
+                        >
+                          <div className="font-bold flex items-center justify-between">
+                            <span className="truncate">{v.name}</span>
+                            {v.recommended && (
+                              <span className="text-[8px] bg-nx-primary/30 text-nx-primary px-1 py-0.2 rounded font-mono shrink-0">
+                                HD
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[9px] text-nx-dim mt-0.5 leading-tight line-clamp-1">
+                            {v.gender} • {v.desc}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1 border-t border-nx-border/40 text-[11px]">
+                    <span className="text-nx-dim">Velocidade:</span>
+                    <div className="flex items-center gap-1">
+                      {[0.9, 1.0, 1.05, 1.2, 1.35].map((rate) => (
+                        <button
+                          key={rate}
+                          type="button"
+                          onClick={() => {
+                            setSpeechRate(rate);
+                            localStorage.setItem('nexomente_copilot_voice_speed', String(rate));
+                          }}
+                          className={`px-1.5 py-0.5 rounded text-[10px] font-mono transition-colors cursor-pointer ${
+                            speechRate === rate
+                              ? 'bg-nx-primary text-white font-bold'
+                              : 'bg-nx-overlay text-nx-dim hover:text-nx-bright'
+                          }`}
+                        >
+                          {rate}x
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {/* Mensagens */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3.5 scrollbar-thin">
               {messages.map((m) => {
@@ -460,14 +526,37 @@ export default function AICopilotDrawer({ isOpen, onClose, onExpandFullScreen })
                             type="button"
                             onClick={() => speakText(m.text, m.id)}
                             title={isSpeakingThis ? 'Parar leitura' : 'Ouvir resposta em voz alta'}
-                            className={`px-1.5 py-0.5 rounded text-[10px] font-medium flex items-center gap-1 transition-colors cursor-pointer ${
+                            className={`px-2 py-0.5 rounded text-[10px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer ${
                               isSpeakingThis
-                                ? 'bg-nx-primary/25 text-nx-primary font-bold animate-pulse'
+                                ? 'bg-nx-primary/25 text-nx-primary font-bold shadow-sm'
                                 : 'text-nx-dim hover:text-nx-bright hover:bg-nx-overlay/60 opacity-80 group-hover:opacity-100'
                             }`}
                           >
-                            {isSpeakingThis ? <VolumeX size={11} /> : <Volume2 size={11} />}
-                            <span>{isSpeakingThis ? 'Parar voz' : 'Ouvir'}</span>
+                            {isSpeakingThis ? (
+                              <>
+                                <span className="flex items-end gap-0.5 h-3 px-0.5" aria-hidden="true">
+                                  <span className="w-0.5 h-2 bg-nx-primary animate-pulse rounded-full" />
+                                  <span
+                                    className="w-0.5 h-3 bg-nx-primary animate-bounce rounded-full"
+                                    style={{ animationDelay: '100ms' }}
+                                  />
+                                  <span
+                                    className="w-0.5 h-1.5 bg-nx-primary animate-pulse rounded-full"
+                                    style={{ animationDelay: '200ms' }}
+                                  />
+                                  <span
+                                    className="w-0.5 h-2.5 bg-nx-primary animate-bounce rounded-full"
+                                    style={{ animationDelay: '150ms' }}
+                                  />
+                                </span>
+                                <span>Parar</span>
+                              </>
+                            ) : (
+                              <>
+                                <Volume2 size={11} />
+                                <span>Ouvir</span>
+                              </>
+                            )}
                           </button>
                         </div>
                       )}

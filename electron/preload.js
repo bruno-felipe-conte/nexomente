@@ -62,4 +62,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   embeddedChat: (payload) => ipcRenderer.invoke('ai:embeddedChat', payload),
   getHardwareInfo: () => ipcRenderer.invoke('ai:getHardwareInfo'),
   getContextStats: () => ipcRenderer.invoke('ai:getContextStats'),
+
+  // Audio & Speech
+  synthesizeSpeech: (payload) => ipcRenderer.invoke('audio:synthesizeSpeech', payload),
 });

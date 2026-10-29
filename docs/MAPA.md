@@ -239,9 +239,9 @@
 
 ### NÓ: Copiloto Neural - Conversação Bidirecional por Áudio (STT + TTS)
 - **Arquivo**: `app/src/components/ai/AICopilotDrawer.jsx:195`
-- **Fluxo**: Clique no ícone de Microfone ao lado do input do Copiloto → `useVosk.startListening()` captura fala com energia RMS e transcreve em tempo real (`onPartialResult`/`onResult`) → no modo Ditado insere no campo e no modo Auto-Envio despacha direto para `aiProvider.askAI()` → resposta gerada pelo Gemma 4 Local é sintetizada em áudio pt-BR nativo (`window.speechSynthesis`) com pausa automática da escuta durante a fala da IA para prevenção de eco.
-- **Usa**: `ai-provider`, `ui-store`, Vosk Browser (modelo de fala local WASM)
-- **Afeta**: Entrada de voz acessível em qualquer tela via gaveta Copiloto (`Ctrl+J`) e acessibilidade por áudio.
+- **Fluxo**: Clique no ícone de Microfone ao lado do input do Copiloto → `useVosk.startListening()` captura fala com energia RMS e transcreve em tempo real (`onPartialResult`/`onResult`) → no modo Ditado insere no campo e no modo Auto-Envio despacha direto para `aiProvider.askAI()` → resposta gerada pelo Gemma 4 Local é formatada pelo sanitizador fonético e matemático (`speechFormatter.js`) e sintetizada em áudio de alta fidelidade pelo motor neural (`neuralTTS.js` via canal IPC `audio:synthesizeSpeech` ou endpoint `/api/tts/synthesize` com vozes neurais HD Francisca/Antonio e fallback offline com chunking sentencial).
+- **Usa**: `ai-provider`, `ui-store`, Vosk Browser (modelo de fala local WASM), `neuralTTS`, canal IPC `audio:synthesizeSpeech`
+- **Afeta**: Entrada de voz e reprodução sonora acessível em qualquer tela via gaveta Copiloto (`Ctrl+J`).
 
 ### NÓ: Grafo de Conhecimento - Câmera Cytoscape & Deep Link
 - **Arquivo**: `app/src/pages/Graph.jsx:195`
@@ -288,6 +288,7 @@
 | `ai:embeddedChat` | `embeddedService.js:38` | `electron/ipc/aiHandlers.js:306` | `{ success: boolean, response: string, tokens: number, modelFile: string }` |
 | `ai:getHardwareInfo` | `electron/preload.js:64` *(Interface declarada)* | `electron/ipc/aiHandlers.js:311` | `{ cpu: string, ram: number, gpu: string, vram: number }` |
 | `ai:getContextStats` | `electron/preload.js:65` *(Interface declarada)* | `electron/ipc/aiHandlers.js:323` | `{ activeTokens: number, maxTokens: number }` |
+| `audio:synthesizeSpeech` | `electron/preload.js:68` *(Interface nativa)* | `electron/ipc/audioHandlers.js:28` | `{ success: boolean, audioBase64?: string, error?: string }` |
 | `db-notas:getAll` | `electron/preload.js:18` *(Interface nativa)* | `electron/ipc/dbHandlers.js:8` | `Array<Nota>` (com tags parsed) |
 | `db-notas:getById` | `electron/preload.js:19` *(Interface nativa)* | `electron/ipc/dbHandlers.js:29` | `Nota \| null` |
 | `db-notas:create` | `electron/preload.js:20` *(Interface nativa)* | `electron/ipc/dbHandlers.js:50` | `string` (ID da nota criada) |

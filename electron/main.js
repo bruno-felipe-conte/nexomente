@@ -5,6 +5,7 @@ import { initDB, closeDB } from './db/database.js';
 import { registerWindowHandlers } from './ipc/windowHandlers.js';
 import { registerDbHandlers } from './ipc/dbHandlers.js';
 import { registerAiHandlers } from './ipc/aiHandlers.js';
+import { registerAudioHandlers } from './ipc/audioHandlers.js';
 
 process.on('uncaughtException', (err) => {
   console.error('[MAIN] Excecao nao capturada:', err);
@@ -129,6 +130,7 @@ async function bootstrap() {
     registerWindowHandlers(() => mainWindow);
     registerDbHandlers();
     registerAiHandlers();
+    registerAudioHandlers();
     createWindow();
   } catch (error) {
     console.error('[BOOTSTRAP] Falha critica na inicializacao:', error);

@@ -403,6 +403,7 @@
     }
   ],
   "ipc_canais": [
+    { "canal": "audio:synthesizeSpeech", "chama": "electron/preload.js", "trata": "electron/ipc/audioHandlers.js", "retorno": "{ success: boolean, audioBase64: string, mimeType: string }" },
     { "canal": "ai:embeddedChat", "chama": "app/src/lib/ai/embeddedService.js", "trata": "electron/ipc/aiHandlers.js", "retorno": "{ success: boolean, response: string, tokens: number }" },
     { "canal": "ai:getHardwareInfo", "chama": "electron/preload.js", "trata": "electron/ipc/aiHandlers.js", "retorno": "{ cpu: string, ram: number, gpu: string, vram: number }" },
     { "canal": "ai:getContextStats", "chama": "electron/preload.js", "trata": "electron/ipc/aiHandlers.js", "retorno": "{ activeTokens: number, maxTokens: number }" },

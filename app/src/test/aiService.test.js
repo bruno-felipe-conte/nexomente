@@ -15,8 +15,8 @@ describe('AI Provider Interno (Embedded GGUF) & DomainEventBus', () => {
 
     it('getAIConfig retorna configurações padrão com idioma em Português Brasileiro', () => {
       const cfg = aiProvider.getAIConfig();
-      expect(cfg.temperature).toBe(0.7);
-      expect(cfg.max_tokens).toBe(512);
+      expect(cfg.temperature).toBe(0.35);
+      expect(cfg.max_tokens).toBe(800);
       expect(cfg.language).toBe('Português Brasileiro');
       expect(cfg.system_prompt).toContain('Português Brasileiro');
     });

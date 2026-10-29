@@ -56,6 +56,42 @@ function embeddedAiDevPlugin() {
           return;
         }
 
+        if (req.url === '/api/tts/synthesize' && req.method === 'POST') {
+          let body = '';
+          req.on('data', chunk => { body += chunk; });
+          req.on('end', async () => {
+            try {
+              const payload = JSON.parse(body || '{}');
+              const { MsEdgeTTS, OUTPUT_FORMAT } = await import('msedge-tts');
+              const tts = new MsEdgeTTS();
+              const voice = payload.voice || 'pt-BR-FranciscaNeural';
+              await tts.setMetadata(voice, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
+              const rate = payload.rate && typeof payload.rate === 'number'
+                ? (payload.rate >= 1.0 ? `+${Math.round((payload.rate - 1.0) * 100)}%` : `${Math.round((payload.rate - 1.0) * 100)}%`)
+                : '+0%';
+              const { audioStream } = await tts.toStream(payload.text || '', { rate, pitch: '+0Hz' });
+              const chunks = [];
+              audioStream.on('data', c => chunks.push(c));
+              audioStream.on('end', () => {
+                const buffer = Buffer.concat(chunks);
+                const audioBase64 = `data:audio/mp3;base64,${buffer.toString('base64')}`;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({ success: true, audioBase64, mimeType: 'audio/mp3' }));
+              });
+              audioStream.on('error', (err) => {
+                res.statusCode = 500;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({ success: false, error: err.message }));
+              });
+            } catch (err) {
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ success: false, error: err.message }));
+            }
+          });
+          return;
+        }
+
         next();
       });
     }
