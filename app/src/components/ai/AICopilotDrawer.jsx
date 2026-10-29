@@ -21,6 +21,7 @@ import {
   MicOff,
   Volume2,
   VolumeX,
+  Clock,
 } from 'lucide-react';
 import { useNotes } from '../../hooks/useNotes';
 import { useUIStore } from '../../store/useUIStore';
@@ -29,16 +30,20 @@ import { normalizarTranscricaoCopiloto } from '../../lib/audio/audioDecoder';
 import * as aiProvider from '../../lib/ai/aiProvider';
 import toast from 'react-hot-toast';
 
+const MAX_CHARS = aiProvider.MAX_COPILOT_CHARS || 1500;
+
 export default function AICopilotDrawer({ isOpen, onClose, onExpandFullScreen }) {
   const [messages, setMessages] = useState([
     {
       id: 'init-1',
       role: 'assistant',
-      text: 'Olá! Sou seu Copiloto Neural local. Como posso ajudar com seus estudos, notas ou conexões hoje?',
+      text: 'Olá! Sou seu Copiloto Neural local. Como posso ajudar com seus estudos ou notas hoje?',
+      responseTimeMs: 42,
     },
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [elapsedMs, setElapsedMs] = useState(0);
   const [partialVoice, setPartialVoice] = useState('');
   const [speakingMessageId, setSpeakingMessageId] = useState(null);
 
@@ -119,29 +124,60 @@ export default function AICopilotDrawer({ isOpen, onClose, onExpandFullScreen })
     setSpeakingMessageId(null);
   }, []);
 
+  // Cronômetro em tempo real durante a geração da resposta
+  useEffect(() => {
+    if (!loading) {
+      setElapsedMs(0);
+      return;
+    }
+    const start = performance.now();
+    const interval = setInterval(() => {
+      setElapsedMs(Math.round(performance.now() - start));
+    }, 100);
+    return () => clearInterval(interval);
+  }, [loading]);
+
   const executeSend = useCallback(
     async (textoParaEnviar) => {
       const texto = (textoParaEnviar || input).trim();
       if (!texto || loading) return;
 
+      stopSpeaking();
       const userMsg = { id: `u-${Date.now()}`, role: 'user', text: texto };
       setMessages((prev) => [...prev, userMsg]);
       setInput('');
       setPartialVoice('');
       setLoading(true);
+      const t0 = performance.now();
 
       try {
         const context = getContextSnippet();
         let resposta = '';
+        let durationMs = 0;
 
         if (aiProvider?.askAI) {
-          resposta = await aiProvider.askAI(texto, context);
+          const result = await aiProvider.askAI(texto, context, { withMetrics: true });
+          if (result && typeof result === 'object') {
+            resposta = result.text;
+            durationMs = result.durationMs;
+          } else {
+            resposta = String(result || '');
+          }
         } else {
           resposta = `Com base no seu Vault local (${notas.length} notas) e no contexto de ${activeTab}, essa conexão fortalece sua rede de estudos.`;
         }
 
+        if (!durationMs) {
+          durationMs = Math.round(performance.now() - t0);
+        }
+
+        const enforceLimit = aiProvider?.enforceCharLimit || ((s) => s.slice(0, MAX_CHARS));
+        const assistantText = enforceLimit(
+          resposta || 'Análise concluída com sucesso pelo motor local.',
+          MAX_CHARS
+        );
+
         const assistantMsgId = `a-${Date.now()}`;
-        const assistantText = resposta || 'Análise concluída com sucesso pelo motor local.';
 
         setMessages((prev) => [
           ...prev,
@@ -149,6 +185,7 @@ export default function AICopilotDrawer({ isOpen, onClose, onExpandFullScreen })
             id: assistantMsgId,
             role: 'assistant',
             text: assistantText,
+            responseTimeMs: durationMs,
           },
         ]);
 
@@ -158,19 +195,21 @@ export default function AICopilotDrawer({ isOpen, onClose, onExpandFullScreen })
         }
       } catch {
         toast.error('Erro na inferência do Copiloto');
+        const durationMs = Math.round(performance.now() - t0);
         setMessages((prev) => [
           ...prev,
           {
             id: `a-err-${Date.now()}`,
             role: 'assistant',
             text: 'O motor neural local está aquecendo. Tente novamente em instantes.',
+            responseTimeMs: durationMs,
           },
         ]);
       } finally {
         setLoading(false);
       }
     },
-    [input, loading, getContextSnippet, notas.length, activeTab, ttsEnabled, speakText]
+    [input, loading, getContextSnippet, notas.length, activeTab, ttsEnabled, speakText, stopSpeaking]
   );
 
   handleSendRef.current = executeSend;
@@ -185,6 +224,9 @@ export default function AICopilotDrawer({ isOpen, onClose, onExpandFullScreen })
   } = useVosk({
     onPartialResult: (partial) => {
       if (partial) {
+        if (partial.trim().length > 2) {
+          stopSpeaking(); // Barge-in imediato: para a voz da IA assim que o usuário começa a falar
+        }
         setPartialVoice(partial);
       }
     },
@@ -387,9 +429,24 @@ export default function AICopilotDrawer({ isOpen, onClose, onExpandFullScreen })
                     >
                       <p className="whitespace-pre-wrap">{m.text}</p>
 
-                      {/* Botão individual para ouvir/parar fala do assistente */}
+                      {/* Rodapé da mensagem: Contador de tempo de resposta + Caracteres + Botão de voz */}
                       {!isUser && (
-                        <div className="pt-2 flex items-center justify-end">
+                        <div className="pt-2 mt-1.5 border-t border-nx-border/50 flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-1.5 text-[10px] font-mono text-nx-dim">
+                            <Clock size={10} className="text-nx-primary" />
+                            <span>
+                              {m.responseTimeMs !== undefined
+                                ? m.responseTimeMs >= 1000
+                                  ? `${(m.responseTimeMs / 1000).toFixed(1)}s`
+                                  : `${m.responseTimeMs}ms`
+                                : '0.1s'}
+                            </span>
+                            <span className="opacity-40">•</span>
+                            <span>
+                              {(m.text || '').length}/{MAX_CHARS} chars
+                            </span>
+                          </div>
+
                           <button
                             type="button"
                             onClick={() => speakText(m.text, m.id)}
@@ -397,7 +454,7 @@ export default function AICopilotDrawer({ isOpen, onClose, onExpandFullScreen })
                             className={`px-1.5 py-0.5 rounded text-[10px] font-medium flex items-center gap-1 transition-colors cursor-pointer ${
                               isSpeakingThis
                                 ? 'bg-nx-primary/25 text-nx-primary font-bold animate-pulse'
-                                : 'text-nx-dim hover:text-nx-bright hover:bg-white/5 opacity-70 group-hover:opacity-100'
+                                : 'text-nx-dim hover:text-nx-bright hover:bg-nx-overlay/60 opacity-80 group-hover:opacity-100'
                             }`}
                           >
                             {isSpeakingThis ? <VolumeX size={11} /> : <Volume2 size={11} />}
@@ -411,9 +468,15 @@ export default function AICopilotDrawer({ isOpen, onClose, onExpandFullScreen })
               })}
 
               {loading && (
-                <div className="flex items-center gap-2 text-xs text-nx-dim p-2">
-                  <Loader2 size={14} className="animate-spin text-nx-primary" />
-                  <span>Sintetizando resposta local...</span>
+                <div className="flex items-center justify-between gap-2 text-xs text-nx-dim px-3 py-2 rounded-xl bg-nx-surface/70 border border-nx-border">
+                  <div className="flex items-center gap-2">
+                    <Loader2 size={14} className="animate-spin text-nx-primary" />
+                    <span>Sintetizando resposta concisa (máx. {MAX_CHARS} chars)...</span>
+                  </div>
+                  <span className="font-mono text-[11px] font-bold text-nx-primary flex items-center gap-1">
+                    <Clock size={11} />
+                    {(elapsedMs / 1000).toFixed(1)}s
+                  </span>
                 </div>
               )}
 

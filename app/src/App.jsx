@@ -197,7 +197,7 @@ function App() {
   }
 
   return (
-    <div className="flex h-full w-full bg-nx-void relative overflow-hidden text-nx-text selection:bg-nx-primary/30">
+    <div className="flex h-full w-full nx-app-bg relative overflow-hidden text-nx-text selection:bg-nx-primary/30">
       <LevelUpOverlay />
       <a
         href="#main-content"

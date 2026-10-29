@@ -11,7 +11,7 @@
  */
 import {
   Menu, Search, Minus, Square, X, Bell, Edit2, FileText, Brain, Flame, Check,
-  Clock, Play, Pause, Sparkles
+  Clock, Play, Pause, Sparkles, Sun, Moon
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -34,7 +34,7 @@ export default function Header({ title, onToggleSidebar, onNavigate, onToggleCop
   const [tempName, setTempName] = useState('');
   const searchInputRef = useRef(null);
 
-  const { userName, setUserName, setPendingNoteAction } = useUIStore();
+  const { userName, setUserName, setPendingNoteAction, theme, toggleTheme } = useUIStore();
   const { player } = useTamagotchiStore();
   const { notas } = useNotes();
   const { cards, getParaRevisao } = useFlashcards();
@@ -160,13 +160,22 @@ export default function Header({ title, onToggleSidebar, onNavigate, onToggleCop
         className="w-full h-full flex items-center justify-between px-4 md:px-6 gap-3"
         style={{ WebkitAppRegion: 'no-drag' }}
       >
-        {/* Left: Toggle + Screen Title & Subtitle */}
-        <div className="flex items-center gap-3 min-w-0 flex-1">
+        {/* Left: Mobile Menu Toggle + Screen Title & Subtitle */}
+        <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
+          <button
+            onClick={onToggleSidebar}
+            className="lg:hidden p-1.5 -ml-1 rounded-xl text-nx-dim hover:text-nx-bright hover:bg-nx-overlay/60 transition-colors cursor-pointer shrink-0"
+            title="Abrir Menu Lateral"
+            aria-label="Abrir Menu Lateral"
+          >
+            <Menu size={20} />
+          </button>
+
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               {title === 'dashboard' ? (
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-lg md:text-[22px] font-display font-bold text-nx-bright tracking-tight leading-tight">
+                  <span className="text-base sm:text-lg md:text-[22px] font-display font-bold text-nx-bright tracking-tight leading-tight">
                     {getGreetingText()},
                   </span>
                   {isEditingName ? (
@@ -190,21 +199,21 @@ export default function Header({ title, onToggleSidebar, onNavigate, onToggleCop
                     <button
                       onClick={startEditName}
                       data-testid="edit-user-name"
-                      className="text-lg md:text-[22px] font-display font-bold text-nx-bright hover:text-nx-primary transition-colors flex items-center gap-1.5 group cursor-pointer tracking-tight leading-tight"
+                      className="text-base sm:text-lg md:text-[22px] font-display font-bold text-nx-bright hover:text-nx-primary transition-colors flex items-center gap-1.5 group cursor-pointer tracking-tight leading-tight"
                       title="Clique para editar seu nome"
                     >
-                      <span>{displayName}</span>
-                      <Edit2 size={12} className="opacity-0 group-hover:opacity-80 text-nx-primary transition-opacity" />
+                      <span className="truncate max-w-[120px] sm:max-w-none">{displayName}</span>
+                      <Edit2 size={12} className="opacity-0 group-hover:opacity-80 text-nx-primary transition-opacity shrink-0" />
                     </button>
                   )}
                 </div>
               ) : (
-                <h1 className="text-lg md:text-[22px] font-display font-bold text-nx-bright tracking-tight leading-tight truncate">
+                <h1 className="text-base sm:text-lg md:text-[22px] font-display font-bold text-nx-bright tracking-tight leading-tight truncate">
                   {currentMeta.heading}
                 </h1>
               )}
             </div>
-            <p className="text-[12px] text-nx-dim truncate hidden sm:block mt-0.5">
+            <p className="text-[12px] text-nx-dim truncate hidden md:block mt-0.5">
               {currentMeta.subtitle}
             </p>
           </div>
@@ -325,7 +334,7 @@ export default function Header({ title, onToggleSidebar, onNavigate, onToggleCop
                         Timer de Estudo
                       </span>
                       <span className="text-[10px] font-mono text-nx-secondary font-bold">
-                        {currentModoTimer.name}
+                        {currentModoTimer?.label || currentModoTimer?.name || 'Pomodoro'}
                       </span>
                     </div>
 
@@ -348,7 +357,7 @@ export default function Header({ title, onToggleSidebar, onNavigate, onToggleCop
                               : 'bg-nx-depth border-nx-border/60 text-nx-dim hover:text-nx-bright'
                           }`}
                         >
-                          {m.name.split(' ')[0]}
+                          {(m.label || m.name || '').split(' ')[0]}
                         </button>
                       ))}
                     </div>
@@ -376,25 +385,45 @@ export default function Header({ title, onToggleSidebar, onNavigate, onToggleCop
             </AnimatePresence>
           </div>
 
-          {/* Streak Pill */}
+          {/* Streak Inline (Sem caixa competindo com botões) */}
           <div
-            className="hidden sm:flex items-center gap-1.5 h-[38px] px-3 rounded-[10px] bg-nx-surface border border-nx-border text-nx-accent"
+            className="hidden sm:flex items-center gap-1 px-2 text-nx-accent select-none"
             title="Ofensiva de estudo contínuo"
           >
             <Flame size={14} className="text-nx-accent shrink-0" />
             <span className="text-[12px] font-bold whitespace-nowrap font-mono">
-              {player.streak || 0} {t('header.streak.days')}
+              {player.streak || 0}d
             </span>
           </div>
 
-          {/* Copiloto Neural Global Button (Abre Gaveta Lateral) */}
+          {/* Toggle Tema: Papel & Café vs. Café Torrado (Luz de Velas) */}
+          <button
+            onClick={toggleTheme}
+            title={
+              theme === 'roasted'
+                ? 'Alternar para Modo Papel & Café (Diurno)'
+                : 'Alternar para Modo Café Torrado / Luz de Velas (Noturno)'
+            }
+            className="flex items-center gap-1.5 h-[36px] px-3 rounded-[9px] bg-nx-surface border border-nx-border hover:border-nx-primary text-nx-text hover:text-nx-bright text-[11.5px] font-medium transition-colors cursor-pointer"
+          >
+            {theme === 'roasted' ? (
+              <>
+                <Sun size={14} className="text-nx-accent" />
+                <span className="hidden lg:inline">Papel</span>
+              </>
+            ) : (
+              <>
+                <Moon size={14} className="text-nx-dim" />
+                <span className="hidden lg:inline">Noturno</span>
+              </>
+            )}
+          </button>
+
+          {/* Copiloto Neural Global Button (Ação Primária Editorial) */}
           <button
             onClick={onToggleCopilot}
             title="Copiloto Neural Global (Ctrl+J)"
-            className="flex items-center gap-1.5 h-[38px] px-3.5 rounded-[10px] text-[12px] font-bold text-white shadow-glow-primary hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer whitespace-nowrap"
-            style={{
-              background: 'linear-gradient(90deg, var(--nx-primary) 0%, #4A6BEF 100%)',
-            }}
+            className="flex items-center gap-1.5 h-[36px] px-3.5 rounded-[9px] bg-nx-primary hover:bg-nx-primary-hover text-[#FDFBF7] text-[12px] font-semibold shadow-sm active:scale-[0.98] transition-all cursor-pointer whitespace-nowrap"
           >
             <Sparkles size={14} />
             <span className="hidden md:inline">Copiloto</span>

@@ -10,10 +10,12 @@ function generateId() {
 }
 
 export function useNotes() {
+  useDBStore((s) => s.version);
   const { Notas, loading: dbLoading, db } = useDBStore();
   const [localNotas, setLocalNotas] = useState(() => notasStorage.getAll());
 
   const isDBReady = Boolean(Notas && !dbLoading && db && typeof Notas.getAll === 'function');
+  // version garante reatividade automática do hook em inserções, updates e deleções no DB WASM
   const notas = isDBReady ? (Notas.getAll() || []) : localNotas;
   const loading = isDBReady ? dbLoading : false;
 

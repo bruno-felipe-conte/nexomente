@@ -79,9 +79,12 @@ export function useAIChat(notaId) {
   );
 
   const adicionar = useCallback(
-    (role, texto, errorCode = null) => {
+    (role, texto, errorCode = null, responseTimeMs = null) => {
       setMensagens((prev) => {
-        const updated = [...prev, { role, texto, errorCode, isError: !!errorCode, ts: Date.now() }];
+        const updated = [
+          ...prev,
+          { role, texto, errorCode, isError: !!errorCode, ts: Date.now(), responseTimeMs },
+        ];
         persistir(updated);
         return updated;
       });

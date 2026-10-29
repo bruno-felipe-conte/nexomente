@@ -1,11 +1,11 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ["./index.html", "./app/src/**/*.{js,ts,jsx,tsx}"],
+  content: ['./index.html', './app/src/**/*.{js,ts,jsx,tsx}'],
   darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        // ── NX Design System ──
+        // ── NX Design System (Vanilla-Reader: Papel & Café / Café Torrado) ──
         'nx-void':           'var(--nx-void)',
         'nx-depth':          'var(--nx-depth)',
         'nx-surface':        'var(--nx-surface)',
@@ -64,14 +64,14 @@ export default {
       },
       fontSize: {
         'nx-xs':      ['11px', { lineHeight: '1.4' }],
-        'nx-sm':      ['12px', { lineHeight: '1.4' }],
-        'nx-base':    ['14px', { lineHeight: '1.5' }],
-        'nx-md':      ['15px', { lineHeight: '1.5' }],
-        'nx-lg':      ['17px', { lineHeight: '1.4' }],
-        'nx-xl':      ['20px', { lineHeight: '1.3' }],
-        'nx-2xl':     ['24px', { lineHeight: '1.2' }],
+        'nx-sm':      ['12.5px', { lineHeight: '1.45' }],
+        'nx-base':    ['14px', { lineHeight: '1.55' }],
+        'nx-md':      ['15.5px', { lineHeight: '1.65' }],
+        'nx-lg':      ['17.5px', { lineHeight: '1.45' }],
+        'nx-xl':      ['20px', { lineHeight: '1.35' }],
+        'nx-2xl':     ['24px', { lineHeight: '1.25' }],
         'nx-3xl':     ['30px', { lineHeight: '1.2' }],
-        'nx-display': ['42px', { lineHeight: '1.1' }],
+        'nx-display': ['40px', { lineHeight: '1.15' }],
         'title-xl': ['1.75rem',   { fontWeight: '600', lineHeight: '1.2' }],
         'title-l':  ['1.375rem',  { fontWeight: '600', lineHeight: '1.3' }],
         'subtitle': ['1.0625rem', { fontWeight: '500', lineHeight: '1.4' }],
@@ -80,10 +80,10 @@ export default {
         'overline': ['0.6875rem', { fontWeight: '500', letterSpacing: '0.08em' }],
       },
       fontFamily: {
-        sans:    ['"DM Sans"', 'system-ui', 'sans-serif'],
-        display: ['Syne', 'sans-serif'],
+        sans:    ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+        display: ['Lora', 'Georgia', 'serif'],
         mono:    ['"JetBrains Mono"', 'monospace'],
-        ui:      ['"DM Sans"', 'system-ui', 'sans-serif'],
+        ui:      ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
       },
       borderRadius: {
         'nx-xs':   'var(--nx-radius-xs)',
@@ -101,19 +101,19 @@ export default {
         'nx-sidebar': 'var(--nx-sidebar-width)',
       },
       transitionDuration: {
-        'nx-fast': '150ms',
-        'nx-base': '200ms',
-        'nx-slow': '350ms',
+        'nx-fast': '180ms',
+        'nx-base': '260ms',
+        'nx-slow': '380ms',
       },
       boxShadow: {
-        'glow-sm':      '0 0 12px -2px var(--color-brand)',
-        'glow-md':      '0 0 24px -4px var(--nx-primary-glow)',
-        'glass':        'inset 0 1px 0 rgba(255,255,255,0.05)',
-        'glow-primary': '0 0 28px var(--nx-primary-glow)',
-        'glow-accent':  '0 0 28px var(--nx-accent-glow)',
-        'glow-cyan':    '0 0 28px var(--nx-secondary-glow)',
-        'glow-hot':     '0 0 28px var(--nx-hot-glow)',
-        'glow-violet':  '0 0 18px rgba(124, 111, 250, 0.40)',
+        'glow-sm':      '0 2px 8px rgba(44, 38, 35, 0.06)',
+        'glow-md':      '0 4px 16px rgba(44, 38, 35, 0.08)',
+        'glass':        'inset 0 1px 0 rgba(255,255,255,0.40)',
+        'glow-primary': '0 4px 14px rgba(184, 93, 67, 0.14)',
+        'glow-accent':  '0 4px 14px rgba(184, 131, 46, 0.14)',
+        'glow-cyan':    '0 4px 14px rgba(90, 125, 104, 0.14)',
+        'glow-hot':     '0 4px 14px rgba(184, 93, 67, 0.14)',
+        'glow-violet':  '0 4px 14px rgba(184, 93, 67, 0.12)',
       },
       backgroundImage: {
         'gradient-primary': 'linear-gradient(135deg, var(--nx-primary) 0%, var(--nx-secondary) 100%)',
@@ -148,4 +148,4 @@ export default {
     },
   },
   plugins: [],
-}
+};

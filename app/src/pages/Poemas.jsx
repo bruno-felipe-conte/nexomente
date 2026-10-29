@@ -256,22 +256,22 @@ export default function PoemasPage() {
 
   if (tela === 'gerenciar') {
     return (
-      <div className="flex flex-col h-full">
-        <div className="px-6 py-3 bg-[#10121A] border-b border-white/[0.07] flex items-center justify-between shrink-0">
+      <div className="flex flex-col h-full bg-nx-void text-nx-bright">
+        <div className="px-6 py-3 bg-nx-surface border-b border-nx-border flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-[#9499B3]">Modo Biblioteca de Poemas</span>
+            <span className="text-xs font-semibold text-nx-dim">Modo Biblioteca de Poemas</span>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setTela('estudio')}
-              className="px-3.5 py-1.5 rounded-lg bg-[#5B7CF4] hover:bg-[#5B7CF4]/90 text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="px-3.5 py-1.5 rounded-lg nx-btn-primary text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <Mic size={13} />
               <span>{t('poems.mode_dojo')}</span>
             </button>
             <button
               onClick={() => setTela('leitura')}
-              className="px-3.5 py-1.5 rounded-lg bg-[#161923] hover:bg-[#1E2130] text-[#EEF0F6] border border-white/[0.08] text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="px-3.5 py-1.5 rounded-lg nx-btn-secondary text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <BookOpen size={13} />
               <span>{t('poems.mode_read')}</span>
@@ -298,20 +298,20 @@ export default function PoemasPage() {
 
   if (tela === 'leitura') {
     return (
-      <div className="flex flex-col h-full">
-        <div className="px-6 py-3 bg-[#10121A] border-b border-white/[0.07] flex items-center justify-between shrink-0">
-          <span className="text-xs font-semibold text-[#9499B3]">{t('poems.mode_read')}</span>
+      <div className="flex flex-col h-full bg-nx-void text-nx-bright">
+        <div className="px-6 py-3 bg-nx-surface border-b border-nx-border flex items-center justify-between shrink-0">
+          <span className="text-xs font-semibold text-nx-dim">{t('poems.mode_read')}</span>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setTela('estudio')}
-              className="px-3.5 py-1.5 rounded-lg bg-[#5B7CF4] hover:bg-[#5B7CF4]/90 text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="px-3.5 py-1.5 rounded-lg nx-btn-primary text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <Mic size={13} />
               <span>{t('poems.mode_dojo')}</span>
             </button>
             <button
               onClick={() => setTela('gerenciar')}
-              className="px-3.5 py-1.5 rounded-lg bg-[#161923] hover:bg-[#1E2130] text-[#EEF0F6] border border-white/[0.08] text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="px-3.5 py-1.5 rounded-lg nx-btn-secondary text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <Settings size={13} />
               <span>{t('poems.manage')}</span>
@@ -330,11 +330,11 @@ export default function PoemasPage() {
   }
 
   return (
-    <div className="h-full overflow-y-auto scrollbar-none bg-[#0A0B0F] text-[#EEF0F6] p-4 md:p-6 flex flex-col gap-5 select-none">
+    <div className="h-full overflow-y-auto scrollbar-none bg-nx-void text-nx-bright p-4 md:p-6 flex flex-col gap-5 select-none font-ui pb-24 lg:pb-6">
       {/* Barra Superior de Seleção de Poema & Alternância de Modos */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-[#10121A] border border-white/[0.07] rounded-xl px-4 py-2.5">
+      <div className="flex flex-wrap items-center justify-between gap-3 nx-sheet rounded-xl px-4 py-2.5">
         <div className="flex items-center gap-3 min-w-0">
-          <span className="px-2.5 py-1 rounded-md bg-[#38BDF8]/12 border border-[#38BDF8]/30 text-[#38BDF8] text-[11px] font-bold tracking-wide">
+          <span className="px-2.5 py-1 rounded-md bg-[var(--nx-accent)]/15 border border-[var(--nx-accent)]/30 text-[var(--nx-accent)] text-[11px] font-bold tracking-wide">
             {t('poems.active_badge')}
           </span>
           <div className="flex items-center gap-1.5">
@@ -343,7 +343,7 @@ export default function PoemasPage() {
               onClick={() => navegarPoema('ant')}
               disabled={poemas.length === 0}
               title="Poema Anterior"
-              className="px-2 py-1 rounded-md bg-[#161923] hover:bg-[#1E2130] disabled:opacity-40 text-[#9499B3] hover:text-[#EEF0F6] text-xs font-medium flex items-center gap-1 transition-colors cursor-pointer"
+              className="px-2 py-1 rounded-md bg-nx-depth hover:bg-nx-surface disabled:opacity-40 text-nx-dim hover:text-nx-bright text-xs font-medium flex items-center gap-1 transition-colors cursor-pointer border border-nx-border"
             >
               <ChevronLeft size={13} />
               <span>Anterior</span>
@@ -363,7 +363,7 @@ export default function PoemasPage() {
                   setAcuraciaSessao(0);
                 }
               }}
-              className="bg-[#161923] border border-white/[0.08] rounded-lg px-3 py-1 text-xs font-semibold text-[#EEF0F6] focus:outline-none focus:border-[#5B7CF4] cursor-pointer"
+              className="bg-nx-depth border border-nx-border rounded-lg px-3 py-1 text-xs font-semibold text-nx-bright focus:outline-none focus:border-[var(--nx-accent)] cursor-pointer"
             >
               {poemas.length === 0 ? (
                 <option value="">Nenhum poema cadastrado</option>
@@ -380,7 +380,7 @@ export default function PoemasPage() {
               onClick={() => navegarPoema('prox')}
               disabled={poemas.length === 0}
               title="Próximo Poema"
-              className="px-2 py-1 rounded-md bg-[#161923] hover:bg-[#1E2130] disabled:opacity-40 text-[#9499B3] hover:text-[#EEF0F6] text-xs font-medium flex items-center gap-1 transition-colors cursor-pointer"
+              className="px-2 py-1 rounded-md bg-nx-depth hover:bg-nx-surface disabled:opacity-40 text-nx-dim hover:text-nx-bright text-xs font-medium flex items-center gap-1 transition-colors cursor-pointer border border-nx-border"
             >
               <span>Próximo</span>
               <ChevronRight size={13} />
@@ -396,7 +396,7 @@ export default function PoemasPage() {
                 terminateVoskAudio();
                 setModalVoskAberto(true);
               }}
-              className="px-3 py-1.5 rounded-lg bg-[#38BDF8]/15 hover:bg-[#38BDF8]/25 border border-[#38BDF8]/35 text-[#38BDF8] text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="px-3 py-1.5 rounded-lg bg-[var(--nx-secondary)]/15 hover:bg-[var(--nx-secondary)]/25 border border-[var(--nx-secondary)]/35 text-[var(--nx-secondary)] text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <Mic size={13} />
               <span>Captura em Tela Cheia</span>
@@ -405,7 +405,7 @@ export default function PoemasPage() {
           <button
             type="button"
             onClick={() => setTela('leitura')}
-            className="px-3 py-1.5 rounded-lg bg-[#161923] hover:bg-[#1E2130] border border-white/[0.08] text-[#9499B3] hover:text-[#EEF0F6] text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="px-3 py-1.5 rounded-lg nx-btn-secondary text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
           >
             <BookOpen size={13} />
             <span>{t('poems.mode_read')}</span>
@@ -413,7 +413,7 @@ export default function PoemasPage() {
           <button
             type="button"
             onClick={() => setTela('gerenciar')}
-            className="px-3 py-1.5 rounded-lg bg-[#5B7CF4] hover:bg-[#5B7CF4]/90 text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="px-3 py-1.5 rounded-lg nx-btn-primary text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
           >
             <Plus size={13} />
             <span>{t('poems.manage')}</span>
@@ -423,20 +423,20 @@ export default function PoemasPage() {
 
       {/* Estado Vazio Limpo quando não há poemas cadastrados */}
       {!poemaAtivo ? (
-        <div className="flex-1 bg-[#161923] border border-white/[0.07] rounded-2xl p-10 flex flex-col items-center justify-center text-center">
-          <div className="w-14 h-14 rounded-2xl bg-[#10121A] border border-white/[0.08] flex items-center justify-center mb-4 text-[#38BDF8]">
+        <div className="flex-1 nx-sheet rounded-2xl p-10 flex flex-col items-center justify-center text-center">
+          <div className="w-14 h-14 rounded-2xl bg-nx-depth border border-nx-border flex items-center justify-center mb-4 text-[var(--nx-accent)]">
             <Mic size={26} />
           </div>
-          <h2 className="text-lg font-bold text-[#EEF0F6] mb-1">
+          <h2 className="text-lg font-bold text-nx-bright mb-1 font-display">
             Seu Dojo de Oratória está vazio
           </h2>
-          <p className="text-xs text-[#9499B3] max-w-md mb-5 leading-relaxed">
+          <p className="text-xs text-nx-dim max-w-md mb-5 leading-relaxed">
             Cadastre seu primeiro poema, texto clássico ou discurso para treinar memorização verbal, dicção e prosódia com reconhecimento fonético em tempo real.
           </p>
           <button
             type="button"
             onClick={() => setTela('gerenciar')}
-            className="px-5 py-2.5 rounded-xl bg-[#5B7CF4] hover:bg-[#5B7CF4]/90 text-white text-xs font-bold flex items-center gap-2 shadow-lg shadow-[#5B7CF4]/20 transition-all cursor-pointer"
+            className="px-5 py-2.5 rounded-xl nx-btn-primary text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
           >
             <Plus size={15} />
             <span>Adicionar Primeiro Poema</span>
@@ -446,18 +446,18 @@ export default function PoemasPage() {
         /* Layout Principal de 2 Colunas */
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 flex-1">
           {/* Coluna Esquerda (7 cols): Arena de Recitação Fonética em Tempo Real */}
-          <div className="xl:col-span-7 bg-[#161923] border border-white/[0.07] rounded-2xl p-7 flex flex-col justify-between">
+          <div className="xl:col-span-7 nx-sheet rounded-2xl p-7 flex flex-col justify-between">
             <div>
               {/* Header do Poema */}
               <div className="flex items-start justify-between gap-4 mb-5">
                 <div>
-                  <span className="inline-block px-2.5 py-1 rounded-md bg-[#38BDF8]/12 text-[#38BDF8] text-[11px] font-bold tracking-wider uppercase mb-2.5">
+                  <span className="inline-block px-2.5 py-1 rounded-md bg-[var(--nx-accent)]/15 text-[var(--nx-accent)] text-[11px] font-bold tracking-wider uppercase mb-2.5 border border-[var(--nx-accent)]/30">
                     {t('poems.active_badge')}
                   </span>
-                  <h2 className="text-2xl font-bold text-[#EEF0F6] tracking-tight">
+                  <h2 className="text-2xl font-bold text-nx-bright tracking-tight font-display">
                     {poemaAtivo.titulo}
                   </h2>
-                  <p className="text-xs text-[#9499B3] mt-1">
+                  <p className="text-xs text-nx-dim mt-1">
                     {poemaAtivo.autor || 'Autor desconhecido'} •{' '}
                     {poemaAtivo.epoca || 'Verso Livre'} • Estrofe {indiceLinhaAtiva + 1} de {versos.length}
                   </p>
@@ -469,14 +469,14 @@ export default function PoemasPage() {
                   onClick={toggleListening}
                   className={`px-3.5 py-1.5 rounded-full border flex items-center gap-2 shrink-0 transition-colors cursor-pointer ${
                     isListening
-                      ? 'bg-[#22C55E]/15 border-[#22C55E]/40 text-[#22C55E]'
-                      : 'bg-[#5B7CF4]/15 border-[#5B7CF4]/40 text-[#5B7CF4] hover:bg-[#5B7CF4]/25'
+                      ? 'bg-[var(--nx-secondary)]/15 border-[var(--nx-secondary)]/40 text-[var(--nx-secondary)]'
+                      : 'bg-nx-depth border-nx-border text-nx-dim hover:text-nx-bright'
                   }`}
                   title={isListening ? 'Clique para pausar o microfone' : 'Clique para ativar o microfone'}
                 >
                   <span
                     className={`w-2.5 h-2.5 rounded-full ${
-                      isListening ? 'bg-[#22C55E] animate-ping' : 'bg-[#5B7CF4]'
+                      isListening ? 'bg-[var(--nx-secondary)] animate-ping' : 'bg-nx-dim'
                     }`}
                   />
                   <span className="text-[11.5px] font-bold">
@@ -485,7 +485,7 @@ export default function PoemasPage() {
                 </button>
               </div>
 
-              <div className="h-px bg-white/[0.07] mb-5" />
+              <div className="h-px bg-nx-border mb-5" />
 
               {/* Lista de Versos com Destaque na Linha Ativa */}
               <div className="space-y-2.5 mb-6 max-h-[260px] overflow-y-auto pr-1">
@@ -498,32 +498,32 @@ export default function PoemasPage() {
                       <motion.div
                         key={idx}
                         layoutId="active-verse-box"
-                        className="bg-[#5B7CF4]/12 border border-[#5B7CF4]/45 rounded-xl p-4 space-y-2.5"
+                        className="nx-callout rounded-xl p-4 space-y-2.5 bg-nx-depth/60"
                       >
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#38BDF8] flex items-center gap-1.5">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--nx-accent)] flex items-center gap-1.5">
                             <Sparkles size={12} />
                             {t('poems.active_line')}
                           </span>
-                          <span className="text-[11px] font-mono text-[#9499B3]">
+                          <span className="text-[11px] font-mono text-nx-dim">
                             Linha {idx + 1}/{versos.length}
                           </span>
                         </div>
 
-                        {/* Exibição Palavra por Palavra com Coloração Dinâmica (Verde = Acerto, Vermelho = Erro) */}
-                        <p className="text-xl font-bold leading-relaxed flex flex-wrap gap-2 text-[#EEF0F6]">
-                          <span className="text-[#38BDF8]">“</span>
+                        {/* Exibição Palavra por Palavra com Coloração Dinâmica */}
+                        <p className="text-xl font-bold leading-relaxed flex flex-wrap gap-2 text-nx-bright font-display">
+                          <span className="text-[var(--nx-accent)]">“</span>
                           {palavrasVersoAtual.map((p, i) => {
                             const status = palavrasStatus[i];
                             const isEsperada = i === indicePalavraEsperada;
 
-                            let classesCor = 'text-[#EEF0F6]/35';
+                            let classesCor = 'text-nx-dim/50';
                             if (status === 'correta') {
-                              classesCor = 'text-[#22C55E] font-bold drop-shadow-[0_0_10px_rgba(34,197,94,0.7)]';
+                              classesCor = 'text-[var(--nx-secondary)] font-bold';
                             } else if (status === 'errada' || status === 'warn') {
-                              classesCor = 'text-[#EF4444] font-bold drop-shadow-[0_0_10px_rgba(239,68,68,0.65)]';
+                              classesCor = 'text-[var(--nx-error)] font-bold';
                             } else if (isEsperada && isListening) {
-                              classesCor = 'text-[#38BDF8] font-bold underline underline-offset-4';
+                              classesCor = 'text-[var(--nx-accent)] font-bold underline underline-offset-4';
                             }
 
                             return (
@@ -532,14 +532,14 @@ export default function PoemasPage() {
                               </span>
                             );
                           })}
-                          <span className="text-[#38BDF8]">”</span>
+                          <span className="text-[var(--nx-accent)]">”</span>
                         </p>
 
                         {/* Feedback de voz ao vivo */}
                         {partialTranscript && (
-                          <div className="text-xs font-mono text-[#38BDF8] flex items-center gap-1.5 pt-1">
+                          <div className="text-xs font-mono text-[var(--nx-accent)] flex items-center gap-1.5 pt-1">
                             <span className="animate-pulse">🎙️ Ouvido:</span>
-                            <span className="text-white font-medium italic">“{partialTranscript}”</span>
+                            <span className="text-nx-bright font-medium italic">“{partialTranscript}”</span>
                           </div>
                         )}
                       </motion.div>
@@ -558,20 +558,20 @@ export default function PoemasPage() {
                         setPartialTranscript('');
                         nextVoskVerse();
                       }}
-                      className="w-full text-left flex items-center gap-3 px-2 py-1.5 rounded-lg hover:bg-white/[0.03] transition-colors cursor-pointer"
+                      className="w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-nx-depth transition-colors cursor-pointer border border-transparent hover:border-nx-border"
                     >
                       <span
                         className={`px-2 py-0.5 rounded text-[11px] font-mono font-bold shrink-0 ${
                           concluida
-                            ? 'bg-[#22C55E]/15 text-[#22C55E]'
-                            : 'bg-[#1E2130] text-[#5C6178]'
+                            ? 'bg-[var(--nx-secondary)]/15 text-[var(--nx-secondary)]'
+                            : 'bg-nx-depth text-nx-dim'
                         }`}
                       >
                         {concluida ? '100%' : '•••'}
                       </span>
                       <span
-                        className={`text-sm truncate ${
-                          concluida ? 'text-[#9499B3]' : 'text-[#5C6178]'
+                        className={`text-sm truncate font-display ${
+                          concluida ? 'text-nx-dim line-through opacity-70' : 'text-nx-bright'
                         }`}
                       >
                         {linha}
@@ -584,10 +584,10 @@ export default function PoemasPage() {
               {/* Análise Fonética Token por Token Dinâmica */}
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-2.5">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-[#5C6178]">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-nx-dim">
                     {t('poems.phonetic_tokens')} (Status Fonético)
                   </p>
-                  <span className="text-[10px] font-mono text-[#9499B3]">
+                  <span className="text-[10px] font-mono text-nx-dim">
                     {Object.values(palavrasStatus).filter((s) => s === 'correta').length}/{palavrasVersoAtual.length} palavras
                   </span>
                 </div>
@@ -597,17 +597,17 @@ export default function PoemasPage() {
                     const status = palavrasStatus[idx];
                     const isEsperada = idx === indicePalavraEsperada && isListening;
 
-                    let estiloCard = 'bg-[#1E2130] border-white/[0.06] text-[#5C6178]';
+                    let estiloCard = 'bg-nx-depth border-nx-border text-nx-dim';
                     let scoreTexto = 'Aguardando';
 
                     if (status === 'correta') {
-                      estiloCard = 'bg-[#22C55E]/15 border-[#22C55E]/50 text-[#22C55E] shadow-[0_0_12px_rgba(34,197,94,0.25)]';
+                      estiloCard = 'bg-[var(--nx-secondary)]/15 border-[var(--nx-secondary)]/50 text-[var(--nx-secondary)]';
                       scoreTexto = '100%';
                     } else if (status === 'errada' || status === 'warn') {
-                      estiloCard = 'bg-[#EF4444]/15 border-[#EF4444]/50 text-[#EF4444] shadow-[0_0_12px_rgba(239,68,68,0.25)]';
+                      estiloCard = 'bg-[var(--nx-error)]/15 border-[var(--nx-error)]/50 text-[var(--nx-error)]';
                       scoreTexto = 'Erro';
                     } else if (isEsperada) {
-                      estiloCard = 'bg-[#5B7CF4]/20 border-[#5B7CF4]/60 text-[#38BDF8]';
+                      estiloCard = 'bg-[var(--nx-accent)]/15 border-[var(--nx-accent)]/50 text-[var(--nx-accent)]';
                       scoreTexto = 'Fale agora';
                     }
 
@@ -625,12 +625,12 @@ export default function PoemasPage() {
               </div>
             </div>
 
-            {/* Espectro de Voz Reativo ao Volume Real (RMS) do Microfone */}
+            {/* Espectro de Voz Reativo ao Volume Real */}
             <div className="space-y-4">
-              <div className="bg-[#10121A] border border-white/[0.06] rounded-xl p-4">
-                <div className="flex items-center justify-between text-[11px] font-mono text-[#9499B3] mb-3">
+              <div className="bg-nx-depth border border-nx-border rounded-xl p-4">
+                <div className="flex items-center justify-between text-[11px] font-mono text-nx-dim mb-3">
                   <span>{t('poems.spectrum')}</span>
-                  <span className="text-[#38BDF8]">
+                  <span className="text-[var(--nx-accent)]">
                     {isListening
                       ? audioLevel >= 4 || partialTranscript
                         ? `Captando Voz (${audioLevel}% RMS)`
@@ -640,11 +640,15 @@ export default function PoemasPage() {
                   </span>
                 </div>
 
-                {/* Ondas Dinâmicas de Áudio Guiadas pelo Volume Real (audioLevel) */}
+                {/* Ondas Dinâmicas de Áudio com Cores Terrosas */}
                 <div className="h-14 flex items-center gap-1.5 overflow-hidden">
                   {ESPECTRO_BASE_ALTURAS.map((baseH, i) => {
                     const corBarra =
-                      i % 3 === 0 ? '#5B7CF4' : i % 3 === 1 ? '#38BDF8' : '#22C55E';
+                      i % 3 === 0
+                        ? 'var(--nx-accent)'
+                        : i % 3 === 1
+                          ? 'var(--nx-secondary)'
+                          : 'var(--nx-warning)';
 
                     const temVozAtiva = isListening && (audioLevel >= 3 || Boolean(partialTranscript));
                     const intensidade = Math.max(audioLevel, partialTranscript ? 35 : 0);
@@ -676,8 +680,8 @@ export default function PoemasPage() {
                   onClick={toggleListening}
                   className={`px-4 py-2.5 rounded-xl border text-xs font-bold flex items-center gap-2 transition-colors cursor-pointer ${
                     isListening
-                      ? 'bg-[#EF4444]/15 border-[#EF4444]/40 text-[#EF4444]'
-                      : 'bg-[#22C55E]/15 border-[#22C55E]/40 text-[#22C55E]'
+                      ? 'bg-[var(--nx-error)]/15 border-[var(--nx-error)]/40 text-[var(--nx-error)]'
+                      : 'bg-[var(--nx-secondary)]/15 border-[var(--nx-secondary)]/40 text-[var(--nx-secondary)]'
                   }`}
                 >
                   {isListening ? <MicOff size={15} /> : <Mic size={15} />}
@@ -688,7 +692,7 @@ export default function PoemasPage() {
                   <button
                     type="button"
                     onClick={reiniciarVerso}
-                    className="px-4 py-2.5 rounded-xl bg-[#1E2130] hover:bg-white/[0.08] border border-white/[0.07] text-[#9499B3] hover:text-[#EEF0F6] text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer"
+                    className="px-4 py-2.5 rounded-xl nx-btn-secondary text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer"
                   >
                     <RotateCcw size={14} />
                     <span>{t('poems.restart_verse')}</span>
@@ -697,7 +701,7 @@ export default function PoemasPage() {
                   <button
                     type="button"
                     onClick={avancarEstrofe}
-                    className="px-5 py-2.5 rounded-xl bg-[#5B7CF4] hover:bg-[#5B7CF4]/90 text-white text-xs font-bold flex items-center gap-2 shadow-lg shadow-[#5B7CF4]/20 transition-all cursor-pointer"
+                    className="px-5 py-2.5 rounded-xl nx-btn-primary text-xs font-bold flex items-center gap-2 transition-all cursor-pointer"
                   >
                     <span>{t('poems.next_stanza')}</span>
                     <ChevronRight size={15} />
@@ -709,13 +713,13 @@ export default function PoemasPage() {
 
           {/* Coluna Direita (5 cols): Acurácia Fonética Global em Tempo Real */}
           <div className="xl:col-span-5 flex flex-col gap-5">
-            {/* Card 1: Precisão Fonética Global (Donut Gauge Dinâmico) */}
-            <div className="bg-[#161923] border border-white/[0.07] rounded-2xl p-6">
+            {/* Card 1: Precisão Fonética Global (Donut Gauge) */}
+            <div className="nx-sheet rounded-2xl p-6">
               <div className="mb-4">
-                <h3 className="text-base font-bold text-[#EEF0F6]">
+                <h3 className="text-base font-bold text-nx-bright font-display">
                   {t('poems.global_accuracy')}
                 </h3>
-                <p className="text-xs text-[#9499B3] mt-0.5">
+                <p className="text-xs text-nx-dim mt-0.5">
                   {t('poems.prosody_eval')}
                 </p>
               </div>
@@ -729,7 +733,7 @@ export default function PoemasPage() {
                       cy="70"
                       r="56"
                       fill="none"
-                      stroke="#1E2130"
+                      stroke="var(--nx-border)"
                       strokeWidth="12"
                     />
                     {acuraciaSessao > 0 && (
@@ -738,7 +742,7 @@ export default function PoemasPage() {
                         cy="70"
                         r="56"
                         fill="none"
-                        stroke="#22C55E"
+                        stroke="var(--nx-secondary)"
                         strokeWidth="12"
                         strokeLinecap="round"
                         strokeDasharray={`${dashAcierto} ${circunferenciaDonut}`}
@@ -746,10 +750,10 @@ export default function PoemasPage() {
                     )}
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                    <span className="text-2xl font-bold font-mono text-[#EEF0F6]">
+                    <span className="text-2xl font-bold font-mono text-nx-bright">
                       {acuraciaSessao}%
                     </span>
-                    <span className="text-[11px] font-bold text-[#22C55E]">
+                    <span className="text-[11px] font-bold text-[var(--nx-secondary)]">
                       {acuraciaSessao >= 90
                         ? 'Excelente'
                         : acuraciaSessao >= 75
@@ -764,27 +768,27 @@ export default function PoemasPage() {
                 {/* Métricas Detalhadas Reais de Acústica e Prosódia */}
                 <div className="flex-1 w-full space-y-3">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-[#9499B3]">Dicção & Fonemas</span>
-                    <span className="font-mono font-bold text-[#22C55E]">{acuraciaSessao}%</span>
+                    <span className="text-nx-dim">Dicção & Fonemas</span>
+                    <span className="font-mono font-bold text-[var(--nx-secondary)]">{acuraciaSessao}%</span>
                   </div>
-                  <div className="w-full h-1.5 bg-[#1E2130] rounded-full overflow-hidden">
+                  <div className="w-full h-1.5 bg-nx-depth rounded-full overflow-hidden border border-nx-border/50">
                     <div
-                      className="h-full bg-[#22C55E] transition-all duration-300"
+                      className="h-full bg-[var(--nx-secondary)] transition-all duration-300"
                       style={{ width: `${acuraciaSessao}%` }}
                     />
                   </div>
 
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-[#9499B3]">Cadência Poética (Ritmo)</span>
-                    <span className="font-mono font-bold text-[#38BDF8]">
+                    <span className="text-nx-dim">Cadência Poética (Ritmo)</span>
+                    <span className="font-mono font-bold text-[var(--nx-accent)]">
                       {prosodyMetrics?.syllableRateHz > 0
                         ? `${prosodyMetrics.syllableRateHz} síl/s (${prosodyMetrics.cadenciaScore || 0}%)`
                         : `${acuraciaSessao > 0 ? Math.round(acuraciaSessao * 0.96) : 0}%`}
                     </span>
                   </div>
-                  <div className="w-full h-1.5 bg-[#1E2130] rounded-full overflow-hidden">
+                  <div className="w-full h-1.5 bg-nx-depth rounded-full overflow-hidden border border-nx-border/50">
                     <div
-                      className="h-full bg-[#38BDF8] transition-all duration-300"
+                      className="h-full bg-[var(--nx-accent)] transition-all duration-300"
                       style={{
                         width: `${
                           prosodyMetrics?.syllableRateHz > 0
@@ -798,21 +802,21 @@ export default function PoemasPage() {
                   </div>
 
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-[#9499B3]">Fidelidade Lexical</span>
-                    <span className="font-mono font-bold text-[#5B7CF4]">
+                    <span className="text-nx-dim">Fidelidade Lexical</span>
+                    <span className="font-mono font-bold text-[var(--nx-secondary)]">
                       {acuraciaSessao > 0 ? Math.round(acuraciaSessao * 0.98) : 0}%
                     </span>
                   </div>
-                  <div className="w-full h-1.5 bg-[#1E2130] rounded-full overflow-hidden">
+                  <div className="w-full h-1.5 bg-nx-depth rounded-full overflow-hidden border border-nx-border/50">
                     <div
-                      className="h-full bg-[#5B7CF4] transition-all duration-300"
+                      className="h-full bg-[var(--nx-secondary)] transition-all duration-300"
                       style={{ width: `${acuraciaSessao > 0 ? Math.round(acuraciaSessao * 0.98) : 0}%` }}
                     />
                   </div>
 
-                  <div className="pt-1 flex items-center justify-between text-[11px] text-[#9499B3]">
+                  <div className="pt-1 flex items-center justify-between text-[11px] text-nx-dim">
                     <span>Ofensiva deste Poema</span>
-                    <span className="font-bold text-[#F59E0B]">
+                    <span className="font-bold text-[var(--nx-warning)]">
                       {poemaAtivo.streak_recitacao || 0} recitações
                     </span>
                   </div>
@@ -821,17 +825,17 @@ export default function PoemasPage() {
             </div>
 
             {/* Card 2: Estrutura Métrica & Índice de Versos */}
-            <div className="bg-[#161923] border border-white/[0.07] rounded-2xl p-6 flex-1 flex flex-col">
+            <div className="nx-sheet rounded-2xl p-6 flex-1 flex flex-col">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="text-base font-bold text-[#EEF0F6]">
+                  <h3 className="text-base font-bold text-nx-bright font-display">
                     Estrutura Métrica & Índice de Versos
                   </h3>
-                  <p className="text-xs text-[#9499B3] mt-0.5">
+                  <p className="text-xs text-nx-dim mt-0.5">
                     {poemaAtivo.titulo} • {versos.length} versos
                   </p>
                 </div>
-                <span className="px-2.5 py-1 rounded-md bg-[#5B7CF4]/15 border border-[#5B7CF4]/35 text-[#5B7CF4] text-xs font-mono font-bold">
+                <span className="px-2.5 py-1 rounded-md bg-[var(--nx-accent)]/15 border border-[var(--nx-accent)]/35 text-[var(--nx-accent)] text-xs font-mono font-bold">
                   VERSO {indiceLinhaAtiva + 1}/{versos.length}
                 </span>
               </div>
@@ -853,15 +857,15 @@ export default function PoemasPage() {
                       }}
                       className={`w-full text-left p-3 rounded-xl border text-xs transition-colors flex items-center gap-3 cursor-pointer ${
                         ativo
-                          ? 'bg-[#5B7CF4]/15 border-[#5B7CF4]/50 text-[#EEF0F6] font-semibold'
+                          ? 'bg-[var(--nx-accent)]/15 border-[var(--nx-accent)]/50 text-nx-bright font-semibold'
                           : concluido
-                            ? 'bg-[#22C55E]/8 border-[#22C55E]/25 text-[#9499B3]'
-                            : 'bg-[#10121A] border-white/[0.05] text-[#9499B3] hover:text-[#EEF0F6]'
+                            ? 'bg-[var(--nx-secondary)]/10 border-[var(--nx-secondary)]/30 text-nx-dim'
+                            : 'bg-nx-depth border-nx-border text-nx-dim hover:text-nx-bright'
                       }`}
                     >
-                      <span className="font-mono text-[10px] w-5 shrink-0 text-[#5C6178]">{i + 1}</span>
-                      <span className="truncate flex-1">{v}</span>
-                      {concluido && <span className="text-[#22C55E] text-[10px] font-bold shrink-0">✓</span>}
+                      <span className="font-mono text-[10px] w-5 shrink-0 text-nx-dim">{i + 1}</span>
+                      <span className="truncate flex-1 font-display">{v}</span>
+                      {concluido && <span className="text-[var(--nx-secondary)] text-[10px] font-bold shrink-0">✓</span>}
                     </button>
                   );
                 })}
@@ -871,7 +875,7 @@ export default function PoemasPage() {
         </div>
       )}
 
-      {/* Modal Vosk em Tela Cheia (Quando acionado) */}
+      {/* Modal Vosk em Tela Cheia */}
       {modalVoskAberto && poemaAtivo && (
         <PoemaRecitacao
           poema={poemaAtivo}

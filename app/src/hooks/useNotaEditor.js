@@ -96,7 +96,7 @@ export function useNotaEditor({ notaSelecionada, editando, update, addTag, setNo
     editable: editando,
     editorProps: {
       attributes: {
-        class: "prose prose-invert max-w-none focus:outline-none min-h-[300px] p-6 leading-relaxed",
+        class: "nx-caderno-editor max-w-none focus:outline-none min-h-[420px]",
       },
     },
     onUpdate: ({ editor: ed }) => {
@@ -134,6 +134,10 @@ export function useNotaEditor({ notaSelecionada, editando, update, addTag, setNo
     if (editor && notaSelecionada) {
       const isNewNote = lastLoadedNoteIdRef.current !== notaSelecionada.id;
       if (isNewNote) {
+        if (debounceTimerRef.current) {
+          clearTimeout(debounceTimerRef.current);
+          debounceTimerRef.current = null;
+        }
         lastLoadedNoteIdRef.current = notaSelecionada.id;
         lastLoadedContentRef.current = notaSelecionada.conteudo || "";
         editor.commands.setContent(notaSelecionada.conteudo || "");
@@ -145,6 +149,10 @@ export function useNotaEditor({ notaSelecionada, editando, update, addTag, setNo
         editor.commands.setContent(notaSelecionada.conteudo || "");
       }
     } else if (!notaSelecionada) {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
       lastLoadedNoteIdRef.current = null;
       lastLoadedContentRef.current = null;
     }

@@ -1,26 +1,26 @@
 import PropTypes from 'prop-types';
 import { Home, FileText, Mic, Layers, GitBranch, Settings } from 'lucide-react';
 import { motion } from 'framer-motion';
-
-const NAV_ITEMS = [
-  { id: 'dashboard', icon: Home,         label: 'Início',  color: '#7C6FFA' },
-  { id: 'notes',     icon: FileText,      label: 'Notas',   color: '#A78BFA' },
-  { id: 'poemas',    icon: Mic,           label: 'Dojo',    color: '#22D3EE' },
-  { id: 'flashcards',icon: Layers,        label: 'Cards',   color: '#F472B6' },
-  { id: 'graph',     icon: GitBranch,     label: 'Grafo',   color: '#22D3EE' },
-  { id: 'settings',  icon: Settings,      label: 'Config',  color: '#7D869E' },
-];
+import { useTranslation } from '../../lib/i18n';
 
 export default function BottomNav({ currentPage, onNavigate }) {
-  return (
-    <div
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-[100] flex items-end"
-      style={{ background: 'rgba(4, 5, 13, 0.92)', backdropFilter: 'blur(20px)', borderTop: '1px solid rgba(33,38,61,0.8)' }}
-    >
-      {/* active page glow strip */}
-      <div className="absolute top-0 left-0 right-0 h-[1px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(124,111,250,0.5), transparent)' }} />
+  const { t } = useTranslation();
 
-      <div className="w-full flex items-center justify-around px-1 pb-safe pt-1 h-16">
+  const NAV_ITEMS = [
+    { id: 'dashboard',  icon: Home,      label: t('nav.bottom.dashboard', 'Início') },
+    { id: 'notes',      icon: FileText,  label: t('nav.bottom.notes', 'Notas') },
+    { id: 'poemas',     icon: Mic,       label: t('nav.bottom.dojo', 'Dojo') },
+    { id: 'flashcards', icon: Layers,    label: t('nav.bottom.cards', 'Cards') },
+    { id: 'graph',      icon: GitBranch, label: t('nav.bottom.graph', 'Grafo') },
+    { id: 'settings',   icon: Settings,  label: t('nav.bottom.settings', 'Config') },
+  ];
+
+  return (
+    <nav
+      aria-label="Navegação Inferior Mobile"
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-[100] bg-nx-surface/95 backdrop-blur-md border-t border-nx-border shadow-[0_-4px_24px_rgba(44,38,35,0.08)] select-none"
+    >
+      <div className="w-full flex items-center justify-around px-2 pb-safe pt-1.5 h-16 max-w-lg mx-auto">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive = currentPage === item.id;
@@ -29,39 +29,31 @@ export default function BottomNav({ currentPage, onNavigate }) {
             <button
               key={item.id}
               onClick={() => onNavigate(item.id)}
-              className="relative flex flex-col items-center justify-center min-w-[44px] gap-0.5 py-1 transition-all duration-150"
+              className="relative flex flex-col items-center justify-center min-w-[48px] py-1 transition-colors cursor-pointer group"
             >
-              {/* active indicator dot above icon */}
+              {/* Indicador superior ativo */}
               {isActive && (
                 <motion.div
                   layoutId="bottom-nav-indicator"
-                  className="absolute -top-[1px] w-8 h-[2px] rounded-full"
-                  style={{
-                    background: `linear-gradient(90deg, transparent, ${item.color}, transparent)`,
-                    boxShadow: `0 0 8px ${item.color}80`,
-                  }}
+                  className="absolute -top-1.5 w-8 h-[2.5px] rounded-full bg-nx-primary"
+                  transition={{ type: 'spring', stiffness: 500, damping: 35 }}
                 />
               )}
 
               <div
-                className="flex items-center justify-center w-9 h-7 rounded-lg transition-all duration-150"
-                style={isActive ? {
-                  background: `linear-gradient(135deg, ${item.color}25, ${item.color}10)`,
-                  boxShadow: `0 0 12px ${item.color}30`,
-                } : {}}
+                className={`flex items-center justify-center w-10 h-7 rounded-lg transition-colors ${
+                  isActive
+                    ? 'bg-nx-primary-bg text-nx-primary'
+                    : 'text-nx-dim group-hover:text-nx-bright group-hover:bg-nx-overlay/60'
+                }`}
               >
-                <Icon
-                  size={18}
-                  style={isActive
-                    ? { color: item.color, filter: `drop-shadow(0 0 6px ${item.color}80)` }
-                    : { color: '#7D869E' }
-                  }
-                />
+                <Icon size={18} strokeWidth={isActive ? 2.4 : 1.8} />
               </div>
 
               <span
-                className="text-[8px] font-mono font-bold uppercase tracking-wider hidden min-[360px]:block"
-                style={{ color: isActive ? item.color : '#4E5570' }}
+                className={`text-[9px] font-sans font-semibold uppercase tracking-wider truncate mt-0.5 ${
+                  isActive ? 'text-nx-primary font-bold' : 'text-nx-dim group-hover:text-nx-text'
+                }`}
               >
                 {item.label}
               </span>
@@ -69,7 +61,7 @@ export default function BottomNav({ currentPage, onNavigate }) {
           );
         })}
       </div>
-    </div>
+    </nav>
   );
 }
 

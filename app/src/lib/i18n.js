@@ -7,6 +7,15 @@ import { create } from 'zustand';
 
 export const DICTIONARIES = {
   'pt-BR': {
+    // Comum & Dias da Semana
+    'common.days.sun': 'Dom',
+    'common.days.mon': 'Seg',
+    'common.days.tue': 'Ter',
+    'common.days.wed': 'Qua',
+    'common.days.thu': 'Qui',
+    'common.days.fri': 'Sex',
+    'common.days.sat': 'Sáb',
+
     // Sidebar & Navegação
     'brand.tagline': 'SECOND BRAIN • LOCAL AI',
     'sidebar.ecosystem': 'ECOSSISTEMA COGNITIVO',
@@ -20,6 +29,12 @@ export const DICTIONARIES = {
     'nav.ai': 'Chat Neural',
     'nav.statistics': 'Métricas',
     'nav.settings': 'Configurações',
+    'nav.bottom.dashboard': 'Início',
+    'nav.bottom.notes': 'Notas',
+    'nav.bottom.dojo': 'Dojo',
+    'nav.bottom.cards': 'Cards',
+    'nav.bottom.graph': 'Grafo',
+    'nav.bottom.settings': 'Config',
     'sidebar.runtime.title': 'Motor Neural Offline',
     'sidebar.runtime.llm': 'Gemma 4 / Llama • Local',
     'sidebar.runtime.stt': 'Vosk / Whisper • 16kHz Worker',
@@ -36,40 +51,91 @@ export const DICTIONARIES = {
     'header.cta.flashcards': '✦ Ir p/ Flashcards →',
     'header.cta.graph': '✦ Abrir Grafo 3D →',
     'header.cta.dashboard': '✦ Voltar ao Início',
+    'header.timer.title': 'Timer de Estudo',
+    'header.timer.sub': 'Ganhe +XP ao concluir sessões de foco',
+    'header.timer.pause': 'Pausar',
+    'header.timer.start': 'Iniciar',
+    'header.timer.finish': 'Concluir sessão agora e ganhar XP',
+    'header.theme.light': 'Papel',
+    'header.theme.dark': 'Noturno',
+    'header.copilot.btn': 'Copiloto',
+    'header.notif.title': 'Notificações',
+    'header.notif.allGood': 'Revisões em dia!',
+    'header.notif.pending': 'cards para revisar',
 
-    // Dashboard (Tela 1)
+    // Dashboard (Passo 1: Prioridade do Dia)
     'dash.greeting.morning': 'Bom dia',
     'dash.greeting.afternoon': 'Boa tarde',
     'dash.greeting.evening': 'Boa noite',
     'dash.subtitle': 'Seu Segundo Cérebro processou seus flashcards, notas e poemas com IA local hoje.',
-    'dash.kpi.fsrs': 'Flashcards Revisados (FSRS)',
-    'dash.kpi.fsrs.delta': '+16% vs média semanal',
-    'dash.kpi.whisper': 'Precisão Fonética (Oratória)',
-    'dash.kpi.whisper.delta': '+2.8% em Oratória',
-    'dash.kpi.graph': 'Sinapses no Grafo Neural',
-    'dash.kpi.graph.delta': 'Conexões semânticas ativas',
-    'dash.kpi.xp': 'Evolução Cognitiva (XP)',
+    'dash.step1.tag': '1. Prioridade de Hoje • Memória Ativa',
+    'dash.step1.dueCards_one': 'Você tem {count} cartão aguardando revisão',
+    'dash.step1.dueCards_other': 'Você tem {count} cartões aguardando revisão',
+    'dash.step1.allDone': 'Todas as revisões de hoje estão em dia',
+    'dash.step1.emptyDeck': 'Comece seu baralho de repetição espaçada',
+    'dash.step1.progress': 'Progresso diário: {reviewed} de {total} cartões consolidados no baralho.',
+    'dash.step1.createCardsDesc': 'Crie ou importe cartões no formato frente;verso para acompanhar sua curva real de retenção.',
+    'dash.step1.reviewNow': 'Revisar Agora ({count})',
+    'dash.step1.openDeck': 'Abrir Estúdio de Flashcards',
+    'dash.step1.newNote': '+ Nova Nota',
+
+    // Dashboard (Resumo do Acervo)
+    'dash.acervo.title': 'Resumo do Acervo:',
+    'dash.acervo.cards': 'flashcards',
+    'dash.acervo.notes': 'notas no caderno',
+    'dash.acervo.synapses': 'conexões [[WikiLinks]]',
+    'dash.acervo.focusMin': 'min de foco no mês',
+
+    // Dashboard (Caderno & Notas Recentes)
+    'dash.notes.tag': 'Caderno de Estudo',
+    'dash.notes.title': 'Notas Recentes & Conexões Geradas por IA',
+    'dash.notes.viewGraph': 'Ver no Grafo Neural',
+    'dash.notes.empty': 'Nenhuma nota criada ainda',
+    'dash.notes.createFirst': '+ Criar primeira nota',
+    'dash.notes.noTitle': 'Sem título',
+    'dash.notes.linkedCards': '{count} card(s) vinculados',
+    'dash.notes.thisWeek': '+{count} nota(s) criadas nesta semana',
+    'dash.notes.openAll': 'Abrir Caderno Completo →',
+
+    // Dashboard (Passo 2: Panorama de Estudo e FSRS)
+    'dash.step2.tag': '2. Histórico de Atividade (7 Dias)',
     'dash.chart.title': 'Ritmo de Estudo & Retenção Neural (7 Dias)',
     'dash.chart.sub': 'Comparativo entre Revisões FSRS-5 e Sessões de Oratória',
     'dash.chart.leg.fsrs': 'Flashcards FSRS',
     'dash.chart.leg.dojo': 'Versos Recitados',
+    'dash.step2.empty': 'Sem sessões registradas nos últimos 7 dias',
+    'dash.step2.startHint': 'Inicie um Pomodoro na Topbar ou revise flashcards para gerar telemetria real.',
+    'dash.step2.totalReviews': 'Total revisado',
+    'dash.step2.totalVerses': 'Versos falados',
+
+    // Dashboard (Donut FSRS)
     'dash.donut.title': 'Estabilidade da Memória',
     'dash.donut.sub': 'Distribuição da coleção no motor SRS',
     'dash.donut.retention': 'Retenção',
+    'dash.donut.total': 'Total no Baralho',
     'dash.donut.mature': 'Maduros (>21d)',
     'dash.donut.young': 'Jovens (4–20d)',
     'dash.donut.learning': 'Aprendendo',
     'dash.donut.new': 'Novos na Fila',
+    'dash.donut.empty': 'Nenhum cartão cadastrado',
+    'dash.donut.emptyHint': 'Adicione flashcards para visualizar a distribuição de maturidade FSRS-5.',
     'dash.donut.btn': '✦ Revisar Cartões Pendentes →',
-    'dash.notes.title': 'Notas Recentes & Conexões Geradas por IA',
-    'dash.notes.viewGraph': 'Ver no Grafo Neural →',
-    'dash.notes.empty': 'Nenhuma nota criada ainda',
-    'dash.notes.createFirst': '+ Criar primeira nota',
+
+    // Dashboard (Passo 3: Oratória & Consistência)
+    'dash.step3.tag': '3. Leitura Poética & Prática de Oratória',
     'dash.dojo.tag': '✦ ESTÚDIO DE VOZ LOCAL',
     'dash.dojo.title': 'Estúdio de Recitação',
-    'dash.dojo.cta': 'Praticar Oratória (+50 XP) →',
+    'dash.dojo.cta': 'Praticar Recitação no Dojo (+50 XP) →',
+    'dash.step3.switchPoem': 'Alternar Poema',
+    'dash.step3.emptyPoems': 'Nenhum poema clássico carregado',
+    'dash.annual.toggleOpen': 'Consistência Anual & Metas Globais',
+    'dash.annual.toggleHint': 'Visualizar heatmap de 365 dias e resumo consolidado',
+    'dash.annual.streakActive': 'Ofensiva Ativa',
+    'dash.annual.streakRecord': 'Recorde Histórico',
+    'dash.annual.monthlyFocus': 'Foco Mensal',
+    'dash.annual.masteredCards': 'Cards Dominados',
 
-    // Oratória & Poesia (Tela 2)
+    // Oratória & Poesia (Dojo)
     'dojo.header.title': 'Estúdio de Recitação & Oratória',
     'dojo.header.sub': 'Transcrição fonética em tempo real a 16kHz via Motor de Voz Local.',
     'dojo.work.category': 'OBRA CLÁSSICA • ACERVO POÉTICO',
@@ -88,7 +154,7 @@ export const DICTIONARIES = {
     'dojo.pet.header': 'EVOLUÇÃO DO PET EM TEMPO REAL',
     'dojo.pet.title': 'Kora absorveu sua oratória!',
 
-    // Flashcards FSRS (Tela 3)
+    // Flashcards FSRS
     'cards.header.title': 'Repetição Espaçada (FSRS-5)',
     'cards.header.sub': 'Fila otimizada pela Curva de Esquecimento Individual',
     'cards.q.label': 'PERGUNTA (FRENTE)',
@@ -103,8 +169,31 @@ export const DICTIONARIES = {
     'cards.gen.tag': '✦ LOCAL AI GENERATOR',
     'cards.gen.title': 'Síntese Automática de Notas',
     'cards.gen.btn': '✦ Adicionar Cartões ao Deck',
+    'flashcards.tab.review': 'Estúdio de Revisão',
+    'flashcards.tab.manage': 'Gerenciador do Acervo',
+    'flashcards.tab.forge': 'Forja Neural & Importador',
+    'flashcards.btn.new': '+ Novo Flashcard',
+    'flashcards.btn.import': 'Importar (.md / csv)',
+    'flashcards.deck.all': 'Todos os Baralhos',
+    'flashcards.deck.general': 'Geral',
+    'flashcards.empty.doneTitle': 'Parabéns! Todas as revisões foram concluídas.',
+    'flashcards.empty.doneSub': 'Volte mais tarde para novas repetições FSRS-5.',
+    'flashcards.session_progress': 'Progresso da Sessão',
+    'flashcards.ebbinghaus_title': 'Curva de Esquecimento (Ebbinghaus)',
+    'flashcards.ebbinghaus_sub': 'Projeção matemática de retenção baseada no FSRS-5',
+    'poems.active_badge': 'Obra Ativa',
+    'poems.mode_dojo': 'Modo Estúdio',
+    'poems.mode_read': 'Modo Leitura',
+    'poems.manage': 'Gerenciar Acervo',
+    'poems.active_line': 'Verso Ativo',
+    'poems.phonetic_tokens': 'Análise Fonética de Tokens',
+    'poems.spectrum': 'Espectro de Voz Vosk (16kHz)',
+    'poems.restart_verse': 'Reiniciar Verso',
+    'poems.next_stanza': 'Avançar Estrofe',
+    'poems.global_accuracy': 'Precisão Fonética Global',
+    'poems.prosody_eval': 'Avaliação de Prosódia e Dicção',
 
-    // Grafo Neural & AI Chat (Tela 4)
+    // Grafo Neural
     'graph.header.title': 'Grafo de Sinapses & Vault',
     'graph.header.sub': 'Notas conectadas por [[WikiLinks]] e tags semânticas locais.',
     'graph.filter.all': 'Todos',
@@ -115,34 +204,6 @@ export const DICTIONARIES = {
     'graph.backlinks.header': 'BACKLINKS BIDIRECIONAIS',
     'graph.chat.header': '✦ CHAT NEURAL COM SEU VAULT',
     'graph.chat.placeholder': 'Pergunte à IA sobre o Vault...',
-
-    // Chaves de compatibilidade para Oratória & Poesia
-    'poems.active_badge': 'Obra Ativa',
-    'poems.mode_dojo': 'Modo Estúdio',
-    'poems.mode_read': 'Modo Leitura',
-    'poems.manage': 'Gerenciar Poemas',
-    'poems.vosk_listening': 'Vosk Escutando',
-    'poems.active_line': 'Verso Ativo',
-    'poems.phonetic_tokens': 'Análise Fonética de Tokens',
-    'poems.spectrum': 'Espectro de Voz Vosk (16kHz)',
-    'poems.latency': 'Latência',
-    'poems.pause_listen': 'Pausar Escuta',
-    'poems.restart_verse': 'Reiniciar Verso',
-    'poems.next_stanza': 'Avançar Estrofe',
-    'poems.global_accuracy': 'Precisão Fonética Global',
-    'poems.prosody_eval': 'Avaliação de Prosódia e Dicção',
-    'poems.pet_reaction': 'Reação de Kora em Tempo Real',
-    'topbar.streak_days': 'Dias',
-
-    // Chaves de compatibilidade para Flashcards
-    'flashcards.session_progress': 'Progresso da Sessão',
-    'flashcards.undo': 'Desfazer',
-    'flashcards.ebbinghaus_title': 'Curva de Esquecimento (Ebbinghaus)',
-    'flashcards.ebbinghaus_sub': 'Projeção matemática de retenção baseada no FSRS-5',
-    'flashcards.ai_synthesis': 'Síntese Neural por IA Local',
-    'flashcards.approve_add': 'Aprovar e Adicionar ao Baralho',
-
-    // Chaves de compatibilidade para Grafo
     'graph.all_clusters': 'Todos os Clusters',
     'graph.selected_node': 'Nó Selecionado',
     'graph.open_note': 'Abrir no Editor',
@@ -151,9 +212,27 @@ export const DICTIONARIES = {
     'graph.ai_chat_sub': 'Inferência 100% privada com Gemma 4 Local',
     'graph.ask_placeholder': 'Pergunte à IA sobre as conexões deste nó...',
     'graph.send': 'Enviar',
+
+    // Configurações Gerais
+    'settings.general.title': 'Geral & Preferências Globais',
+    'settings.general.sub': 'Idioma do ecossistema, temas de interface e atalhos operacionais de produtividade.',
+    'settings.lang.title': 'Idioma da Interface (i18n)',
+    'settings.lang.sub': 'Altera todos os rótulos visuais, botões, métricas e terminologias de forma imediata.',
+    'settings.theme.title': 'Tema Visual & Conforto',
+    'settings.theme.sub': 'Paleta inspirada em papéis de leitura para prevenir fadiga visual.',
   },
 
   'en-US': {
+    // Common & Days
+    'common.days.sun': 'Sun',
+    'common.days.mon': 'Mon',
+    'common.days.tue': 'Tue',
+    'common.days.wed': 'Wed',
+    'common.days.thu': 'Thu',
+    'common.days.fri': 'Fri',
+    'common.days.sat': 'Sat',
+
+    // Sidebar & Navigation
     'brand.tagline': 'SECOND BRAIN • LOCAL AI',
     'sidebar.ecosystem': 'COGNITIVE ECOSYSTEM',
     'nav.dashboard': 'Dashboard',
@@ -166,6 +245,12 @@ export const DICTIONARIES = {
     'nav.ai': 'Neural Chat',
     'nav.statistics': 'Analytics',
     'nav.settings': 'Settings',
+    'nav.bottom.dashboard': 'Home',
+    'nav.bottom.notes': 'Notes',
+    'nav.bottom.dojo': 'Dojo',
+    'nav.bottom.cards': 'Cards',
+    'nav.bottom.graph': 'Graph',
+    'nav.bottom.settings': 'Settings',
     'sidebar.runtime.title': 'Offline Neural Engine',
     'sidebar.runtime.llm': 'Gemma 4 / Llama • Local',
     'sidebar.runtime.stt': 'Vosk / Whisper • 16kHz Worker',
@@ -175,44 +260,98 @@ export const DICTIONARIES = {
     'sidebar.pet.xpLabel': 'Level XP',
     'sidebar.user.vault': '✦ 100% On-Device',
 
+    // TopBar / Header
     'header.search.placeholder': 'Search notes, poems, flashcards...',
     'header.streak.days': 'Days',
     'header.cta.dojo': '✦ Open Oratory →',
     'header.cta.flashcards': '✦ Go to Flashcards →',
     'header.cta.graph': '✦ Open 3D Graph →',
     'header.cta.dashboard': '✦ Back to Home',
+    'header.timer.title': 'Study Timer',
+    'header.timer.sub': 'Earn +XP upon completing focus sessions',
+    'header.timer.pause': 'Pause',
+    'header.timer.start': 'Start',
+    'header.timer.finish': 'Finish session now and earn XP',
+    'header.theme.light': 'Paper',
+    'header.theme.dark': 'Night',
+    'header.copilot.btn': 'Copilot',
+    'header.notif.title': 'Notifications',
+    'header.notif.allGood': 'Reviews up to date!',
+    'header.notif.pending': 'cards to review',
 
+    // Dashboard (Step 1: Today's Priority)
     'dash.greeting.morning': 'Good morning',
     'dash.greeting.afternoon': 'Good afternoon',
     'dash.greeting.evening': 'Good evening',
     'dash.subtitle': 'Your Second Brain processed your flashcards, notes, and poems with local AI today.',
-    'dash.kpi.fsrs': 'Reviewed Flashcards (FSRS)',
-    'dash.kpi.fsrs.delta': '+16% vs weekly avg',
-    'dash.kpi.whisper': 'Phonetic Accuracy (Oratory)',
-    'dash.kpi.whisper.delta': '+2.8% in Rhetoric',
-    'dash.kpi.graph': 'Neural Graph Synapses',
-    'dash.kpi.graph.delta': 'Active semantic links',
-    'dash.kpi.xp': 'Cognitive Evolution (XP)',
+    'dash.step1.tag': '1. Today’s Priority • Active Memory',
+    'dash.step1.dueCards_one': 'You have {count} card waiting for review',
+    'dash.step1.dueCards_other': 'You have {count} cards waiting for review',
+    'dash.step1.allDone': 'All reviews for today are up to date',
+    'dash.step1.emptyDeck': 'Start your spaced repetition deck',
+    'dash.step1.progress': 'Daily progress: {reviewed} of {total} cards consolidated in deck.',
+    'dash.step1.createCardsDesc': 'Create or import cards in front;back format to track your real retention curve.',
+    'dash.step1.reviewNow': 'Review Now ({count})',
+    'dash.step1.openDeck': 'Open Flashcard Studio',
+    'dash.step1.newNote': '+ New Note',
+
+    // Dashboard (Vault Summary)
+    'dash.acervo.title': 'Vault Summary:',
+    'dash.acervo.cards': 'flashcards',
+    'dash.acervo.notes': 'notes in notebook',
+    'dash.acervo.synapses': '[[WikiLinks]] connections',
+    'dash.acervo.focusMin': 'min of focus this month',
+
+    // Dashboard (Notebook & Recent Notes)
+    'dash.notes.tag': 'Study Notebook',
+    'dash.notes.title': 'Recent Notes & AI-Generated Links',
+    'dash.notes.viewGraph': 'View in Neural Graph',
+    'dash.notes.empty': 'No notes created yet',
+    'dash.notes.createFirst': '+ Create first note',
+    'dash.notes.noTitle': 'Untitled',
+    'dash.notes.linkedCards': '{count} linked card(s)',
+    'dash.notes.thisWeek': '+{count} note(s) created this week',
+    'dash.notes.openAll': 'Open Full Notebook →',
+
+    // Dashboard (Step 2: Activity Rhythm & FSRS)
+    'dash.step2.tag': '2. Activity History (7 Days)',
     'dash.chart.title': 'Study Rhythm & Neural Retention (7 Days)',
     'dash.chart.sub': 'Comparison between FSRS-5 Reviews and Oratory Sessions',
     'dash.chart.leg.fsrs': 'FSRS Flashcards',
     'dash.chart.leg.dojo': 'Recited Verses',
+    'dash.step2.empty': 'No sessions recorded in the last 7 days',
+    'dash.step2.startHint': 'Start a Pomodoro in the Topbar or review flashcards to generate real telemetry.',
+    'dash.step2.totalReviews': 'Total reviewed',
+    'dash.step2.totalVerses': 'Verses recited',
+
+    // Dashboard (FSRS Donut)
     'dash.donut.title': 'Memory Stability',
     'dash.donut.sub': 'Deck maturity distribution in SRS engine',
     'dash.donut.retention': 'Retention',
+    'dash.donut.total': 'Total in Deck',
     'dash.donut.mature': 'Mature (>21d)',
     'dash.donut.young': 'Young (4–20d)',
     'dash.donut.learning': 'Learning',
     'dash.donut.new': 'New in Queue',
+    'dash.donut.empty': 'No cards registered',
+    'dash.donut.emptyHint': 'Add flashcards to view FSRS-5 maturity distribution.',
     'dash.donut.btn': '✦ Review Due Cards →',
-    'dash.notes.title': 'Recent Notes & AI-Generated Links',
-    'dash.notes.viewGraph': 'View in Neural Graph →',
-    'dash.notes.empty': 'No notes created yet',
-    'dash.notes.createFirst': '+ Create first note',
+
+    // Dashboard (Step 3: Oratory & Consistency)
+    'dash.step3.tag': '3. Poetic Reading & Oratory Practice',
     'dash.dojo.tag': '✦ LOCAL VOICE STUDIO',
     'dash.dojo.title': 'Recitation Studio',
-    'dash.dojo.cta': 'Practice Oratory (+50 XP) →',
+    'dash.dojo.cta': 'Practice Recitation in Dojo (+50 XP) →',
+    'dash.step3.switchPoem': 'Switch Poem',
+    'dash.step3.emptyPoems': 'No classic poems loaded',
+    'dash.annual.toggleOpen': 'Annual Consistency & Global Goals',
+    'dash.annual.toggleHint': 'View 365-day heatmap and consolidated summary',
+    'dash.annual.streakActive': 'Active Streak',
+    'dash.annual.streakRecord': 'All-Time Record',
+    'dash.annual.monthlyFocus': 'Monthly Focus',
+    'dash.annual.masteredCards': 'Mastered Cards',
 
+    // Oratory & Poetry (Dojo)
     'dojo.header.title': 'Recitation & Oratory Studio',
     'dojo.header.sub': 'Real-time 16kHz phonetic transcription via Local Voice Engine.',
     'dojo.work.category': 'CLASSIC WORK • POETRY VAULT',
@@ -222,7 +361,7 @@ export const DICTIONARIES = {
     'dojo.spectrum.latency': 'Worker Latency: 38ms • 60 FPS UI',
     'dojo.btn.retry': '↺ Retry Verse',
     'dojo.btn.listening': 'Listening... (Pause)',
-    'dojo.btn.start': 'Start Recitation',
+    'dojo.btn.start': 'Start Recitation in Dojo',
     'dojo.btn.next': 'Next Verse →',
     'dojo.btn.manage': 'Manage Library',
     'dojo.diag.title': 'Global Phonetic Accuracy',
@@ -231,6 +370,7 @@ export const DICTIONARIES = {
     'dojo.pet.header': 'REAL-TIME PET EVOLUTION',
     'dojo.pet.title': 'Kora absorbed your rhetoric!',
 
+    // Flashcards FSRS
     'cards.header.title': 'Spaced Repetition (FSRS-5)',
     'cards.header.sub': 'Queue optimized by Individual Forgetting Curve',
     'cards.q.label': 'QUESTION (FRONT)',
@@ -245,7 +385,31 @@ export const DICTIONARIES = {
     'cards.gen.tag': '✦ LOCAL AI GENERATOR',
     'cards.gen.title': 'Automatic Note Synthesis',
     'cards.gen.btn': '✦ Add Cards to Deck',
+    'flashcards.tab.review': 'Review Studio',
+    'flashcards.tab.manage': 'Deck Manager',
+    'flashcards.tab.forge': 'Neural Forge & Importer',
+    'flashcards.btn.new': '+ New Flashcard',
+    'flashcards.btn.import': 'Import (.md / csv)',
+    'flashcards.deck.all': 'All Decks',
+    'flashcards.deck.general': 'General',
+    'flashcards.empty.doneTitle': 'Congratulations! All reviews are done.',
+    'flashcards.empty.doneSub': 'Check back later for new FSRS-5 repetitions.',
+    'flashcards.session_progress': 'Session Progress',
+    'flashcards.ebbinghaus_title': 'Forgetting Curve (Ebbinghaus)',
+    'flashcards.ebbinghaus_sub': 'Mathematical retention projection based on FSRS-5',
+    'poems.active_badge': 'Active Poem',
+    'poems.mode_dojo': 'Studio Mode',
+    'poems.mode_read': 'Read Mode',
+    'poems.manage': 'Manage Library',
+    'poems.active_line': 'Active Verse',
+    'poems.phonetic_tokens': 'Phonetic Token Match',
+    'poems.spectrum': '16kHz Audio Spectrum',
+    'poems.restart_verse': 'Restart Verse',
+    'poems.next_stanza': 'Next Stanza',
+    'poems.global_accuracy': 'Global Phonetic Accuracy',
+    'poems.prosody_eval': 'Prosody & Diction Evaluation',
 
+    // Neural Graph
     'graph.header.title': 'Synapse Graph & Vault',
     'graph.header.sub': 'Notes connected via [[WikiLinks]] and local semantic tags.',
     'graph.filter.all': 'All',
@@ -256,31 +420,6 @@ export const DICTIONARIES = {
     'graph.backlinks.header': 'BIDIRECTIONAL BACKLINKS',
     'graph.chat.header': '✦ NEURAL CHAT WITH YOUR VAULT',
     'graph.chat.placeholder': 'Ask local AI about your Vault...',
-
-    'poems.active_badge': 'Active Poem',
-    'poems.mode_dojo': 'Studio Mode',
-    'poems.mode_read': 'Read Mode',
-    'poems.manage': 'Manage Poems',
-    'poems.vosk_listening': 'Voice Listening',
-    'poems.active_line': 'Active Verse',
-    'poems.phonetic_tokens': 'Phonetic Token Match',
-    'poems.spectrum': '16kHz Audio Spectrum',
-    'poems.latency': 'Latency',
-    'poems.pause_listen': 'Pause Listening',
-    'poems.restart_verse': 'Restart Verse',
-    'poems.next_stanza': 'Next Stanza',
-    'poems.global_accuracy': 'Global Phonetic Accuracy',
-    'poems.prosody_eval': 'Prosody & Diction Evaluation',
-    'poems.pet_reaction': 'Real-Time Pet Reaction',
-    'topbar.streak_days': 'Days',
-
-    'flashcards.session_progress': 'Session Progress',
-    'flashcards.undo': 'Undo',
-    'flashcards.ebbinghaus_title': 'Forgetting Curve (Ebbinghaus)',
-    'flashcards.ebbinghaus_sub': 'Mathematical retention projection based on FSRS-5',
-    'flashcards.ai_synthesis': 'Neural Synthesis by Local AI',
-    'flashcards.approve_add': 'Approve and Add to Deck',
-
     'graph.all_clusters': 'All Clusters',
     'graph.selected_node': 'Selected Node',
     'graph.open_note': 'Open in Editor',
@@ -289,9 +428,27 @@ export const DICTIONARIES = {
     'graph.ai_chat_sub': '100% private inference with Local Gemma 4',
     'graph.ask_placeholder': 'Ask local AI about connections of this node...',
     'graph.send': 'Send',
+
+    // Settings
+    'settings.general.title': 'General & Global Preferences',
+    'settings.general.sub': 'Ecosystem language, interface themes and productivity shortcuts.',
+    'settings.lang.title': 'Interface Language (i18n)',
+    'settings.lang.sub': 'Changes visual labels, buttons, metrics, and terminology immediately.',
+    'settings.theme.title': 'Visual Theme & Comfort',
+    'settings.theme.sub': 'Reading paper-inspired palette to prevent eye strain.',
   },
 
   'es-ES': {
+    // Común & Días de la Semana
+    'common.days.sun': 'Dom',
+    'common.days.mon': 'Lun',
+    'common.days.tue': 'Mar',
+    'common.days.wed': 'Mié',
+    'common.days.thu': 'Jue',
+    'common.days.fri': 'Vie',
+    'common.days.sat': 'Sáb',
+
+    // Sidebar & Navegación
     'brand.tagline': 'SECOND BRAIN • LOCAL AI',
     'sidebar.ecosystem': 'ECOSISTEMA COGNITIVO',
     'nav.dashboard': 'Dashboard',
@@ -304,6 +461,12 @@ export const DICTIONARIES = {
     'nav.ai': 'Chat Neural',
     'nav.statistics': 'Métricas',
     'nav.settings': 'Ajustes',
+    'nav.bottom.dashboard': 'Inicio',
+    'nav.bottom.notes': 'Notas',
+    'nav.bottom.dojo': 'Dojo',
+    'nav.bottom.cards': 'Tarjetas',
+    'nav.bottom.graph': 'Grafo',
+    'nav.bottom.settings': 'Ajustes',
     'sidebar.runtime.title': 'Motor Neural Offline',
     'sidebar.runtime.llm': 'Gemma 4 / Llama • Local',
     'sidebar.runtime.stt': 'Vosk / Whisper • 16kHz Worker',
@@ -313,44 +476,98 @@ export const DICTIONARIES = {
     'sidebar.pet.xpLabel': 'XP Nivel',
     'sidebar.user.vault': '✦ 100% En Dispositivo',
 
+    // TopBar / Header
     'header.search.placeholder': 'Buscar notas, poemas, flashcards...',
     'header.streak.days': 'Días',
     'header.cta.dojo': '✦ Abrir Oratoria →',
     'header.cta.flashcards': '✦ Ir a Flashcards →',
     'header.cta.graph': '✦ Abrir Grafo 3D →',
     'header.cta.dashboard': '✦ Volver al Inicio',
+    'header.timer.title': 'Temporizador de Estudio',
+    'header.timer.sub': 'Gana +XP al completar sesiones de enfoque',
+    'header.timer.pause': 'Pausar',
+    'header.timer.start': 'Iniciar',
+    'header.timer.finish': 'Concluir sesión ahora y ganar XP',
+    'header.theme.light': 'Papel',
+    'header.theme.dark': 'Noche',
+    'header.copilot.btn': 'Copiloto',
+    'header.notif.title': 'Notificaciones',
+    'header.notif.allGood': '¡Revisiones al día!',
+    'header.notif.pending': 'tarjetas por revisar',
 
+    // Dashboard (Paso 1: Prioridad de Hoy)
     'dash.greeting.morning': 'Buenos días',
     'dash.greeting.afternoon': 'Buenas tardes',
     'dash.greeting.evening': 'Buenas noches',
     'dash.subtitle': 'Tu Segundo Cerebro procesó tus flashcards, notas y poemas con IA local hoy.',
-    'dash.kpi.fsrs': 'Flashcards Revisadas (FSRS)',
-    'dash.kpi.fsrs.delta': '+16% vs media semanal',
-    'dash.kpi.whisper': 'Precisión Fonética (Oratoria)',
-    'dash.kpi.whisper.delta': '+2.8% en Oratoria',
-    'dash.kpi.graph': 'Sinapsis en el Grafo Neural',
-    'dash.kpi.graph.delta': 'Conexiones semánticas activas',
-    'dash.kpi.xp': 'Evolución Cognitiva (XP)',
+    'dash.step1.tag': '1. Prioridad de Hoy • Memoria Activa',
+    'dash.step1.dueCards_one': 'Tienes {count} tarjeta esperando revisión',
+    'dash.step1.dueCards_other': 'Tienes {count} tarjetas esperando revisión',
+    'dash.step1.allDone': 'Todas las revisiones de hoy están al día',
+    'dash.step1.emptyDeck': 'Comienza tu mazo de repetición espaciada',
+    'dash.step1.progress': 'Progreso diario: {reviewed} de {total} tarjetas consolidadas en el mazo.',
+    'dash.step1.createCardsDesc': 'Crea o importa tarjetas en formato frente;reverso para seguir tu curva real de retención.',
+    'dash.step1.reviewNow': 'Revisar Ahora ({count})',
+    'dash.step1.openDeck': 'Abrir Estudio de Flashcards',
+    'dash.step1.newNote': '+ Nueva Nota',
+
+    // Dashboard (Resumen del Acervo)
+    'dash.acervo.title': 'Resumen del Acervo:',
+    'dash.acervo.cards': 'flashcards',
+    'dash.acervo.notes': 'notas en cuaderno',
+    'dash.acervo.synapses': 'conexiones [[WikiLinks]]',
+    'dash.acervo.focusMin': 'min de enfoque en el mes',
+
+    // Dashboard (Cuaderno & Notas Recientes)
+    'dash.notes.tag': 'Cuaderno de Estudio',
+    'dash.notes.title': 'Notas Recientes y Conexiones IA',
+    'dash.notes.viewGraph': 'Ver en Grafo Neural',
+    'dash.notes.empty': 'Aún no hay notas creadas',
+    'dash.notes.createFirst': '+ Crear primera nota',
+    'dash.notes.noTitle': 'Sin título',
+    'dash.notes.linkedCards': '{count} tarjeta(s) vinculadas',
+    'dash.notes.thisWeek': '+{count} nota(s) creadas esta semana',
+    'dash.notes.openAll': 'Abrir Cuaderno Completo →',
+
+    // Dashboard (Paso 2: Ritmo de Estudio y FSRS)
+    'dash.step2.tag': '2. Historial de Actividad (7 Días)',
     'dash.chart.title': 'Ritmo de Estudio y Retención Neural (7 Días)',
     'dash.chart.sub': 'Comparativa entre Revisiones FSRS-5 y Sesiones de Oratoria',
     'dash.chart.leg.fsrs': 'Flashcards FSRS',
     'dash.chart.leg.dojo': 'Versos Recitados',
+    'dash.step2.empty': 'Sin sesiones registradas en los últimos 7 días',
+    'dash.step2.startHint': 'Inicia un Pomodoro en la barra superior o revisa tarjetas para generar telemetría real.',
+    'dash.step2.totalReviews': 'Total revisado',
+    'dash.step2.totalVerses': 'Versos recitados',
+
+    // Dashboard (Donut FSRS)
     'dash.donut.title': 'Estabilidad de la Memoria',
     'dash.donut.sub': 'Distribución de tarjetas en el motor SRS',
     'dash.donut.retention': 'Retención',
+    'dash.donut.total': 'Total en el Mazo',
     'dash.donut.mature': 'Maduras (>21d)',
     'dash.donut.young': 'Jóvenes (4–20d)',
     'dash.donut.learning': 'Aprendiendo',
     'dash.donut.new': 'Nuevas en Cola',
+    'dash.donut.empty': 'Sin tarjetas registradas',
+    'dash.donut.emptyHint': 'Añade tarjetas para visualizar la distribución de madurez FSRS-5.',
     'dash.donut.btn': '✦ Revisar Tarjetas Pendientes →',
-    'dash.notes.title': 'Notas Recientes y Conexiones IA',
-    'dash.notes.viewGraph': 'Ver en Grafo Neural →',
-    'dash.notes.empty': 'Aún no hay notas creadas',
-    'dash.notes.createFirst': '+ Crear primera nota',
+
+    // Dashboard (Paso 3: Oratoria y Consistencia)
+    'dash.step3.tag': '3. Lectura Poética y Práctica de Oratoria',
     'dash.dojo.tag': '✦ ESTUDIO DE VOZ LOCAL',
     'dash.dojo.title': 'Estudio de Recitación',
-    'dash.dojo.cta': 'Practicar Oratoria (+50 XP) →',
+    'dash.dojo.cta': 'Practicar Recitación en el Dojo (+50 XP) →',
+    'dash.step3.switchPoem': 'Cambiar Poema',
+    'dash.step3.emptyPoems': 'Sin poemas clásicos cargados',
+    'dash.annual.toggleOpen': 'Consistencia Anual y Metas Globales',
+    'dash.annual.toggleHint': 'Ver mapa de calor de 365 días y resumen consolidado',
+    'dash.annual.streakActive': 'Racha Activa',
+    'dash.annual.streakRecord': 'Récord Histórico',
+    'dash.annual.monthlyFocus': 'Foco Mensual',
+    'dash.annual.masteredCards': 'Tarjetas Dominadas',
 
+    // Oratoria y Poesía (Dojo)
     'dojo.header.title': 'Estudio de Recitación y Oratoria',
     'dojo.header.sub': 'Transcripción fonética en tiempo real a 16kHz vía Motor Local.',
     'dojo.work.category': 'OBRA CLÁSICA • ACERVO POÉTICO',
@@ -360,7 +577,7 @@ export const DICTIONARIES = {
     'dojo.spectrum.latency': 'Latencia Worker: 38ms • 60 FPS UI',
     'dojo.btn.retry': '↺ Repetir Verso',
     'dojo.btn.listening': 'Escuchando... (Pausar)',
-    'dojo.btn.start': 'Iniciar Recitación',
+    'dojo.btn.start': 'Iniciar Recitación en el Dojo',
     'dojo.btn.next': 'Siguiente Verso →',
     'dojo.btn.manage': 'Gestionar Acervo',
     'dojo.diag.title': 'Precisión Fonética Global',
@@ -369,6 +586,7 @@ export const DICTIONARIES = {
     'dojo.pet.header': 'EVOLUCIÓN DEL PET EN TIEMPO REAL',
     'dojo.pet.title': '¡Kora absorbió tu oratoria!',
 
+    // Flashcards FSRS
     'cards.header.title': 'Repetición Espaciada (FSRS-5)',
     'cards.header.sub': 'Cola optimizada por Curva de Olvido Individual',
     'cards.q.label': 'PREGUNTA (FRENTE)',
@@ -383,7 +601,31 @@ export const DICTIONARIES = {
     'cards.gen.tag': '✦ GENERADOR IA LOCAL',
     'cards.gen.title': 'Síntesis Automática de Notas',
     'cards.gen.btn': '✦ Añadir Tarjetas al Mazo',
+    'flashcards.tab.review': 'Estudio de Revisión',
+    'flashcards.tab.manage': 'Gestor del Mazo',
+    'flashcards.tab.forge': 'Forja Neural e Importador',
+    'flashcards.btn.new': '+ Nueva Tarjeta',
+    'flashcards.btn.import': 'Importar (.md / csv)',
+    'flashcards.deck.all': 'Todos los Mazos',
+    'flashcards.deck.general': 'General',
+    'flashcards.empty.doneTitle': '¡Felicidades! Todas las revisiones han sido completadas.',
+    'flashcards.empty.doneSub': 'Vuelve más tarde para nuevas repeticiones FSRS-5.',
+    'flashcards.session_progress': 'Progreso de Sesión',
+    'flashcards.ebbinghaus_title': 'Curva del Olvido (Ebbinghaus)',
+    'flashcards.ebbinghaus_sub': 'Proyección matemática de retención basada en FSRS-5',
+    'poems.active_badge': 'Obra Activa',
+    'poems.mode_dojo': 'Modo Estudio',
+    'poems.mode_read': 'Modo Lectura',
+    'poems.manage': 'Gestionar Acervo',
+    'poems.active_line': 'Verso Activo',
+    'poems.phonetic_tokens': 'Tokens Fonéticos',
+    'poems.spectrum': 'Espectro de Audio 16kHz',
+    'poems.restart_verse': 'Reiniciar Verso',
+    'poems.next_stanza': 'Siguiente Estrofa',
+    'poems.global_accuracy': 'Precisión Fonética Global',
+    'poems.prosody_eval': 'Evaluación de Prosodia y Dicción',
 
+    // Grafo
     'graph.header.title': 'Grafo de Sinapsis y Bóveda',
     'graph.header.sub': 'Notas conectadas por [[WikiLinks]] y etiquetas semánticas.',
     'graph.filter.all': 'Todos',
@@ -394,31 +636,6 @@ export const DICTIONARIES = {
     'graph.backlinks.header': 'BACKLINKS BIDIRECCIONALES',
     'graph.chat.header': '✦ CHAT NEURAL CON TU BÓVEDA',
     'graph.chat.placeholder': 'Pregunta a la IA sobre tu Bóveda...',
-
-    'poems.active_badge': 'Activo en el Dojo',
-    'poems.mode_dojo': 'Modo Dojo',
-    'poems.mode_read': 'Modo Lectura',
-    'poems.manage': 'Gestionar Poemas',
-    'poems.vosk_listening': 'Vosk Escuchando',
-    'poems.active_line': 'Verso Activo',
-    'poems.phonetic_tokens': 'Tokens Fonéticos',
-    'poems.spectrum': 'Espectro de Audio 16kHz',
-    'poems.latency': 'Latencia',
-    'poems.pause_listen': 'Pausar Escucha',
-    'poems.restart_verse': 'Reiniciar Verso',
-    'poems.next_stanza': 'Siguiente Estrofa',
-    'poems.global_accuracy': 'Precisión Fonética Global',
-    'poems.prosody_eval': 'Evaluación de Prosodia y Dicción',
-    'poems.pet_reaction': 'Reacción de Kora en Tiempo Real',
-    'topbar.streak_days': 'Días',
-
-    'flashcards.session_progress': 'Progreso de Sesión',
-    'flashcards.undo': 'Deshacer',
-    'flashcards.ebbinghaus_title': 'Curva del Olvido (Ebbinghaus)',
-    'flashcards.ebbinghaus_sub': 'Proyección matemática basada en FSRS-5',
-    'flashcards.ai_synthesis': 'Síntesis Neural por IA Local',
-    'flashcards.approve_add': 'Aprobar y Añadir al Mazo',
-
     'graph.all_clusters': 'Todos los Clusters',
     'graph.selected_node': 'Nodo Seleccionado',
     'graph.open_note': 'Abrir en el Editor',
@@ -427,6 +644,14 @@ export const DICTIONARIES = {
     'graph.ai_chat_sub': 'Inferencia 100% privada con Gemma 4 Local',
     'graph.ask_placeholder': 'Pregunta a la IA sobre las conexiones de este nodo...',
     'graph.send': 'Enviar',
+
+    // Ajustes
+    'settings.general.title': 'General y Preferencias Globales',
+    'settings.general.sub': 'Idioma del ecosistema, temas de interfaz y atajos operativos de productividad.',
+    'settings.lang.title': 'Idioma de la Interfaz (i18n)',
+    'settings.lang.sub': 'Cambia etiquetas visuales, botones, métricas y terminologías de forma inmediata.',
+    'settings.theme.title': 'Tema Visual y Confort',
+    'settings.theme.sub': 'Paleta inspirada en papeles de lectura para prevenir fatiga visual.',
   },
 };
 
@@ -446,10 +671,30 @@ export const useI18nStore = create((set, get) => ({
     }
     set({ locale: newLocale });
   },
-  t: (key, fallback) => {
+  t: (key, fallbackOrParams, maybeParams) => {
     const { locale } = get();
     const dict = DICTIONARIES[locale] || DICTIONARIES['pt-BR'];
-    return dict[key] || DICTIONARIES['pt-BR'][key] || fallback || key;
+    let str = dict[key] || DICTIONARIES['pt-BR']?.[key];
+    let params = null;
+
+    if (typeof fallbackOrParams === 'object' && fallbackOrParams !== null) {
+      params = fallbackOrParams;
+    } else if (typeof fallbackOrParams === 'string') {
+      if (!str) str = fallbackOrParams;
+      if (typeof maybeParams === 'object' && maybeParams !== null) {
+        params = maybeParams;
+      }
+    }
+
+    if (!str) str = key;
+
+    if (params) {
+      Object.entries(params).forEach(([k, v]) => {
+        str = str.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
+      });
+    }
+
+    return str;
   },
 }));
 

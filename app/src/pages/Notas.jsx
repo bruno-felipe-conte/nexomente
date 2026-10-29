@@ -70,7 +70,7 @@ export default function NotasPage() {
     return base;
   }, [notas, busca, search, categoriaAtiva]);
 
-  const criarNota = useCallback((tipoCustom) => {
+  const criarNota = useCallback((tipoCustom, tituloCustom) => {
     const cat = (typeof tipoCustom === 'string' && tipoCustom) ? tipoCustom : categoriaAtiva;
     let tipo = 'nota';
     let pasta_id = 'pasta_raiz';
@@ -88,8 +88,9 @@ export default function NotasPage() {
       }
     }
 
-    const id = create({ titulo: 'Nova Nota', tipo, pasta_id, status });
-    const nova = getById(id) || { id, titulo: 'Nova Nota', tipo, pasta_id, status, conteudo: '', tags: [] };
+    const tituloFinal = (typeof tituloCustom === 'string' && tituloCustom.trim()) ? tituloCustom.trim() : 'Nova Nota';
+    const id = create({ titulo: tituloFinal, tipo, pasta_id, status });
+    const nova = getById(id) || { id, titulo: tituloFinal, tipo, pasta_id, status, conteudo: '', tags: [] };
     setNotaSelecionada(nova);
     setEditando(true);
   }, [create, getById, categoriaAtiva]);
@@ -144,7 +145,7 @@ export default function NotasPage() {
       setPendingNoteAction(null);
     } else if (pendingNoteAction.action === 'create') {
       queueMicrotask(() => {
-        criarNota();
+        criarNota(null, pendingNoteAction.title);
       });
       setPendingNoteAction(null);
     }
@@ -177,10 +178,10 @@ export default function NotasPage() {
   };
 
   return (
-    <div className={`flex h-full w-full overflow-hidden ${focoMode ? 'bg-bg-primary' : ''}`}>
-      {/* Coluna 1: LISTA E CATEGORIAS (Navegação Unificada em 2 Colunas) */}
+    <div className={`h-full w-full overflow-hidden ${focoMode ? 'p-0' : 'nx-notes-layout'}`}>
+      {/* Coluna 1: LISTA E CATEGORIAS (Painel de Vidro Apple-style) */}
       {!focoMode && (
-        <div className="w-80 md:w-96 border-r border-white/5 flex flex-col bg-bg-secondary/15 shrink-0 h-full">
+        <div className="nx-glass nx-notes-list flex flex-col h-full min-h-0">
           <NotaLista
             notas={notasFiltradas}
             todasNotas={notas || []}
@@ -190,6 +191,7 @@ export default function NotasPage() {
             categoriaAtiva={categoriaAtiva}
             onSelectCategoria={(catId) => setCategoriaAtiva(catId)}
             onSelect={(n) => {
+              salvarImediato();
               const notaAtualizada = getById(n.id) || n;
               setNotaSelecionada(notaAtualizada);
               setEditando(true);
@@ -200,26 +202,26 @@ export default function NotasPage() {
         </div>
       )}
 
-      {/* Coluna 2: WORKSPACE DO EDITOR (Notion / Obsidian Clean) */}
-      <div className="flex-1 flex flex-col relative bg-bg-primary/5 min-w-0 h-full overflow-hidden">
+      {/* Coluna 2: WORKSPACE DO EDITOR (Folha de Escrita em Vidro Translúcido) */}
+      <div className={`nx-glass-strong nx-notes-editor flex-1 flex flex-col min-w-0 h-full overflow-hidden ${focoMode ? 'rounded-none border-none shadow-none' : ''}`}>
         {notaSelecionada ? (
           <>
             {/* 1. BARRA SUPERIOR ÚNICA E COMPACTA (Breadcrumb à esquerda | Ações à direita) */}
-            <div className="h-12 px-6 flex items-center justify-between border-b border-white/[0.06] bg-bg-secondary/20 shrink-0 gap-4">
+            <div className="h-12 px-5 md:px-6 flex items-center justify-between border-b border-nx-border/70 bg-nx-depth/35 shrink-0 gap-4">
               {/* Breadcrumb sutil */}
-              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-text-lo/40 truncate">
+              <div className="flex items-center gap-2 text-[10.5px] font-mono font-bold uppercase tracking-wider text-nx-dim truncate">
                 <span>Vault</span>
-                <span className="opacity-30">/</span>
-                <span className="text-text-lo/70">{notaSelecionada.tipo || 'Nota'}</span>
-                <span className="opacity-30">/</span>
-                <span className="text-text-hi truncate max-w-[160px]">{notaSelecionada.titulo}</span>
+                <span className="opacity-40">/</span>
+                <span className="text-nx-secondary">{notaSelecionada.tipo || 'Nota'}</span>
+                <span className="opacity-40">/</span>
+                <span className="text-nx-bright truncate max-w-[180px]">{notaSelecionada.titulo}</span>
               </div>
 
               {/* Indicadores & Ações agrupados à direita na mesma linha */}
-              <div className="flex items-center gap-2.5">
-                {/* Indicador de Status Auto-Save com micro ponto */}
-                <div className="flex items-center gap-1.5 text-[10px] font-mono text-text-lo/50 mr-2" title="Salvamento contínuo em background">
-                  <span className={`w-1.5 h-1.5 rounded-full ${saveStatus === 'saving' ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'}`} />
+              <div className="flex items-center gap-2">
+                {/* Indicador de Status Auto-Save */}
+                <div className="hidden sm:flex items-center gap-1.5 text-[10.5px] font-mono text-nx-dim mr-2" title="Salvamento contínuo em background">
+                  <span className={`w-1.5 h-1.5 rounded-full ${saveStatus === 'saving' ? 'bg-nx-accent animate-pulse' : 'bg-nx-secondary'}`} />
                   <span data-testid="save-status">{saveStatus === 'saving' ? 'Salvando…' : 'Salvo'}</span>
                 </div>
 
@@ -227,41 +229,41 @@ export default function NotasPage() {
                 <button
                   onClick={handleResumoOpen}
                   disabled={aiLoadingResumo}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-text-hi text-xs font-semibold border border-white/10 transition-all cursor-pointer disabled:opacity-40"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-nx-surface hover:bg-nx-overlay text-nx-bright text-xs font-semibold border border-nx-border transition-all cursor-pointer disabled:opacity-40 shadow-xs"
                   title="Resumo via IA local"
                 >
-                  {aiLoadingResumo ? <Loader2 size={12} className="animate-spin text-accent-main" /> : <Sparkles size={12} className="text-accent-main" />}
-                  <span className="hidden sm:inline">Resumo IA</span>
+                  {aiLoadingResumo ? <Loader2 size={12} className="animate-spin text-nx-primary" /> : <Sparkles size={12} className="text-nx-primary" />}
+                  <span className="hidden md:inline">Resumo IA</span>
                 </button>
 
                 <button
                   onClick={handleTagsOpen}
                   disabled={aiLoadingTags}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-text-hi text-xs font-semibold border border-white/10 transition-all cursor-pointer disabled:opacity-40"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-nx-surface hover:bg-nx-overlay text-nx-bright text-xs font-semibold border border-nx-border transition-all cursor-pointer disabled:opacity-40 shadow-xs"
                   title="Sugerir tags semânticas"
                 >
-                  {aiLoadingTags ? <Loader2 size={12} className="animate-spin text-accent-main" /> : <Tag size={12} className="text-accent-main" />}
-                  <span className="hidden sm:inline">Tags</span>
+                  {aiLoadingTags ? <Loader2 size={12} className="animate-spin text-nx-secondary" /> : <Tag size={12} className="text-nx-secondary" />}
+                  <span className="hidden md:inline">Tags</span>
                 </button>
 
                 <button
                   onClick={handleCardsOpen}
                   disabled={aiLoadingCards}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-accent-main/15 hover:bg-accent-main/25 text-accent-main text-xs font-semibold border border-accent-main/30 transition-all cursor-pointer disabled:opacity-40"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-nx-primary-bg hover:bg-nx-primary/15 text-nx-primary text-xs font-semibold border border-nx-primary/30 transition-all cursor-pointer disabled:opacity-40 shadow-xs"
                   title="Forjar flashcards para repetição espaçada"
                 >
                   {aiLoadingCards ? <Loader2 size={12} className="animate-spin" /> : <Layers size={12} />}
-                  <span className="hidden sm:inline">Forjar Cards</span>
+                  <span className="hidden md:inline">Forjar Cards</span>
                 </button>
 
-                <div className="h-4 w-px bg-white/10 mx-0.5" />
+                <div className="h-4 w-px bg-nx-border mx-1" />
 
                 {/* Info / Metadados */}
                 <button
                   onClick={() => setMostrandoMeta(p => !p)}
                   aria-label="Metadados da nota"
                   className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
-                    mostrandoMeta ? 'bg-white/10 text-text-hi border-white/20' : 'text-text-lo/40 border-transparent hover:text-text-hi'
+                    mostrandoMeta ? 'bg-nx-overlay text-nx-bright border-nx-border' : 'text-nx-dim border-transparent hover:text-nx-bright hover:bg-nx-overlay/60'
                   }`}
                   title="Metadados da nota"
                 >
@@ -273,7 +275,7 @@ export default function NotasPage() {
                 <button
                   onClick={() => setFocoMode(p => !p)}
                   className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
-                    focoMode ? 'bg-accent-main/20 text-accent-main border-accent-main/30' : 'text-text-lo/40 border-transparent hover:text-text-hi'
+                    focoMode ? 'bg-nx-primary-bg text-nx-primary border-nx-primary/30' : 'text-nx-dim border-transparent hover:text-nx-bright hover:bg-nx-overlay/60'
                   }`}
                   title={focoMode ? 'Sair do Modo Foco' : 'Modo Foco Zen'}
                 >
@@ -283,7 +285,7 @@ export default function NotasPage() {
                 {/* Excluir Nota */}
                 <button
                   onClick={() => excluirNota(notaSelecionada.id)}
-                  className="p-1.5 rounded-lg text-text-lo/40 hover:text-rose-400 hover:bg-rose-500/10 transition-all cursor-pointer"
+                  className="p-1.5 rounded-lg text-nx-dim hover:text-nx-error hover:bg-nx-error-bg transition-all cursor-pointer"
                   title="Excluir nota"
                 >
                   <Trash2 size={15} />
@@ -291,10 +293,10 @@ export default function NotasPage() {
               </div>
             </div>
 
-            {/* 2. ÁREA DE ESCRITA RESPIRÁVEL (Notion / Obsidian Clean) */}
-            <div className="flex-1 overflow-y-auto px-6 py-8 scrollbar-none">
-              <div className="max-w-3xl mx-auto w-full flex flex-col">
-                {/* TÍTULO GRANDE E LIMPO DIRETAMENTE ACIMA DO TEXTO (Sem linhas cortando) */}
+            {/* 2. ÁREA DE ESCRITA RESPIRÁVEL (Folha Pautada do Editor) */}
+            <div className="flex-1 overflow-y-auto scrollbar-none">
+              <div className="nx-editor-paper">
+                {/* TÍTULO GRANDE DIRETAMENTE ACIMA DO TEXTO (Tipografia Lora) */}
                 <input
                   type="text"
                   aria-label="Título da nota"
@@ -305,13 +307,14 @@ export default function NotasPage() {
                     setNotaSelecionada(prev => ({ ...prev, titulo: novoTitulo, conteudo: conteudoAtual }));
                     update(notaSelecionada.id, { titulo: novoTitulo, conteudo: conteudoAtual });
                   }}
-                  className="w-full bg-transparent text-3xl md:text-4xl font-serif font-bold text-text-hi placeholder:text-text-lo/20 focus:outline-none border-none p-0 mb-3 tracking-tight"
+                  className="w-full bg-transparent text-3xl md:text-4xl font-display font-bold text-nx-bright placeholder:text-nx-subtle/30 focus:outline-none border-none p-0 mb-3 tracking-tight"
                   placeholder="Título da nota..."
                 />
 
-                {/* Tags em pílulas logo abaixo do título */}
+                {/* Tags em pílulas editoriais */}
                 <div className="mb-4">
                   <TagInput
+                    key={notaSelecionada.id}
                     tags={notaSelecionada.tags || []}
                     onAdd={(tag) => {
                       addTag(notaSelecionada.id, tag);
@@ -324,21 +327,21 @@ export default function NotasPage() {
                   />
                 </div>
 
-                {/* Micro-dock minimalista de formatação (Sem barra dura de tela inteira) */}
-                <div className="mb-5 sticky top-0 z-20 py-1 bg-nx-void/90 backdrop-blur-md">
+                {/* Micro-dock minimalista de formatação */}
+                <div className="mb-5 sticky top-0 z-20 py-1 bg-nx-surface/90 backdrop-blur-md rounded-xl">
                   <EditorToolbar editor={editor} />
                 </div>
 
                 {/* Corpo do editor TipTap */}
                 <div className="flex-1 min-h-[420px]">
                   <EditorContextMenus editor={editor} onAIAction={(action) => action === 'summarize' && handleResumoOpen()} />
-                  <EditorContent editor={editor} className="prose prose-invert max-w-none focus:outline-none min-h-[420px] leading-relaxed text-text-hi" />
+                  <EditorContent editor={editor} className="max-w-none focus:outline-none min-h-[420px] text-nx-text" />
                 </div>
               </div>
             </div>
 
             {/* 3. BARRA DE STATUS INFERIOR DISCRETA */}
-            <div className="h-7 px-6 border-t border-white/[0.05] bg-bg-primary/20 flex items-center justify-between text-[11px] text-text-lo/50 font-mono select-none shrink-0">
+            <div className="h-7 px-6 border-t border-nx-border/60 bg-nx-depth/35 flex items-center justify-between text-[11px] text-nx-dim font-mono select-none shrink-0">
               <div className="flex items-center gap-3">
                 {(() => {
                   const texto = editor?.getText() || '';
@@ -362,23 +365,30 @@ export default function NotasPage() {
                       : 'Todas as alterações salvas'}
                 </span>
                 <span className="opacity-30">•</span>
-                <span className="text-[10px] uppercase tracking-wider text-text-lo/40">Ctrl+S salva</span>
+                <span className="text-[10px] uppercase tracking-wider text-nx-subtle">Ctrl+S salva</span>
               </div>
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-text-lo/40 p-10">
-            <div className="text-center space-y-3">
-              <FileText size={48} className="mx-auto opacity-20" />
-              <p className="text-base font-semibold text-text-hi">Selecione uma nota do Vault</p>
-              <p className="text-xs text-text-lo/50">Ou crie uma nova nota para começar a escrever</p>
+          <div className="nx-empty">
+            <FileText strokeWidth={1.5} />
+            <h3 className="text-lg font-display font-bold text-nx-bright">
+              Selecione uma nota do Vault
+            </h3>
+            <p className="text-xs text-nx-dim max-w-sm leading-relaxed">
+              {(notas || []).length > 0
+                ? 'Escolha um card ao lado para continuar sua escrita, ou use o botão + no topo da lista (Ctrl+Shift+N) para criar uma nova nota.'
+                : 'Seu Vault está pronto para receber suas reflexões, sínteses e conexões neurais.'}
+            </p>
+            {/* CTA único de boas-vindas exibido apenas quando não houver notas cadastradas */}
+            {(notas || []).length === 0 && (
               <button
                 onClick={() => criarNota()}
-                className="mt-2 px-4 py-2 rounded-xl bg-accent-main/15 text-accent-main border border-accent-main/30 text-xs font-bold hover:bg-accent-main/25 transition-all cursor-pointer"
+                className="mt-2 nx-btn-primary px-4 py-2 text-xs flex items-center gap-1.5 cursor-pointer"
               >
-                + Nova Nota
+                + Criar Primeira Nota
               </button>
-            </div>
+            )}
           </div>
         )}
       </div>

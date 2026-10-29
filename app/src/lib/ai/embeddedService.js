@@ -45,8 +45,13 @@ export async function chat(messages, options = {}) {
     modelPath,
     messages,
     options: {
-      temperature: options.temperature ?? 0.7,
-      max_tokens: options.max_tokens || 512,
+      temperature: options.temperature ?? 0.35,
+      top_p: options.top_p ?? 0.90,
+      min_p: options.min_p ?? 0.05,
+      repeat_penalty: options.repeat_penalty ?? 1.10,
+      max_tokens: options.max_tokens || 800,
+      num_predict: options.num_predict || 800,
+      maxChars: options.maxChars || 1500,
       reasoning: Boolean(options.reasoning),
       jsonSchema: options.jsonSchema || undefined,
     }
@@ -77,6 +82,7 @@ export async function chat(messages, options = {}) {
       success: true,
       content: res.response,
       response: res.response,
+      durationMs: res.durationMs,
       modelName: res.modelName,
       role: "assistant"
     };

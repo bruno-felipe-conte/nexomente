@@ -43,3 +43,7 @@ build/
 out/
 coverage/
 reports/
+
+# Temporary visual verification screenshots
+screen_*.png
+screenshot_*.png

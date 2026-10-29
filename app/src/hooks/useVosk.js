@@ -299,8 +299,12 @@ export function useVosk({ onResult, onPartialResult, onError, grammar = null, au
         }
       };
 
+      // Isola a saída com ganho zero para evitar vazamento do microfone / microfonia nos alto-falantes
+      const silentGain = ctx.createGain();
+      silentGain.gain.value = 0;
       dsp.outputNode.connect(processorRef.current);
-      processorRef.current.connect(ctx.destination);
+      processorRef.current.connect(silentGain);
+      silentGain.connect(ctx.destination);
       
       isListeningRef.current = true;
       setIsListening(true);

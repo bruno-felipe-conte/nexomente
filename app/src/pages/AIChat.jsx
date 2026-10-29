@@ -167,11 +167,11 @@ export default function AIChatPage({ onNavigate }) {
 
   const buildMessages = useCallback((userPrompt) => {
     const sys = notaAtual
-      ? `Você é um assistente de estudo conectado à nota "${escapeForPrompt(notaAtual.titulo)}". Use o conteúdo da nota abaixo como contexto principal e responda em português de forma clara e objetiva.\n\nConteúdo da Nota:\n${escapeForPrompt(notaAtual.conteudo || "").substring(0, 4000)}`
-      : "Você é um assistente de estudo prestativo. Responda em português.";
+      ? `Você é o Copiloto Neural conectado à nota "${escapeForPrompt(notaAtual.titulo)}". Responda de forma analítica, precisa e fundamentada em português em até ${aiProvider.MAX_COPILOT_CHARS} caracteres.\n\nConteúdo da Nota:\n${escapeForPrompt(notaAtual.conteudo || "").substring(0, 3000)}`
+      : aiProvider.DEFAULT_COPILOT_SYSTEM_PROMPT;
 
     const msgs = [{ role: "system", content: sys }];
-    mensagens.slice(-10).forEach((m) => msgs.push({ role: m.role, content: m.texto }));
+    mensagens.slice(-6).forEach((m) => msgs.push({ role: m.role, content: m.texto }));
     if (userPrompt) msgs.push({ role: "user", content: userPrompt });
     return msgs;
   }, [notaAtual, mensagens]);
@@ -183,18 +183,20 @@ export default function AIChatPage({ onNavigate }) {
     setLoading(true);
     if (!promptExtra) setInput("");
     adicionar("user", prompt);
+    const t0 = performance.now();
 
     try {
-      const instrucaoRaciocinio = temperatura < 0.5
-        ? "\n\n(Instrução de Pensamento Adaptativo: Raciocine passo a passo de forma lógica e estruturada antes de responder. Seja extremamente preciso.)"
-        : "";
-
-      const res = await aiProvider.chat(buildMessages(prompt + instrucaoRaciocinio), {
-        temperature: temperatura,
-        max_tokens: 1024,
+      const res = await aiProvider.chat(buildMessages(prompt), {
+        temperature: temperatura || 0.35,
+        max_tokens: 800,
+        maxChars: aiProvider.MAX_COPILOT_CHARS,
       });
-      const respostaTexto = res.success ? res.response : res.error;
-      adicionar("assistant", respostaTexto, res.code);
+      const durationMs = res.durationMs || Math.round(performance.now() - t0);
+      const enforceLimit = aiProvider.enforceCharLimit || ((s) => s.slice(0, aiProvider.MAX_COPILOT_CHARS));
+      const respostaTexto = res.success
+        ? enforceLimit(res.response || res.content || "", aiProvider.MAX_COPILOT_CHARS)
+        : res.error;
+      adicionar("assistant", respostaTexto, res.code, durationMs);
 
       if (res.success && notaAtual && respostaTexto) {
         const historicoRecente = [

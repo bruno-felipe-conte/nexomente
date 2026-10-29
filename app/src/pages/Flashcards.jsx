@@ -306,8 +306,8 @@ export default function FlashcardsPage() {
       };
     }
 
-    let sAtual = 1;
-    let sBom = 2.5;
+    let sAtual;
+    let sBom;
     let sourceLabel = 'Média do baralho';
 
     if (cardAtual) {
@@ -366,7 +366,7 @@ export default function FlashcardsPage() {
   }, [cards, cardAtual, desiredRetention]);
 
   return (
-    <div className="flex h-full bg-[#0A0B0F] text-[#EEF0F6]">
+    <div className="flex h-full bg-nx-void text-nx-bright">
       <input
         type="file"
         ref={fileInputRef}
@@ -375,15 +375,15 @@ export default function FlashcardsPage() {
         className="hidden"
       />
 
-      <div className="flex-1 p-5 md:p-6 space-y-5 overflow-auto scrollbar-none">
+      <div className="flex-1 p-4 sm:p-5 md:p-6 space-y-5 overflow-auto scrollbar-none pb-24 lg:pb-6">
         {/* Barra de Abas do Estúdio de Flashcards & Forja */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.08] pb-4">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-nx-border pb-4">
+          <div className="flex flex-wrap items-center gap-2">
             {[
-              { id: 'revisao', label: 'Revisar', icon: Brain },
-              { id: 'forja', label: 'Forja IA (Gerador)', icon: Wand2 },
-              { id: 'todos', label: 'Ver Todos', icon: Layers },
-              { id: 'editar', label: 'Gerenciar', icon: ListFilter },
+              { id: 'revisao', label: t('flashcards.tab.review', 'Revisar'), icon: Brain },
+              { id: 'forja', label: t('flashcards.tab.forge', 'Forja IA'), icon: Wand2 },
+              { id: 'todos', label: t('flashcards.deck.all', 'Ver Todos'), icon: Layers },
+              { id: 'editar', label: t('flashcards.tab.manage', 'Gerenciar'), icon: ListFilter },
             ].map(({ id: m, label, icon: Icon }) => (
               <button
                 key={m}
@@ -398,10 +398,10 @@ export default function FlashcardsPage() {
                     setCardAtual(null);
                   }
                 }}
-                className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
+                className={`px-3 sm:px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
                   modo === m
-                    ? 'bg-[#5B7CF4] text-white shadow-lg shadow-[#5B7CF4]/20'
-                    : 'bg-[#161923] border border-white/[0.07] text-[#9499B3] hover:text-[#EEF0F6] hover:border-white/20'
+                    ? 'nx-btn-primary shadow-sm'
+                    : 'bg-nx-surface border border-nx-border text-nx-dim hover:text-nx-bright hover:bg-nx-depth'
                 }`}
               >
                 <Icon size={14} />
@@ -413,18 +413,18 @@ export default function FlashcardsPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowImporter(true)}
-              className="px-3.5 py-2 bg-[#161923] hover:bg-[#1E2130] border border-white/[0.08] text-[#EEF0F6] rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5"
+              className="nx-btn-secondary px-3.5 py-2 text-xs font-semibold flex items-center gap-1.5"
               title="Importar Flashcards (frente;verso) ou Notas (.md)"
             >
-              <UploadCloud size={14} className="text-[#38BDF8]" />
-              <span>Importar em Lote</span>
+              <UploadCloud size={14} className="text-[var(--nx-accent)]" />
+              <span>{t('flashcards.btn.import', 'Importar em Lote')}</span>
             </button>
             <button
               onClick={() => setShowCriar(!showCriar)}
-              className="px-3.5 py-2 bg-[#5B7CF4] hover:bg-[#5B7CF4]/90 text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-md"
+              className="nx-btn-primary px-3.5 py-2 text-xs font-bold flex items-center gap-1.5"
             >
               <Plus size={14} />
-              <span>Novo Card</span>
+              <span>{t('flashcards.btn.new', 'Novo Card')}</span>
             </button>
           </div>
         </div>
@@ -458,28 +458,28 @@ export default function FlashcardsPage() {
           }}
         />
 
-        {/* Barra de Progresso da Sessão (Protótipo Tela 3) */}
-        <div className="bg-[#161923] border border-white/[0.07] rounded-xl px-5 py-3.5 flex flex-wrap items-center justify-between gap-4">
+        {/* Barra de Progresso da Sessão */}
+        <div className="nx-sheet rounded-xl px-5 py-3.5 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-4 flex-1 min-w-[260px]">
-            <span className="text-xs font-bold text-[#EEF0F6] whitespace-nowrap">
+            <span className="text-xs font-bold text-nx-bright whitespace-nowrap">
               {t('flashcards.session_progress')}: {atualSessao} / {totalSessao} Cards ({pctSessao}%)
             </span>
-            <div className="flex-1 max-w-xs h-2 bg-[#10121A] rounded-full overflow-hidden">
+            <div className="flex-1 max-w-xs h-2 bg-nx-depth rounded-full overflow-hidden border border-nx-border/50">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-[#5B7CF4] to-[#22C55E] transition-all duration-300"
+                className="h-full rounded-full bg-[var(--nx-accent)] transition-all duration-300"
                 style={{ width: `${pctSessao}%` }}
               />
             </div>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="px-2.5 py-1 rounded-md bg-[#38BDF8]/12 text-[#38BDF8] text-[11px] font-mono font-bold">
+            <span className="px-2.5 py-1 rounded-md bg-[var(--nx-accent)]/15 text-[var(--nx-accent)] border border-[var(--nx-accent)]/25 text-[11px] font-mono font-bold">
               Novos: {stats.novos ?? 0}
             </span>
-            <span className="px-2.5 py-1 rounded-md bg-[#F59E0B]/12 text-[#F59E0B] text-[11px] font-mono font-bold">
+            <span className="px-2.5 py-1 rounded-md bg-[var(--nx-warning)]/15 text-[var(--nx-warning)] border border-[var(--nx-warning)]/25 text-[11px] font-mono font-bold">
               Aprendendo: {stats.aprendendo ?? 0}
             </span>
-            <span className="px-2.5 py-1 rounded-md bg-[#22C55E]/12 text-[#22C55E] text-[11px] font-mono font-bold">
+            <span className="px-2.5 py-1 rounded-md bg-[var(--nx-secondary)]/15 text-[var(--nx-secondary)] border border-[var(--nx-secondary)]/25 text-[11px] font-mono font-bold">
               Revisão: {stats.devidos ?? 0}
             </span>
           </div>
@@ -490,11 +490,11 @@ export default function FlashcardsPage() {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex items-center justify-between bg-[#F59E0B]/10 border border-[#F59E0B]/40 rounded-xl px-4 py-2.5 text-sm"
+            className="flex items-center justify-between bg-[var(--nx-warning)]/10 border border-[var(--nx-warning)]/30 rounded-xl px-4 py-2.5 text-sm"
           >
-            <span className="text-[#9499B3]">
+            <span className="text-nx-dim">
               Último:{' '}
-              <span className="text-[#F59E0B] font-semibold">
+              <span className="text-[var(--nx-warning)] font-semibold">
                 {undoCard.frente.substring(0, 28)}
               </span>
               <span className="ml-2 text-xs font-mono">
@@ -503,7 +503,7 @@ export default function FlashcardsPage() {
             </span>
             <button
               onClick={handleUndo}
-              className="px-3 py-1 bg-[#F59E0B]/20 text-[#F59E0B] rounded-lg text-xs font-bold hover:bg-[#F59E0B]/30 cursor-pointer flex items-center gap-1.5"
+              className="px-3 py-1 bg-[var(--nx-warning)]/20 text-[var(--nx-warning)] rounded-lg text-xs font-bold hover:bg-[var(--nx-warning)]/30 cursor-pointer flex items-center gap-1.5"
             >
               <RotateCcw size={12} />
               <span>
@@ -513,19 +513,19 @@ export default function FlashcardsPage() {
           </motion.div>
         )}
 
-        {/* Formulário de Criação Rápida (Cloze & Anki SRS) */}
+        {/* Formulário de Criação Rápida */}
         {showCriar && (
-          <div className="bg-[#161923] rounded-2xl p-5 border border-white/[0.08]">
+          <div className="nx-sheet rounded-2xl p-5 border border-nx-border">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-bold text-[#EEF0F6] text-sm">
-                Novo Flashcard (Anki SRS & Cloze)
+              <h3 className="font-bold text-nx-bright text-sm font-display">
+                Novo Flashcard (Repetição Espaçada & Cloze)
               </h3>
               <button
                 type="button"
                 onClick={() => {
                   setNovaFrente((prev) => `${prev} {{c1::palavra-chave::dica}}`);
                 }}
-                className="text-[11px] font-mono px-2.5 py-1 rounded-lg bg-[#5B7CF4]/15 text-[#5B7CF4] border border-[#5B7CF4]/30 hover:bg-[#5B7CF4]/25 transition-colors cursor-pointer"
+                className="text-[11px] font-mono px-2.5 py-1 rounded-lg bg-[var(--nx-accent)]/15 text-[var(--nx-accent)] border border-[var(--nx-accent)]/30 hover:bg-[var(--nx-accent)]/25 transition-colors cursor-pointer"
                 title="Inserir Cloze Deletion"
               >
                 {'+ Cloze [{{c1::...}}]'}
@@ -542,7 +542,7 @@ export default function FlashcardsPage() {
                   if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') criarCard();
                   if (e.key === 'Escape') setShowCriar(false);
                 }}
-                className="w-full bg-[#10121A] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-sm text-[#EEF0F6] focus:border-[#5B7CF4] focus:outline-none"
+                className="w-full bg-nx-depth border border-nx-border rounded-xl px-3.5 py-2.5 text-sm text-nx-bright focus:border-[var(--nx-accent)] focus:outline-none"
               />
               <input
                 value={novoVerso}
@@ -553,11 +553,11 @@ export default function FlashcardsPage() {
                   if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') criarCard();
                   if (e.key === 'Escape') setShowCriar(false);
                 }}
-                className="w-full bg-[#10121A] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-sm text-[#EEF0F6] focus:border-[#5B7CF4] focus:outline-none"
+                className="w-full bg-nx-depth border border-nx-border rounded-xl px-3.5 py-2.5 text-sm text-nx-bright focus:border-[var(--nx-accent)] focus:outline-none"
               />
               <button
                 onClick={criarCard}
-                className="w-full py-2.5 bg-[#5B7CF4] hover:bg-[#5B7CF4]/90 text-white rounded-xl text-sm font-bold cursor-pointer transition-colors"
+                className="w-full py-2.5 nx-btn-primary rounded-xl text-sm font-bold cursor-pointer"
               >
                 Criar Card
               </button>
@@ -565,11 +565,11 @@ export default function FlashcardsPage() {
           </div>
         )}
 
-        {/* Modo Revisão: Layout 2 Colunas Fiel ao Protótipo Tela 3 */}
+        {/* Modo Revisão: Layout 2 Colunas */}
         {modo === 'revisao' && (
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start">
-            {/* Coluna Esquerda (7 cols): Flashcard Viewer 3D + 4 Botões FSRS */}
-            <div className="xl:col-span-7 bg-[#161923] border border-white/[0.07] rounded-2xl p-6">
+            {/* Coluna Esquerda (7 cols): Flashcard Viewer Editorial + Botões */}
+            <div className="xl:col-span-7 nx-sheet rounded-2xl p-6">
               <FlashcardViewer
                 cardAtual={cardAtual}
                 paraRevisao={paraRevisao}
@@ -602,25 +602,25 @@ export default function FlashcardsPage() {
               />
             </div>
 
-            {/* Coluna Direita (5 cols): Curva de Ebbinghaus SVG + Síntese Neural IA */}
+            {/* Coluna Direita (5 cols): Curva de Ebbinghaus SVG + Resumo FSRS */}
             <div className="xl:col-span-5 flex flex-col gap-5">
               {/* Card 1: Projeção da Curva de Esquecimento (Ebbinghaus) */}
-              <div className="bg-[#161923] border border-white/[0.07] rounded-2xl p-6">
+              <div className="nx-sheet rounded-2xl p-6">
                 <div className="mb-3 flex items-start justify-between gap-2">
                   <div>
-                    <h3 className="text-base font-bold text-[#EEF0F6]">
+                    <h3 className="text-base font-bold text-nx-bright font-display">
                       {t('flashcards.ebbinghaus_title')}
                     </h3>
-                    <p className="text-xs text-[#9499B3] mt-0.5">
+                    <p className="text-xs text-nx-dim mt-0.5">
                       {t('flashcards.ebbinghaus_sub')}
                     </p>
                   </div>
-                  <span className="px-2 py-0.5 rounded bg-[#10121A] border border-white/[0.07] text-[10px] font-mono text-[#9499B3]">
+                  <span className="px-2 py-0.5 rounded bg-nx-depth border border-nx-border text-[10px] font-mono text-nx-dim">
                     {ebbinghausData.sourceLabel}
                   </span>
                 </div>
 
-                <div className="bg-[#10121A] border border-white/[0.06] rounded-xl p-4">
+                <div className="bg-nx-depth border border-nx-border rounded-xl p-4">
                   <svg viewBox="0 0 380 175" className="w-full h-40 overflow-visible">
                     {/* Eixos e Linha de Limiar de Retenção Configurada */}
                     <line
@@ -628,7 +628,7 @@ export default function FlashcardsPage() {
                       y1="20"
                       x2="360"
                       y2="20"
-                      stroke="#1E2130"
+                      stroke="var(--nx-border)"
                       strokeWidth="1"
                     />
                     <line
@@ -636,7 +636,7 @@ export default function FlashcardsPage() {
                       y1={ebbinghausData.targetY}
                       x2="360"
                       y2={ebbinghausData.targetY}
-                      stroke="#F59E0B"
+                      stroke="var(--nx-warning)"
                       strokeWidth="1"
                       strokeDasharray="4 4"
                     />
@@ -645,17 +645,17 @@ export default function FlashcardsPage() {
                       y1="145"
                       x2="360"
                       y2="145"
-                      stroke="#1E2130"
+                      stroke="var(--nx-border)"
                       strokeWidth="1"
                     />
 
-                    <text x="4" y="24" fill="#9499B3" fontSize="9" fontFamily="monospace">
+                    <text x="4" y="24" fill="var(--nx-dim)" fontSize="9" fontFamily="monospace">
                       100%
                     </text>
-                    <text x="4" y={ebbinghausData.targetY + 3} fill="#F59E0B" fontSize="9" fontFamily="monospace">
+                    <text x="4" y={ebbinghausData.targetY + 3} fill="var(--nx-warning)" fontSize="9" fontFamily="monospace">
                       {ebbinghausData.targetPct}%
                     </text>
-                    <text x="8" y="148" fill="#5C6178" fontSize="9" fontFamily="monospace">
+                    <text x="8" y="148" fill="var(--nx-dim)" fontSize="9" fontFamily="monospace">
                       60%
                     </text>
 
@@ -665,25 +665,25 @@ export default function FlashcardsPage() {
                         <path
                           d={ebbinghausData.pathAtual}
                           fill="none"
-                          stroke="#EF4444"
+                          stroke="var(--nx-error)"
                           strokeWidth="2"
-                          opacity="0.8"
+                          opacity="0.85"
                         />
 
                         {/* Curva Pós-Revisão Bom (S = sBom) */}
                         <path
                           d={ebbinghausData.pathBom}
                           fill="none"
-                          stroke="#22C55E"
+                          stroke="var(--nx-secondary)"
                           strokeWidth="3"
                         />
-                        <circle cx="38" cy="20" r="4" fill="#22C55E" />
+                        <circle cx="38" cy="20" r="4" fill="var(--nx-secondary)" />
                         {ebbinghausData.pointAtual && (
                           <circle
                             cx={ebbinghausData.pointAtual.x}
                             cy={ebbinghausData.pointAtual.y}
                             r="3.5"
-                            fill="#EF4444"
+                            fill="var(--nx-error)"
                           />
                         )}
                         {ebbinghausData.pointBom && (
@@ -691,18 +691,18 @@ export default function FlashcardsPage() {
                             cx={ebbinghausData.pointBom.x}
                             cy={ebbinghausData.pointBom.y}
                             r="4.5"
-                            fill="#38BDF8"
+                            fill="var(--nx-accent)"
                           />
                         )}
 
                         {/* Rótulos eixo X dinâmicos */}
-                        <text x="36" y="164" fill="#5C6178" fontSize="9" fontFamily="monospace">
+                        <text x="36" y="164" fill="var(--nx-dim)" fontSize="9" fontFamily="monospace">
                           Hoje
                         </text>
                         <text
                           x={Math.max(75, Math.min(200, (ebbinghausData.pointAtual?.x || 135) - 24))}
                           y="164"
-                          fill="#5C6178"
+                          fill="var(--nx-dim)"
                           fontSize="9"
                           fontFamily="monospace"
                         >
@@ -711,7 +711,7 @@ export default function FlashcardsPage() {
                         <text
                           x={Math.max(205, Math.min(285, (ebbinghausData.pointBom?.x || 260) - 25))}
                           y="164"
-                          fill="#22C55E"
+                          fill="var(--nx-secondary)"
                           fontSize="9"
                           fontFamily="monospace"
                         >
@@ -723,7 +723,7 @@ export default function FlashcardsPage() {
                         x="198"
                         y="92"
                         textAnchor="middle"
-                        fill="#5C6178"
+                        fill="var(--nx-dim)"
                         fontSize="10"
                         fontFamily="monospace"
                       >
@@ -732,15 +732,15 @@ export default function FlashcardsPage() {
                     )}
                   </svg>
 
-                  <div className="flex items-center justify-between text-[11px] pt-2 border-t border-white/[0.05] mt-1">
-                    <span className="flex items-center gap-1.5 text-[#EF4444]">
-                      <span className="w-2 h-2 rounded-full bg-[#EF4444]" />
+                  <div className="flex items-center justify-between text-[11px] pt-2 border-t border-nx-border mt-1">
+                    <span className="flex items-center gap-1.5 text-[var(--nx-error)]">
+                      <span className="w-2 h-2 rounded-full bg-[var(--nx-error)]" />
                       {ebbinghausData.hasData
                         ? `Sem revisão (S=${ebbinghausData.sAtualLabel})`
                         : 'Sem revisão (S=0d)'}
                     </span>
-                    <span className="flex items-center gap-1.5 text-[#22C55E] font-semibold">
-                      <span className="w-2 h-2 rounded-full bg-[#22C55E]" />
+                    <span className="flex items-center gap-1.5 text-[var(--nx-secondary)] font-semibold">
+                      <span className="w-2 h-2 rounded-full bg-[var(--nx-secondary)]" />
                       {ebbinghausData.hasData
                         ? `Após 'Bom' (S=${ebbinghausData.sBomLabel})`
                         : "Após 'Bom' (S=0d)"}
@@ -750,43 +750,43 @@ export default function FlashcardsPage() {
               </div>
 
               {/* Card 2: Resumo FSRS & Próximas Repetições */}
-              <div className="bg-[#161923] border border-white/[0.07] rounded-2xl p-6">
+              <div className="nx-sheet rounded-2xl p-6">
                 <div className="flex items-center justify-between gap-2 mb-4">
                   <div className="flex items-center gap-2">
-                    <TrendingUp size={16} className="text-[#38BDF8]" />
-                    <h3 className="text-sm font-bold text-[#EEF0F6]">
-                      Algoritmo FSRS v4 • Estado do Baralho
+                    <TrendingUp size={16} className="text-[var(--nx-accent)]" />
+                    <h3 className="text-sm font-bold text-nx-bright font-display">
+                      Repetição Espaçada • Estado do Baralho
                     </h3>
                   </div>
-                  <span className="px-2.5 py-1 rounded-md bg-[#22C55E]/12 text-[#22C55E] text-[10px] font-bold font-mono">
+                  <span className="px-2.5 py-1 rounded-md bg-[var(--nx-secondary)]/15 text-[var(--nx-secondary)] border border-[var(--nx-secondary)]/30 text-[10px] font-bold font-mono">
                     {ebbinghausData.targetPct}% RETENÇÃO ALVO
                   </span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 text-xs">
-                  <div className="p-3 rounded-xl bg-[#10121A] border border-white/[0.05]">
-                    <span className="text-[#9499B3] text-[10px] block uppercase font-mono">Total no Baralho</span>
-                    <span className="text-lg font-bold text-[#EEF0F6] font-mono">{cards.length}</span>
+                  <div className="p-3 rounded-xl bg-nx-depth border border-nx-border">
+                    <span className="text-nx-dim text-[10px] block uppercase font-mono">Total no Baralho</span>
+                    <span className="text-lg font-bold text-nx-bright font-mono">{cards.length}</span>
                   </div>
-                  <div className="p-3 rounded-xl bg-[#10121A] border border-white/[0.05]">
-                    <span className="text-[#9499B3] text-[10px] block uppercase font-mono">Para Hoje</span>
-                    <span className="text-lg font-bold text-[#F59E0B] font-mono">{paraRevisao.length}</span>
+                  <div className="p-3 rounded-xl bg-nx-depth border border-nx-border">
+                    <span className="text-nx-dim text-[10px] block uppercase font-mono">Para Hoje</span>
+                    <span className="text-lg font-bold text-[var(--nx-warning)] font-mono">{paraRevisao.length}</span>
                   </div>
-                  <div className="p-3 rounded-xl bg-[#10121A] border border-white/[0.05]">
-                    <span className="text-[#9499B3] text-[10px] block uppercase font-mono">Dominados</span>
-                    <span className="text-lg font-bold text-[#22C55E] font-mono">{stats.dominados ?? 0}</span>
+                  <div className="p-3 rounded-xl bg-nx-depth border border-nx-border">
+                    <span className="text-nx-dim text-[10px] block uppercase font-mono">Dominados</span>
+                    <span className="text-lg font-bold text-[var(--nx-secondary)] font-mono">{stats.dominados ?? 0}</span>
                   </div>
-                  <div className="p-3 rounded-xl bg-[#10121A] border border-white/[0.05]">
-                    <span className="text-[#9499B3] text-[10px] block uppercase font-mono">Novos</span>
-                    <span className="text-lg font-bold text-[#38BDF8] font-mono">{stats.novos ?? 0}</span>
+                  <div className="p-3 rounded-xl bg-nx-depth border border-nx-border">
+                    <span className="text-nx-dim text-[10px] block uppercase font-mono">Novos</span>
+                    <span className="text-lg font-bold text-[var(--nx-accent)] font-mono">{stats.novos ?? 0}</span>
                   </div>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-white/[0.05] flex items-center justify-between text-xs text-[#9499B3]">
+                <div className="mt-4 pt-3 border-t border-nx-border flex items-center justify-between text-xs text-nx-dim">
                   <span>Quer forjar novos cards via IA?</span>
                   <button
                     onClick={() => setModo('forja')}
-                    className="text-[#5B7CF4] hover:text-[#5B7CF4]/80 font-bold flex items-center gap-1 cursor-pointer"
+                    className="text-[var(--nx-accent)] hover:underline font-bold flex items-center gap-1 cursor-pointer"
                   >
                     Abrir Forja IA →
                   </button>
@@ -796,9 +796,9 @@ export default function FlashcardsPage() {
           </div>
         )}
 
-        {/* Modo Forja IA (Gerador de Questões & Flashcards Integrado) */}
+        {/* Modo Forja IA */}
         {modo === 'forja' && (
-          <div className="bg-[#161923] border border-white/[0.07] rounded-2xl p-6 min-h-[500px]">
+          <div className="nx-sheet rounded-2xl p-6 min-h-[500px]">
             <GeradorForjaTab
               step={forjaStep}
               setStep={setForjaStep}
@@ -831,12 +831,12 @@ export default function FlashcardsPage() {
                 onChange={(e) => setBusca(e.target.value)}
                 aria-label="Buscar flashcards"
                 placeholder="Buscar cards..."
-                className="flex-1 min-w-[160px] bg-[#161923] border border-white/[0.08] rounded-xl px-3.5 py-2 text-sm text-[#EEF0F6] focus:border-[#5B7CF4] focus:outline-none"
+                className="flex-1 min-w-[160px] bg-nx-surface border border-nx-border rounded-xl px-3.5 py-2 text-sm text-nx-bright focus:border-[var(--nx-accent)] focus:outline-none"
               />
               <select
                 value={filtro}
                 onChange={(e) => setFiltro(e.target.value)}
-                className="bg-[#161923] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-[#EEF0F6] cursor-pointer"
+                className="bg-nx-surface border border-nx-border rounded-xl px-3 py-2 text-sm text-nx-bright cursor-pointer"
               >
                 <option value="todos">Todos os status</option>
                 <option value="revisar">Para revisar</option>
@@ -846,7 +846,7 @@ export default function FlashcardsPage() {
                 <select
                   value={filtroMateria}
                   onChange={(e) => setFiltroMateria(e.target.value)}
-                  className="bg-[#161923] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-[#EEF0F6] cursor-pointer"
+                  className="bg-nx-surface border border-nx-border rounded-xl px-3 py-2 text-sm text-nx-bright cursor-pointer"
                 >
                   <option value="todas">Todas as matérias</option>
                   {materiasDisponiveis.map((m) => (
@@ -859,7 +859,7 @@ export default function FlashcardsPage() {
               <button
                 onClick={exportarCardsJSON}
                 title="Exportar baralho em JSON"
-                className="px-3 py-2 bg-[#161923] border border-white/[0.08] rounded-xl text-xs font-semibold text-[#9499B3] hover:text-[#EEF0F6] hover:border-white/20 transition-colors cursor-pointer flex items-center gap-1.5"
+                className="px-3 py-2 nx-btn-secondary rounded-xl text-xs font-semibold flex items-center gap-1.5"
               >
                 <Download size={13} />
                 <span>Exportar JSON</span>
@@ -867,7 +867,7 @@ export default function FlashcardsPage() {
             </div>
 
             {cardsFiltrados.length === 0 ? (
-              <div className="text-center py-12 text-[#9499B3]">
+              <div className="text-center py-12 text-nx-dim">
                 <p>Nenhum card encontrado</p>
               </div>
             ) : (
@@ -878,7 +878,7 @@ export default function FlashcardsPage() {
                   return (
                     <div
                       key={card.id}
-                      className="bg-[#161923] rounded-xl p-4 border border-[#5B7CF4]"
+                      className="nx-sheet rounded-xl p-4 border border-[var(--nx-accent)]"
                     >
                       <input
                         autoFocus
@@ -889,7 +889,7 @@ export default function FlashcardsPage() {
                           if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') salvarEdicao();
                           if (e.key === 'Escape') setEditandoId(null);
                         }}
-                        className="w-full bg-[#10121A] border border-white/[0.08] rounded-lg px-3 py-2 text-sm mb-2 focus:outline-none"
+                        className="w-full bg-nx-depth border border-nx-border rounded-lg px-3 py-2 text-sm mb-2 focus:outline-none"
                       />
                       <input
                         value={editVerso}
@@ -899,18 +899,18 @@ export default function FlashcardsPage() {
                           if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') salvarEdicao();
                           if (e.key === 'Escape') setEditandoId(null);
                         }}
-                        className="w-full bg-[#10121A] border border-white/[0.08] rounded-lg px-3 py-2 text-sm mb-2 focus:outline-none"
+                        className="w-full bg-nx-depth border border-nx-border rounded-lg px-3 py-2 text-sm mb-2 focus:outline-none"
                       />
                       <div className="flex gap-2">
                         <button
                           onClick={salvarEdicao}
-                          className="px-3 py-1.5 bg-[#22C55E] text-white rounded-lg text-xs font-bold cursor-pointer flex items-center gap-1"
+                          className="px-3 py-1.5 nx-btn-primary rounded-lg text-xs font-bold cursor-pointer flex items-center gap-1"
                         >
                           <Save size={12} /> Salvar
                         </button>
                         <button
                           onClick={() => setEditandoId(null)}
-                          className="px-3 py-1.5 bg-[#10121A] border border-white/[0.08] rounded-lg text-xs cursor-pointer"
+                          className="px-3 py-1.5 bg-nx-depth border border-nx-border rounded-lg text-xs cursor-pointer text-nx-dim hover:text-nx-bright"
                         >
                           Cancelar
                         </button>
@@ -921,29 +921,29 @@ export default function FlashcardsPage() {
                 return (
                   <div
                     key={card.id}
-                    className="bg-[#161923] rounded-xl p-3.5 border border-white/[0.07] flex items-start gap-3"
+                    className="nx-sheet rounded-xl p-3.5 border border-nx-border flex items-start gap-3"
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-[#EEF0F6] truncate">
+                      <p className="text-sm font-semibold text-nx-bright truncate font-display">
                         {card.frente}
                       </p>
-                      <p className="text-xs text-[#9499B3] truncate mt-0.5">
+                      <p className="text-xs text-nx-dim truncate mt-0.5">
                         {card.verso}
                       </p>
                       <div className="flex gap-2 mt-2">
-                        <span className="text-[10px] px-2 py-0.5 rounded bg-[#10121A] text-[#9499B3] font-mono">
+                        <span className="text-[10px] px-2 py-0.5 rounded bg-nx-depth text-nx-dim font-mono border border-nx-border/50">
                           ef:{card.ef?.toFixed(1)}
                         </span>
-                        <span className="text-[10px] px-2 py-0.5 rounded bg-[#10121A] text-[#9499B3] font-mono">
+                        <span className="text-[10px] px-2 py-0.5 rounded bg-nx-depth text-nx-dim font-mono border border-nx-border/50">
                           rep:{card.repetitions}
                         </span>
                         {paraRev && (
-                          <span className="text-[10px] px-2 py-0.5 rounded bg-[#F59E0B]/20 text-[#F59E0B] font-bold">
+                          <span className="text-[10px] px-2 py-0.5 rounded bg-[var(--nx-warning)]/15 text-[var(--nx-warning)] font-bold border border-[var(--nx-warning)]/30">
                             revisar
                           </span>
                         )}
                         {dom && (
-                          <span className="text-[10px] px-2 py-0.5 rounded bg-[#22C55E]/20 text-[#22C55E] font-bold">
+                          <span className="text-[10px] px-2 py-0.5 rounded bg-[var(--nx-secondary)]/15 text-[var(--nx-secondary)] font-bold border border-[var(--nx-secondary)]/30">
                             dominado
                           </span>
                         )}
@@ -958,7 +958,7 @@ export default function FlashcardsPage() {
                         }}
                         aria-label="Editar flashcard"
                         title="Editar flashcard"
-                        className="px-2.5 py-1.5 rounded-lg bg-[#10121A] text-[#9499B3] hover:text-[#EEF0F6] text-xs flex items-center gap-1 cursor-pointer"
+                        className="px-2.5 py-1.5 rounded-lg bg-nx-depth text-nx-dim hover:text-nx-bright text-xs flex items-center gap-1 cursor-pointer border border-nx-border/50"
                       >
                         <Edit size={13} />
                         <span>Editar</span>
@@ -967,7 +967,7 @@ export default function FlashcardsPage() {
                         onClick={() => remove(card.id)}
                         aria-label="Excluir flashcard"
                         title="Excluir flashcard"
-                        className="px-2.5 py-1.5 rounded-lg bg-[#10121A] text-[#9499B3] hover:text-[#EF4444] text-xs flex items-center gap-1 cursor-pointer"
+                        className="px-2.5 py-1.5 rounded-lg bg-nx-depth text-nx-dim hover:text-[var(--nx-error)] text-xs flex items-center gap-1 cursor-pointer border border-nx-border/50"
                       >
                         <Trash2 size={13} />
                         <span>Excluir</span>
@@ -979,27 +979,6 @@ export default function FlashcardsPage() {
             )}
           </div>
         )}
-
-        {/* Resumo Inferior de Contadores */}
-        <div className="grid grid-cols-3 gap-3">
-          {[
-            { label: 'Total', valor: stats.total, cor: 'text-[#EEF0F6]' },
-            {
-              label: 'Para revisar',
-              valor: stats.paraRevisar,
-              cor: stats.paraRevisar > 0 ? 'text-[#F59E0B]' : 'text-[#EEF0F6]',
-            },
-            { label: 'Dominados', valor: stats.dominados, cor: 'text-[#22C55E]' },
-          ].map((s) => (
-            <div
-              key={s.label}
-              className="bg-[#161923] rounded-xl p-3.5 border border-white/[0.07] text-center"
-            >
-              <p className={`text-xl font-bold font-mono ${s.cor}`}>{s.valor}</p>
-              <p className="text-xs text-[#9499B3] mt-0.5">{s.label}</p>
-            </div>
-          ))}
-        </div>
       </div>
     </div>
   );

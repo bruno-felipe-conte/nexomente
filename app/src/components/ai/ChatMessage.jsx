@@ -6,7 +6,7 @@
 import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
-import { Copy, Check, Plus, Bot, Terminal } from 'lucide-react';
+import { Copy, Check, Plus, Bot, Terminal, Clock } from 'lucide-react';
 import PropTypes from 'prop-types';
 
 function CodeBlock({ code, language }) {
@@ -109,20 +109,35 @@ const ChatMessage = memo(function ChatMessage({ msg, idx, copiadoIdx, onCopiar, 
           )}
           
           {!isUser && !msg.isError && (
-            <div className="flex gap-2 mt-4 pt-4 border-t border-white/5">
-              <button
-                onClick={() => onCopiar(msg.texto, idx)}
-                className="px-3 py-1 bg-white/5 border border-white/5 rounded-lg text-[10px] font-bold uppercase tracking-widest text-text-lo hover:text-text-hi transition-all cursor-pointer flex items-center gap-2"
-              >
-                <Copy size={12} />
-                {copiadoIdx === idx ? 'Copiado!' : 'Copiar'}
-              </button>
-              <button
-                onClick={() => onInserir(msg.texto)}
-                className="px-3 py-1 bg-white/5 border border-white/5 rounded-lg text-[10px] font-bold uppercase tracking-widest text-text-lo hover:text-text-hi transition-all cursor-pointer flex items-center gap-2"
-              >
-                <Plus size={12} /> Inserir
-              </button>
+            <div className="flex flex-wrap items-center justify-between gap-2 mt-3 pt-3 border-t border-white/10">
+              <div className="flex items-center gap-1.5 text-[10px] font-mono text-text-lo">
+                <Clock size={11} className="text-accent-main" />
+                <span>
+                  {msg.responseTimeMs !== undefined && msg.responseTimeMs !== null
+                    ? msg.responseTimeMs >= 1000
+                      ? `${(msg.responseTimeMs / 1000).toFixed(1)}s`
+                      : `${msg.responseTimeMs}ms`
+                    : '0.1s'}
+                </span>
+                <span className="opacity-40">•</span>
+                <span>{(msg.texto || '').length} chars</span>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => onCopiar(msg.texto, idx)}
+                  className="px-3 py-1 bg-white/5 border border-white/5 rounded-lg text-[10px] font-bold uppercase tracking-widest text-text-lo hover:text-text-hi transition-all cursor-pointer flex items-center gap-2"
+                >
+                  <Copy size={12} />
+                  {copiadoIdx === idx ? 'Copiado!' : 'Copiar'}
+                </button>
+                <button
+                  onClick={() => onInserir(msg.texto)}
+                  className="px-3 py-1 bg-white/5 border border-white/5 rounded-lg text-[10px] font-bold uppercase tracking-widest text-text-lo hover:text-text-hi transition-all cursor-pointer flex items-center gap-2"
+                >
+                  <Plus size={12} /> Inserir
+                </button>
+              </div>
             </div>
           )}
         </div>

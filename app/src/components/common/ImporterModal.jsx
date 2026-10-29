@@ -214,17 +214,17 @@ export function ContentImporter({
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto bg-zinc-900 border border-zinc-800 rounded-2xl shadow-xl overflow-hidden text-zinc-100">
+    <div className="w-full max-w-2xl mx-auto nx-sheet rounded-2xl shadow-xl overflow-hidden text-nx-bright">
       {/* Abas */}
-      <div className="flex items-center justify-between border-b border-zinc-800 bg-zinc-950/60 p-2 gap-2">
+      <div className="flex items-center justify-between border-b border-nx-border bg-nx-surface/90 p-2 gap-2">
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setActiveTab('notes')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all cursor-pointer ${
               activeTab === 'notes'
-                ? 'bg-zinc-800 text-emerald-400 shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'
+                ? 'nx-btn-primary shadow-xs'
+                : 'text-nx-dim hover:text-nx-bright hover:bg-nx-depth'
             }`}
           >
             <FileText size={16} />
@@ -235,8 +235,8 @@ export function ContentImporter({
             onClick={() => setActiveTab('flashcards')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all cursor-pointer ${
               activeTab === 'flashcards'
-                ? 'bg-zinc-800 text-blue-400 shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'
+                ? 'nx-btn-primary shadow-xs'
+                : 'text-nx-dim hover:text-nx-bright hover:bg-nx-depth'
             }`}
           >
             <Layers size={16} />
@@ -249,7 +249,7 @@ export function ContentImporter({
             type="button"
             onClick={onClose}
             aria-label="Fechar importador"
-            className="p-2 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60 transition-colors cursor-pointer"
+            className="p-2 rounded-lg text-nx-dim hover:text-nx-bright hover:bg-nx-depth transition-colors cursor-pointer"
           >
             <X size={16} />
           </button>
@@ -262,10 +262,10 @@ export function ContentImporter({
           <div className="space-y-4">
             <div className="flex flex-wrap justify-between items-center gap-3">
               <div>
-                <h3 className="text-base font-semibold text-zinc-100">Importação em Massa</h3>
-                <p className="text-xs text-zinc-400">
+                <h3 className="text-base font-semibold text-nx-bright font-display">Importação em Massa</h3>
+                <p className="text-xs text-nx-dim">
                   Cole dezenas ou centenas de linhas no formato{' '}
-                  <code className="text-blue-300">frente;verso</code>
+                  <code className="text-[var(--nx-accent)] font-mono">frente;verso</code>
                 </p>
               </div>
               <input
@@ -273,7 +273,7 @@ export function ContentImporter({
                 placeholder="Baralho (ex: Italiano, Vocabulário)"
                 value={deckName}
                 onChange={(e) => setDeckName(e.target.value)}
-                className="bg-zinc-800 border border-zinc-700 text-xs px-3 py-1.5 rounded-lg focus:outline-none focus:border-blue-500 text-zinc-200"
+                className="bg-nx-depth border border-nx-border text-xs px-3 py-1.5 rounded-lg focus:outline-none focus:border-[var(--nx-accent)] text-nx-bright"
               />
             </div>
 
@@ -282,17 +282,17 @@ export function ContentImporter({
               value={rawFlashcards}
               onChange={handleTextChange}
               placeholder={'cane;cachorro\ngatto;gato\nmela;maçã\nlibro;livro'}
-              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 font-mono text-sm text-zinc-200 focus:outline-none focus:border-blue-500 placeholder-zinc-600 resize-y"
+              className="w-full bg-nx-depth border border-nx-border rounded-xl p-3 font-mono text-sm text-nx-bright focus:outline-none focus:border-[var(--nx-accent)] placeholder-nx-dim/50 resize-y"
             />
 
             {/* Prévia e Status */}
             <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
               <div className="flex gap-4">
-                <span className="flex items-center gap-1.5 text-emerald-400">
+                <span className="flex items-center gap-1.5 text-[var(--nx-secondary)]">
                   <CheckCircle2 size={14} /> {cardStats.valid} cartões identificados
                 </span>
                 {cardStats.invalid > 0 && (
-                  <span className="flex items-center gap-1.5 text-amber-400">
+                  <span className="flex items-center gap-1.5 text-[var(--nx-warning)]">
                     <AlertCircle size={14} /> {cardStats.invalid} linhas ignoradas/inválidas
                   </span>
                 )}
@@ -301,7 +301,7 @@ export function ContentImporter({
                 type="button"
                 onClick={handleConfirmFlashcards}
                 disabled={cardStats.valid === 0}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:hover:bg-blue-600 text-white rounded-lg font-medium text-sm transition-colors shadow-md flex items-center gap-2 cursor-pointer"
+                className="px-4 py-2 nx-btn-primary disabled:opacity-40 text-xs font-bold rounded-lg transition-colors shadow-xs flex items-center gap-2 cursor-pointer"
               >
                 Inserir Flashcards ({cardStats.valid})
               </button>
@@ -313,9 +313,9 @@ export function ContentImporter({
         {activeTab === 'notes' && (
           <div className="space-y-4">
             <div>
-              <h3 className="text-base font-semibold text-zinc-100">Importar Arquivos Markdown</h3>
-              <p className="text-xs text-zinc-400">
-                Carregue arquivos <code className="text-emerald-300">.md</code> para converter em
+              <h3 className="text-base font-semibold text-nx-bright font-display">Importar Arquivos Markdown</h3>
+              <p className="text-xs text-nx-dim">
+                Carregue arquivos <code className="text-[var(--nx-secondary)] font-mono">.md</code> para converter em
                 notas do sistema
               </p>
             </div>
@@ -333,13 +333,13 @@ export function ContentImporter({
               }}
               className={`flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-8 cursor-pointer transition-all ${
                 isDragging
-                  ? 'border-emerald-500 bg-emerald-950/20'
-                  : 'border-zinc-800 hover:border-zinc-700 bg-zinc-950/40'
+                  ? 'border-[var(--nx-secondary)] bg-[var(--nx-secondary)]/10'
+                  : 'border-nx-border hover:border-[var(--nx-accent)] bg-nx-depth'
               }`}
             >
-              <UploadCloud className="text-zinc-500 mb-2" size={32} />
-              <p className="text-sm text-zinc-300 font-medium">Arraste seus arquivos .md aqui</p>
-              <p className="text-xs text-zinc-500 mt-1">ou clique para selecionar do computador</p>
+              <UploadCloud className="text-nx-dim mb-2" size={32} />
+              <p className="text-sm text-nx-bright font-medium">Arraste seus arquivos .md aqui</p>
+              <p className="text-xs text-nx-dim mt-1">ou clique para selecionar do computador</p>
               <input
                 type="file"
                 accept=".md,.markdown"
@@ -355,12 +355,12 @@ export function ContentImporter({
                   {importedNotes.map((note) => (
                     <div
                       key={note.id}
-                      className="flex items-center justify-between bg-zinc-800/60 px-3 py-2 rounded-lg text-xs"
+                      className="flex items-center justify-between bg-nx-depth border border-nx-border px-3 py-2 rounded-lg text-xs"
                     >
-                      <span className="font-mono truncate max-w-xs text-zinc-200">
+                      <span className="font-mono truncate max-w-xs text-nx-bright">
                         {note.title}.md
                       </span>
-                      <span className="text-zinc-500">{(note.size / 1024).toFixed(1)} KB</span>
+                      <span className="text-nx-dim">{(note.size / 1024).toFixed(1)} KB</span>
                     </div>
                   ))}
                 </div>
@@ -369,7 +369,7 @@ export function ContentImporter({
                   <button
                     type="button"
                     onClick={handleConfirmNotes}
-                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-medium text-sm transition-colors shadow-md cursor-pointer"
+                    className="px-4 py-2 nx-btn-primary rounded-lg font-medium text-sm transition-colors shadow-xs cursor-pointer"
                   >
                     Salvar {importedNotes.length} Nota(s)
                   </button>

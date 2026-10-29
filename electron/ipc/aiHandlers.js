@@ -276,10 +276,17 @@ export async function runEmbeddedInference({ modelPath, messages = [], options =
       systemPrompt: systemMsg?.content || undefined,
     });
 
-    const maxTokens = Number(options.max_tokens) || 512;
+    const maxTokens = Number(options.max_tokens || options.num_predict) || 800;
+    const maxChars = Number(options.maxChars) || 1500;
     const promptOptions = {
       maxTokens,
-      temperature: Number(options.temperature) || 0.7,
+      temperature: Number(options.temperature ?? 0.35),
+      topP: Number(options.top_p ?? 0.90),
+      minP: Number(options.min_p ?? 0.05),
+      repeatPenalty: {
+        lastTokens: 64,
+        penalty: Number(options.repeat_penalty ?? 1.10),
+      },
     };
 
     if (options.jsonSchema && llamaInstance) {
@@ -293,23 +300,53 @@ export async function runEmbeddedInference({ modelPath, messages = [], options =
     // C8: Timeout configurável com AbortSignal (default 30s)
     const timeoutMs = Number(options.timeoutMs || process.env.AI_INFERENCE_TIMEOUT_MS) || 30000;
     const abortController = new AbortController();
+    let earlyStopTriggered = false;
+    let streamedText = "";
+
     const timeoutHandle = setTimeout(() => {
       abortController.abort(new Error("Timeout: modelo não respondeu no tempo limite de " + (timeoutMs / 1000) + "s"));
     }, timeoutMs);
 
     let meta;
+    const startTimeMs = Date.now();
     try {
       meta = await session.promptWithMeta(lastMessage, {
         ...promptOptions,
         signal: abortController.signal,
-        onTextChunk: options.onChunk
-          ? (chunk) => options.onChunk(chunk)
-          : undefined,
+        onTextChunk: (chunk) => {
+          // Bloqueia tokens degenerados em scripts não-latinos corrompidos (ex: tailandês "ดับ")
+          if (/[\u0E00-\u0E7F]/.test(chunk)) {
+            earlyStopTriggered = true;
+            abortController.abort();
+            return;
+          }
+          streamedText += chunk;
+          if (options.onChunk) {
+            options.onChunk(chunk);
+          }
+          // Detecta loop de repetição consecutiva de palavras/sílabas
+          if (/(\b\S{2,15}\s*)\1{2,}$/i.test(streamedText) || /(.{3,15})\1{2,}$/.test(streamedText)) {
+            earlyStopTriggered = true;
+            abortController.abort();
+            return;
+          }
+          // Parada antecipada se atingir margem do limite de caracteres solicitado
+          if (maxChars > 0 && streamedText.length >= maxChars + 150) {
+            earlyStopTriggered = true;
+            abortController.abort();
+          }
+        },
       });
+    } catch (promptErr) {
+      if (!earlyStopTriggered) {
+        throw promptErr;
+      }
     } finally {
       clearTimeout(timeoutHandle);
     }
-    let response = (meta?.responseText || "").trim();
+
+    const durationMs = Date.now() - startTimeMs;
+    let response = ((meta?.responseText || streamedText) || "").trim();
     if (!response && Array.isArray(meta?.response)) {
       response = meta.response
         .map((seg) => (typeof seg === "string" ? seg : seg?.text || ""))
@@ -317,10 +354,19 @@ export async function runEmbeddedInference({ modelPath, messages = [], options =
         .trim();
     }
 
+    // Limpeza de loops de repetição e caracteres corrompidos residuais
+    response = response
+      .replace(/[\u0E00-\u0E7F]+/g, "")
+      .replace(/(?:,\s*|\s+)?(\b\S{1,15})(?:\s+\1){2,}[\s\S]*$/gi, "")
+      .replace(/(.{3,15})\1{2,}[\s\S]*$/g, "")
+      .replace(/[,;:\-\s]+$/, "")
+      .trim();
+
     await smartContext.addMessage("assistant", response);
 
     return createSuccessResponse({
       response,
+      durationMs,
       modelName: path.basename(currentModelPath),
       modelPath: currentModelPath,
     });

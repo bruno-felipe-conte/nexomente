@@ -17,7 +17,7 @@ import { useFlashcards } from '../../hooks/useFlashcards';
 import { useNotes } from '../../hooks/useNotes';
 import { useTranslation } from '../../lib/i18n';
 
-export default function Sidebar({ isOpen: _isPinnedExternal = true, currentPage, onNavigate, onCloseMobile, className = '' }) {
+export default function Sidebar({ isOpen = false, currentPage, onNavigate, onCloseMobile, className = '' }) {
   const [isHovered, setIsHovered] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
 
@@ -33,8 +33,9 @@ export default function Sidebar({ isOpen: _isPinnedExternal = true, currentPage,
   const xpInfo = getLevelProgress(player?.xp || 0);
   const progressPct = typeof xpInfo === 'number' ? xpInfo : (xpInfo.progress ?? 0);
 
-  // A barra é considerada expandida se estiver com hover OU se estiver fixada (pinned) OU em mobile aberto
-  const isExpanded = isHovered || isPinned;
+  // A barra é considerada expandida se estiver com hover/pin (desktop) OU se estiver aberta como drawer no mobile
+  const isExpandedDesktop = isHovered || isPinned;
+  const isExpanded = isOpen || isExpandedDesktop;
 
   const PRIMARY_MODULES = [
     { id: 'dashboard',  label: t('nav.dashboard'),  icon: LayoutGrid, badge: null },
@@ -60,8 +61,8 @@ export default function Sidebar({ isOpen: _isPinnedExternal = true, currentPage,
 
   return (
     <>
-      {/* Backdrop Mobile */}
-      {isExpanded && (
+      {/* Backdrop Mobile: aparece quando a sidebar é aberta no mobile */}
+      {isOpen && (
         <div
           className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[95] lg:hidden"
           onClick={onCloseMobile}
@@ -69,17 +70,17 @@ export default function Sidebar({ isOpen: _isPinnedExternal = true, currentPage,
         />
       )}
 
-      {/* Espaçador estático no fluxo para o modo recolhido (Mini-Rail: w-16 = 64px) */}
+      {/* Espaçador estático no fluxo para o modo recolhido (Mini-Rail: w-16 = 64px) no Desktop */}
       <div className="hidden lg:block w-16 shrink-0 h-full pointer-events-none" />
 
-      {/* Aside com Auto-Hide Flutuante no Hover */}
+      {/* Aside com Auto-Hide Flutuante no Hover para desktop e Drawer deslizante para telas < 1024px */}
       <aside
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         className={`fixed inset-y-0 left-0 z-[100] flex flex-col border-r border-nx-border/80 bg-nx-depth select-none transition-all duration-300 ease-out ${
-          isExpanded
-            ? 'w-64 shadow-[8px_0_30px_rgba(0,0,0,0.6)]'
-            : 'w-16 shadow-none'
+          isOpen ? 'translate-x-0 w-64 shadow-2xl' : '-translate-x-full lg:translate-x-0'
+        } ${
+          isExpandedDesktop ? 'lg:w-64 lg:shadow-[6px_0_24px_rgba(44,38,35,0.10)]' : 'lg:w-16 lg:shadow-none'
         } ${className}`}
       >
         {/* 1. BRAND HEADER (Nivelado perfeitamente com a Topbar em h-16 = 64px) */}

@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
 import { Cpu, Zap, Activity, Info } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -8,35 +6,35 @@ const QUALITY_PRESETS = {
   quality: {
     id: 'quality',
     label: '🎯 Qualidade Máxima',
-    description: 'Ideal para resumos densos e precisos. Exige mais do computador.',
+    description: 'Ideal para resumos densos e precisos. Exige mais capacidade de memória do computador.',
     cacheTypeK: 'q8_0',
     cacheTypeV: 'q4_0',
     contextSize: 8192,
     minRAM: 14,
-    color: 'text-purple-400',
-    borderColor: 'border-purple-500/30'
+    color: 'text-nx-secondary',
+    borderColor: 'border-nx-secondary'
   },
   balanced: {
     id: 'balanced',
     label: '⚖️ Equilibrado',
-    description: 'Otimizado para 8-16GB de RAM. Bom equilíbrio entre inteligência e leveza.',
+    description: 'Otimizado para 8-16GB de RAM. Excelente balanço entre velocidade, inteligência e leveza.',
     cacheTypeK: 'q4_0',
     cacheTypeV: 'q4_0',
     contextSize: 4096,
     minRAM: 8,
-    color: 'text-teal-400',
-    borderColor: 'border-teal-500/30'
+    color: 'text-nx-primary',
+    borderColor: 'border-nx-primary'
   },
   performance: {
     id: 'performance',
-    label: '⚡ Desempenho',
-    description: 'Foco total em velocidade. Ideal para computadores com menos de 8GB de RAM.',
+    label: '⚡ Desempenho Rápido',
+    description: 'Foco total em velocidade de resposta e economia de recursos para qualquer hardware.',
     cacheTypeK: 'q4_0',
     cacheTypeV: 'q4_0',
     contextSize: 2048,
     minRAM: 4,
-    color: 'text-amber-400',
-    borderColor: 'border-amber-500/30'
+    color: 'text-nx-accent',
+    borderColor: 'border-nx-accent'
   },
 };
 
@@ -73,22 +71,22 @@ export default function AIPerformancePanel() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between px-2">
+      <div className="flex flex-wrap items-center justify-between gap-4 px-1">
         <div className="flex items-center gap-3">
-           <div className="w-10 h-10 rounded-xl bg-accent-main/10 flex items-center justify-center text-accent-main">
-              <Cpu size={20} />
-           </div>
-           <div>
-              <h3 className="text-lg font-bold text-text-hi font-display">Desempenho da IA</h3>
-              <p className="text-xs text-text-lo">Ajuste como o NexoMente utiliza seu hardware.</p>
-           </div>
+          <div className="w-10 h-10 rounded-xl bg-nx-primary-bg flex items-center justify-center text-nx-primary border border-nx-primary/20 shrink-0">
+            <Cpu size={20} />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-nx-bright font-display">Desempenho da IA Local</h3>
+            <p className="text-xs text-nx-dim">Ajuste os parâmetros de inferência neural ao seu hardware.</p>
+          </div>
         </div>
-        
+
         {hardware && (
-          <Badge variant="gray" className="bg-white/5 border-white/10 py-1.5 px-3">
-             <Activity size={12} className="mr-2 text-green-400" />
-             {hardware.ramGB}GB RAM · {hardware.hasGPU ? 'GPU Ativa' : 'Apenas CPU'}
-          </Badge>
+          <div className="flex items-center gap-2 py-1.5 px-3 rounded-xl bg-nx-surface border border-nx-border shadow-xs text-xs font-mono text-nx-bright">
+            <Activity size={13} className="text-nx-success" />
+            <span>{hardware.ramGB}GB RAM · {hardware.hasGPU ? 'GPU Ativa' : 'CPU Only'}</span>
+          </div>
         )}
       </div>
 
@@ -98,45 +96,48 @@ export default function AIPerformancePanel() {
           const isCompatible = hardware ? hardware.ramGB >= preset.minRAM : true;
 
           return (
-            <Card 
+            <div
               key={preset.id}
-              interactive={isCompatible}
-              className={`glass-panel p-5 transition-all ${isSelected ? `border-2 ${preset.borderColor} bg-white/[0.03]` : 'border-white/5 opacity-60 hover:opacity-100'} ${!isCompatible ? 'grayscale cursor-not-allowed' : ''}`}
               onClick={() => isCompatible && handleSelectPreset(preset)}
+              className={`nx-glass p-5 transition-all cursor-pointer select-none ${
+                isSelected
+                  ? `border-2 ${preset.borderColor} shadow-md bg-nx-surface/90`
+                  : 'border-nx-border opacity-70 hover:opacity-100 hover:bg-nx-surface/75'
+              } ${!isCompatible ? 'grayscale cursor-not-allowed opacity-40' : ''}`}
             >
-              <div className="flex items-center justify-between mb-4">
-                 <div className={`text-sm font-bold ${preset.color}`}>{preset.label}</div>
-                 {isSelected && <Zap size={14} className="text-accent-main fill-accent-main" />}
+              <div className="flex items-center justify-between mb-3">
+                <div className={`text-sm font-bold ${preset.color}`}>{preset.label}</div>
+                {isSelected && <Zap size={14} className="text-nx-primary fill-nx-primary" />}
               </div>
-              
-              <p className="text-xs text-text-mid mb-6 leading-relaxed">
+
+              <p className="text-xs text-nx-dim mb-5 leading-relaxed min-h-[38px]">
                 {preset.description}
               </p>
 
-              <div className="space-y-2 pt-4 border-t border-white/5">
-                 <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider">
-                    <span className="text-text-lo">Contexto</span>
-                    <span className="text-text-hi">{preset.contextSize / 1000}k tokens</span>
-                 </div>
-                 <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider">
-                    <span className="text-text-lo">Otimização</span>
-                    <span className="text-text-hi">KV {preset.cacheTypeK}</span>
-                 </div>
+              <div className="space-y-2 pt-3 border-t border-nx-border/60">
+                <div className="flex justify-between text-[10.5px] font-mono uppercase tracking-wider">
+                  <span className="text-nx-dim">Contexto</span>
+                  <span className="text-nx-bright font-bold">{preset.contextSize / 1000}k tokens</span>
+                </div>
+                <div className="flex justify-between text-[10.5px] font-mono uppercase tracking-wider">
+                  <span className="text-nx-dim">Otimização</span>
+                  <span className="text-nx-bright font-bold">KV {preset.cacheTypeK}</span>
+                </div>
               </div>
 
               {!isCompatible && (
-                <div className="mt-4 flex items-center gap-2 text-[10px] text-color-error font-bold uppercase">
-                   <Info size={12} />
-                   Requer {preset.minRAM}GB RAM
+                <div className="mt-3 flex items-center gap-1.5 text-[10.5px] text-nx-error font-bold uppercase tracking-wider">
+                  <Info size={12} />
+                  <span>Requer {preset.minRAM}GB RAM</span>
                 </div>
               )}
-            </Card>
+            </div>
           );
         })}
       </div>
-      
-      <p className="text-[10px] text-text-lo/40 text-center uppercase tracking-widest italic">
-        * As alterações serão aplicadas na próxima vez que a IA for inicializada.
+
+      <p className="text-[10.5px] text-nx-dim/70 text-center uppercase tracking-widest font-mono">
+        ✦ Configurações salvas e aplicadas a cada sessão do motor neural local.
       </p>
     </div>
   );
