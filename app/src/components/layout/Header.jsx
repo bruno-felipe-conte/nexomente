@@ -525,16 +525,6 @@ export default function Header({ title, onToggleSidebar, onNavigate, onToggleCop
             </AnimatePresence>
           </div>
 
-          {/* Toggle Sidebar Button na Extrema Direita */}
-          <button
-            onClick={onToggleSidebar}
-            className="p-2 rounded-[10px] text-nx-dim hover:text-nx-bright hover:bg-nx-surface border border-transparent hover:border-nx-border transition-all cursor-pointer shrink-0"
-            aria-label="Toggle sidebar"
-            title="Alternar barra lateral"
-          >
-            <Menu size={18} />
-          </button>
-
           {/* Electron Window Controls */}
           {typeof window !== 'undefined' && window.electronAPI && (
             <div className="flex items-center gap-1.5 ml-1 pl-2 border-l border-nx-border">
