@@ -15,7 +15,8 @@
     "test:coverage": "vitest run --coverage",
     "prepare": "husky",
     "lint": "eslint app/src/ electron/ --max-warnings 999",
-    "mapa:check": "node scripts/verificar-mapa.js"
+    "mapa:check": "node scripts/verificar-mapa.js",
+    "build:desktop": "vite build && electron-builder --win dir"
   },
   "lint-staged": {
     "app/src/**/*.{js,jsx}": [
@@ -96,6 +97,8 @@
       "dist/**/*",
       "!dist/teste-vosk.html",
       "electron/**/*",
+      "app/src/hooks/sm2.js",
+      "app/src/features/flashcards/domain/ankiSrsEngine.js",
       "!electron/models/**/*",
       "package.json"
     ],
@@ -105,6 +108,13 @@
         "to": "models",
         "filter": [
           "**/*"
+        ]
+      },
+      {
+        "from": "electron/models/gemma-4-E2B-it-GGUF",
+        "to": "models/gemma-4-E2B-it-GGUF",
+        "filter": [
+          "gemma-4-E2B-it-Q4_K_M.gguf"
         ]
       }
     ],
@@ -117,6 +127,11 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "NexoMente"
-    }
+    },
+    "asarUnpack": [
+      "node_modules/node-llama-cpp/**",
+      "node_modules/@node-llama-cpp/**",
+      "node_modules/better-sqlite3/**"
+    ]
   }
 }
