@@ -64,7 +64,13 @@ function embeddedAiDevPlugin() {
               const payload = JSON.parse(body || '{}');
               const { MsEdgeTTS, OUTPUT_FORMAT } = await import('msedge-tts');
               const tts = new MsEdgeTTS();
-              const voice = payload.voice || 'pt-BR-FranciscaNeural';
+              const voiceMap = {
+                'pt-BR-FranciscaNeural': 'pt-BR-FranciscaNeural',
+                'pt-BR-AntonioNeural': 'pt-BR-AntonioNeural',
+                'pt-BR-ThalitaMultilingualNeural': 'pt-BR-ThalitaMultilingualNeural',
+                'pt-BR-ThalitaNeural': 'pt-BR-ThalitaMultilingualNeural',
+              };
+              const voice = voiceMap[payload.voice] || 'pt-BR-FranciscaNeural';
               await tts.setMetadata(voice, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
               const rate = payload.rate && typeof payload.rate === 'number'
                 ? (payload.rate >= 1.0 ? `+${Math.round((payload.rate - 1.0) * 100)}%` : `${Math.round((payload.rate - 1.0) * 100)}%`)

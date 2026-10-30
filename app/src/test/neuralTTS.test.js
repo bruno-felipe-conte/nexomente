@@ -6,8 +6,8 @@ describe('neuralTTS - Motor de Síntese de Voz Neural', () => {
     neuralTTS.stop();
   });
 
-  it('exporta a lista de vozes neurais com Francisca como recomendada HD', () => {
-    expect(NEURAL_VOICES.length).toBeGreaterThanOrEqual(4);
+  it('exporta a lista de 3 vozes neurais HD com Francisca como padrão', () => {
+    expect(NEURAL_VOICES.length).toBe(3);
     const francisca = NEURAL_VOICES.find((v) => v.id === 'pt-BR-FranciscaNeural');
     expect(francisca).toBeDefined();
     expect(francisca.recommended).toBe(true);
@@ -15,8 +15,8 @@ describe('neuralTTS - Motor de Síntese de Voz Neural', () => {
     const antonio = NEURAL_VOICES.find((v) => v.id === 'pt-BR-AntonioNeural');
     expect(antonio).toBeDefined();
 
-    const system = NEURAL_VOICES.find((v) => v.id === 'system');
-    expect(system).toBeDefined();
+    const thalita = NEURAL_VOICES.find((v) => v.id === 'pt-BR-ThalitaMultilingualNeural');
+    expect(thalita).toBeDefined();
   });
 
   it('gerencia o ciclo de estado e notifica listeners', () => {
@@ -35,12 +35,27 @@ describe('neuralTTS - Motor de Síntese de Voz Neural', () => {
     unsubscribe();
   });
 
-  it('interrompe áudio e zera messageId ao chamar stop()', () => {
+  it('interrompe áudio, remove listeners e zera messageId ao chamar stop()', () => {
+    const mockAudio = {
+      pause: vi.fn(),
+      load: vi.fn(),
+      removeAttribute: vi.fn(),
+      currentTime: 10,
+      onplay: vi.fn(),
+      onended: vi.fn(),
+      onerror: vi.fn(),
+    };
+    neuralTTS.currentAudio = mockAudio;
     neuralTTS.isPlaying = true;
     neuralTTS.currentMessageId = 'teste-1';
 
     neuralTTS.stop();
 
+    expect(mockAudio.pause).toHaveBeenCalled();
+    expect(mockAudio.onplay).toBeNull();
+    expect(mockAudio.onended).toBeNull();
+    expect(mockAudio.onerror).toBeNull();
+    expect(mockAudio.currentTime).toBe(0);
     expect(neuralTTS.isPlaying).toBe(false);
     expect(neuralTTS.currentMessageId).toBeNull();
   });

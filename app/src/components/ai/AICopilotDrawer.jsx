@@ -57,9 +57,16 @@ export default function AICopilotDrawer({ isOpen, onClose, onExpandFullScreen })
   const [autoSendVoice, setAutoSendVoice] = useState(
     () => localStorage.getItem('nexomente_copilot_voice_autosend') === 'true'
   );
-  const [selectedVoice, setSelectedVoice] = useState(
-    () => localStorage.getItem('nexomente_copilot_voice') || 'pt-BR-FranciscaNeural'
-  );
+  const [selectedVoice, setSelectedVoice] = useState(() => {
+    const saved = localStorage.getItem('nexomente_copilot_voice');
+    if (saved === 'pt-BR-ThalitaNeural' || saved === 'pt-BR-ThalitaMultilingualNeural') {
+      return 'pt-BR-ThalitaMultilingualNeural';
+    }
+    if (saved === 'pt-BR-AntonioNeural') {
+      return 'pt-BR-AntonioNeural';
+    }
+    return 'pt-BR-FranciscaNeural';
+  });
   const [speechRate, setSpeechRate] = useState(
     () => parseFloat(localStorage.getItem('nexomente_copilot_voice_speed') || '1.05')
   );
@@ -419,7 +426,7 @@ export default function AICopilotDrawer({ isOpen, onClose, onExpandFullScreen })
                     <span className="text-[10px] text-nx-dim font-mono">Alta Fidelidade</span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-1.5">
+                  <div className="grid grid-cols-3 gap-1.5">
                     {NEURAL_VOICES.map((v) => {
                       const isSelected = selectedVoice === v.id;
                       return (
@@ -437,8 +444,8 @@ export default function AICopilotDrawer({ isOpen, onClose, onExpandFullScreen })
                               : 'bg-nx-overlay/40 border-nx-border/60 text-nx-dim hover:text-nx-bright hover:bg-nx-overlay'
                           }`}
                         >
-                          <div className="font-bold flex items-center justify-between">
-                            <span className="truncate">{v.name}</span>
+                          <div className="font-bold flex items-center justify-between gap-1">
+                            <span className="truncate">{v.name.replace(' Neural', '')}</span>
                             {v.recommended && (
                               <span className="text-[8px] bg-nx-primary/30 text-nx-primary px-1 py-0.2 rounded font-mono shrink-0">
                                 HD
@@ -446,7 +453,7 @@ export default function AICopilotDrawer({ isOpen, onClose, onExpandFullScreen })
                             )}
                           </div>
                           <div className="text-[9px] text-nx-dim mt-0.5 leading-tight line-clamp-1">
-                            {v.gender} • {v.desc}
+                            {v.gender}
                           </div>
                         </button>
                       );

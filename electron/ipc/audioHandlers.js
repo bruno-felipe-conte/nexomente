@@ -23,6 +23,13 @@ function normalizePitch(pitch) {
   return pitch >= 0 ? `+${Math.round(pitch)}Hz` : `${Math.round(pitch)}Hz`;
 }
 
+const SUPPORTED_VOICES = {
+  'pt-BR-FranciscaNeural': 'pt-BR-FranciscaNeural',
+  'pt-BR-AntonioNeural': 'pt-BR-AntonioNeural',
+  'pt-BR-ThalitaMultilingualNeural': 'pt-BR-ThalitaMultilingualNeural',
+  'pt-BR-ThalitaNeural': 'pt-BR-ThalitaMultilingualNeural',
+};
+
 export function registerAudioHandlers() {
   ipcMain.handle('audio:synthesizeSpeech', async (_, payload = {}) => {
     const {
@@ -36,6 +43,7 @@ export function registerAudioHandlers() {
       return { success: false, error: 'Texto não fornecido para síntese' };
     }
 
+    const cleanVoice = SUPPORTED_VOICES[voice] || 'pt-BR-FranciscaNeural';
     const cleanText = text.trim();
     const rateStr = normalizeRate(rate);
     const pitchStr = normalizePitch(pitch);
@@ -43,7 +51,7 @@ export function registerAudioHandlers() {
     // Gerar chave de cache
     const cacheKey = crypto
       .createHash('md5')
-      .update(`${voice}|${rateStr}|${pitchStr}|${cleanText}`)
+      .update(`${cleanVoice}|${rateStr}|${pitchStr}|${cleanText}`)
       .digest('hex');
 
     if (audioCache.has(cacheKey)) {
@@ -60,7 +68,7 @@ export function registerAudioHandlers() {
       const tts = new MsEdgeTTS();
 
       // Configuração de formato de áudio MP3 de alta clareza
-      await tts.setMetadata(voice, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
+      await tts.setMetadata(cleanVoice, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
 
       const { audioStream } = await tts.toStream(cleanText, {
         rate: rateStr,

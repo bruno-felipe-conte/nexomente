@@ -22,27 +22,23 @@ export const NEURAL_VOICES = [
     recommended: false
   },
   {
-    id: 'pt-BR-ThalitaNeural',
+    id: 'pt-BR-ThalitaMultilingualNeural',
     name: 'Thalita Neural',
     gender: 'Feminina',
     desc: 'Jovem, dinâmica e ágil',
     recommended: false
-  },
-  {
-    id: 'pt-BR-FabioNeural',
-    name: 'Fabio Neural',
-    gender: 'Masculino',
-    desc: 'Coloquial e amigável',
-    recommended: false
-  },
-  {
-    id: 'system',
-    name: 'Voz Local do Sistema',
-    gender: 'Auto',
-    desc: 'Síntese offline direta do sistema operacional',
-    recommended: false
   }
 ];
+
+// Mapeamento de retrocompatibilidade para identificadores antigos
+export const VOICE_ALIAS_MAP = {
+  'pt-BR-ThalitaNeural': 'pt-BR-ThalitaMultilingualNeural',
+  'pt-BR-ThalitaMultilingualNeural': 'pt-BR-ThalitaMultilingualNeural',
+  'pt-BR-AntonioNeural': 'pt-BR-AntonioNeural',
+  'pt-BR-FranciscaNeural': 'pt-BR-FranciscaNeural',
+  'pt-BR-FabioNeural': 'pt-BR-FranciscaNeural',
+  system: 'pt-BR-FranciscaNeural'
+};
 
 class NeuralTTSManager {
   constructor() {
@@ -75,9 +71,14 @@ class NeuralTTSManager {
   stop() {
     if (this.currentAudio) {
       try {
+        // Desvincular todos os handlers para evitar disparo acidental de onerror ou onended ao resetar
+        this.currentAudio.onplay = null;
+        this.currentAudio.onended = null;
+        this.currentAudio.onerror = null;
         this.currentAudio.pause();
         this.currentAudio.currentTime = 0;
-        this.currentAudio.src = '';
+        this.currentAudio.removeAttribute('src');
+        this.currentAudio.load();
       } catch (e) {
         // Ignora erros ao parar áudio descartado
       }
@@ -102,9 +103,11 @@ class NeuralTTSManager {
    * Sintetiza áudio chamando o Electron IPC ou o endpoint HTTP do Vite
    */
   async fetchNeuralAudio(text, voice, rate) {
+    const targetVoice = VOICE_ALIAS_MAP[voice] || 'pt-BR-FranciscaNeural';
+
     // 1. Tentar via Electron IPC (se estiver no app Desktop)
     if (typeof window !== 'undefined' && window.electronAPI?.synthesizeSpeech) {
-      const res = await window.electronAPI.synthesizeSpeech({ text, voice, rate });
+      const res = await window.electronAPI.synthesizeSpeech({ text, voice: targetVoice, rate });
       if (res?.success && res.audioBase64) {
         return res.audioBase64;
       }
@@ -115,7 +118,7 @@ class NeuralTTSManager {
     const response = await fetch('/api/tts/synthesize', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, voice, rate })
+      body: JSON.stringify({ text, voice: targetVoice, rate })
     });
 
     if (!response.ok) {
@@ -213,35 +216,37 @@ class NeuralTTSManager {
     const cleanText = formatTextForSpeech(rawText);
     if (!cleanText) return;
 
+    const resolvedVoice = VOICE_ALIAS_MAP[voice] || 'pt-BR-FranciscaNeural';
+
     this.isPlaying = true;
     this.currentMessageId = messageId;
     this.notify({ isPlaying: true, messageId, loading: true });
 
-    // Se o usuário selecionou expressamente a voz do sistema offline
-    if (voice === 'system') {
-      this.playWebSpeechFallback(cleanText, rate, messageId);
-      return;
-    }
-
     try {
-      const audioBase64 = await this.fetchNeuralAudio(cleanText, voice, rate);
+      const audioBase64 = await this.fetchNeuralAudio(cleanText, resolvedVoice, rate);
 
       if (!this.isPlaying || this.currentMessageId !== messageId) {
-        return; // Interrompido enquanto aguardava
+        return; // Interrompido enquanto aguardava a requisição
       }
 
       const audio = new Audio(audioBase64);
       this.currentAudio = audio;
+      let hasCompleted = false;
 
       audio.onplay = () => {
         this.notify({ isPlaying: true, messageId, loading: false });
       };
 
       audio.onended = () => {
+        hasCompleted = true;
         this.stop();
       };
 
       audio.onerror = (e) => {
+        // Se já concluiu normalmente ou foi interrompido, não dispara fallback
+        if (hasCompleted || !this.isPlaying || this.currentMessageId !== messageId) {
+          return;
+        }
         console.warn('[NEURAL TTS] Erro no player de áudio MP3, usando fallback local:', e);
         this.playWebSpeechFallback(cleanText, rate, messageId);
       };
