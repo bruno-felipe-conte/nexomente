@@ -20,7 +20,14 @@ const isDev = process.env.NODE_ENV === 'development';
 
 let mainWindow = null;
 
-const ALLOWED_ORIGINS = ['file://', 'http://localhost:5173', 'http://127.0.0.1:5173'];
+const DEV_PORT = process.env.VITE_PORT || 5174;
+const ALLOWED_ORIGINS = [
+  'file://',
+  `http://localhost:${DEV_PORT}`,
+  `http://127.0.0.1:${DEV_PORT}`,
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+];
 
 function isAllowedOrigin(origin) {
   return ALLOWED_ORIGINS.some(allowed => origin.startsWith(allowed));
@@ -46,7 +53,7 @@ app.whenReady().then(() => {
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "img-src 'self' data: blob: https:",
       "font-src 'self' https://fonts.gstatic.com data:",
-      "connect-src 'self' https://unpkg.com http://localhost:1234 http://localhost:11434 http://localhost:5173 ws://localhost:5173 data: blob:",
+      `connect-src 'self' https://unpkg.com http://localhost:1234 http://localhost:11434 http://localhost:${DEV_PORT} ws://localhost:${DEV_PORT} http://localhost:5173 ws://localhost:5173 data: blob:`,
       "worker-src 'self' blob: data:",
       "media-src 'self' blob: data: mediastream:",
       "object-src 'none'",
@@ -107,11 +114,12 @@ function createWindow() {
   });
 
   if (isDev) {
-    mainWindow.loadURL('http://localhost:5173').catch(async (err) => {
+    const devUrl = `http://localhost:${DEV_PORT}`;
+    mainWindow.loadURL(devUrl).catch(async (err) => {
       console.log('[WINDOW] Vite inicializando, aguardando conexao...');
-      const ok = await waitForUrl('http://localhost:5173');
+      const ok = await waitForUrl(devUrl);
       if (ok) {
-        await mainWindow.loadURL('http://localhost:5173');
+        await mainWindow.loadURL(devUrl);
       } else {
         console.error('[WINDOW] Vite nao respondeu:', err);
       }
