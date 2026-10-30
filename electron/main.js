@@ -92,6 +92,7 @@ function createWindow() {
 
   mainWindow = new BrowserWindow({
     width: 1280,
+    icon: path.join(__dirname, "../build/icon.png"),
     height: 800,
     minWidth: minAppWidth,
     minHeight: 500,

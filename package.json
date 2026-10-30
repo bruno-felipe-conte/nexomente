@@ -88,6 +88,7 @@
   "build": {
     "appId": "com.bruno.nexomente",
     "productName": "NexoMente",
+    "icon": "build/icon.png",
     "directories": {
       "output": "dist-electron"
     },

@@ -1,6 +1,6 @@
 <div align="center">
 
-![NexoMente Hero Banner](./nexomente_hero_banner.png)
+<p align="center"><img src="./public/logo.png" alt="NexoMente" width="360" /></p>
 
 # 🌌 NEXOMENTE: THE ULTIMATE SECOND BRAIN
 ### ✦ *Local Intelligence. Gamified Wisdom. Absolute Privacy.* ✦

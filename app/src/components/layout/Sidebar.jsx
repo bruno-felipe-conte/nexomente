@@ -102,14 +102,12 @@ export default function Sidebar({ isOpen = false, currentPage, onNavigate, onClo
               className="w-12 h-full flex items-center justify-center shrink-0 group cursor-pointer"
               title="Ir para o Dashboard"
             >
-              <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-transform duration-150 group-hover:scale-105 shadow-glow-primary"
-                style={{
-                  background: 'linear-gradient(135deg, var(--nx-primary) 0%, var(--nx-secondary) 100%)',
-                }}
-              >
-                <span className="text-white font-display font-black text-base leading-none">N</span>
-              </div>
+              <img
+                src="./logo-mark.png"
+                alt="NexoMente"
+                draggable={false}
+                className="w-9 h-9 object-contain shrink-0 transition-transform duration-150 group-hover:scale-105"
+              />
             </button>
 
             {/* Container de Texto & Ações (Clip-reveal com transição suave de opacidade) */}
