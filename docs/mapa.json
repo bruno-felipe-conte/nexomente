@@ -1,6 +1,6 @@
 {
-  "versao": "1.2.0",
-  "data_atualizacao": "2026-10-30",
+  "versao": "1.3.0",
+  "data_atualizacao": "2026-10-31",
   "descricao": "Grafo estruturado de conexões, dependências e canais IPC do NexoMente",
   "hubs": [
     {
@@ -400,6 +400,30 @@
       "fluxo": "Clique em Apagar Tudo -> modal exige digitar CONFIRMAR -> limpeza de localStorage -> reinicialização do SQLite -> reload",
       "usa": ["db-store"],
       "afeta": ["Notas", "Flashcards", "Study", "Settings", "Dashboard"]
+    },
+    {
+      "id": "test-resilience-edge-cases",
+      "nome": "Suíte Dedicada de Resiliência Vitest (M1/M2/M3)",
+      "arquivo": "app/src/test/resilienceEdgeCases.test.js",
+      "linha": 1,
+      "fluxo": "Vitest JSDOM -> Executa 14 testes cobrindo 9 cenários extremos (E1 QuotaExceededError, E2 Corrupção SQLite, E3 Reconciliação Boot, E8 Reset Fábrica, E6 Streak Freeze, E7 Timer Monotônico, E4 AsyncMutex, MF-03/04 FSRS, MF-01/02 Forja IA)",
+      "usa": [
+        "db-store",
+        "tamagotchi-engine",
+        "study-timer-engine",
+        "fsrs-config-engine",
+        "ui-store"
+      ],
+      "afeta": [
+        "wasmEngine",
+        "DatabaseAdapter",
+        "useDBStore",
+        "useTamagotchiStore",
+        "useStudyTimerStore",
+        "aiHandlers",
+        "FlashcardViewer",
+        "GeradorForjaTab"
+      ]
     }
   ],
   "ipc_canais": [

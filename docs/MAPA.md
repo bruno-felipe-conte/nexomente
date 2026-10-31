@@ -331,15 +331,15 @@
 
 | Se alterar... | Componentes e Arquivos Afetados que Devem Ser Verificados |
 |---|---|
-| **`wasmEngine.js` / `DatabaseAdapter.js`** *(Schema SQLite / IndexedDB / `saveDB`)* | `useDBStore.js`, todos os 7 repositórios em `app/src/lib/db/repositories/`, `useNotes.js`, `useFlashcards.js`, `useMaterias.js`, testes `useDBStore.test.js`, `integration.test.js`, `smoke.test.jsx`. |
+| **`wasmEngine.js` / `DatabaseAdapter.js`** *(Schema SQLite / IndexedDB / `saveDB`)* | `useDBStore.js`, todos os 7 repositórios em `app/src/lib/db/repositories/`, `useNotes.js`, `useFlashcards.js`, `useMaterias.js`, testes `resilienceEdgeCases.test.js`, `useDBStore.test.js`, `integration.test.js`, `smoke.test.jsx`. |
 | **`aiProvider.js`** *(Contratos `chat`, `generate` e `getModel`)* | `useAIStore.js`, `useAIModel.js`, `embeddedService.js`, `AIChat.jsx`, `parser.js`, `useGerador.js`, `AIBar.jsx`, `Notas.jsx`, teste `aiService.test.js`. |
 | **`eventBus.js` (`@core/events`)** *(Eventos de Domínio)* | `useFlashcards.js`, `useTamagotchiStore.js`, teste `aiService.test.js`. |
-| **`useTamagotchiStore.js`** *(Níveis, XP, HP e Passivas)* | `TamagotchiWidget.jsx`, `LevelCard.jsx`, `Header.jsx`, `Dashboard.jsx`, `Statistics.jsx`, `useStudyTimerStore.js`, `eventBus.js`. |
-| **`useStudyTimerStore.js`** *(Timer, Estados de Estudo e Sessões)* | `Study.jsx`, `MiniTimerWidget.jsx`, `CircularTimer.jsx`, `App.jsx`, `Statistics.jsx`, teste `miniTimer.test.jsx`, `behavioralScreen.test.jsx`. |
+| **`useTamagotchiStore.js`** *(Níveis, XP, HP e Passivas)* | `TamagotchiWidget.jsx`, `LevelCard.jsx`, `Header.jsx`, `Dashboard.jsx`, `Statistics.jsx`, `useStudyTimerStore.js`, `eventBus.js`, teste `resilienceEdgeCases.test.js`. |
+| **`useStudyTimerStore.js`** *(Timer, Estados de Estudo e Sessões)* | `Study.jsx`, `MiniTimerWidget.jsx`, `CircularTimer.jsx`, `App.jsx`, `Statistics.jsx`, teste `resilienceEdgeCases.test.js`, `miniTimer.test.jsx`, `behavioralScreen.test.jsx`. |
 | **`useUIStore.jsx`** *(Abas, Ações Pendentes, Categorias, Nome)* | `App.jsx`, `Sidebar.jsx`, `Header.jsx`, `Dashboard.jsx`, `Notas.jsx`, `Graph.jsx`, `Statistics.jsx`, `Settings.jsx`, `AIChat.jsx`, `Onboarding.jsx`, teste `useUIStore.test.js`. |
 | **`useNotes.js`** *(CRUD de Notas e Tags)* | `Notas.jsx`, `NotaLista.jsx`, `CategoriaSelector.jsx`, `BibliotecaPanel.jsx`, `useNotaEditor.js`, `Graph.jsx`, `Statistics.jsx`, `Dashboard.jsx`, `Header.jsx`, teste `useNotes.test.js`, `smoke.test.jsx`. |
-| **`useFlashcards.js`** / **`ankiSrsEngine.js`** *(Algoritmo Anki SRS)* | `Flashcards.jsx`, `FlashcardViewer.jsx`, `useGerador.js`, `Statistics.jsx`, `Header.jsx`, teste `sm2.test.js`. |
-| **`electron/preload.js`** / **Handlers IPC** | `electron/main.js`, `electron/ipc/dbHandlers.js`, `electron/ipc/aiHandlers.js`, `electron/ipc/windowHandlers.js`, `Header.jsx`, `embeddedService.js`. |
+| **`useFlashcards.js`** / **`ankiSrsEngine.js`** *(Algoritmo Anki SRS)* | `Flashcards.jsx`, `FlashcardViewer.jsx`, `useGerador.js`, `Statistics.jsx`, `Header.jsx`, teste `resilienceEdgeCases.test.js`, `sm2.test.js`. |
+| **`electron/preload.js`** / **Handlers IPC** | `electron/main.js`, `electron/ipc/dbHandlers.js`, `electron/ipc/aiHandlers.js` (`AsyncMutex`), `electron/ipc/windowHandlers.js`, `Header.jsx`, `embeddedService.js`, teste `resilienceEdgeCases.test.js`. |
 
 ---
 
