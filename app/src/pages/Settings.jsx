@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUIStore } from '../store/useUIStore';
+import { purgeAllStorage } from '../infra/db/DatabaseAdapter';
 import toast from 'react-hot-toast';
 
 export default function Settings() {
@@ -72,19 +73,19 @@ export default function Settings() {
     reader.readAsText(file);
   };
 
-  const handleReset = (type) => {
+  const handleReset = async (type) => {
     if (confirmText !== 'CONFIRMAR') {
       toast.error('Digite CONFIRMAR para autorizar a exclusão');
       return;
     }
 
     if (type === 'all') {
-      localStorage.clear();
+      await purgeAllStorage();
       window.location.reload();
     } else {
       const keysToKeep = ['nexomente_gemini_key', 'nexomente_user_name', 'nexomente_notif_study', 'nexomente_ai_provider', 'nexomente_embedded_path', 'nexomente_locale', 'nexomente_fsrs_config'];
       const kept = keysToKeep.map(k => ({ k, v: localStorage.getItem(k) }));
-      localStorage.clear();
+      await purgeAllStorage();
       kept.forEach(item => { if (item.v) localStorage.setItem(item.k, item.v); });
       toast.success('Dados de estudo limpos');
       setTimeout(() => window.location.reload(), 1000);

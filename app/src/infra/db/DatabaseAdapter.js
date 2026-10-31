@@ -12,6 +12,7 @@
 const IDB_NAME = 'nexomente_idb';
 const IDB_STORE = 'sqlite_snapshots';
 const IDB_KEY = 'primary_db';
+const IDB_META_KEY = 'primary_db_meta';
 
 let idbPromise = null;
 
@@ -39,9 +40,10 @@ function openIndexedDB() {
 }
 
 /**
- * Salva o snapshot Uint8Array no IndexedDB de forma 100% assíncrona (sem travar a UI e sem btoa).
+ * Salva o snapshot Uint8Array no IndexedDB de forma 100% assíncrona (sem travar a UI e sem btoa),
+ * mantendo metadados de carimbo temporal para prevenção de ressurreição stale.
  */
-export async function saveSnapshotToIndexedDB(uint8Array) {
+export async function saveSnapshotToIndexedDB(uint8Array, metadata = {}) {
   const idb = await openIndexedDB();
   if (!idb) return false;
   return new Promise((resolve) => {
@@ -49,6 +51,12 @@ export async function saveSnapshotToIndexedDB(uint8Array) {
       const tx = idb.transaction(IDB_STORE, 'readwrite');
       const store = tx.objectStore(IDB_STORE);
       store.put(uint8Array, IDB_KEY);
+      const meta = {
+        updatedAt: metadata.updatedAt || Date.now(),
+        size: uint8Array?.byteLength || 0,
+        ...metadata
+      };
+      store.put(meta, IDB_META_KEY);
       tx.oncomplete = () => resolve(true);
       tx.onerror = () => resolve(false);
     } catch {
@@ -77,6 +85,68 @@ export async function loadSnapshotFromIndexedDB() {
 }
 
 /**
+ * Carrega os metadados do snapshot gravado no IndexedDB.
+ */
+export async function loadSnapshotMetaFromIndexedDB() {
+  const idb = await openIndexedDB();
+  if (!idb) return null;
+  return new Promise((resolve) => {
+    try {
+      const tx = idb.transaction(IDB_STORE, 'readonly');
+      const store = tx.objectStore(IDB_STORE);
+      const req = store.get(IDB_META_KEY);
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => resolve(null);
+    } catch {
+      resolve(null);
+    }
+  });
+}
+
+/**
+ * Purga atomicamente todo o armazenamento do aplicativo (LocalStorage + IndexedDB).
+ * Previne o ressurgimento de dados fantasma após o reset de fábrica (E8).
+ */
+export async function purgeAllStorage() {
+  if (idbPromise) {
+    try {
+      const db = await idbPromise;
+      if (db && typeof db.close === 'function') {
+        db.close();
+      }
+    } catch { /* ignore */ }
+    idbPromise = null;
+  }
+
+  if (typeof indexedDB !== 'undefined') {
+    await new Promise((resolve) => {
+      try {
+        const req = indexedDB.deleteDatabase(IDB_NAME);
+        req.onsuccess = () => resolve(true);
+        req.onerror = () => resolve(false);
+        req.onblocked = () => resolve(false);
+      } catch {
+        resolve(false);
+      }
+    });
+  }
+
+  if (typeof localStorage !== 'undefined') {
+    try {
+      localStorage.clear();
+    } catch (err) {
+      console.error('[DatabaseAdapter] Erro ao limpar localStorage:', err);
+    }
+  }
+
+  if (typeof sessionStorage !== 'undefined') {
+    try {
+      sessionStorage.clear();
+    } catch { /* ignore */ }
+  }
+}
+
+/**
  * Verifica se o driver nativo do Electron IPC está ativo.
  */
 export function isElectronNativeDBAvailable() {
@@ -94,7 +164,7 @@ export function scheduleBackgroundPersist(exportFn) {
     try {
       const bytes = exportFn();
       if (bytes) {
-        saveSnapshotToIndexedDB(bytes);
+        saveSnapshotToIndexedDB(bytes, { updatedAt: Date.now() });
       }
     } catch (err) {
       console.error('[DatabaseAdapter] Erro ao persistir snapshot em IndexedDB:', err);

@@ -36,9 +36,34 @@ export const useDBStore = create((set, get) => {
       try {
         const db = await initDB();
         set({ db, loading: false });
+        get().reconcileBootNotes();
         get().syncXP();
       } catch (error) {
         set({ error: error.message, loading: false });
+      }
+    },
+
+    reconcileBootNotes: () => {
+      if (typeof localStorage === 'undefined') return;
+      try {
+        const raw = localStorage.getItem('nexomente_notas');
+        if (!raw) return;
+        const pendingNotes = JSON.parse(raw);
+        if (Array.isArray(pendingNotes) && pendingNotes.length > 0) {
+          const { Notas } = get();
+          if (Notas && typeof Notas.create === 'function') {
+            for (const nota of pendingNotes) {
+              const existing = Notas.getById(nota.id);
+              if (!existing) {
+                Notas.create(nota);
+              }
+            }
+          }
+          localStorage.removeItem('nexomente_notas');
+          get().incrementVersion();
+        }
+      } catch (err) {
+        console.warn('[useDBStore] Falha ao reconciliar notas de boot:', err);
       }
     },
 

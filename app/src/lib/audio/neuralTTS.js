@@ -223,7 +223,15 @@ class NeuralTTSManager {
     this.notify({ isPlaying: true, messageId, loading: true });
 
     try {
-      const audioBase64 = await this.fetchNeuralAudio(cleanText, resolvedVoice, rate);
+      // [E5] Timeout de 5s via Promise.race acionando fallback Web Speech em caso de latência excessiva ou queda
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Timeout de 5000ms na obtenção de áudio neural')), 5000);
+      });
+
+      const audioBase64 = await Promise.race([
+        this.fetchNeuralAudio(cleanText, resolvedVoice, rate),
+        timeoutPromise
+      ]);
 
       if (!this.isPlaying || this.currentMessageId !== messageId) {
         return; // Interrompido enquanto aguardava a requisição

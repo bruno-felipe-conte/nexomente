@@ -304,8 +304,8 @@ export function codificarFoneticaPtBr(palavra) {
   w = w.replace(/qu(?=[ei])/g, 'K').replace(/gu(?=[ei])/g, 'G');
   // ç, sc, sç, xc, ss -> 'S' (som sibilante surdo)
   w = w.replace(/s[cç]|xc|ç|ss/g, 'S');
-  // 'c' antes de e/i vira 'S', senão 'K'
-  w = w.replace(/c(?=[ei])/g, 'S').replace(/c/g, 'K');
+  // Normalização consistente de 'c' e 'ç' para tolerar digitação/reconhecimento com ou sem cedilha
+  w = w.replace(/c/g, 'S');
   // 's' intervocálico -> 'Z' (apenas 's' simples entre vogais, não 'S' maiúsculo derivado de ss/ç)
   w = w.replace(/([aeiou])s([aeiou])/g, '$1Z$2');
   // Todos os 's' restantes viram 'S'

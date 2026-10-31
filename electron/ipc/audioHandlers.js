@@ -70,32 +70,68 @@ export function registerAudioHandlers() {
       // Configuração de formato de áudio MP3 de alta clareza
       await tts.setMetadata(cleanVoice, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
 
-      const { audioStream } = await tts.toStream(cleanText, {
-        rate: rateStr,
-        pitch: pitchStr
-      });
+      // [E5] Timeout de 6s para evitar travamento perpétuo de socket em conexões half-open
+      const timeoutMs = 6000;
+      const abortController = new AbortController();
 
-      const audioBuffer = await new Promise((resolve, reject) => {
-        const chunks = [];
-        audioStream.on('data', (chunk) => chunks.push(chunk));
-        audioStream.on('end', () => resolve(Buffer.concat(chunks)));
-        audioStream.on('error', (err) => reject(err));
-      });
+      const timeoutHandle = setTimeout(() => {
+        abortController.abort(new Error(`Timeout de síntese TTS (${timeoutMs}ms)`));
+      }, timeoutMs);
 
-      const audioBase64 = `data:audio/mp3;base64,${audioBuffer.toString('base64')}`;
+      let audioStream = null;
+      try {
+        const streamResult = await tts.toStream(cleanText, {
+          rate: rateStr,
+          pitch: pitchStr
+        });
+        audioStream = streamResult.audioStream;
 
-      // Armazenar no cache com eviction LRU simples
-      if (audioCache.size >= MAX_CACHE_SIZE) {
-        const firstKey = audioCache.keys().next().value;
-        audioCache.delete(firstKey);
+        const audioBuffer = await new Promise((resolve, reject) => {
+          const chunks = [];
+
+          const onAbort = () => {
+            try {
+              if (audioStream && typeof audioStream.destroy === 'function') {
+                audioStream.destroy();
+              }
+            } catch { /* ignore */ }
+            reject(new Error(`Timeout de síntese TTS após ${timeoutMs}ms`));
+          };
+
+          if (abortController.signal.aborted) {
+            return onAbort();
+          }
+
+          abortController.signal.addEventListener('abort', onAbort, { once: true });
+
+          audioStream.on('data', (chunk) => chunks.push(chunk));
+          audioStream.on('end', () => {
+            abortController.signal.removeEventListener('abort', onAbort);
+            resolve(Buffer.concat(chunks));
+          });
+          audioStream.on('error', (err) => {
+            abortController.signal.removeEventListener('abort', onAbort);
+            reject(err);
+          });
+        });
+
+        const audioBase64 = `data:audio/mp3;base64,${audioBuffer.toString('base64')}`;
+
+        // Armazenar no cache com eviction LRU simples
+        if (audioCache.size >= MAX_CACHE_SIZE) {
+          const firstKey = audioCache.keys().next().value;
+          audioCache.delete(firstKey);
+        }
+        audioCache.set(cacheKey, audioBase64);
+
+        return {
+          success: true,
+          audioBase64,
+          mimeType: 'audio/mp3'
+        };
+      } finally {
+        clearTimeout(timeoutHandle);
       }
-      audioCache.set(cacheKey, audioBase64);
-
-      return {
-        success: true,
-        audioBase64,
-        mimeType: 'audio/mp3'
-      };
     } catch (err) {
       console.error('[AUDIO IPC] Falha ao sintetizar voz via MsEdgeTTS:', err);
       return {

@@ -3,6 +3,7 @@
 // ============================================================================
 import {
   loadSnapshotFromIndexedDB,
+  loadSnapshotMetaFromIndexedDB,
   scheduleBackgroundPersist,
 } from '@infra/db/DatabaseAdapter';
 
@@ -53,25 +54,61 @@ export async function initDB() {
       locateFile: () => `https://unpkg.com/sql.js@1.12.0/dist/sql-wasm.wasm`
     });
 
+    // [E1] Inversão de precedência: checar snapshot do IndexedDB primeiro
+    const idbData = await loadSnapshotFromIndexedDB();
+    const idbMeta = idbData ? await loadSnapshotMetaFromIndexedDB() : null;
     const savedData = typeof localStorage !== 'undefined' ? localStorage.getItem('nexomente_db') : null;
-    const idbData = !savedData ? await loadSnapshotFromIndexedDB() : null;
+    const lsUpdatedAtStr = typeof localStorage !== 'undefined' ? localStorage.getItem('nexomente_db_updated_at') : null;
+    const lsUpdatedAt = lsUpdatedAtStr ? parseInt(lsUpdatedAtStr, 10) : 0;
+    const idbUpdatedAt = idbMeta?.updatedAt || 0;
+    const storageMode = typeof localStorage !== 'undefined' ? localStorage.getItem('nexomente_storage_mode') : null;
 
-    if (savedData) {
+    const preferIDB = storageMode === 'indexeddb' || (idbData instanceof Uint8Array && (!savedData || idbUpdatedAt >= lsUpdatedAt));
+
+    let loaded = false;
+
+    // Tentativa 1: IndexedDB (quando mais recente ou quando localStorage excedeu cota)
+    if (preferIDB && idbData instanceof Uint8Array) {
+      try {
+        dbInstance = new SQL.Database(idbData);
+        loaded = true;
+      } catch (idbErr) {
+        console.warn("[wasmEngine] Falha ao instanciar DB a partir do IndexedDB, tentando localStorage...", idbErr);
+      }
+    }
+
+    // Tentativa 2: LocalStorage (quando presente e mais recente)
+    if (!loaded && savedData) {
       try {
         const data = Uint8Array.from(atob(savedData), c => c.charCodeAt(0));
         dbInstance = new SQL.Database(data);
+        loaded = true;
       } catch (dbErr) {
-        console.error("Banco de dados corrompido, reiniciando...", dbErr);
-        if (typeof localStorage !== 'undefined') localStorage.removeItem('nexomente_db');
-        dbInstance = new SQL.Database();
+        console.error("Banco de dados localStorage corrompido, tentando recuperação de emergência no IndexedDB...", dbErr);
+        if (typeof localStorage !== 'undefined') {
+          localStorage.removeItem('nexomente_db');
+          localStorage.removeItem('nexomente_db_updated_at');
+        }
+        // Recuperação de emergência no IndexedDB antes de instanciar banco vazio
+        if (idbData instanceof Uint8Array) {
+          try {
+            dbInstance = new SQL.Database(idbData);
+            loaded = true;
+          } catch { /* ignore */ }
+        }
       }
-    } else if (idbData instanceof Uint8Array) {
+    }
+
+    // Tentativa 3: Fallback final para IndexedDB
+    if (!loaded && idbData instanceof Uint8Array) {
       try {
         dbInstance = new SQL.Database(idbData);
-      } catch {
-        dbInstance = new SQL.Database();
-      }
-    } else {
+        loaded = true;
+      } catch { /* ignore */ }
+    }
+
+    // Tentativa 4: Instanciação de banco novo caso não haja snapshots
+    if (!loaded) {
       dbInstance = new SQL.Database();
     }
 
@@ -206,27 +243,56 @@ export function createTables(db) {
       ['pasta_raiz', 'Minha Biblioteca', '#6C63FF', 'library']);
   }
 
-  // Remove poemas de seed legados (p1, p2) para garantir início 100% limpo
-  db.run("DELETE FROM poemas WHERE id IN ('p1', 'p2')");
+  const poemasCount = db.exec("SELECT COUNT(*) as count FROM poemas")[0]?.values[0][0] || 0;
+  if (poemasCount === 0) {
+    const seedPoemas = [
+      {
+        id: 'p1',
+        titulo: 'Ode Triunfal (Excerto)',
+        autor: 'Álvaro de Campos',
+        corpo: 'À dolorosa luz das grandes lâmpadas eléctricas da fábrica\nTenho febre e escrevo.\nEscrevo rangendo os dentes, fera para a beleza disto,\nPara a beleza disto totalmente desconhecida dos antigos.',
+        epoca: 'Modernismo'
+      },
+      {
+        id: 'p2',
+        titulo: 'Amor é um fogo que arde sem se ver',
+        autor: 'Luís de Camões',
+        corpo: 'Amor é um fogo que arde sem se ver;\nÉ ferida que dói, e não se sente;\nÉ um contentamento descontente;\nÉ dor que desatina sem doer.',
+        epoca: 'Renascimento'
+      }
+    ];
+    seedPoemas.forEach(p => {
+      db.run("INSERT INTO poemas (id, titulo, autor, corpo, epoca) VALUES (?, ?, ?, ?, ?)",
+        [p.id, p.titulo, p.autor, p.corpo, p.epoca]);
+    });
+  }
 
   saveDB();
 }
 
 export function saveDB() {
-  if (!dbInstance || typeof localStorage === 'undefined') return;
+  if (!dbInstance) return;
   try {
     const data = dbInstance.export();
     const bytes = new Uint8Array(data);
-    const chunkSize = 0x8000; // 32KB chunks para evitar estouro da pilha de chamadas
-    let binary = '';
-    for (let i = 0; i < bytes.length; i += chunkSize) {
-      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
-    }
-    const base64 = btoa(binary);
-    localStorage.setItem('nexomente_db', base64);
+    const now = Date.now();
 
-    // Persistência não-bloqueante espelhada no IndexedDB via DatabaseAdapter
+    // Persistência não-bloqueante espelhada no IndexedDB via DatabaseAdapter (com timestamp)
     scheduleBackgroundPersist(() => bytes);
+
+    if (typeof localStorage !== 'undefined') {
+      const storageMode = localStorage.getItem('nexomente_storage_mode');
+      if (storageMode !== 'indexeddb') {
+        const chunkSize = 0x8000; // 32KB chunks para evitar estouro da pilha de chamadas
+        let binary = '';
+        for (let i = 0; i < bytes.length; i += chunkSize) {
+          binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+        }
+        const base64 = btoa(binary);
+        localStorage.setItem('nexomente_db', base64);
+        localStorage.setItem('nexomente_db_updated_at', String(now));
+      }
+    }
 
     setTimeout(() => {
       if (typeof onSaveCallback === 'function') {
@@ -235,8 +301,16 @@ export function saveDB() {
     }, 0);
   } catch (err) {
     console.error('Erro crítico ao salvar banco de dados:', err);
-    if (err?.name === 'QuotaExceededError') {
-      // Se localStorage estourar a cota de 5MB, garante persistência no IndexedDB (sem limite de 5MB)
+    if (err?.name === 'QuotaExceededError' || (typeof err?.message === 'string' && err.message.includes('Quota'))) {
+      // [E1] Se localStorage estourar a cota de 5MB:
+      // Remove com segurança a chave base64 corrompida/antiga e delega exclusivamente ao IndexedDB
+      try {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.removeItem('nexomente_db');
+          localStorage.removeItem('nexomente_db_updated_at');
+          localStorage.setItem('nexomente_storage_mode', 'indexeddb');
+        }
+      } catch { /* ignore */ }
       scheduleBackgroundPersist(() => new Uint8Array(dbInstance.export()));
     }
   }

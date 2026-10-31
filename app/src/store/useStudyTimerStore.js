@@ -35,6 +35,7 @@ export function playCompletionChime() {
 }
 
 let globalTimerInterval = null;
+let lastTickPerf = null;
 
 export const useStudyTimerStore = create((set, get) => ({
   timer: 25 * 60,
@@ -83,6 +84,8 @@ export const useStudyTimerStore = create((set, get) => ({
       materiaAtiva: materiaId || null
     });
 
+    lastTickPerf = typeof performance !== 'undefined' ? performance.now() : Date.now();
+
     if (globalTimerInterval) clearInterval(globalTimerInterval);
     globalTimerInterval = setInterval(() => {
       get().tick();
@@ -96,6 +99,7 @@ export const useStudyTimerStore = create((set, get) => ({
       clearInterval(globalTimerInterval);
       globalTimerInterval = null;
     }
+    lastTickPerf = null;
     set({
       rodando: false,
       targetEndTime: null
@@ -115,6 +119,7 @@ export const useStudyTimerStore = create((set, get) => ({
       clearInterval(globalTimerInterval);
       globalTimerInterval = null;
     }
+    lastTickPerf = null;
     const currentModo = MODOS_ESTUDO.find(m => m.id === state.modo) || MODOS_ESTUDO[0];
     set({
       rodando: false,
@@ -131,8 +136,25 @@ export const useStudyTimerStore = create((set, get) => ({
   tick: () => {
     const state = get();
     if (!state.rodando || !state.targetEndTime) return;
-    const restante = Math.max(0, Math.ceil((state.targetEndTime - Date.now()) / 1000));
-    set({ timer: restante });
+
+    // [E7] Temporal Monotonicity Guard:
+    // Verifica intervalo monotonicamente com performance.now() e limiar < 3000ms por tick.
+    // Previne que suspensão de SO ou manipulação de relógio credite instantaneamente XP fraudulento.
+    const nowPerf = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    const deltaMs = lastTickPerf ? (nowPerf - lastTickPerf) : 1000;
+    lastTickPerf = nowPerf;
+
+    if (deltaMs > 3000) {
+      console.warn(`[useStudyTimerStore] Salto temporal ou suspensão detectada (delta=${Math.round(deltaMs)}ms). Pausando para segurança.`);
+      get().pausar();
+      return;
+    }
+
+    const elapsedSeconds = Math.max(1, Math.min(3, Math.round(deltaMs / 1000)));
+    const restante = Math.max(0, state.timer - elapsedSeconds);
+    const updatedTargetEnd = Date.now() + restante * 1000;
+
+    set({ timer: restante, targetEndTime: updatedTargetEnd });
 
     const currentModo = MODOS_ESTUDO.find(m => m.id === state.modo) || MODOS_ESTUDO[0];
     if (typeof document !== 'undefined') {

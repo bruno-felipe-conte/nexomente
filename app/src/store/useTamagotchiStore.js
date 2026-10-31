@@ -100,6 +100,7 @@ export const useTamagotchiStore = create(
         streak: 0,
         streak_max: 0,
         streak_freezes: 1,
+        streak_freeze_used_today: false,
         last_study_date: null,
         total_study_days: 0,
         total_sessions: 0,
@@ -141,11 +142,17 @@ export const useTamagotchiStore = create(
 
             let streak = player.streak;
             let streakFreezes = player.streak_freezes ?? 0;
+            let streakFreezeUsedToday = Boolean(player.streak_freeze_used_today);
+            let updatedLastStudyDate = player.last_study_date;
 
-            // Se diff >= 2 e tiver Streak Freeze disponível, consome o escudo e preserva o streak!
+            // [E6] Se diff >= 2 e tiver Streak Freeze disponível, consome o escudo e preserva o streak!
             if (diff >= 2 && streakFreezes > 0) {
               streakFreezes -= 1;
               finalHpLoss = Math.floor(finalHpLoss * 0.5); // Amortece 50% do dano
+              streakFreezeUsedToday = true;
+              // Avança virtualmente a referência para ontem (dia coberto pelo escudo de gelo)
+              const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+              updatedLastStudyDate = yesterday;
             } else if (diff >= 2) {
               streak = 0; // Perdeu o streak
             }
@@ -178,7 +185,9 @@ export const useTamagotchiStore = create(
                 hibernating,
                 hibernations,
                 streak,
-                streak_freezes: streakFreezes
+                streak_freezes: streakFreezes,
+                streak_freeze_used_today: streakFreezeUsedToday,
+                last_study_date: updatedLastStudyDate
               }
             });
           }
@@ -189,14 +198,15 @@ export const useTamagotchiStore = create(
         const { player } = get();
         const todayStr = new Date().toISOString();
         const diff = player.last_study_date ? calculateDaysDifference(player.last_study_date, todayStr) : 1;
+        const freezeProtected = Boolean(player.streak_freeze_used_today);
 
         let newStreak = player.streak;
         let isFirstOfDay = false;
 
-        // Lógica de Streak
-        if (!player.last_study_date || diff > 0) {
+        // Lógica de Streak com proteção de Streak Freeze
+        if (!player.last_study_date || diff > 0 || freezeProtected) {
           isFirstOfDay = true;
-          if (diff === 1 || !player.last_study_date) {
+          if (diff === 1 || !player.last_study_date || freezeProtected) {
             newStreak += 1;
           } else {
             // Se diff > 1 e nível >= 29 (Entidade), streak não cai abaixo de x2 (14 dias eq.)
@@ -264,6 +274,7 @@ export const useTamagotchiStore = create(
             hp_max: currentHpMax,
             streak: newStreak,
             streak_max: Math.max(player.streak_max, newStreak),
+            streak_freeze_used_today: false,
             last_study_date: todayStr,
             total_study_days: isFirstOfDay ? player.total_study_days + 1 : player.total_study_days,
             total_sessions: player.total_sessions + 1,

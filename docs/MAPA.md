@@ -24,10 +24,10 @@
   - `página: Graph` (`app/src/pages/Graph.jsx`)
 - **Se quebrar**: As chaves de tradução não são resolvidas na interface e o seletor de idiomas na Sidebar deixa de atualizar os textos.
 
-### HUB: db-store (WASM Engine & Repositórios Zustand)
+### HUB: db-store (WASM Engine, DatabaseAdapter & Repositórios Zustand)
 - **Arquivo**: `app/src/store/useDBStore.js:13`
-- **Implementação**: `app/src/lib/db/wasmEngine.js:19`, repositórios em `app/src/lib/db/repositories/`
-- **Descrição**: Motor central de banco de dados SQLite (WASM em memória + serialização Base64 chunked de 32KB em `localStorage` sob chave `nexomente_db`). Expõe repositórios para Notas, Pastas, Matérias, Sessões de Estudo, Flashcards, XP e Poemas.
+- **Implementação**: `app/src/lib/db/wasmEngine.js:19`, `app/src/infra/db/DatabaseAdapter.js:1`, repositórios em `app/src/lib/db/repositories/`
+- **Descrição**: Motor central de persistência híbrida SQLite (WASM in-memory + espelhamento em IndexedDB snapshot com fallback em Base64 `localStorage('nexomente_db')`, reconciliação de notas pré-boot e purga completa `purgeAllStorage()`). Expõe repositórios para Notas, Pastas, Matérias, Sessões de Estudo, Flashcards, XP e Poemas.
 - **Usado por**:
   - `hook: useNotes` (`app/src/hooks/useNotes.js`)
   - `hook: useMaterias` (`app/src/hooks/useMaterias.js`)
@@ -40,7 +40,7 @@
 ### HUB: ai-provider (Motor Interno de IA GGUF)
 - **Arquivo**: `app/src/lib/ai/aiProvider.js:29`
 - **Implementação**: `app/src/lib/ai/embeddedService.js`, `electron/ipc/aiHandlers.js`, `vite.config.js`
-- **Descrição**: Roteador do motor de inteligência artificial unificado e 100% privado. Executa inferência local embutida (`node-llama-cpp@3.22.1` nativo apontando para a pasta própria `electron/models/gemma-4-E2B-it-GGUF/gemma-4-E2B-it-Q4_K_M.gguf` dentro do projeto, via IPC `ai:embeddedChat` no Electron ou middleware `/api/embedded/chat` no Vite).
+- **Descrição**: Roteador do motor de inteligência artificial unificado e 100% privado com mutex de serialização assíncrona (`AsyncMutex` em `persistentSequence`). Executa inferência local embutida (`node-llama-cpp@3.22.1` nativo apontando para a pasta própria `electron/models/gemma-4-E2B-it-GGUF/gemma-4-E2B-it-Q4_K_M.gguf` dentro do projeto, via IPC `ai:embeddedChat` no Electron ou middleware `/api/embedded/chat` no Vite).
 - **Usado por**:
   - `store: useAIStore` (`app/src/store/useAIStore.js`)
   - `hook: useAIModel` (`app/src/hooks/useAIModel.js`)
@@ -53,7 +53,7 @@
 ### HUB: tamagotchi-engine (Gamificação, Níveis e HP)
 - **Arquivo**: `app/src/store/useTamagotchiStore.js:84`
 - **Implementação**: Estado Zustand persistido em `localStorage` (`tamagotchi_storage`).
-- **Descrição**: Controla ciclo de vida do pet virtual (30 níveis, estágios de evolução, HP de 0 a 150, penalidade por dias ausentes, escudos de gelo `streak_freezes`, multiplicadores de XP e recompensas).
+- **Descrição**: Controla ciclo de vida do pet virtual (30 níveis, estágios de evolução, HP de 0 a 150, penalidade por dias ausentes, proteção e preservação de streak com escudos de gelo `streak_freezes`, multiplicadores de XP e recompensas).
 - **Usado por**:
   - `componente: TamagotchiWidget` (`app/src/components/gamification/TamagotchiWidget.jsx`)
   - `componente: Sidebar` (`app/src/components/layout/Sidebar.jsx`)
@@ -66,8 +66,8 @@
 
 ### HUB: study-timer-engine (Timer de Estudos & MiniTimer PiP)
 - **Arquivo**: `app/src/store/useStudyTimerStore.js:39`
-- **Implementação**: Timer persistente global com suporte a Pomodoro (25m), Foco Profundo (50m) e Descanso (5m).
-- **Descrição**: Gerencia contagem regressiva imune a trocas de aba, registro atômico de sessões em `SessoesEstudo`, entrega de XP com confetti e controle do widget miniaturizado (`MiniTimerWidget`).
+- **Implementação**: Timer persistente global com suporte a Pomodoro (25m), Foco Profundo (50m) e Descanso (5m) com guarda de monotonicidade temporal (< 3000ms delta).
+- **Descrição**: Gerencia contagem regressiva imune a trocas de aba e suspensão de SO, registro atômico de sessões em `SessoesEstudo`, entrega de XP com confetti e controle do widget miniaturizado (`MiniTimerWidget`).
 - **Usado por**:
   - `página: Study` (`app/src/pages/Study.jsx`)
   - `componente: MiniTimerWidget` (`app/src/components/study/MiniTimerWidget.jsx`)

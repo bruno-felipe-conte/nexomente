@@ -1,6 +1,6 @@
 {
   "versao": "1.2.0",
-  "data_atualizacao": "2026-10-17",
+  "data_atualizacao": "2026-10-30",
   "descricao": "Grafo estruturado de conexões, dependências e canais IPC do NexoMente",
   "hubs": [
     {

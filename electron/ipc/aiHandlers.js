@@ -72,6 +72,38 @@ const rateLimiter = new RateLimiter({ maxTokens: 5, refillRate: 3 });
 // Limpeza a cada 30 segundos
 setInterval(() => rateLimiter.cleanup(), 30000);
 
+/**
+ * [E4] AsyncMutex para serializar o acesso concorrente ao node-llama-cpp.
+ * Garante que requisições paralelas (ex: Chat + Forja) não acessem a mesma
+ * persistentSequence ao mesmo tempo, prevenindo crash SIGSEGV no binding C++.
+ */
+export class AsyncMutex {
+  constructor() {
+    this._queue = Promise.resolve();
+  }
+
+  lock() {
+    let unlock;
+    const next = new Promise((resolve) => {
+      unlock = resolve;
+    });
+    const current = this._queue.then(() => unlock);
+    this._queue = this._queue.then(() => next).catch(() => next);
+    return current;
+  }
+
+  async runExclusive(fn) {
+    const unlock = await this.lock();
+    try {
+      return await fn();
+    } finally {
+      unlock();
+    }
+  }
+}
+
+const inferenceMutex = new AsyncMutex();
+
 function isValidTextGguf(filename) {
   const lower = filename.toLowerCase();
   return (
@@ -240,17 +272,18 @@ export function warmupEmbeddedModel(requestedModelPath) {
 }
 
 export async function runEmbeddedInference({ modelPath, messages = [], options = {} }) {
-  try {
-    const { LlamaChatSession, Gemma4ChatWrapper } = await import("node-llama-cpp");
+  return await inferenceMutex.runExclusive(async () => {
+    try {
+      const { LlamaChatSession, Gemma4ChatWrapper } = await import("node-llama-cpp");
 
-    if (warmupPromise) {
-      await warmupPromise;
-      warmupPromise = null;
-    }
+      if (warmupPromise) {
+        await warmupPromise;
+        warmupPromise = null;
+      }
 
-    await ensureEmbeddedEngineReady(modelPath);
+      await ensureEmbeddedEngineReady(modelPath);
 
-    const systemMsg = messages.find((m) => m.role === "system");
+      const systemMsg = messages.find((m) => m.role === "system");
     const userMessages = messages.filter((m) => m.role !== "system");
     const lastMessageObj = userMessages[userMessages.length - 1] || messages[messages.length - 1] || {};
     const lastMessage = lastMessageObj.content || lastMessageObj.texto || "";
@@ -370,11 +403,12 @@ export async function runEmbeddedInference({ modelPath, messages = [], options =
       modelName: path.basename(currentModelPath),
       modelPath: currentModelPath,
     });
-  } catch (error) {
-    console.error("[AI ENGINE] ERRO CRITICO:", error);
+    } catch (error) {
+      console.error("[AI ENGINE] ERRO CRITICO:", error);
 
-    return createErrorResponse(error, null, "Consulte o manual para o código de erro", isDev);
-  }
+      return createErrorResponse(error, null, "Consulte o manual para o código de erro", isDev);
+    }
+  });
 }
 
 export function registerAiHandlers() {
