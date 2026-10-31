@@ -67,7 +67,7 @@ function createMockIndexedDB() {
           }
           return {};
         },
-        transaction: (storeName, mode) => {
+        transaction: (storeName, _mode) => {
           if (!dbStores.has(storeName)) {
             dbStores.set(storeName, new Map());
           }
