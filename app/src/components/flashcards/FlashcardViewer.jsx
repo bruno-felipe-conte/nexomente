@@ -9,10 +9,12 @@ import { ChevronLeft, ChevronRight, Edit, AlertCircle } from 'lucide-react';
 import PropTypes from 'prop-types';
 
 import { parseCloze } from '../../features/flashcards/domain/ankiSrsEngine';
+import { previewIntervalo } from '../../hooks/sm2';
+import EmptyState from '../ui/EmptyState';
 
 export default function FlashcardViewer({
   cardAtual,
-  paraRevisao,
+  paraRevisao = [],
   idxRevisao,
   mostrandoFrente,
   onViraCard,
@@ -21,6 +23,7 @@ export default function FlashcardViewer({
   onProximo,
   onEditar,
   onCriar,
+  onForjar,
   _contadoresAnki = { novos: 0, aprendendo: 0, devidos: 0 },
 }) {
   useEffect(() => {
@@ -38,16 +41,16 @@ export default function FlashcardViewer({
           onViraCard();
           break;
         case '1':
-          onRevisar(1);
+          if (!mostrandoFrente) onRevisar(1);
           break;
         case '2':
-          onRevisar(2);
+          if (!mostrandoFrente) onRevisar(2);
           break;
         case '3':
-          onRevisar(3);
+          if (!mostrandoFrente) onRevisar(3);
           break;
         case '4':
-          onRevisar(4);
+          if (!mostrandoFrente) onRevisar(4);
           break;
         case 'ArrowLeft':
           onAnterior();
@@ -65,7 +68,21 @@ export default function FlashcardViewer({
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [cardAtual, onViraCard, onRevisar, onAnterior, onProximo, onEditar, onCriar]);
+  }, [cardAtual, mostrandoFrente, onViraCard, onRevisar, onAnterior, onProximo, onEditar, onCriar]);
+
+  const intervals = useMemo(() => {
+    if (!cardAtual) return { 1: '', 2: '', 3: '', 4: '' };
+    try {
+      return {
+        1: previewIntervalo(cardAtual, 1),
+        2: previewIntervalo(cardAtual, 2),
+        3: previewIntervalo(cardAtual, 3),
+        4: previewIntervalo(cardAtual, 4),
+      };
+    } catch {
+      return { 1: '<10m', 2: '1d', 3: '4d', 4: '9d' };
+    }
+  }, [cardAtual]);
 
   const cardContent = useMemo(() => {
     if (!cardAtual) return { frente: '', verso: '' };
@@ -74,6 +91,45 @@ export default function FlashcardViewer({
       mostrandoFrente
     );
   }, [cardAtual, mostrandoFrente]);
+
+  if (!cardAtual || !paraRevisao || paraRevisao.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[360px] w-full max-w-2xl mx-auto">
+        <EmptyState
+          icon={<span className="text-4xl select-none">🎉</span>}
+          title="Baralho em dia! 🎉"
+          description="Você revisou todos os cartões agendados para hoje."
+          action={
+            <div className="flex flex-wrap items-center justify-center gap-3 mt-4">
+              <button
+                type="button"
+                onClick={() => {
+                  if (onForjar) onForjar();
+                  else {
+                    sessionStorage.setItem('nexomente_flashcards_tab', 'forja');
+                    window.dispatchEvent(new CustomEvent('flashcards-tab', { detail: 'forja' }));
+                    window.dispatchEvent(new CustomEvent('navigate', { detail: 'flashcards' }));
+                  }
+                }}
+                className="px-5 py-2.5 bg-nx-primary hover:bg-nx-primary-hover text-white rounded-xl text-xs font-semibold shadow-sm transition-all cursor-pointer"
+              >
+                Forjar Novos Cards
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  window.dispatchEvent(new CustomEvent('navigate', { detail: 'dashboard' }));
+                }}
+                className="px-5 py-2.5 bg-nx-surface border border-nx-border hover:bg-nx-depth text-nx-bright rounded-xl text-xs font-semibold transition-all cursor-pointer"
+              >
+                Ir para o Dashboard
+              </button>
+            </div>
+          }
+        />
+      </div>
+    );
+  }
 
   return (
     <AnimatePresence mode="wait">
@@ -144,45 +200,62 @@ export default function FlashcardViewer({
           )}
         </div>
 
-        {/* 4 Botões FSRS / SM-2 — Paleta Terrosa Suave */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 w-full max-w-2xl">
+        {/* Avaliação FSRS / SM-2 ou Dica de Revelar Resposta */}
+        {mostrandoFrente ? (
           <button
             type="button"
-            className="p-3 rounded-xl border border-[var(--nx-error)]/30 bg-[var(--nx-error)]/8 hover:bg-[var(--nx-error)]/15 text-[var(--nx-error)] text-xs font-bold transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5"
-            onClick={() => onRevisar(1)}
-            disabled={!cardAtual}
+            onClick={onViraCard}
+            className="w-full max-w-2xl py-4 px-6 rounded-2xl border border-nx-border bg-nx-surface hover:bg-nx-depth text-nx-bright text-xs font-semibold flex items-center justify-center gap-2.5 transition-all cursor-pointer shadow-sm group"
           >
-            <span className="font-mono text-sm opacity-75">1</span>
-            <span>Errei</span>
+            <kbd className="px-2 py-0.5 rounded bg-nx-depth border border-nx-border font-mono text-[11px] text-nx-dim group-hover:text-nx-bright">
+              Espaço
+            </kbd>
+            <span>Revelar Resposta</span>
           </button>
-          <button
-            type="button"
-            className="p-3 rounded-xl border border-[var(--nx-warning)]/30 bg-[var(--nx-warning)]/8 hover:bg-[var(--nx-warning)]/15 text-[var(--nx-warning)] text-xs font-bold transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5"
-            onClick={() => onRevisar(2)}
-            disabled={!cardAtual}
-          >
-            <span className="font-mono text-sm opacity-75">2</span>
-            <span>Difícil</span>
-          </button>
-          <button
-            type="button"
-            className="p-3 rounded-xl border border-[var(--nx-secondary)]/35 bg-[var(--nx-secondary)]/10 hover:bg-[var(--nx-secondary)]/20 text-[var(--nx-secondary)] text-xs font-bold transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5"
-            onClick={() => onRevisar(3)}
-            disabled={!cardAtual}
-          >
-            <span className="font-mono text-sm opacity-75">3</span>
-            <span>Bom</span>
-          </button>
-          <button
-            type="button"
-            className="p-3 rounded-xl border border-[var(--nx-accent)]/35 bg-[var(--nx-accent)]/10 hover:bg-[var(--nx-accent)]/20 text-[var(--nx-accent)] text-xs font-bold transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5"
-            onClick={() => onRevisar(4)}
-            disabled={!cardAtual}
-          >
-            <span className="font-mono text-sm opacity-75">4</span>
-            <span>Fácil</span>
-          </button>
-        </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 w-full max-w-2xl">
+            <button
+              type="button"
+              className="p-3 rounded-xl border border-[var(--nx-error)]/30 bg-[var(--nx-error)]/8 hover:bg-[var(--nx-error)]/15 text-[var(--nx-error)] text-xs font-bold transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5"
+              onClick={() => onRevisar(1)}
+              disabled={!cardAtual}
+            >
+              <span className="font-mono text-sm opacity-75">1</span>
+              <span>Errei</span>
+              <span className="text-[10px] font-mono opacity-75 font-normal">{intervals[1]}</span>
+            </button>
+            <button
+              type="button"
+              className="p-3 rounded-xl border border-[var(--nx-warning)]/30 bg-[var(--nx-warning)]/8 hover:bg-[var(--nx-warning)]/15 text-[var(--nx-warning)] text-xs font-bold transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5"
+              onClick={() => onRevisar(2)}
+              disabled={!cardAtual}
+            >
+              <span className="font-mono text-sm opacity-75">2</span>
+              <span>Difícil</span>
+              <span className="text-[10px] font-mono opacity-75 font-normal">{intervals[2]}</span>
+            </button>
+            <button
+              type="button"
+              className="p-3 rounded-xl border border-[var(--nx-secondary)]/35 bg-[var(--nx-secondary)]/10 hover:bg-[var(--nx-secondary)]/20 text-[var(--nx-secondary)] text-xs font-bold transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5"
+              onClick={() => onRevisar(3)}
+              disabled={!cardAtual}
+            >
+              <span className="font-mono text-sm opacity-75">3</span>
+              <span>Bom</span>
+              <span className="text-[10px] font-mono opacity-75 font-normal">{intervals[3]}</span>
+            </button>
+            <button
+              type="button"
+              className="p-3 rounded-xl border border-[var(--nx-accent)]/35 bg-[var(--nx-accent)]/10 hover:bg-[var(--nx-accent)]/20 text-[var(--nx-accent)] text-xs font-bold transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5"
+              onClick={() => onRevisar(4)}
+              disabled={!cardAtual}
+            >
+              <span className="font-mono text-sm opacity-75">4</span>
+              <span>Fácil</span>
+              <span className="text-[10px] font-mono opacity-75 font-normal">{intervals[4]}</span>
+            </button>
+          </div>
+        )}
 
         {/* Navegação Manual */}
         <div className="flex items-center justify-between w-full max-w-2xl pt-1 text-xs text-nx-dim">
@@ -222,7 +295,7 @@ FlashcardViewer.propTypes = {
     verso: PropTypes.string,
     lapses: PropTypes.number,
   }),
-  paraRevisao: PropTypes.arrayOf(PropTypes.object).isRequired,
+  paraRevisao: PropTypes.arrayOf(PropTypes.object),
   idxRevisao: PropTypes.number.isRequired,
   mostrandoFrente: PropTypes.bool.isRequired,
   onViraCard: PropTypes.func.isRequired,
@@ -231,30 +304,7 @@ FlashcardViewer.propTypes = {
   onProximo: PropTypes.func.isRequired,
   onEditar: PropTypes.func.isRequired,
   onCriar: PropTypes.func.isRequired,
-  contadoresAnki: PropTypes.shape({
-    novos: PropTypes.number,
-    aprendendo: PropTypes.number,
-    devidos: PropTypes.number,
-  }),
-};
-
-
-FlashcardViewer.propTypes = {
-  cardAtual: PropTypes.shape({
-    id: PropTypes.string.isRequired,
-    frente: PropTypes.string,
-    verso: PropTypes.string,
-    lapses: PropTypes.number,
-  }),
-  paraRevisao: PropTypes.arrayOf(PropTypes.object).isRequired,
-  idxRevisao: PropTypes.number.isRequired,
-  mostrandoFrente: PropTypes.bool.isRequired,
-  onViraCard: PropTypes.func.isRequired,
-  onRevisar: PropTypes.func.isRequired,
-  onAnterior: PropTypes.func.isRequired,
-  onProximo: PropTypes.func.isRequired,
-  onEditar: PropTypes.func.isRequired,
-  onCriar: PropTypes.func.isRequired,
+  onForjar: PropTypes.func,
   contadoresAnki: PropTypes.shape({
     novos: PropTypes.number,
     aprendendo: PropTypes.number,

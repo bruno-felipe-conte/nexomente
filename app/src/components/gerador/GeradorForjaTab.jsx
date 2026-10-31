@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Sparkles, Upload, Wand2, BookOpen } from 'lucide-react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -21,6 +22,14 @@ export default function GeradorForjaTab({
   deletarQuestao,
   setAba
 }) {
+  useEffect(() => {
+    const textoSalvo = sessionStorage.getItem('nexomente_forja_texto');
+    if (textoSalvo && setTextoInput) {
+      setTextoInput(textoSalvo);
+      sessionStorage.removeItem('nexomente_forja_texto');
+    }
+  }, [setTextoInput]);
+
   return (
     <div className="h-full max-w-6xl mx-auto flex flex-col">
       {/* STEP 1: ENTRADA */}
@@ -236,7 +245,11 @@ export default function GeradorForjaTab({
                 Converter Todas em Cards
               </button>
               <button
-                onClick={() => { setAba('banco'); setStep(1); }}
+                onClick={() => {
+                  toast.success('Flashcards forjados com sucesso!');
+                  setAba('revisar');
+                  setStep(1);
+                }}
                 className="px-8 py-4 bg-color-gerador text-surface-base rounded-2xl font-black uppercase tracking-widest text-[10px] hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-lg shadow-color-gerador/20"
               >
                 Concluir e Salvar

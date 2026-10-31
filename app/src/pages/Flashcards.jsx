@@ -34,6 +34,7 @@ import ImporterModal from '../components/common/ImporterModal';
 import ankiSRS from '../features/flashcards/domain/ankiSrsEngine';
 import { useFSRSConfigStore } from '../store/useFSRSConfigStore';
 import toast from 'react-hot-toast';
+import EmptyState from '../components/ui/EmptyState';
 
 
 
@@ -50,9 +51,27 @@ export default function FlashcardsPage() {
     return pedido === 'forja' ? 'forja' : 'revisao';
   });
   useEffect(() => {
+    const checkTab = () => {
+      const pedido = sessionStorage.getItem('nexomente_flashcards_tab');
+      if (pedido === 'forja') {
+        sessionStorage.removeItem('nexomente_flashcards_tab');
+        setModo('forja');
+      }
+      const texto = sessionStorage.getItem('nexomente_forja_texto');
+      if (texto) {
+        setTextoInput(texto);
+        sessionStorage.removeItem('nexomente_forja_texto');
+      }
+    };
+    checkTab();
     const trocarAba = (e) => {
       sessionStorage.removeItem('nexomente_flashcards_tab');
       if (e.detail === 'forja') setModo('forja');
+      const texto = sessionStorage.getItem('nexomente_forja_texto');
+      if (texto) {
+        setTextoInput(texto);
+        sessionStorage.removeItem('nexomente_forja_texto');
+      }
     };
     window.addEventListener('flashcards-tab', trocarAba);
     return () => window.removeEventListener('flashcards-tab', trocarAba);
@@ -104,7 +123,7 @@ export default function FlashcardsPage() {
   } = useGerador();
 
   const [forjaStep, setForjaStep] = useState(1);
-  const [textoInput, setTextoInput] = useState('');
+  const [textoInput, setTextoInput] = useState(() => sessionStorage.getItem('nexomente_forja_texto') || '');
   const [configIA, setConfigIA] = useState({
     quantidade: 5,
     tipo: 'multipla-escolha',
@@ -485,14 +504,15 @@ export default function FlashcardsPage() {
           </div>
         </div>
 
-        {/* Toast Optimistic UI de Desfazer Avaliação */}
+        {/* Toast Optimistic UI de Desfazer Avaliação (Zero-CLS Fixed Floating Bar) */}
         {undoCard && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex items-center justify-between bg-[var(--nx-warning)]/10 border border-[var(--nx-warning)]/30 rounded-xl px-4 py-2.5 text-sm"
+            exit={{ opacity: 0, y: 20 }}
+            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 flex items-center gap-4 bg-nx-surface/95 backdrop-blur-md border border-[var(--nx-warning)]/40 rounded-2xl px-5 py-3 text-sm shadow-2xl select-none"
           >
-            <span className="text-nx-dim">
+            <span className="text-nx-dim whitespace-nowrap">
               Último:{' '}
               <span className="text-[var(--nx-warning)] font-semibold">
                 {undoCard.frente.substring(0, 28)}
@@ -503,7 +523,7 @@ export default function FlashcardsPage() {
             </span>
             <button
               onClick={handleUndo}
-              className="px-3 py-1 bg-[var(--nx-warning)]/20 text-[var(--nx-warning)] rounded-lg text-xs font-bold hover:bg-[var(--nx-warning)]/30 cursor-pointer flex items-center gap-1.5"
+              className="px-3 py-1.5 bg-[var(--nx-warning)]/20 text-[var(--nx-warning)] rounded-lg text-xs font-bold hover:bg-[var(--nx-warning)]/30 cursor-pointer flex items-center gap-1.5 transition-colors"
             >
               <RotateCcw size={12} />
               <span>
@@ -565,8 +585,33 @@ export default function FlashcardsPage() {
           </div>
         )}
 
-        {/* Modo Revisão: Layout 2 Colunas */}
+        {/* Modo Revisão: Layout 2 Colunas ou Empty State Acolhedor */}
         {modo === 'revisao' && (
+          paraRevisao.length === 0 ? (
+            <div className="nx-sheet rounded-2xl p-10 max-w-2xl mx-auto shadow-sm">
+              <EmptyState
+                icon={<span className="text-4xl select-none">🎉</span>}
+                title="Baralho em dia! 🎉"
+                description="Você revisou todos os cartões agendados para hoje."
+                action={
+                  <div className="flex flex-wrap items-center justify-center gap-3 mt-4">
+                    <button
+                      onClick={() => setModo('forja')}
+                      className="px-5 py-2.5 bg-nx-primary hover:bg-nx-primary-hover text-white rounded-xl text-xs font-semibold shadow-sm transition-all cursor-pointer"
+                    >
+                      Forjar Novos Cards
+                    </button>
+                    <button
+                      onClick={() => window.dispatchEvent(new CustomEvent('navigate', { detail: 'dashboard' }))}
+                      className="px-5 py-2.5 bg-nx-surface border border-nx-border hover:bg-nx-depth text-nx-bright rounded-xl text-xs font-semibold transition-all cursor-pointer"
+                    >
+                      Ir para o Dashboard
+                    </button>
+                  </div>
+                }
+              />
+            </div>
+          ) : (
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start">
             {/* Coluna Esquerda (7 cols): Flashcard Viewer Editorial + Botões */}
             <div className="xl:col-span-7 nx-sheet rounded-2xl p-6">
@@ -598,6 +643,7 @@ export default function FlashcardsPage() {
                   setModo('editar');
                 }}
                 onCriar={() => setShowCriar(true)}
+                onForjar={() => setModo('forja')}
                 contadoresAnki={stats}
               />
             </div>
@@ -794,6 +840,7 @@ export default function FlashcardsPage() {
               </div>
             </div>
           </div>
+          )
         )}
 
         {/* Modo Forja IA */}

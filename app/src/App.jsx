@@ -15,6 +15,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import LevelUpOverlay from "./components/gamification/LevelUpOverlay";
 import BottomNav from "./components/layout/BottomNav";
 import { useStudyTimerStore } from "./store/useStudyTimerStore";
+import { useTamagotchiStore } from "./store/useTamagotchiStore";
 
 // Code Splitting — cada página carrega só quando necessária (Tarefa 5.1)
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -78,6 +79,8 @@ function App() {
 
   // Configurações Padrão de Inicialização desacopladas via bootstrap modular
   useLayoutEffect(() => {
+    useTamagotchiStore.getState().checkDailyStatus();
+
     import("./lib/bootstrap/appDefaults.js").then((m) => {
       m.initAppDefaults();
     }).catch(() => {});

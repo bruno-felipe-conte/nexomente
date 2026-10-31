@@ -24,6 +24,7 @@ import { usePoemas } from '../hooks/useMaterias';
 import { useFlashcards } from '../hooks/useFlashcards';
 import { useDBStore } from '../store/useDBStore';
 import { useUIStore } from '../store/useUIStore';
+import { useTamagotchiStore } from '../store/useTamagotchiStore';
 import { useTranslation } from '../lib/i18n';
 import ActivityHeatmap from '../components/gamification/ActivityHeatmap';
 import PoemaRecitacao from '../components/poemas/PoemaRecitacao';
@@ -36,6 +37,7 @@ export default function Dashboard() {
   const { SessoesEstudo } = useDBStore();
   const { setActiveTab, setPendingNoteAction } = useUIStore();
   const { t } = useTranslation();
+  const tamagotchiStreak = useTamagotchiStore((s) => s.player?.streak || 0);
 
   const [showAnual, setShowAnual] = useState(() => {
     const pedido = sessionStorage.getItem('nexomente_dashboard_anual') === '1';
@@ -85,19 +87,17 @@ export default function Dashboard() {
       .sort()
       .reverse();
 
-    if (datas.length === 0) return { streakAtual: 0, recordeStreak: 0 };
-
-    let atual = 0;
+    let sessoesAtual = 0;
     const dHoje = new Date();
     const hoje = dHoje.toISOString().split('T')[0];
     const dOntem = new Date(dHoje.getTime() - 86400000);
     const ontem = dOntem.toISOString().split('T')[0];
 
-    if (datas[0] === hoje || datas[0] === ontem) {
-      atual = 1;
+    if (datas.length > 0 && (datas[0] === hoje || datas[0] === ontem)) {
+      sessoesAtual = 1;
       for (let i = 1; i < datas.length; i++) {
         const diff = (new Date(datas[i - 1]) - new Date(datas[i])) / 86400000;
-        if (Math.round(diff) === 1) atual++;
+        if (Math.round(diff) === 1) sessoesAtual++;
         else break;
       }
     }
@@ -113,10 +113,11 @@ export default function Dashboard() {
         temp = 1;
       }
     }
-    max = Math.max(max, temp, atual);
+    const finalAtual = Math.max(tamagotchiStreak, sessoesAtual);
+    max = Math.max(max, temp, finalAtual);
 
-    return { streakAtual: atual, recordeStreak: max };
-  }, [sessoes]);
+    return { streakAtual: finalAtual, recordeStreak: max };
+  }, [sessoes, tamagotchiStreak]);
 
   const [currentPoemIndex, setCurrentPoemIndex] = useState(() => {
     const saved = localStorage.getItem('nexomente_dashboard_poem_idx');

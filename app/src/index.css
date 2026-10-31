@@ -4,6 +4,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── ACESSIBILIDADE TECLADO & FOCUS RINGS (WCAG 2.4.7 / MF-12) ── */
+:focus-visible {
+  outline: 2px solid var(--nx-primary) !important;
+  outline-offset: 2px !important;
+}
+
 :root,
 html[data-theme="vanilla"] {
   /* ── PALETA VANILLA-READER: PAPEL & CAFÉ (Padrão Diurno / Leitura Prolongada) ── */

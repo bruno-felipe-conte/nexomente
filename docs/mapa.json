@@ -268,28 +268,28 @@
     },
     {
       "id": "notas-ai-cards",
-      "nome": "Editor de Notas - Botão AI Cards & Chat IA",
-      "arquivo": "app/src/components/editor/AIBar.jsx",
-      "linha": 42,
-      "fluxo": "Clique em Cards -> useNotaEditor.handleCardsOpen() salva a nota, define setPendingChatNoteId(nota.id) e navega para AIChat.jsx -> carrega nota como contexto do chat e grava resumo conciso da conversa no final da própria nota",
-      "usa": ["ui-store", "ai-provider", "db-store"],
-      "afeta": ["Notas", "AIChat"]
+      "nome": "Editor de Notas - Botão Forjar Cards & Ponte para Forja IA",
+      "arquivo": "app/src/hooks/useNotaEditor.js",
+      "linha": 227,
+      "fluxo": "Clique em Forjar Cards -> useNotaEditor.handleCardsOpen() salva a nota imediatamente (salvarImediato()), define sessionStorage('nexomente_forja_texto', conteudo), define sessionStorage('nexomente_flashcards_tab', 'forja') e despacha navegação para flashcards com o texto pré-carregado na Forja IA",
+      "usa": ["ui-store", "db-store"],
+      "afeta": ["Notas", "Flashcards"]
     },
     {
       "id": "flashcards-review-sm2",
-      "nome": "Central de Flashcards - Avaliação Anki SRS & Atalhos",
+      "nome": "Central de Flashcards - Avaliação Anki SRS, Intervalos Preditivos & Empty State",
       "arquivo": "app/src/components/flashcards/FlashcardViewer.jsx",
       "linha": 131,
-      "fluxo": "Clique no card ou Space/Enter -> Flip 3D -> clique no rating (Again, Hard, Good, Easy) ou teclas 1-4 -> revisar(card.id, rating) -> ankiSrsEngine.js calcula intervalo/ease/learning steps/lapses -> atualiza SQLite/IndexedDB e emite FLASHCARD_REVIEWED no DomainEventBus (+XP para Kora)",
+      "fluxo": "Clique no card ou Space/Enter -> Flip 3D (bloqueando rating 1-4 na frente com prompt Espaço Revelar Resposta) -> exibição dos 4 botões com intervalos preditivos FSRS (<10m, 1d, 4d, 9d) -> revisar(card.id, rating) -> ankiSrsEngine.js calcula intervalo/ease/learning steps/lapses -> atualiza SQLite/IndexedDB e emite FLASHCARD_REVIEWED (+XP para Kora). Ao zerar fila, renderiza EmptyState comemorativo",
       "usa": ["db-store", "tamagotchi-engine"],
       "afeta": ["Flashcards", "TamagotchiWidget", "Dashboard"]
     },
     {
       "id": "flashcards-undo",
-      "nome": "Central de Flashcards - Desfazer Imediato (Undo)",
+      "nome": "Central de Flashcards - Desfazer Imediato (Zero-CLS Floating Bar)",
       "arquivo": "app/src/pages/Flashcards.jsx",
       "linha": 47,
-      "fluxo": "Avaliação recente inicia countdown de 5s -> clique em Desfazer ou tecla Z -> handleUndo() -> update(undoCard.id, ...) restaura estado SM-2 exato anterior",
+      "fluxo": "Avaliação recente inicia countdown de 5s em barra flutuante inferior fixa (fixed bottom-8 left-1/2 -translate-x-1/2 z-40, eliminando CLS) -> clique em Desfazer ou tecla Z -> handleUndo() -> update(undoCard.id, ...) restaura estado SM-2 exato anterior",
       "usa": ["db-store"],
       "afeta": ["Flashcards"]
     },
@@ -322,10 +322,10 @@
     },
     {
       "id": "gerador-forja-simulado",
-      "nome": "Forja de Questões - Geração de Simulado por IA",
+      "nome": "Forja de Questões - Geração de Simulado por IA & Conclusão de Lote",
       "arquivo": "app/src/components/gerador/GeradorForjaTab.jsx",
       "linha": 201,
-      "fluxo": "Depósito de material/arquivo (.txt, .md, .pdf via extrairTextoDePDF) -> seleção de disciplina, banca, foco BM25 (topico), rigor, formato e provider -> clique em Forjar Agora -> useGerador.gerarComIA(texto, config) -> pipeline Chunking + BM25 (selecionarChunksRelevantes) + Micro-Lotes com citacao_base e QUESTOES_JSON_SCHEMA (JSON Grammar) -> salva no banco",
+      "fluxo": "Depósito de material (.txt, .md, .pdf ou pré-preenchido via sessionStorage 'nexomente_forja_texto') -> seleção de parâmetros -> geração de questões -> botão Concluir e Salvar despacha setAba('revisar') com toast de sucesso, eliminando becos sem saída e levando direto para a revisão ativa",
       "usa": ["ai-provider", "db-store"],
       "afeta": ["Gerador", "Flashcards"]
     },

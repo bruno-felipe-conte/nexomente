@@ -227,8 +227,10 @@ export function useNotaEditor({ notaSelecionada, editando, update, addTag, setNo
   const handleCardsOpen = useCallback(() => {
     if (!notaSelecionada) return;
     salvarImediato();
-    useUIStore.getState().setPendingChatNoteId(notaSelecionada.id);
-    window.dispatchEvent(new CustomEvent("navigate", { detail: "ai" }));
+    sessionStorage.setItem('nexomente_forja_texto', notaSelecionada.conteudo || '');
+    sessionStorage.setItem('nexomente_flashcards_tab', 'forja');
+    window.dispatchEvent(new CustomEvent('navigate', { detail: 'flashcards' }));
+    window.dispatchEvent(new CustomEvent('flashcards-tab', { detail: 'forja' }));
   }, [notaSelecionada, salvarImediato]);
 
   const handleChatOpen = useCallback(() => {

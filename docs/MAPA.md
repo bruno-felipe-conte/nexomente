@@ -189,23 +189,23 @@
 - **Usa**: `ai-provider`, TipTap Editor, `db-store`
 - **Afeta**: Corpo HTML da nota e resumo executivo do documento (`resumo_ia`).
 
-### NÓ: Editor de Notas - Botão AI Cards & Chat IA
-- **Arquivo**: `app/src/components/editor/AIBar.jsx:42`
-- **Fluxo**: Clique em `Cards` (ou `Chat IA`) → `useNotaEditor.handleCardsOpen()` salva a nota imediatamente (`salvarImediato()`), registra `useUIStore.setPendingChatNoteId(notaSelecionada.id)` e navega para `AIChat.jsx` → `AIChat.jsx` carrega automaticamente a nota atual como contexto principal da conversa e, ao final de cada interação (ou ao clicar em "Concluir & Salvar Resumo na Nota"), gera e adiciona um resumo conciso da conversa no próprio corpo da nota (`<blockquote class="ai-chat-summary">`) e em `resumo_ia`.
-- **Usa**: `ui-store`, `ai-provider`, `hook: useNotes`, `db-store`
-- **Afeta**: Conexão direta entre Nota e Chat Neural, enriquecimento automático da nota com o resumo conciso da conversa.
+### NÓ: Editor de Notas - Botão Forjar Cards & Ponte para Forja IA
+- **Arquivo**: `app/src/hooks/useNotaEditor.js:227`
+- **Fluxo**: Clique em `Forjar Cards` → `useNotaEditor.handleCardsOpen()` salva a nota imediatamente (`salvarImediato()`), armazena o conteúdo em `sessionStorage('nexomente_forja_texto')`, define `sessionStorage('nexomente_flashcards_tab', 'forja')` e navega para Flashcards (`window.dispatchEvent('navigate', 'flashcards')`) com a aba Forja IA aberta e pré-preenchida com o texto da nota ativa.
+- **Usa**: `ui-store`, `hook: useNotaEditor`, `db-store`
+- **Afeta**: Conexão direta e sem atrito entre o Editor de Notas e a Forja de Flashcards com IA.
 
-### NÓ: Central de Flashcards - Avaliação Anki SRS, Cloze & Atalhos
+### NÓ: Central de Flashcards - Avaliação Anki SRS, Intervalos Preditivos & Empty State
 - **Arquivo**: `app/src/components/flashcards/FlashcardViewer.jsx:131`
-- **Fluxo**: Usuário clica no card ou pressiona `Space`/`Enter` → `setMostrandoFrente(!mostrandoFrente)` (animação Flip 3D com renderização Cloze Deletion `{{c1::...}}`) → usuário clica no botão de rating ou pressiona tecla `1` (*Again*), `2` (*Hard*), `3` (*Good*) ou `4` (*Easy*) → `revisar(card.id, rating)` → cálculo do motor Anki SRS em `sm2.js` (`ankiSRS`, learning steps [1m, 10m], graduação, lapses, detecção de leech) → atualização de `intervalo`, `ease_factor`, `lapses`, `state`, `step_index` e `next_review` no SQLite/WASM → exibição de contadores estilo Anki (Novos em azul, Aprendendo em âmbar, Devidos em verde).
-- **Usa**: `hook: useFlashcards`, `db-store` (repositório `Flashcards`), `sm2.js` (`ankiSRS`, `parseCloze`, `previewIntervalo`)
-- **Afeta**: Próxima data de revisão do card, taxa de retenção em `Statistics.jsx`, contadores de deck e detecção de sanguessugas (Leech).
+- **Fluxo**: Usuário clica no card ou pressiona `Space`/`Enter` → `setMostrandoFrente(!mostrandoFrente)` (animação Flip 3D com renderização Cloze Deletion `{{c1::...}}`). Na face frontal, botões e atalhos 1-4 são bloqueados com prompt `[Espaço] Revelar Resposta`. Após o flip, surgem os 4 botões de classificação com intervalos preditivos FSRS (`previewIntervalo(card, q)`: `<10m`, `1d`, `4d`, `9d`). Ao concluir a fila diária (`paraRevisao.length === 0`), exibe `EmptyState.jsx` comemorativo ("Baralho em dia! 🎉").
+- **Usa**: `hook: useFlashcards`, `db-store` (repositório `Flashcards`), `sm2.js` (`ankiSRS`, `parseCloze`, `previewIntervalo`), `EmptyState`
+- **Afeta**: Prevenção de avaliações prematuras acidentais, transparência algorítmica Anki/FSRS e experiência de conclusão diária.
 
-### NÓ: Central de Flashcards - Desfazer Imediato (Undo)
+### NÓ: Central de Flashcards - Desfazer Imediato (Zero-CLS Floating Bar)
 - **Arquivo**: `app/src/pages/Flashcards.jsx:47`
-- **Fluxo**: Avaliação recente aciona contagem regressiva de 5 segundos de undo → clique em "Desfazer" ou tecla `Z` dispara `handleUndo()` → `update(undoCard.id, ...)` restaura o estado SM-2 exato anterior do card (repetições, intervalo, ease_factor e próxima revisão) no banco.
+- **Fluxo**: Avaliação recente aciona contagem regressiva de 5 segundos de undo exibida em barra flutuante inferior fixa (`fixed bottom-8 left-1/2 -translate-x-1/2 z-40`), eliminando o layout shift (0 CLS) → clique em "Desfazer" ou tecla `Z` dispara `handleUndo()` → `update(undoCard.id, ...)` restaura o estado SM-2 exato anterior do card no banco.
 - **Usa**: `hook: useFlashcards`, `db-store`
-- **Afeta**: Previne classificações incorretas acidentais pelo teclado preservando o histórico SM-2.
+- **Afeta**: Previne classificações incorretas acidentais com estabilidade visual absoluta (0 CLS).
 
 ### NÓ: Importador Unificado de Conteúdo (Notas `.md` & Flashcards em Lote `frente;verso`)
 - **Arquivo**: `app/src/components/common/ImporterModal.jsx:1`
@@ -225,11 +225,11 @@
 - **Usa**: Vosk Browser (modelo de fala local WASM singleton com downsample a 16kHz + RMS `audioLevel`), `tamagotchi-engine`, `db-store`
 - **Afeta**: Streak de declamação do poema (`streak_recitacao`), ganho de XP e evolução do pet.
 
-### NÓ: Forja de Questões - Geração de Simulado por IA
+### NÓ: Forja de Questões - Geração de Simulado por IA & Conclusão de Lote
 - **Arquivo**: `app/src/components/gerador/GeradorForjaTab.jsx:201`
-- **Fluxo**: Depósito de material/arquivo (`.txt`, `.md`, `.pdf` via `extrairTextoDePDF`) no Passo 1 → seleção de disciplina (`materia`), banca, foco BM25 (`topico`), rigor/dificuldade, tipo (múltipla escolha, V/F ou discursiva) e provider (interno, nuvem, local) no Passo 2 → clique em "Forjar Agora" → `useGerador.gerarComIA(texto, config)` → pipeline de Chunking Inteligente + BM25 (`selecionarChunksRelevantes`) + Micro-Lotes de até 5 questões com ancoragem literal (`citacao_base`) e `QUESTOES_JSON_SCHEMA` (`createGrammarForJsonSchema` no `node-llama-cpp`) → extrator resiliente `parser.extrairQuestoesDeResposta` → inclusão das questões no banco de simulados.
+- **Fluxo**: Depósito de material/arquivo (`.txt`, `.md`, `.pdf` ou pré-carregado via `sessionStorage('nexomente_forja_texto')`) no Passo 1 → seleção de disciplina (`materia`), banca, foco BM25 (`topico`), rigor/dificuldade, tipo (múltipla escolha, V/F ou discursiva) e provider no Passo 2 → clique em "Forjar Agora" → `useGerador.gerarComIA(texto, config)` → pipeline de Chunking Inteligente + BM25 (`selecionarChunksRelevantes`) + Micro-Lotes de até 5 questões com ancoragem literal (`citacao_base`) e `QUESTOES_JSON_SCHEMA` → botão "Concluir e Salvar" despacha `setAba('revisar')` com toast de sucesso, eliminando becos sem saída e levando direto para a revisão ativa FSRS.
 - **Usa**: `ai-provider`, `hook: useGerador`, `services/exportService`, `serviço: embeddedService`
-- **Afeta**: Banco de questões ativas, geração de simulados sem alucinação e conversão silenciosa em lote para flashcards.
+- **Afeta**: Banco de questões ativas, geração de simulados sem alucinação e retorno imediato ao baralho de repetição espaçada.
 
 ### NÓ: Chat Neural - Envio de Mensagem & Resumo Automático na Nota
 - **Arquivo**: `app/src/pages/AIChat.jsx:180`

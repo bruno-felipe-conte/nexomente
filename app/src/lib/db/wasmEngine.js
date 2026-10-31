@@ -82,6 +82,7 @@ export async function initDB() {
       try {
         const data = Uint8Array.from(atob(savedData), c => c.charCodeAt(0));
         dbInstance = new SQL.Database(data);
+        dbInstance.exec("SELECT 1;");
         loaded = true;
       } catch (dbErr) {
         console.error("Banco de dados localStorage corrompido, tentando recuperação de emergência no IndexedDB...", dbErr);

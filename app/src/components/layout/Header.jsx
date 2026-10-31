@@ -501,23 +501,16 @@ export default function Header({ title, onToggleSidebar, onNavigate, onToggleCop
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-xs font-bold text-nx-bright">{displayName}</p>
-                        <p className="text-[10px] font-mono text-nx-primary">Nível {player.level} • {player.xp} XP</p>
+                        <p className="text-[10px] text-nx-dim">Operador NexoMente</p>
                       </div>
                       <button
                         onClick={() => { onNavigate('settings'); setIsProfileOpen(false); }}
-                        className="p-1.5 hover:bg-nx-overlay rounded text-nx-dim hover:text-nx-bright"
+                        title="Configurações do Perfil"
+                        aria-label="Configurações do Perfil"
+                        className="p-1.5 hover:bg-nx-overlay rounded-lg text-nx-dim hover:text-nx-bright transition-colors cursor-pointer"
                       >
                         <Edit2 size={13} />
                       </button>
-                    </div>
-                    <div className="w-full h-1.5 bg-nx-void rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full"
-                        style={{
-                          width: `${progressPct}%`,
-                          background: 'linear-gradient(90deg, var(--nx-accent), var(--nx-primary))',
-                        }}
-                      />
                     </div>
                   </motion.div>
                 </>
