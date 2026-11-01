@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import AIPerformancePanel from '../components/ai/AIPerformancePanel';
 import FSRSSettings from '../components/settings/FSRSSettings';
 import GeneralSettings from '../components/settings/GeneralSettings';
@@ -7,11 +7,12 @@ import {
   User, Database, Trash2, Cpu,
   AlertTriangle, Sparkles, Download, Upload,
   Layers, Globe, Bell, Eye, EyeOff, Cloud,
-  CheckCircle2, XCircle, Loader2, Server
+  CheckCircle2, XCircle, Loader2, Server, ArrowRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUIStore } from '../store/useUIStore';
-import { purgeAllStorage } from '../infra/db/DatabaseAdapter';
+import { purgeAllStorage, saveSnapshotToIndexedDB, loadSnapshotFromIndexedDB } from '../infra/db/DatabaseAdapter';
+import { getDB, useDBStore } from '../store/useDBStore';
 import { httpProvider } from '../lib/ai/httpProvider';
 import { getActiveProvider, setActiveProvider } from '../lib/ai/aiProvider';
 import toast from 'react-hot-toast';
@@ -61,7 +62,12 @@ export default function Settings() {
     localStorage.setItem('nexomente_ai_http_url', cleanUrl);
     localStorage.setItem('nexomente_ai_http_api_key', cleanKey);
     localStorage.setItem('nexomente_ai_http_model', cleanModel);
-    toast.success('Configurações de Provedor Externo salvas com sucesso');
+
+    // Ativa automaticamente o modo HTTP no sistema
+    setAiProviderMode('http');
+    setActiveProvider('http');
+
+    toast.success('Provedor Externo salvo e ativado como motor de IA principal!');
   };
 
   const handleTestConnection = async () => {
@@ -94,25 +100,62 @@ export default function Settings() {
     if (preset === 'gemini') {
       setHttpUrl('https://generativelanguage.googleapis.com/v1beta/openai');
       setHttpModel('gemini-2.5-flash');
-      toast('Preset Google Gemini aplicado! Cole sua chave de API abaixo.', { icon: '✨' });
+      setAiProviderMode('http');
+      setActiveProvider('http');
+      toast('Preset Google Gemini selecionado e ativado! Cole sua chave e clique em Salvar.', { icon: '✨' });
     } else if (preset === 'openrouter') {
       setHttpUrl('https://openrouter.ai/api/v1');
       setHttpModel('google/gemini-2.5-flash');
-      toast('Preset OpenRouter aplicado!', { icon: '🚀' });
+      setAiProviderMode('http');
+      setActiveProvider('http');
+      toast('Preset OpenRouter aplicado e ativado!', { icon: '🚀' });
     } else if (preset === 'groq') {
       setHttpUrl('https://api.groq.com/openai/v1');
       setHttpModel('llama-3.3-70b-versatile');
-      toast('Preset Groq aplicado!', { icon: '⚡' });
+      setAiProviderMode('http');
+      setActiveProvider('http');
+      toast('Preset Groq aplicado e ativado!', { icon: '⚡' });
     } else if (preset === 'ollama') {
       setHttpUrl('http://localhost:11434/v1');
       setHttpModel('llama3.2');
-      toast('Preset Ollama aplicado!', { icon: '🦙' });
+      setAiProviderMode('http');
+      setActiveProvider('http');
+      toast('Preset Ollama aplicado e ativado!', { icon: '🦙' });
     } else if (preset === 'lmstudio') {
       setHttpUrl('http://localhost:1234/v1');
       setHttpModel('local-model');
-      toast('Preset LM Studio aplicado!', { icon: '💻' });
+      setAiProviderMode('http');
+      setActiveProvider('http');
+      toast('Preset LM Studio aplicado e ativado!', { icon: '💻' });
     }
   };
+
+  const keyMismatch = useMemo(() => {
+    const trimmedKey = httpApiKey.trim();
+    const trimmedUrl = httpUrl.trim().toLowerCase();
+    if (!trimmedKey) return null;
+
+    const isGeminiKey = trimmedKey.startsWith('AQ.') || trimmedKey.startsWith('AIza');
+    const isGroqKey = trimmedKey.startsWith('gsk_');
+
+    if (isGeminiKey && !trimmedUrl.includes('googleapis')) {
+      return {
+        type: 'gemini',
+        message: 'A chave inserida (iniciada em AQ...) pertence ao Google Gemini, mas o endpoint atual não é do Gemini.',
+        actionText: 'Trocar para Google Gemini',
+        targetPreset: 'gemini'
+      };
+    }
+    if (isGroqKey && !trimmedUrl.includes('groq')) {
+      return {
+        type: 'groq',
+        message: 'A chave inserida (iniciada em gsk_...) pertence à Groq, mas o endpoint atual não é da Groq.',
+        actionText: 'Trocar para Groq',
+        targetPreset: 'groq'
+      };
+    }
+    return null;
+  }, [httpApiKey, httpUrl]);
 
   const saveConfig = (key, value) => {
     localStorage.setItem(key, value);
@@ -121,15 +164,58 @@ export default function Settings() {
 
   const handleBackup = async () => {
     try {
-      const dbData = localStorage.getItem('nexomente_db');
-      const blob = new Blob([dbData], { type: 'application/json' });
+      let base64 = localStorage.getItem('nexomente_db') || '';
+
+      // Tenta obter o snapshot binário do SQLite diretamente da instância ativa
+      const db = getDB();
+      if (db && typeof db.export === 'function') {
+        const bytes = db.export();
+        const chunkSize = 0x8000;
+        let binary = '';
+        for (let i = 0; i < bytes.length; i += chunkSize) {
+          binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+        }
+        base64 = btoa(binary);
+      } else {
+        const idbBytes = await loadSnapshotFromIndexedDB();
+        if (idbBytes && idbBytes.byteLength > 0) {
+          const chunkSize = 0x8000;
+          let binary = '';
+          for (let i = 0; i < idbBytes.length; i += chunkSize) {
+            binary += String.fromCharCode.apply(null, idbBytes.subarray(i, i + chunkSize));
+          }
+          base64 = btoa(binary);
+        }
+      }
+
+      // Dados estruturados para interoperabilidade
+      const notas = useDBStore.getState().Notas?.getAll?.() || [];
+      const flashcards = useDBStore.getState().Flashcards?.getAll?.() || [];
+      const materias = useDBStore.getState().Materias?.getAll?.() || [];
+      const pastas = useDBStore.getState().Pastas?.getAll?.() || [];
+
+      const backupPayload = {
+        app: 'NexoMente',
+        version: '1.0.0',
+        exportedAt: new Date().toISOString(),
+        timestamp: Date.now(),
+        sqliteBase64: base64,
+        notas,
+        flashcards,
+        materias,
+        pastas,
+      };
+
+      const blob = new Blob([JSON.stringify(backupPayload, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = `nexomente_backup_${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
-      toast.success('Backup gerado com sucesso');
-    } catch {
+      URL.revokeObjectURL(url);
+      toast.success('Backup exportado com sucesso!');
+    } catch (err) {
+      console.error('Erro no backup:', err);
       toast.error('Erro ao gerar backup');
     }
   };
@@ -139,20 +225,48 @@ export default function Settings() {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
-        const content = event.target?.result;
-        if (!content || typeof content !== 'string') {
-          throw new Error('Arquivo vazio ou inválido');
+        const rawContent = event.target?.result;
+        if (!rawContent || typeof rawContent !== 'string') {
+          throw new Error('Arquivo vazio ou ilegível');
         }
 
-        const cleanContent = content.trim().replace(/^"|"$/g, '');
-        localStorage.setItem('nexomente_db', cleanContent);
-        toast.success('Backup restaurado com sucesso! Recarregando sistema...');
+        let parsed;
+        try {
+          parsed = JSON.parse(rawContent);
+        } catch {
+          // Pode ser o base64 puro legado
+          parsed = { sqliteBase64: rawContent.trim().replace(/^"|"$/g, '') };
+        }
+
+        if (parsed?.sqliteBase64) {
+          const base64 = parsed.sqliteBase64;
+          localStorage.setItem('nexomente_db', base64);
+          localStorage.setItem('nexomente_db_updated_at', String(Date.now() + 5000));
+
+          // Grava também no IndexedDB para manter paridade absoluta
+          try {
+            const binary = atob(base64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) {
+              bytes[i] = binary.charCodeAt(i);
+            }
+            await saveSnapshotToIndexedDB(bytes, { updatedAt: Date.now() + 5000 });
+          } catch (idbErr) {
+            console.warn('Aviso: falha ao espelhar restauração no IndexedDB:', idbErr);
+          }
+        } else if (Array.isArray(parsed?.notas)) {
+          // Backup em JSON legível de notas
+          localStorage.setItem('nexomente_notas', JSON.stringify(parsed.notas));
+        }
+
+        toast.success('Backup restaurado com sucesso! Reiniciando ecossistema...');
         setTimeout(() => {
           window.location.reload();
-        }, 1200);
-      } catch {
+        }, 1000);
+      } catch (err) {
+        console.error('Falha na restauração:', err);
         toast.error('Falha ao restaurar backup: arquivo corrompido');
       }
     };
@@ -377,6 +491,24 @@ export default function Settings() {
                           {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
                         </button>
                       </div>
+
+                      {/* Aviso de Incompatibilidade de Chave */}
+                      {keyMismatch && (
+                        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
+                          <div className="flex items-center gap-2 text-amber-300">
+                            <AlertTriangle size={15} className="shrink-0 text-amber-400" />
+                            <span>{keyMismatch.message}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => applyPreset(keyMismatch.targetPreset)}
+                            className="px-3 py-1 rounded-lg bg-amber-500 text-slate-900 font-bold text-[11px] shrink-0 hover:bg-amber-400 transition-colors cursor-pointer flex items-center gap-1 shadow-xs"
+                          >
+                            <span>{keyMismatch.actionText}</span>
+                            <ArrowRight size={12} />
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     {/* Identificador do Modelo */}

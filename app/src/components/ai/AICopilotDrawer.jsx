@@ -88,6 +88,33 @@ export default function AICopilotDrawer({ isOpen, onClose, onExpandFullScreen })
   const [elapsedMs, setElapsedMs] = useState(0);
   const [partialVoice, setPartialVoice] = useState('');
   const [speakingMessageId, setSpeakingMessageId] = useState(null);
+  const [activeProvider, setActiveProviderState] = useState(() => aiProvider.getActiveProvider());
+  const [activeModel, setActiveModel] = useState(() => aiProvider.getModel());
+
+  useEffect(() => {
+    if (isOpen) {
+      setActiveProviderState(aiProvider.getActiveProvider());
+      setActiveModel(aiProvider.getModel());
+    }
+  }, [isOpen]);
+
+  const modelBadgeLabel = useMemo(() => {
+    if (activeProvider === 'http') {
+      const httpUrl = (localStorage.getItem('nexomente_ai_http_url') || '').toLowerCase();
+      const httpModel = localStorage.getItem('nexomente_ai_http_model') || 'gemini-2.5-flash';
+      if (httpUrl.includes('googleapis') || httpModel.includes('gemini')) {
+        return `Gemini (${httpModel.replace(/^models\//, '')})`;
+      }
+      if (httpUrl.includes('groq')) {
+        return `Groq (${httpModel})`;
+      }
+      if (httpUrl.includes('openrouter')) {
+        return `OpenRouter (${httpModel.split('/').pop()})`;
+      }
+      return httpModel || 'Nuvem (HTTP)';
+    }
+    return copilotMode === 'socratic' ? 'LearnHarness (Local)' : 'Gemma 4 (Local)';
+  }, [activeProvider, activeModel, copilotMode, isOpen]);
 
   const messagesRef = useRef(messages);
   useEffect(() => {
@@ -202,6 +229,7 @@ export default function AICopilotDrawer({ isOpen, onClose, onExpandFullScreen })
         let resposta = '';
         let durationMs = 0;
 
+        let rawResult = null;
         if (copilotMode === 'socratic') {
           // Modo Tutor Socrático Adaptativo: Injeta SOCRATIC_SYSTEM_PROMPT e histórico dedutivo
           const systemMsg = {
@@ -217,20 +245,20 @@ export default function AICopilotDrawer({ isOpen, onClose, onExpandFullScreen })
             }));
 
           const chatMessages = [systemMsg, ...priorHistory, { role: 'user', content: texto }];
-          const result = await aiProvider.chat(chatMessages, { withMetrics: true });
-          if (result && (result.response || result.content || result.success)) {
-            resposta = result.response || result.content || '';
-            durationMs = result.durationMs;
+          rawResult = await aiProvider.chat(chatMessages, { withMetrics: true });
+          if (rawResult && (rawResult.response || rawResult.content || rawResult.success)) {
+            resposta = rawResult.response || rawResult.content || '';
+            durationMs = rawResult.durationMs;
           } else {
-            throw new Error(result?.error || 'Erro na resposta do Tutor Socrático');
+            throw new Error(rawResult?.error || 'Erro na resposta do Tutor Socrático');
           }
         } else if (aiProvider?.askAI) {
-          const result = await aiProvider.askAI(texto, context, { withMetrics: true });
-          if (result && typeof result === 'object') {
-            resposta = result.text;
-            durationMs = result.durationMs;
+          rawResult = await aiProvider.askAI(texto, context, { withMetrics: true });
+          if (rawResult && typeof rawResult === 'object') {
+            resposta = rawResult.text;
+            durationMs = rawResult.durationMs;
           } else {
-            resposta = String(result || '');
+            resposta = String(rawResult || '');
           }
         } else {
           resposta = `Com base no seu Vault local (${notas.length} notas) e no contexto de ${activeTab}, essa conexão fortalece sua rede de estudos.`;
@@ -238,6 +266,18 @@ export default function AICopilotDrawer({ isOpen, onClose, onExpandFullScreen })
 
         if (!durationMs) {
           durationMs = Math.round(performance.now() - t0);
+        }
+
+        const isFallback = Boolean(rawResult?.isFallback);
+        const resolvedModel = isFallback
+          ? 'Gemma 4 (Fallback Offline)'
+          : (activeProvider === 'http' ? modelBadgeLabel : 'Gemma 4 Local');
+
+        if (isFallback) {
+          toast('⚠️ Falha no endpoint externo. Resposta gerada pelo motor local offline (fallback).', {
+            icon: '🔄',
+            duration: 4500,
+          });
         }
 
         const enforceLimit = aiProvider?.enforceCharLimit || ((s) => s.slice(0, MAX_CHARS));
@@ -293,6 +333,8 @@ export default function AICopilotDrawer({ isOpen, onClose, onExpandFullScreen })
             role: 'assistant',
             text: assistantText,
             responseTimeMs: durationMs,
+            isFallback,
+            modelUsed: resolvedModel,
           },
         ]);
 
@@ -438,8 +480,15 @@ export default function AICopilotDrawer({ isOpen, onClose, onExpandFullScreen })
                 <div>
                   <h3 className="text-sm font-bold text-nx-bright leading-tight flex items-center gap-1.5">
                     <span>{copilotMode === 'socratic' ? 'Tutor Socrático' : 'Copiloto Neural'}</span>
-                    <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-nx-overlay border border-nx-primary/40 text-nx-secondary">
-                      {copilotMode === 'socratic' ? 'LearnHarness' : 'Gemma 4'}
+                    <span
+                      className={`text-[9px] font-mono px-1.5 py-0.5 rounded border max-w-[170px] truncate ${
+                        activeProvider === 'http'
+                          ? 'bg-indigo-950/60 border-indigo-500/40 text-indigo-300'
+                          : 'bg-nx-overlay border-nx-primary/40 text-nx-secondary'
+                      }`}
+                      title={modelBadgeLabel}
+                    >
+                      {modelBadgeLabel}
                     </span>
                   </h3>
                   <p className="text-[10px] text-nx-dim">
@@ -674,7 +723,7 @@ export default function AICopilotDrawer({ isOpen, onClose, onExpandFullScreen })
                       {/* Rodapé da mensagem: Contador de tempo de resposta + Caracteres + Botão de voz */}
                       {!isUser && (
                         <div className="pt-2 mt-1.5 border-t border-nx-border/50 flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-1.5 text-[10px] font-mono text-nx-dim">
+                          <div className="flex items-center gap-1.5 text-[10px] font-mono text-nx-dim flex-wrap">
                             <Clock size={10} className="text-nx-primary" />
                             <span>
                               {m.responseTimeMs !== undefined
@@ -687,6 +736,20 @@ export default function AICopilotDrawer({ isOpen, onClose, onExpandFullScreen })
                             <span>
                               {(m.text || '').length}/{MAX_CHARS} chars
                             </span>
+                            {m.modelUsed && (
+                              <>
+                                <span className="opacity-40">•</span>
+                                <span
+                                  className={`text-[9px] px-1 py-0.5 rounded font-medium ${
+                                    m.isFallback
+                                      ? 'text-amber-400 bg-amber-950/40 border border-amber-800/40'
+                                      : 'text-indigo-300 bg-indigo-950/40 border border-indigo-800/30'
+                                  }`}
+                                >
+                                  {m.isFallback ? `⚠️ ${m.modelUsed}` : `✨ ${m.modelUsed}`}
+                                </span>
+                              </>
+                            )}
                           </div>
 
                           <button
