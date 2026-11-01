@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, MicOff, RotateCcw, X, Trophy, ChevronRight } from 'lucide-react';
+import { Mic, MicOff, RotateCcw, X, Trophy, ChevronRight, RefreshCw } from 'lucide-react';
 import { useVosk } from '../../hooks/useVosk';
 import { useTamagotchiStore } from '../../store/useTamagotchiStore';
 import { useDBStore } from '../../store/useDBStore';
@@ -37,7 +37,7 @@ const PoemaRecitacao = ({ poema, onFinish, onClose, onCancel }) => {
     return extrairGramaticaContextual(currentLine);
   }, [currentLine]);
 
-  // Processamento fiel: partialresult pinta verde em tempo real; result consolida acertos/erros (vermelho) e avança o ponteiro
+  // Processamento fonético fiel: partialresult marca verde em tempo real; result consolida e avança o ponteiro
   const processarTranscricao = useCallback((texto, isFinal = false) => {
     if (!texto || isFinished) return;
     setPartialTranscript(texto);
@@ -81,27 +81,37 @@ const PoemaRecitacao = ({ poema, onFinish, onClose, onCancel }) => {
   const {
     isListening,
     isReady,
+    status,
     startListening,
     stopListening,
     nextVerse,
-    terminateAudio
+    terminateAudio,
+    loadVoskModel,
   } = useVosk({
     onResult: (text) => processarTranscricao(text, true),
     onPartialResult: (text) => processarTranscricao(text, false),
     onError: (msg) => toast.error(msg),
     grammar: gramaticaVerso,
+    autoLoad: true,
   });
 
-  const toggleListening = () => {
-    if (isListening) stopListening();
-    else startListening();
+  const toggleListening = async () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      try {
+        await startListening();
+      } catch (err) {
+        console.error('[DOJO] Erro ao iniciar microfone:', err);
+        toast.error('Erro ao acessar microfone ou carregar modelo de voz.');
+      }
+    }
   };
 
   const isTransitioningRef = useRef(false);
 
   const handleClose = (e) => {
     if (e) e.stopPropagation();
-    console.log('[DOJO] Encerrando sessão...');
     terminateAudio();
     (onClose || onCancel || onFinish)?.();
   };
@@ -181,51 +191,76 @@ const PoemaRecitacao = ({ poema, onFinish, onClose, onCancel }) => {
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-xl p-4 select-none"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4 select-none"
     >
       <motion.div 
-        initial={{ opacity: 0, scale: 0.9 }}
+        initial={{ opacity: 0, scale: 0.94 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="relative w-full max-w-4xl bg-slate-900/95 border border-white/10 rounded-3xl overflow-hidden shadow-2xl cursor-default"
+        transition={{ duration: 0.2 }}
+        className="relative w-full max-w-4xl bg-nx-surface border border-nx-border rounded-3xl overflow-hidden shadow-2xl cursor-default"
       >
-        {/* Header */}
-        <div className="p-6 flex justify-between items-center border-b border-white/5 bg-white/5">
+        {/* Header Editorial */}
+        <div className="p-6 flex justify-between items-center border-b border-nx-border bg-nx-depth/40">
           <div>
-            <h2 className="text-indigo-400 font-mono text-sm tracking-widest uppercase">Estúdio de Oratória & Poesia</h2>
-            <h3 className="text-2xl font-bold text-white">{poema?.titulo || 'Recitação'}</h3>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[var(--nx-primary)]" />
+              <h2 className="text-[var(--nx-primary)] font-mono text-xs tracking-widest uppercase font-bold">
+                Estúdio de Oratória & Poesia
+              </h2>
+            </div>
+            <h3 className="text-2xl font-bold font-display text-nx-bright mt-1">
+              {poema?.titulo || 'Recitação'}
+            </h3>
+            {poema?.autor && (
+              <p className="text-xs text-nx-dim font-display italic mt-0.5">
+                por {poema.autor}
+              </p>
+            )}
           </div>
           <button 
             type="button"
             onClick={handleClose} 
-            className="p-2 hover:bg-white/10 rounded-full transition-colors text-white/50 hover:text-white cursor-pointer"
+            className="p-2.5 hover:bg-nx-overlay rounded-full transition-colors text-nx-dim hover:text-nx-bright cursor-pointer border border-transparent hover:border-nx-border"
             title="Fechar Estúdio"
           >
-            <X size={24} />
+            <X size={20} />
           </button>
         </div>
 
-        <div className="p-12 flex flex-col items-center min-height-[500px]">
+        <div className="p-8 sm:p-12 flex flex-col items-center min-height-[480px]">
           {isFinished ? (
-            <motion.div initial={{ y: 20 }} animate={{ y: 0 }} className="text-center space-y-6">
-              <div className="w-24 h-24 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto border border-yellow-500/50">
-                <Trophy size={48} className="text-yellow-500" />
+            <motion.div initial={{ y: 15 }} animate={{ y: 0 }} className="text-center space-y-6 max-w-lg">
+              <div className="w-20 h-20 bg-[var(--nx-accent-bg)] rounded-full flex items-center justify-center mx-auto border border-[var(--nx-accent)]/30 shadow-sm">
+                <Trophy size={40} className="text-[var(--nx-accent)]" />
               </div>
-              <h2 className="text-4xl font-bold text-white">Excelente!</h2>
-              <p className="text-slate-400">Você concluiu a recitação de "{poema?.titulo}".</p>
+              <div>
+                <h2 className="text-3xl font-bold font-display text-nx-bright">Excelente Recitação!</h2>
+                <p className="text-sm text-nx-dim font-display mt-1">
+                  Você concluiu os versos de "{poema?.titulo}".
+                </p>
+              </div>
               
-              <div className="inline-flex items-center gap-4 px-6 py-2 rounded-2xl bg-white/5 border border-white/10">
-                <span className="text-xs uppercase tracking-widest text-text-lo font-bold">Acurácia:</span>
-                <span className="text-lg font-mono font-bold text-success">{acuraciaCalculada}%</span>
-                <span className="text-white/20">•</span>
-                <span className="text-xs uppercase tracking-widest text-text-lo font-bold">Recompensa:</span>
-                <span className="text-sm font-bold text-xp-gold">+25 XP</span>
+              <div className="inline-flex items-center gap-4 px-6 py-2.5 rounded-2xl bg-nx-depth border border-nx-border shadow-sm">
+                <span className="text-xs uppercase tracking-wider text-nx-dim font-bold">Acurácia:</span>
+                <span className="text-lg font-mono font-bold text-[var(--nx-secondary)]">{acuraciaCalculada}%</span>
+                <span className="text-nx-muted">•</span>
+                <span className="text-xs uppercase tracking-wider text-nx-dim font-bold">Recompensa:</span>
+                <span className="text-sm font-bold text-[var(--nx-accent)]">+25 XP</span>
               </div>
 
-              <div className="flex gap-4 justify-center pt-6">
-                <button type="button" onClick={resetDojo} className="px-6 py-3 bg-white/10 hover:bg-white/15 text-white rounded-xl font-bold transition-all border border-white/10 cursor-pointer">
+              <div className="flex gap-4 justify-center pt-4">
+                <button 
+                  type="button" 
+                  onClick={resetDojo} 
+                  className="px-5 py-2.5 bg-nx-depth hover:bg-nx-overlay text-nx-bright rounded-xl font-semibold transition-all border border-nx-border cursor-pointer text-sm shadow-sm"
+                >
                   Recitar Novamente
                 </button>
-                <button type="button" onClick={onFinish} className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-indigo-500/20 cursor-pointer">
+                <button 
+                  type="button" 
+                  onClick={onFinish} 
+                  className="px-6 py-2.5 bg-[var(--nx-primary)] hover:bg-[var(--nx-primary-hover)] text-white rounded-xl font-semibold transition-all shadow-md shadow-[var(--nx-primary)]/20 cursor-pointer text-sm"
+                >
                   Coletar Recompensa & Salvar
                 </button>
               </div>
@@ -233,22 +268,23 @@ const PoemaRecitacao = ({ poema, onFinish, onClose, onCancel }) => {
           ) : (
             <>
               {/* Progress Bar */}
-              <div className="w-full max-w-md bg-white/5 h-1.5 rounded-full mb-12 overflow-hidden">
+              <div className="w-full max-w-md bg-nx-depth border border-nx-border/50 h-2 rounded-full mb-10 overflow-hidden shadow-inner">
                 <motion.div 
-                  className="h-full bg-gradient-to-r from-indigo-500 to-purple-500"
+                  className="h-full bg-gradient-to-r from-[var(--nx-primary)] to-[var(--nx-secondary)]"
                   initial={{ width: 0 }}
                   animate={{ width: `${((currentLineIndex + 1) / lines.length) * 100}%` }}
                 />
               </div>
 
-              {/* Texto do Poema com Glow */}
-              <div className="poema-texto-display mb-16">
+              {/* Texto do Poema Editorial */}
+              <div className="poema-texto-display mb-10 min-h-[130px] flex items-center justify-center">
                 <AnimatePresence mode="wait">
                   <motion.div 
                     key={currentLineIndex}
-                    initial={{ opacity: 0, y: 10 }}
+                    initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    className="font-display font-medium text-3xl md:text-4xl text-nx-bright leading-relaxed text-center px-4"
                   >
                     {palavrasPoema.map((palavra, idx) => (
                       <span key={idx} className={`palavra palavra--${palavrasStatus[idx] || 'neutra'}`}>
@@ -259,10 +295,16 @@ const PoemaRecitacao = ({ poema, onFinish, onClose, onCancel }) => {
                 </AnimatePresence>
               </div>
 
-              {/* Live Transcript */}
-              <div className="status-feedback mb-8">
-                {partialTranscript && (
-                  <span className="animate-pulse">“{partialTranscript}...”</span>
+              {/* Live Transcript Feedback */}
+              <div className="status-feedback mb-6 flex items-center justify-center">
+                {partialTranscript ? (
+                  <span className="text-sm font-mono text-[var(--nx-primary)] italic bg-[var(--nx-primary-bg)] px-3.5 py-1 rounded-full border border-[var(--nx-primary)]/20 animate-pulse">
+                    “{partialTranscript}...”
+                  </span>
+                ) : (
+                  <span className="text-xs text-nx-dim/70 font-mono">
+                    {isListening ? 'Fale pausadamente recitando as palavras acima' : ''}
+                  </span>
                 )}
               </div>
 
@@ -273,32 +315,40 @@ const PoemaRecitacao = ({ poema, onFinish, onClose, onCancel }) => {
                   <button 
                     type="button"
                     onClick={reiniciarVersoAtual}
-                    className="p-3.5 bg-white/5 hover:bg-white/10 rounded-2xl text-white/60 hover:text-white transition-all flex items-center gap-2 text-xs font-semibold border border-white/5 cursor-pointer"
+                    className="px-4 py-3 bg-nx-depth hover:bg-nx-overlay rounded-2xl text-nx-dim hover:text-nx-bright transition-all flex items-center gap-2 text-xs font-semibold border border-nx-border cursor-pointer shadow-sm"
                     title="Tentar Este Verso Novamente"
                   >
-                    <RotateCcw size={18} />
+                    <RotateCcw size={16} />
                     <span>Verso</span>
                   </button>
 
                   {/* Botão Central de Microfone */}
                   <button 
                     type="button"
-                    onClick={isReady ? toggleListening : undefined}
-                    disabled={!isReady}
-                    className={`relative w-24 h-24 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer ${
-                      !isReady
-                        ? 'bg-slate-700/60 opacity-60 cursor-not-allowed'
+                    onClick={toggleListening}
+                    disabled={status === 'loading' && !isReady}
+                    className={`relative w-24 h-24 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer shadow-md ${
+                      status === 'loading' && !isReady
+                        ? 'bg-nx-depth border-2 border-dashed border-nx-border text-nx-dim cursor-wait opacity-80'
                         : isListening 
-                          ? 'bg-red-500 shadow-[0_0_50px_rgba(239,68,68,0.45)] scale-105' 
-                          : 'bg-indigo-600 hover:bg-indigo-500 shadow-[0_0_30px_rgba(79,70,229,0.35)]'
-                    } text-white`}
-                    title={!isReady ? 'Inicializando modelo Vosk...' : isListening ? 'Pausar Microfone' : 'Iniciar Microfone'}
+                          ? 'bg-red-600 hover:bg-red-500 text-white shadow-red-600/30 ring-4 ring-red-400/30 scale-105' 
+                          : 'bg-[var(--nx-primary)] hover:bg-[var(--nx-primary-hover)] text-white shadow-[var(--nx-primary)]/20 hover:scale-105'
+                    }`}
+                    title={
+                      status === 'loading' && !isReady
+                        ? 'Carregando modelo Vosk...'
+                        : isListening 
+                          ? 'Pausar Microfone' 
+                          : 'Iniciar Microfone'
+                    }
                   >
-                    {isListening ? (
+                    {status === 'loading' && !isReady ? (
+                      <div className="w-8 h-8 border-2 border-nx-dim border-t-[var(--nx-primary)] rounded-full animate-spin" />
+                    ) : isListening ? (
                       <div className="relative">
                         <MicOff size={32} />
                         <motion.div 
-                          animate={{ scale: [1, 1.4, 1], opacity: [0.5, 0, 0.5] }}
+                          animate={{ scale: [1, 1.35, 1], opacity: [0.6, 0, 0.6] }}
                           transition={{ repeat: Infinity, duration: 1.5 }}
                           className="absolute inset-0 bg-white rounded-full -z-10"
                         />
@@ -312,28 +362,43 @@ const PoemaRecitacao = ({ poema, onFinish, onClose, onCancel }) => {
                   <button 
                     type="button"
                     onClick={currentLineIndex < lines.length - 1 ? handleNextLine : finishDojo}
-                    className="p-3.5 bg-white/5 hover:bg-white/10 rounded-2xl text-white/60 hover:text-white transition-all flex items-center gap-2 text-xs font-semibold border border-white/5 cursor-pointer"
+                    className="px-4 py-3 bg-nx-depth hover:bg-nx-overlay rounded-2xl text-nx-dim hover:text-nx-bright transition-all flex items-center gap-2 text-xs font-semibold border border-nx-border cursor-pointer shadow-sm"
                     title="Avançar para o Próximo Verso"
                   >
                     <span>{currentLineIndex < lines.length - 1 ? 'Próximo' : 'Concluir'}</span>
-                    <ChevronRight size={18} />
+                    <ChevronRight size={16} />
                   </button>
                 </div>
 
-                {/* Status Indicator */}
+                {/* Status Indicator com Tratamento Completo */}
                 <div className="flex items-center justify-center pt-2">
-                  {!isReady ? (
-                    <span className="text-[11px] font-mono text-amber-400/90 bg-amber-950/40 border border-amber-800/40 px-3 py-1 rounded-full animate-pulse">
-                      ⏳ Inicializando Motor Vosk Offline...
+                  {status === 'error' ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono text-[var(--nx-error)] bg-[var(--nx-error-bg)] border border-[var(--nx-error)]/30 px-3.5 py-1.5 rounded-full">
+                        ⚠️ Falha ao inicializar Vosk
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => loadVoskModel?.()}
+                        className="text-xs font-semibold text-[var(--nx-primary)] hover:underline cursor-pointer flex items-center gap-1"
+                      >
+                        <RefreshCw size={12} />
+                        <span>Tentar novamente</span>
+                      </button>
+                    </div>
+                  ) : status === 'loading' && !isReady ? (
+                    <span className="text-xs font-mono text-amber-700 dark:text-amber-300 bg-amber-500/10 border border-amber-500/30 px-3.5 py-1.5 rounded-full flex items-center gap-2 animate-pulse">
+                      <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+                      ⏳ Carregando Motor Vosk Offline...
                     </span>
                   ) : isListening ? (
-                    <span className="text-[11px] font-mono uppercase tracking-wider text-cyan-400 bg-cyan-950/50 border border-cyan-800/60 px-3 py-1 rounded-full flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-                      🎙️ Microfone Ativo • Pode Recitar
+                    <span className="text-xs font-mono tracking-wide text-[var(--nx-secondary)] bg-[var(--nx-secondary-bg)] border border-[var(--nx-secondary)]/30 px-3.5 py-1.5 rounded-full flex items-center gap-2 shadow-sm">
+                      <span className="w-2 h-2 rounded-full bg-[var(--nx-secondary)] animate-ping" />
+                      🎙️ Microfone Ativo • Pode Recitar o Verso
                     </span>
                   ) : (
-                    <span className="text-[11px] font-mono text-white/40">
-                      Clique no microfone para iniciar a tomada de oratória
+                    <span className="text-xs font-mono text-nx-dim">
+                      Clique no microfone para iniciar a recitação vocal
                     </span>
                   )}
                 </div>

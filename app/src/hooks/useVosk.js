@@ -58,6 +58,7 @@ export function useVosk({ onResult, onPartialResult, onError, grammar = null, au
       return sharedVoskModel;
     }
     if (!sharedVoskPromise) {
+      setStatus('loading');
       sharedVoskPromise = (async () => {
         const VoskModule = await import('vosk-browser');
         const Vosk = VoskModule?.createModel
@@ -70,11 +71,19 @@ export function useVosk({ onResult, onPartialResult, onError, grammar = null, au
         return model;
       })();
     }
-    const model = await sharedVoskPromise;
-    modelRef.current = model;
-    setIsReady(true);
-    setStatus((prev) => (prev === 'listening' ? 'listening' : 'ready'));
-    return model;
+    try {
+      const model = await sharedVoskPromise;
+      modelRef.current = model;
+      setIsReady(true);
+      setStatus((prev) => (prev === 'listening' ? 'listening' : 'ready'));
+      return model;
+    } catch (err) {
+      sharedVoskPromise = null;
+      console.error('[VOSK] ❌ Erro ao carregar modelo Vosk:', err);
+      setStatus('error');
+      onErrorRef.current?.('Falha ao carregar modelo de voz local.');
+      throw err;
+    }
   }, []);
 
   useEffect(() => {
@@ -89,12 +98,7 @@ export function useVosk({ onResult, onPartialResult, onError, grammar = null, au
         }
       })
       .catch((err) => {
-        sharedVoskPromise = null;
         console.error('[VOSK] ❌ Erro Init:', err);
-        if (mounted) {
-          setStatus('error');
-          onErrorRef.current?.('Falha ao carregar modelo de voz local.');
-        }
       });
     return () => {
       mounted = false;
@@ -341,5 +345,6 @@ export function useVosk({ onResult, onPartialResult, onError, grammar = null, au
     nextVerse,
     resetRecognizer,
     terminateAudio,
+    loadVoskModel,
   };
 }
