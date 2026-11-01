@@ -90,6 +90,30 @@ export default function Settings() {
     }
   };
 
+  const applyPreset = (preset) => {
+    if (preset === 'gemini') {
+      setHttpUrl('https://generativelanguage.googleapis.com/v1beta/openai');
+      setHttpModel('gemini-2.5-flash');
+      toast('Preset Google Gemini aplicado! Cole sua chave de API abaixo.', { icon: '✨' });
+    } else if (preset === 'openrouter') {
+      setHttpUrl('https://openrouter.ai/api/v1');
+      setHttpModel('google/gemini-2.5-flash');
+      toast('Preset OpenRouter aplicado!', { icon: '🚀' });
+    } else if (preset === 'groq') {
+      setHttpUrl('https://api.groq.com/openai/v1');
+      setHttpModel('llama-3.3-70b-versatile');
+      toast('Preset Groq aplicado!', { icon: '⚡' });
+    } else if (preset === 'ollama') {
+      setHttpUrl('http://localhost:11434/v1');
+      setHttpModel('llama3.2');
+      toast('Preset Ollama aplicado!', { icon: '🦙' });
+    } else if (preset === 'lmstudio') {
+      setHttpUrl('http://localhost:1234/v1');
+      setHttpModel('local-model');
+      toast('Preset LM Studio aplicado!', { icon: '💻' });
+    }
+  };
+
   const saveConfig = (key, value) => {
     localStorage.setItem(key, value);
     toast.success('Configuração salva');
@@ -270,6 +294,50 @@ export default function Settings() {
                   </div>
 
                   <div className="space-y-4">
+                    {/* Presets Rápidos */}
+                    <div className="space-y-2 pb-1">
+                      <label className="text-[10px] font-bold text-text-lo uppercase tracking-widest flex items-center gap-1.5">
+                        <Sparkles size={12} className="text-accent-main" /> Presets Rápidos de Provedores
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => applyPreset('gemini')}
+                          className="px-3 py-1.5 rounded-xl bg-accent-main/15 hover:bg-accent-main/25 border border-accent-main/40 text-xs font-bold text-accent-main flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
+                        >
+                          ✨ Google Gemini (Recomendado)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => applyPreset('openrouter')}
+                          className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-medium text-text-hi flex items-center gap-1.5 transition-all cursor-pointer"
+                        >
+                          🚀 OpenRouter
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => applyPreset('groq')}
+                          className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-medium text-text-hi flex items-center gap-1.5 transition-all cursor-pointer"
+                        >
+                          ⚡ Groq
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => applyPreset('ollama')}
+                          className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-medium text-text-hi flex items-center gap-1.5 transition-all cursor-pointer"
+                        >
+                          🦙 Ollama
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => applyPreset('lmstudio')}
+                          className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-medium text-text-hi flex items-center gap-1.5 transition-all cursor-pointer"
+                        >
+                          💻 LM Studio
+                        </button>
+                      </div>
+                    </div>
+
                     {/* URL Base */}
                     <div className="space-y-1.5">
                       <label className="text-[10px] font-bold text-text-lo uppercase tracking-widest flex items-center gap-1.5">
@@ -283,7 +351,7 @@ export default function Settings() {
                         className="w-full bg-bg-secondary border border-white/5 rounded-xl px-4 py-2.5 text-xs font-mono text-text-hi focus:border-accent-main focus:outline-none"
                       />
                       <p className="text-[10px] text-text-lo/40">
-                        LM Studio: <code>http://localhost:1234/v1</code> · Ollama: <code>http://localhost:11434/v1</code> · OpenRouter: <code>https://openrouter.ai/api/v1</code>
+                        Google Gemini: <code>https://generativelanguage.googleapis.com/v1beta/openai</code> · OpenRouter: <code>https://openrouter.ai/api/v1</code> · LM Studio: <code>http://localhost:1234/v1</code>
                       </p>
                     </div>
 

@@ -6,8 +6,25 @@ export const httpProvider = {
   name: 'http',
   defaultBaseUrl: 'http://localhost:1234/v1',
 
+  _normalizeBaseUrl(rawUrl) {
+    let url = (rawUrl || this.getBaseUrl() || '').trim().replace(/\/+$/, '');
+    if (url.includes('generativelanguage.googleapis.com')) {
+      if (!url.includes('/openai')) {
+        if (url.endsWith('/v1beta')) {
+          url = `${url}/openai`;
+        } else if (url.endsWith('googleapis.com')) {
+          url = `${url}/v1beta/openai`;
+        } else {
+          url = `${url}/openai`;
+        }
+      }
+    }
+    return url;
+  },
+
   getBaseUrl() {
-    return localStorage.getItem('nexomente_ai_http_url') || this.defaultBaseUrl;
+    const raw = localStorage.getItem('nexomente_ai_http_url') || this.defaultBaseUrl;
+    return this._normalizeBaseUrl(raw);
   },
 
   getApiKey() {
@@ -17,10 +34,14 @@ export const httpProvider = {
   _buildHeaders(customApiKey, baseUrl) {
     const headers = { 'Content-Type': 'application/json' };
     const apiKey = customApiKey !== undefined ? customApiKey : this.getApiKey();
+    const targetUrl = (baseUrl || this.getBaseUrl() || '').toLowerCase();
+
     if (apiKey) {
       headers['Authorization'] = `Bearer ${apiKey}`;
+      if (targetUrl.includes('generativelanguage.googleapis.com')) {
+        headers['x-goog-api-key'] = apiKey;
+      }
     }
-    const targetUrl = (baseUrl || this.getBaseUrl() || '').toLowerCase();
     if (targetUrl.includes('openrouter')) {
       headers['HTTP-Referer'] = 'https://nexomente.app';
       headers['X-Title'] = 'NexoMente';
@@ -50,7 +71,9 @@ export const httpProvider = {
       }
 
       const data = await res.json();
-      const models = Array.isArray(data?.data) ? data.data.map((m) => m.id) : ['default'];
+      const models = Array.isArray(data?.data)
+        ? data.data.map((m) => m.id.replace(/^models\//, ''))
+        : ['default'];
       return {
         status: 'online',
         available: true,
@@ -71,7 +94,8 @@ export const httpProvider = {
 
   async chat(messages, options = {}) {
     const baseUrl = this.getBaseUrl();
-    const model = options.model || localStorage.getItem('nexomente_ai_http_model') || 'local-model';
+    const rawModel = options.model || localStorage.getItem('nexomente_ai_http_model') || 'local-model';
+    const model = rawModel.replace(/^models\//, '');
     const headers = this._buildHeaders(options.apiKey, baseUrl);
 
     try {
