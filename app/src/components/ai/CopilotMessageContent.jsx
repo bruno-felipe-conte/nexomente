@@ -11,7 +11,7 @@ import React, { useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
-import { Copy, Check, Terminal, TrendingUp, BarChart2 } from 'lucide-react';
+import { Copy, Check, Terminal, TrendingUp, BarChart2, GraduationCap } from 'lucide-react';
 
 // Renderizador seguro do KaTeX
 function renderLatex(formula, displayMode = false) {
@@ -307,6 +307,73 @@ InlineRichText.propTypes = {
   text: PropTypes.string.isRequired,
 };
 
+// Card Estético de Proposição Socrática Dominada (Auto-Forja FSRS)
+function SocraticFlashcardCard({ code }) {
+  const [copied, setCopied] = useState(false);
+
+  const frenteMatch = code.match(/(?:Frente|Front):\s*([^\r\n]+(?:\r?\n(?!(?:Verso|Back):)[^\r\n]+)*)/i);
+  const versoMatch = code.match(/(?:Verso|Back):\s*([\s\S]+)$/i);
+
+  const frente = frenteMatch ? frenteMatch[1].trim() : '';
+  const verso = versoMatch ? versoMatch[1].trim() : '';
+
+  const handleCopy = () => {
+    const textToCopy = `Frente: ${frente}\nVerso: ${verso}`;
+    navigator.clipboard.writeText(textToCopy);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  if (!frente && !verso) {
+    return <CodeSnippet language="flashcard" code={code} />;
+  }
+
+  return (
+    <div className="my-3 rounded-xl border border-amber-500/40 bg-gradient-to-br from-amber-500/10 via-nx-surface/90 to-nx-depth p-3.5 shadow-lg shadow-amber-500/5 backdrop-blur-sm transition-all hover:border-amber-500/60 font-sans">
+      <div className="flex items-center justify-between pb-2 mb-2.5 border-b border-amber-500/20">
+        <div className="flex items-center gap-1.5">
+          <GraduationCap size={15} className="text-amber-400" />
+          <span className="text-[11px] font-semibold text-amber-300">
+            🎓 Conceito Socrático Dominado (FSRS)
+          </span>
+        </div>
+        <button
+          onClick={handleCopy}
+          className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold text-amber-200/90 hover:text-amber-100 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer"
+          title="Copiar Frente e Verso do Flashcard"
+        >
+          {copied ? <Check size={11} className="text-emerald-400" /> : <Copy size={11} />}
+          <span>{copied ? 'Copiado!' : 'Copiar'}</span>
+        </button>
+      </div>
+
+      <div className="space-y-2.5">
+        <div className="rounded-lg bg-nx-void/70 p-2.5 border border-amber-500/20">
+          <div className="text-[10px] font-mono uppercase tracking-wider text-amber-400 font-bold mb-1 flex items-center gap-1">
+            <span>❓</span> Pergunta / Frente
+          </div>
+          <div className="text-xs text-nx-bright font-medium leading-relaxed">
+            <InlineRichText text={frente} />
+          </div>
+        </div>
+
+        <div className="rounded-lg bg-nx-void/70 p-2.5 border border-emerald-500/20">
+          <div className="text-[10px] font-mono uppercase tracking-wider text-emerald-400 font-bold mb-1 flex items-center gap-1">
+            <span>💡</span> Resposta / Verso
+          </div>
+          <div className="text-xs text-emerald-300 font-normal leading-relaxed">
+            <InlineRichText text={verso} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+SocraticFlashcardCard.propTypes = {
+  code: PropTypes.string.isRequired,
+};
+
 /**
  * Componente Principal de Renderização da Mensagem do Copiloto
  */
@@ -318,7 +385,7 @@ export default function CopilotMessageContent({ content, isUser = false }) {
   }
 
   // 1. Divide o conteúdo em blocos especiais: ```bloco``` e $$displayMath$$
-  const blockRegex = /(```[\w:-]*\n[\s\S]*?```|\$\$[\s\S]*?\$\$)/g;
+  const blockRegex = /(```[\w:-]*\s*[\r\n][\s\S]*?```|\$\$[\s\S]*?\$\$)/g;
   const blocks = content.split(blockRegex);
 
   return (
@@ -341,11 +408,16 @@ export default function CopilotMessageContent({ content, isUser = false }) {
 
         // Bloco de Código ou Gráfico (```linguagem\n...```)
         if (block.startsWith('```') && block.endsWith('```')) {
-          const match = block.match(/^```([\w:-]*)\n([\s\S]*?)```$/);
+          const match = block.match(/^```([\w:-]*)\s*[\r\n]([\s\S]*?)```$/);
           if (match) {
             const [, rawLang, codeBody] = match;
             const lang = (rawLang || '').trim().toLowerCase();
             const cleanCode = codeBody.trim();
+
+            // Bloco de Proposição Socrática / Flashcard FSRS
+            if (lang === 'flashcard') {
+              return <SocraticFlashcardCard key={idx} code={cleanCode} />;
+            }
 
             // Gráfico de Função / Plot Matemático
             if (lang === 'plot' || lang === 'math:plot' || lang === 'chart:plot') {

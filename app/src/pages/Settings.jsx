@@ -6,11 +6,14 @@ import Card from '../components/ui/Card';
 import {
   User, Database, Trash2, Cpu,
   AlertTriangle, Sparkles, Download, Upload,
-  Layers, Globe, Bell
+  Layers, Globe, Bell, Eye, EyeOff, Cloud,
+  CheckCircle2, XCircle, Loader2, Server
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUIStore } from '../store/useUIStore';
 import { purgeAllStorage } from '../infra/db/DatabaseAdapter';
+import { httpProvider } from '../lib/ai/httpProvider';
+import { getActiveProvider, setActiveProvider } from '../lib/ai/aiProvider';
 import toast from 'react-hot-toast';
 
 export default function Settings() {
@@ -24,9 +27,68 @@ export default function Settings() {
   const [embeddedPath, setEmbeddedPath] = useState(
     () => localStorage.getItem('nexomente_embedded_path') || './electron/models/gemma-4-E2B-it-GGUF/gemma-4-E2B-it-Q4_K_M.gguf'
   );
+  const [aiProviderMode, setAiProviderMode] = useState(
+    () => localStorage.getItem('nexomente_ai_provider') || 'embedded'
+  );
+  const [httpUrl, setHttpUrl] = useState(
+    () => localStorage.getItem('nexomente_ai_http_url') || 'http://localhost:1234/v1'
+  );
+  const [httpApiKey, setHttpApiKey] = useState(
+    () => localStorage.getItem('nexomente_ai_http_api_key') || ''
+  );
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [httpModel, setHttpModel] = useState(
+    () => localStorage.getItem('nexomente_ai_http_model') || ''
+  );
+  const [testingConnection, setTestingConnection] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState(null);
+
   const [userName, setUserName] = useState(() => globalUserName);
   const [notifStudy, setNotifStudy] = useState(localStorage.getItem('nexomente_notif_study') === 'true');
   const fileInputRef = useRef(null);
+
+  const handleProviderChange = (mode) => {
+    setAiProviderMode(mode);
+    setActiveProvider(mode);
+    toast.success(`Provedor ativo alterado para ${mode === 'embedded' ? 'Motor Interno (GGUF)' : 'Provedores Externos / Nuvem (HTTP)'}`);
+  };
+
+  const handleSaveHttpConfig = () => {
+    const cleanUrl = httpUrl.trim() || 'http://localhost:1234/v1';
+    const cleanKey = httpApiKey.trim();
+    const cleanModel = httpModel.trim();
+
+    localStorage.setItem('nexomente_ai_http_url', cleanUrl);
+    localStorage.setItem('nexomente_ai_http_api_key', cleanKey);
+    localStorage.setItem('nexomente_ai_http_model', cleanModel);
+    toast.success('Configurações de Provedor Externo salvas com sucesso');
+  };
+
+  const handleTestConnection = async () => {
+    setTestingConnection(true);
+    setConnectionStatus(null);
+    try {
+      localStorage.setItem('nexomente_ai_http_url', httpUrl.trim() || 'http://localhost:1234/v1');
+      localStorage.setItem('nexomente_ai_http_api_key', httpApiKey.trim());
+      if (httpModel.trim()) {
+        localStorage.setItem('nexomente_ai_http_model', httpModel.trim());
+      }
+
+      const res = await httpProvider.checkStatus();
+      setConnectionStatus(res);
+      if (res.status === 'online') {
+        toast.success(`Conexão estabelecida com sucesso! (${res.models?.length || 0} modelos detectados)`);
+      } else {
+        toast.error(`Falha ao conectar: ${res.error || 'Servidor inacessível'}`);
+      }
+    } catch (err) {
+      const errObj = { status: 'offline', error: err.message || 'Erro desconhecido' };
+      setConnectionStatus(errObj);
+      toast.error(`Erro ao testar conexão: ${err.message}`);
+    } finally {
+      setTestingConnection(false);
+    }
+  };
 
   const saveConfig = (key, value) => {
     localStorage.setItem(key, value);
@@ -131,6 +193,192 @@ export default function Settings() {
           {/* 1. Inteligência Artificial */}
           {activeTab === 'perf' && (
             <div className="space-y-8 animate-in fade-in duration-500">
+              {/* Seletor de Provedor Ativo */}
+              <div className="glass-panel border-white/5 rounded-3xl p-6 bg-white/[0.01] space-y-4">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] font-bold text-accent-main uppercase tracking-widest">Hub de Inteligência Artificial Híbrido</span>
+                  <h3 className="text-lg font-serif font-bold text-text-hi">Provedor Ativo do Sistema</h3>
+                  <p className="text-xs text-text-lo/40">
+                    Defina o motor primário para processar conversas no Copiloto, sugestão de tags e resumos cognitivos.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => handleProviderChange('embedded')}
+                    className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-3 ${
+                      aiProviderMode === 'embedded'
+                        ? 'bg-accent-main/10 border-accent-main ring-1 ring-accent-main/30'
+                        : 'bg-white/[0.02] border-white/5 hover:border-white/10 text-text-lo/60 hover:text-text-hi'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center gap-2.5">
+                        <Cpu size={18} className={aiProviderMode === 'embedded' ? 'text-accent-main' : 'text-text-lo/40'} />
+                        <span className="text-xs font-bold text-text-hi">Motor Local Embutido</span>
+                      </div>
+                      {aiProviderMode === 'embedded' && (
+                        <span className="px-2 py-0.5 rounded-full bg-accent-main text-white text-[9px] font-black uppercase tracking-wider">
+                          Ativo
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-text-lo/40">
+                      Gemma 4 / Llama GGUF 100% offline, soberano e executado direto no seu hardware.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleProviderChange('http')}
+                    className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-3 ${
+                      aiProviderMode === 'http'
+                        ? 'bg-accent-main/10 border-accent-main ring-1 ring-accent-main/30'
+                        : 'bg-white/[0.02] border-white/5 hover:border-white/10 text-text-lo/60 hover:text-text-hi'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center gap-2.5">
+                        <Cloud size={18} className={aiProviderMode === 'http' ? 'text-accent-main' : 'text-text-lo/40'} />
+                        <span className="text-xs font-bold text-text-hi">Provedor Externo & Nuvem</span>
+                      </div>
+                      {aiProviderMode === 'http' && (
+                        <span className="px-2 py-0.5 rounded-full bg-accent-main text-white text-[9px] font-black uppercase tracking-wider">
+                          Ativo
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-text-lo/40">
+                      OpenRouter, Groq, OpenAI, Ollama ou LM Studio com fallback resiliente para o motor local.
+                    </p>
+                  </button>
+                </div>
+              </div>
+
+              {/* DLC: Provedores Externos & Nuvem */}
+              <div className="glass-panel border-white/5 rounded-3xl overflow-hidden bg-white/[0.01]">
+                <div className="p-7 space-y-6">
+                  <div className="flex flex-col gap-1">
+                    <h3 className="text-lg font-serif font-bold text-text-hi flex items-center gap-2">
+                      <Cloud size={20} className="text-accent-main" />
+                      DLC: Provedores Externos & Nuvem
+                    </h3>
+                    <p className="text-xs text-text-lo/40">
+                      Conecte endpoints OpenAI-compatíveis (OpenRouter, Groq, OpenAI, Ollama, LM Studio). Em caso de indisponibilidade ou falha remota, o NexoMente ativa fallback automático para a LLM local offline sem travar a interface.
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    {/* URL Base */}
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-text-lo uppercase tracking-widest flex items-center gap-1.5">
+                        <Server size={12} className="text-accent-main" /> URL Base da API (Endpoint HTTP)
+                      </label>
+                      <input
+                        type="text"
+                        value={httpUrl}
+                        onChange={e => setHttpUrl(e.target.value)}
+                        placeholder="http://localhost:1234/v1"
+                        className="w-full bg-bg-secondary border border-white/5 rounded-xl px-4 py-2.5 text-xs font-mono text-text-hi focus:border-accent-main focus:outline-none"
+                      />
+                      <p className="text-[10px] text-text-lo/40">
+                        LM Studio: <code>http://localhost:1234/v1</code> · Ollama: <code>http://localhost:11434/v1</code> · OpenRouter: <code>https://openrouter.ai/api/v1</code>
+                      </p>
+                    </div>
+
+                    {/* Chave de API (Bearer Token) */}
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-text-lo uppercase tracking-widest">
+                        Chave de API (Authorization: Bearer)
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showApiKey ? 'text' : 'password'}
+                          value={httpApiKey}
+                          onChange={e => setHttpApiKey(e.target.value)}
+                          placeholder="sk-or-v1-... (deixe em branco para servidores locais sem autenticação)"
+                          className="w-full bg-bg-secondary border border-white/5 rounded-xl px-4 py-2.5 pr-10 text-xs font-mono text-text-hi focus:border-accent-main focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowApiKey(!showApiKey)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-text-lo/40 hover:text-text-hi transition-colors cursor-pointer"
+                          title={showApiKey ? 'Ocultar chave de API' : 'Exibir chave de API'}
+                        >
+                          {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Identificador do Modelo */}
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-text-lo uppercase tracking-widest">
+                        Identificador do Modelo (Model ID)
+                      </label>
+                      <input
+                        type="text"
+                        value={httpModel}
+                        onChange={e => setHttpModel(e.target.value)}
+                        placeholder="ex: anthropic/claude-3.5-sonnet, meta-llama/llama-3.3-70b-instruct, gpt-4o"
+                        className="w-full bg-bg-secondary border border-white/5 rounded-xl px-4 py-2.5 text-xs font-mono text-text-hi focus:border-accent-main focus:outline-none"
+                      />
+                      <p className="text-[10px] text-text-lo/40">
+                        Identificador enviado no payload <code>model</code> na rota <code>/chat/completions</code>.
+                      </p>
+                    </div>
+
+                    {/* Ações e Status da Conexão */}
+                    <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-t border-white/5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          disabled={testingConnection}
+                          onClick={handleTestConnection}
+                          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold text-text-hi transition-all cursor-pointer disabled:opacity-50"
+                        >
+                          {testingConnection ? (
+                            <>
+                              <Loader2 size={14} className="animate-spin text-accent-main" /> Testando...
+                            </>
+                          ) : (
+                            <>
+                              <Server size={14} /> Testar Conexão
+                            </>
+                          )}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleSaveHttpConfig}
+                          className="px-5 py-2.5 bg-accent-main text-white rounded-xl font-bold text-xs hover:bg-accent-main/80 transition-all cursor-pointer"
+                        >
+                          Salvar Configurações
+                        </button>
+                      </div>
+
+                      {/* Badge de Status */}
+                      {connectionStatus && (
+                        <div className="flex items-center">
+                          {connectionStatus.status === 'online' ? (
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-medium">
+                              <CheckCircle2 size={14} />
+                              <span>Online ({connectionStatus.models?.length || 0} modelos)</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-medium">
+                              <XCircle size={14} />
+                              <span>{connectionStatus.error || 'Offline'}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Motor Interno GGUF */}
               <div className="glass-panel border-white/5 rounded-3xl overflow-hidden bg-white/[0.01]">
                 <div className="p-7 space-y-6 border-b border-white/5 bg-white/[0.01]">
                   <div className="flex flex-col gap-1">

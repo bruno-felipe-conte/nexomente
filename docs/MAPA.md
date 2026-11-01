@@ -37,14 +37,15 @@
   - `página: Statistics` (`app/src/pages/Statistics.jsx`)
 - **Se quebrar**: Toda a leitura e gravação de notas, cards, matérias, poemas e histórico de estudo falha e o app entra em modo de erro.
 
-### HUB: ai-provider (Motor Interno de IA GGUF)
+### HUB: ai-provider (Motor Híbrido de IA GGUF & HTTP com Fallback Resiliente)
 - **Arquivo**: `app/src/lib/ai/aiProvider.js:29`
-- **Implementação**: `app/src/lib/ai/embeddedService.js`, `electron/ipc/aiHandlers.js`, `vite.config.js`
-- **Descrição**: Roteador do motor de inteligência artificial unificado e 100% privado com mutex de serialização assíncrona (`AsyncMutex` em `persistentSequence`). Executa inferência local embutida (`node-llama-cpp@3.22.1` nativo apontando para a pasta própria `electron/models/gemma-4-E2B-it-GGUF/gemma-4-E2B-it-Q4_K_M.gguf` dentro do projeto, via IPC `ai:embeddedChat` no Electron ou middleware `/api/embedded/chat` no Vite).
+- **Implementação**: `app/src/lib/ai/embeddedService.js`, `app/src/lib/ai/httpProvider.js`, `app/src/lib/ai/socraticPrompts.js`, `electron/ipc/aiHandlers.js`, `vite.config.js`
+- **Descrição**: Roteador do motor de inteligência artificial híbrido, unificado e resiliente. Suporta inferência local embutida (`node-llama-cpp@3.22.1` nativo apontando para `electron/models/gemma-4-E2B-it-GGUF/gemma-4-E2B-it-Q4_K_M.gguf` via IPC `ai:embeddedChat` no Electron ou middleware `/api/embedded/chat` no Vite) e provedores remotos HTTP compatíveis com OpenAI/OpenRouter (`httpProvider.js`) com autenticação Bearer, chaveamento transparente e fallback automático para a LLM local embutida em caso de falha de conexão ou erro HTTP. Contém a máquina pedagógica socrática (`socraticPrompts.js`) para aprendizado dedutivo.
 - **Usado por**:
   - `store: useAIStore` (`app/src/store/useAIStore.js`)
   - `hook: useAIModel` (`app/src/hooks/useAIModel.js`)
   - `parser: gerarQuestoesComIA` (`app/src/lib/parser.js`)
+  - `componente: AICopilotDrawer` (`app/src/components/ai/AICopilotDrawer.jsx`)
   - `página: AIChat` (`app/src/pages/AIChat.jsx`)
   - `página: Graph` (`app/src/pages/Graph.jsx`)
   - `página: Settings` (`app/src/pages/Settings.jsx`)
@@ -237,17 +238,23 @@
 - **Usa**: `ai-provider`, `hook: useAIModel`, `hook: useNotes`, `ui-store`
 - **Afeta**: Histórico da sessão de chat neural, conteúdo HTML e `resumo_ia` da nota conectada.
 
-### NÓ: Copiloto Neural - Conversação Bidirecional por Áudio (STT + TTS)
+### NÓ: Copiloto Neural - Conversação Bidirecional por Áudio (STT + TTS) & Tutor Socrático
 - **Arquivo**: `app/src/components/ai/AICopilotDrawer.jsx:195`
-- **Fluxo**: Clique no ícone de Microfone ao lado do input do Copiloto → `useVosk.startListening()` captura fala com energia RMS e transcreve em tempo real (`onPartialResult`/`onResult`) → no modo Ditado insere no campo e no modo Auto-Envio despacha direto para `aiProvider.askAI()` → resposta gerada pelo Gemma 4 Local é formatada pelo sanitizador fonético e matemático (`speechFormatter.js`) e sintetizada em áudio de alta fidelidade pelo motor neural (`neuralTTS.js` via canal IPC `audio:synthesizeSpeech` ou endpoint `/api/tts/synthesize` com vozes neurais HD Francisca/Antonio e fallback offline com chunking sentencial).
+- **Fluxo**: Alternador de modo no cabeçalho `[ Assistente | 🎓 Tutor Socrático ]` persistido em `localStorage('nexomente_copilot_mode')` → no modo Socrático injeta `socraticPrompts.js` (`SOCRATIC_SYSTEM_PROMPT` com 5 fases LearnHarness: Sondagem, Árvore Mínima, Passo Único, Checagem Obrigatória e Reparo Imediato) via `aiProvider.chat()` → no modo Assistente despacha para `aiProvider.askAI()` → clique no ícone de Microfone captura fala em tempo real com `useVosk.startListening()` → resposta gerada é formatada e sintetizada em áudio de alta fidelidade pelo motor neural (`neuralTTS.js`) com preservação estrita de todos os estados de áudio e barge-in imediato.
 - **Usa**: `ai-provider`, `ui-store`, Vosk Browser (modelo de fala local WASM), `neuralTTS`, canal IPC `audio:synthesizeSpeech`
-- **Afeta**: Entrada de voz e reprodução sonora acessível em qualquer tela via gaveta Copiloto (`Ctrl+J`).
+- **Afeta**: Entrada de voz, diálogo socrático adaptativo e reprodução sonora acessível em qualquer tela via gaveta Copiloto (`Ctrl+J`).
 
-### NÓ: Grafo de Conhecimento - Câmera Cytoscape & Deep Link
-- **Arquivo**: `app/src/pages/Graph.jsx:195`
-- **Fluxo**: Grafo constrói nós a partir de notas e arestas a partir de `[[wikilinks]]` e tags em comum → clique em um nó seleciona a nota → clique em "Abrir no Editor" dispara `setPendingNoteAction({ noteId })` e `setActiveTab('notes')` → redireciona diretamente para a edição da nota.
-- **Usa**: Cytoscape.js, `hook: useNotes`, `ui-store`
-- **Afeta**: Navegação relacional entre notas interligadas.
+### NÓ: Grafo de Conhecimento - Visualizador Duplo (Cósmico 2D Canvas & Cytoscape Clássico)
+- **Arquivo**: `app/src/pages/Graph.jsx:210`
+- **Fluxo**: Alternador de visualização na barra superior `[ 🌌 Cósmico | 🕸️ Clássico ]` persistido em `localStorage('nexomente_graph_view_engine')` (padrão Cósmico) → sob motor cósmico ativa `CosmicGraphCanvas.jsx` e destrói Cytoscape; sob clássico inicializa Cytoscape em `containerRef` → ambos os motores compartilham a extração memoizada de nós e arestas de notas, tags e `[[wikilinks]]` → clique em um nó seleciona a nota → clique em "Abrir no Editor" dispara `setPendingNoteAction({ noteId })` e `setActiveTab('notes')` → redireciona diretamente para a edição da nota.
+- **Usa**: `CosmicGraphCanvas.jsx`, `clusterGeometry.js`, Cytoscape.js, `hook: useNotes`, `ui-store`
+- **Afeta**: Navegação relacional entre notas interligadas e renderização estelar 2D de alta fidelidade com 0% de CPU ociosa.
+
+### NÓ: Visualizador Cósmico 2D Canvas & Geometria de Clusters (LearnHarness)
+- **Arquivo**: `app/src/components/graph/CosmicGraphCanvas.jsx:45` e `app/src/components/graph/clusterGeometry.js:18`
+- **Fluxo**: Loop de renderização 2D Canvas nativo orientado a dirty-flag (0% CPU ocioso) com suporte a DPR/Retina e zoom centrado no cursor → nós socráticos destacados com halo âmbar e estrela radiante dourada (`#f59e0b`) → agrupamento estelar por matéria/tag via envoltória convexa (`computeClusterHull`) e matizes HSL estáveis por djb2 (`getClusterHue`) → rótulos com transição suave (zoom-gated labels: galáxias quando k < 1.0, notas individuais quando k >= 0.75).
+- **Usa**: HTML5 2D Canvas, `clusterGeometry.js`
+- **Afeta**: Desempenho e estética visual do Grafo de Conhecimento.
 
 ### NÓ: Métricas - Navegação por Categoria de Foco
 - **Arquivo**: `app/src/pages/Statistics.jsx:186`
@@ -339,6 +346,7 @@
 | **`useUIStore.jsx`** *(Abas, Ações Pendentes, Categorias, Nome)* | `App.jsx`, `Sidebar.jsx`, `Header.jsx`, `Dashboard.jsx`, `Notas.jsx`, `Graph.jsx`, `Statistics.jsx`, `Settings.jsx`, `AIChat.jsx`, `Onboarding.jsx`, teste `useUIStore.test.js`. |
 | **`useNotes.js`** *(CRUD de Notas e Tags)* | `Notas.jsx`, `NotaLista.jsx`, `CategoriaSelector.jsx`, `BibliotecaPanel.jsx`, `useNotaEditor.js`, `Graph.jsx`, `Statistics.jsx`, `Dashboard.jsx`, `Header.jsx`, teste `useNotes.test.js`, `smoke.test.jsx`. |
 | **`useFlashcards.js`** / **`ankiSrsEngine.js`** *(Algoritmo Anki SRS)* | `Flashcards.jsx`, `FlashcardViewer.jsx`, `useGerador.js`, `Statistics.jsx`, `Header.jsx`, teste `resilienceEdgeCases.test.js`, `sm2.test.js`. |
+| **`CosmicGraphCanvas.jsx` / `clusterGeometry.js`** *(Grafo Cósmico LearnHarness)* | `Graph.jsx`, teste `socraticDLC.test.js`. |
 | **`electron/preload.js`** / **Handlers IPC** | `electron/main.js`, `electron/ipc/dbHandlers.js`, `electron/ipc/aiHandlers.js` (`AsyncMutex`), `electron/ipc/windowHandlers.js`, `Header.jsx`, `embeddedService.js`, teste `resilienceEdgeCases.test.js`. |
 
 ---

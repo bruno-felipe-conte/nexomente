@@ -166,7 +166,34 @@ export async function chat(messages, options = {}) {
     finalMessages.unshift({ role: 'system', content: globalConfig.system_prompt });
   }
 
-  const result = await currentProvider.chat(finalMessages, finalOptions);
+  let result;
+  if (providerKey === 'http') {
+    try {
+      result = await currentProvider.chat(finalMessages, finalOptions);
+      if (!result || !result.success) {
+        console.warn('[AIProvider] Falha no provedor HTTP, acionando fallback resiliente para motor local embutido...', result?.error);
+        const fallbackResult = await embedded.chat(finalMessages, finalOptions);
+        result = {
+          ...fallbackResult,
+          isFallback: true,
+          fallbackFrom: 'http',
+          originalError: result?.error,
+        };
+      }
+    } catch (err) {
+      console.warn('[AIProvider] Exceção no provedor HTTP, acionando fallback resiliente para motor local embutido...', err);
+      const fallbackResult = await embedded.chat(finalMessages, finalOptions);
+      result = {
+        ...fallbackResult,
+        isFallback: true,
+        fallbackFrom: 'http',
+        originalError: err.message,
+      };
+    }
+  } else {
+    result = await currentProvider.chat(finalMessages, finalOptions);
+  }
+
   const elapsedMs = Math.round(performance.now() - startPerf);
 
   if (result.success) {
@@ -244,6 +271,8 @@ export async function askAI(pergunta, contexto = '', options = {}) {
       text: finalAnswer,
       durationMs: res.durationMs || 0,
       charCount: finalAnswer.length,
+      isFallback: Boolean(res.isFallback),
+      fallbackFrom: res.fallbackFrom || null,
     };
   }
 

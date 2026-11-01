@@ -23,32 +23,88 @@ import {
   VolumeX,
   Clock,
   Sliders,
+  GraduationCap,
 } from 'lucide-react';
 import { useNotes } from '../../hooks/useNotes';
 import { useUIStore } from '../../store/useUIStore';
+import { useFlashcards } from '../../hooks/useFlashcards';
 import { useVosk } from '../../hooks/useVosk';
 import { normalizarTranscricaoCopiloto } from '../../lib/audio/audioDecoder';
 import { neuralTTS, NEURAL_VOICES } from '../../lib/audio/neuralTTS';
 import * as aiProvider from '../../lib/ai/aiProvider';
+import { SOCRATIC_SYSTEM_PROMPT } from '../../lib/ai/socraticPrompts';
 import CopilotMessageContent from './CopilotMessageContent';
 import toast from 'react-hot-toast';
 
 const MAX_CHARS = aiProvider.MAX_COPILOT_CHARS || 1500;
 
+/**
+ * Extrator flexível e resiliente de proposições FSRS em blocos markdown ```flashcard
+ */
+export const extractFlashcardBlocks = (text) => {
+  if (!text || typeof text !== 'string') return [];
+  const regex = /```flashcard\s*[\r\n]+([\s\S]*?)```/gi;
+  const cards = [];
+  let match;
+
+  while ((match = regex.exec(text)) !== null) {
+    const blockContent = match[1];
+    const frenteMatch = blockContent.match(/(?:Frente|Front):\s*([^\r\n]+(?:\r?\n(?!(?:Verso|Back):)[^\r\n]+)*)/i);
+    const versoMatch = blockContent.match(/(?:Verso|Back):\s*([\s\S]+)$/i);
+
+    if (frenteMatch && versoMatch) {
+      const frente = frenteMatch[1].trim();
+      const verso = versoMatch[1].trim();
+      if (frente && verso) {
+        cards.push({ frente, verso });
+      }
+    }
+  }
+  return cards;
+};
+
 export default function AICopilotDrawer({ isOpen, onClose, onExpandFullScreen }) {
-  const [messages, setMessages] = useState([
-    {
-      id: 'init-1',
-      role: 'assistant',
-      text: 'Olá! Sou seu Copiloto Neural local. Como posso ajudar com seus estudos ou notas hoje?',
-      responseTimeMs: 42,
-    },
-  ]);
+  const { create: createFlashcard } = useFlashcards();
+  const processedCardHashesRef = useRef(new Set());
+  const [copilotMode, setCopilotMode] = useState(
+    () => localStorage.getItem('nexomente_copilot_mode') || 'assistant'
+  );
+  const [messages, setMessages] = useState(() => {
+    const savedMode = localStorage.getItem('nexomente_copilot_mode') || 'assistant';
+    return [
+      {
+        id: 'init-1',
+        role: 'assistant',
+        text:
+          savedMode === 'socratic'
+            ? 'Olá! Sou seu Tutor Socrático. Qual conceito ou tema você gostaria de explorar e dominar passo a passo hoje?'
+            : 'Olá! Sou seu Copiloto Neural local. Como posso ajudar com seus estudos ou notas hoje?',
+        responseTimeMs: 42,
+      },
+    ];
+  });
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [partialVoice, setPartialVoice] = useState('');
   const [speakingMessageId, setSpeakingMessageId] = useState(null);
+
+  const messagesRef = useRef(messages);
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+
+  const handleModeChange = (newMode) => {
+    if (newMode === copilotMode) return;
+    setCopilotMode(newMode);
+    localStorage.setItem('nexomente_copilot_mode', newMode);
+    toast(
+      newMode === 'socratic'
+        ? '🎓 Modo Tutor Socrático ativado: aprendizado guiado por dedução'
+        : 'Modo Assistente ativado: respostas diretas e suporte geral',
+      { icon: newMode === 'socratic' ? '🎓' : '🤖' }
+    );
+  };
 
   // Preferências de áudio persistidas
   const [ttsEnabled, setTtsEnabled] = useState(
@@ -146,7 +202,29 @@ export default function AICopilotDrawer({ isOpen, onClose, onExpandFullScreen })
         let resposta = '';
         let durationMs = 0;
 
-        if (aiProvider?.askAI) {
+        if (copilotMode === 'socratic') {
+          // Modo Tutor Socrático Adaptativo: Injeta SOCRATIC_SYSTEM_PROMPT e histórico dedutivo
+          const systemMsg = {
+            role: 'system',
+            content: `${SOCRATIC_SYSTEM_PROMPT}\n\n[Contexto do Vault e Notas]: ${context}`,
+          };
+          const priorHistory = (messagesRef.current || messages)
+            .filter((m) => m.role === 'user' || m.role === 'assistant')
+            .slice(-8)
+            .map((m) => ({
+              role: m.role,
+              content: m.text,
+            }));
+
+          const chatMessages = [systemMsg, ...priorHistory, { role: 'user', content: texto }];
+          const result = await aiProvider.chat(chatMessages, { withMetrics: true });
+          if (result && (result.response || result.content || result.success)) {
+            resposta = result.response || result.content || '';
+            durationMs = result.durationMs;
+          } else {
+            throw new Error(result?.error || 'Erro na resposta do Tutor Socrático');
+          }
+        } else if (aiProvider?.askAI) {
           const result = await aiProvider.askAI(texto, context, { withMetrics: true });
           if (result && typeof result === 'object') {
             resposta = result.text;
@@ -167,6 +245,44 @@ export default function AICopilotDrawer({ isOpen, onClose, onExpandFullScreen })
           resposta || 'Análise concluída com sucesso pelo motor local.',
           MAX_CHARS
         );
+
+        // Auto-Forja FSRS em background (Proposições -> Flashcards)
+        const detectedCards = extractFlashcardBlocks(assistantText);
+        let createdCount = 0;
+        if (detectedCards.length > 0) {
+          const activeNote = (activeTab === 'notes' && pendingNoteAction?.noteId)
+            ? notas.find((n) => n.id === pendingNoteAction.noteId)
+            : null;
+          const activeNoteId = activeNote?.id || null;
+          const activeMateriaId = activeNote?.materia_id || activeNote?.materia || null;
+
+          for (const card of detectedCards) {
+            const cardFingerprint = `${card.frente.trim()}:::${card.verso.trim()}`;
+            if (!processedCardHashesRef.current.has(cardFingerprint)) {
+              processedCardHashesRef.current.add(cardFingerprint);
+              try {
+                if (typeof createFlashcard === 'function') {
+                  createFlashcard({
+                    frente: card.frente.trim(),
+                    verso: card.verso.trim(),
+                    materia_id: activeMateriaId || 'Tutor Socrático',
+                    nota_id: activeNoteId || null,
+                  });
+                  createdCount++;
+                }
+              } catch (err) {
+                console.warn('Erro ao auto-forjar flashcard FSRS:', err);
+              }
+            }
+          }
+
+          if (createdCount > 0) {
+            toast('💡 Conceito aprendido gravado nos Flashcards FSRS!', {
+              icon: '🎓',
+              duration: 3500,
+            });
+          }
+        }
 
         const assistantMsgId = `a-${Date.now()}`;
 
@@ -200,7 +316,7 @@ export default function AICopilotDrawer({ isOpen, onClose, onExpandFullScreen })
         setLoading(false);
       }
     },
-    [input, loading, getContextSnippet, notas.length, activeTab, ttsEnabled, speakText, stopSpeaking]
+    [input, loading, getContextSnippet, notas, activeTab, pendingNoteAction, ttsEnabled, speakText, stopSpeaking, copilotMode, messages, createFlashcard]
   );
 
   handleSendRef.current = executeSend;
@@ -321,12 +437,16 @@ export default function AICopilotDrawer({ isOpen, onClose, onExpandFullScreen })
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-nx-bright leading-tight flex items-center gap-1.5">
-                    <span>Copiloto Neural</span>
+                    <span>{copilotMode === 'socratic' ? 'Tutor Socrático' : 'Copiloto Neural'}</span>
                     <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-nx-overlay border border-nx-primary/40 text-nx-secondary">
-                      Gemma 4
+                      {copilotMode === 'socratic' ? 'LearnHarness' : 'Gemma 4'}
                     </span>
                   </h3>
-                  <p className="text-[10px] text-nx-dim">RAG Local • Conversação por Voz</p>
+                  <p className="text-[10px] text-nx-dim">
+                    {copilotMode === 'socratic'
+                      ? 'Dedução Passo a Passo • FSRS'
+                      : 'RAG Local • Conversação por Voz'}
+                  </p>
                 </div>
               </div>
 
@@ -391,7 +511,17 @@ export default function AICopilotDrawer({ isOpen, onClose, onExpandFullScreen })
                   type="button"
                   onClick={() => {
                     stopSpeaking();
-                    setMessages([]);
+                    setMessages([
+                      {
+                        id: `init-${Date.now()}`,
+                        role: 'assistant',
+                        text:
+                          copilotMode === 'socratic'
+                            ? 'Histórico limpo. Qual conceito ou tópico você deseja construir passo a passo?'
+                            : 'Histórico limpo. Como posso ajudar com seus estudos ou notas hoje?',
+                        responseTimeMs: 20,
+                      },
+                    ]);
                   }}
                   title="Limpar histórico"
                   className="p-1.5 rounded-lg text-nx-dim hover:text-nx-bright hover:bg-nx-surface transition-colors cursor-pointer"
@@ -405,6 +535,36 @@ export default function AICopilotDrawer({ isOpen, onClose, onExpandFullScreen })
                   className="p-1.5 rounded-lg text-nx-dim hover:text-nx-bright hover:bg-nx-surface transition-colors cursor-pointer"
                 >
                   <X size={17} />
+                </button>
+              </div>
+            </div>
+
+            {/* Seletor de Modo no Cabeçalho: [ Assistente | 🎓 Tutor Socrático ] */}
+            <div className="px-4 py-2 border-b border-nx-border/70 bg-nx-surface/35">
+              <div className="flex items-center p-0.5 rounded-lg bg-nx-depth border border-nx-border text-xs font-medium">
+                <button
+                  type="button"
+                  onClick={() => handleModeChange('assistant')}
+                  className={`flex-1 py-1 px-3 rounded-md text-[11px] font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    copilotMode === 'assistant'
+                      ? 'bg-nx-primary text-white shadow-sm'
+                      : 'text-nx-dim hover:text-nx-bright hover:bg-nx-surface/50'
+                  }`}
+                >
+                  <Bot size={13} />
+                  <span>Assistente</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleModeChange('socratic')}
+                  className={`flex-1 py-1 px-3 rounded-md text-[11px] font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    copilotMode === 'socratic'
+                      ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40 shadow-sm font-bold'
+                      : 'text-nx-dim hover:text-nx-bright hover:bg-nx-surface/50'
+                  }`}
+                >
+                  <GraduationCap size={13} />
+                  <span>🎓 Tutor Socrático</span>
                 </button>
               </div>
             </div>
@@ -631,6 +791,8 @@ export default function AICopilotDrawer({ isOpen, onClose, onExpandFullScreen })
                 placeholder={
                   isListening
                     ? 'Ouvindo sua voz... fale ou digite...'
+                    : copilotMode === 'socratic'
+                    ? 'Responda à checagem socrática ou proponha um tema...'
                     : 'Pergunte ao Copiloto (ou use Ctrl+J)...'
                 }
                 className="flex-1 h-[38px] px-3 bg-nx-depth border border-nx-border rounded-[10px] text-xs text-nx-bright placeholder-nx-subtle focus:outline-none focus:border-nx-primary transition-colors"

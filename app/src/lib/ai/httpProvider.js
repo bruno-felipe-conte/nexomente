@@ -1,5 +1,5 @@
 /**
- * Provedor HTTP local compatível com OpenAI (LM Studio / Ollama / LocalAI)
+ * Provedor HTTP local e remoto compatível com OpenAI (LM Studio / Ollama / OpenRouter / Groq / OpenAI)
  */
 
 export const httpProvider = {
@@ -10,13 +10,47 @@ export const httpProvider = {
     return localStorage.getItem('nexomente_ai_http_url') || this.defaultBaseUrl;
   },
 
+  getApiKey() {
+    return localStorage.getItem('nexomente_ai_http_api_key') || '';
+  },
+
+  _buildHeaders(customApiKey, baseUrl) {
+    const headers = { 'Content-Type': 'application/json' };
+    const apiKey = customApiKey !== undefined ? customApiKey : this.getApiKey();
+    if (apiKey) {
+      headers['Authorization'] = `Bearer ${apiKey}`;
+    }
+    const targetUrl = (baseUrl || this.getBaseUrl() || '').toLowerCase();
+    if (targetUrl.includes('openrouter')) {
+      headers['HTTP-Referer'] = 'https://nexomente.app';
+      headers['X-Title'] = 'NexoMente';
+    }
+    return headers;
+  },
+
   async checkStatus() {
     try {
       const baseUrl = this.getBaseUrl();
-      const res = await fetch(`${baseUrl}/models`, { signal: AbortSignal.timeout(3000) });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const headers = this._buildHeaders(undefined, baseUrl);
+
+      const res = await fetch(`${baseUrl}/models`, {
+        headers,
+        signal: AbortSignal.timeout(5000),
+      });
+
+      if (!res.ok) {
+        return {
+          status: 'offline',
+          available: false,
+          provider: 'http',
+          error: `HTTP ${res.status}`,
+          statusCode: res.status,
+          models: [],
+        };
+      }
+
       const data = await res.json();
-      const models = Array.isArray(data.data) ? data.data.map(m => m.id) : ['default'];
+      const models = Array.isArray(data?.data) ? data.data.map((m) => m.id) : ['default'];
       return {
         status: 'online',
         available: true,
@@ -29,7 +63,7 @@ export const httpProvider = {
         status: 'offline',
         available: false,
         provider: 'http',
-        error: e.message,
+        error: e.name === 'TimeoutError' ? 'Tempo limite esgotado (timeout)' : (e.message || 'Falha de conexão'),
         models: [],
       };
     }
@@ -38,11 +72,12 @@ export const httpProvider = {
   async chat(messages, options = {}) {
     const baseUrl = this.getBaseUrl();
     const model = options.model || localStorage.getItem('nexomente_ai_http_model') || 'local-model';
+    const headers = this._buildHeaders(options.apiKey, baseUrl);
 
     try {
       const res = await fetch(`${baseUrl}/chat/completions`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           model,
           messages,
@@ -53,11 +88,25 @@ export const httpProvider = {
           max_tokens: options.max_tokens ?? 800,
           num_predict: options.num_predict ?? 800,
         }),
-        signal: AbortSignal.timeout(30000),
+        signal: AbortSignal.timeout(options.timeout || 30000),
       });
 
       if (!res.ok) {
-        throw new Error(`Servidor HTTP retornou erro ${res.status}`);
+        let errorDetail = `HTTP ${res.status}`;
+        try {
+          const errJson = await res.json();
+          if (errJson?.error?.message) {
+            errorDetail = `${errorDetail}: ${errJson.error.message}`;
+          }
+        } catch (_) {
+          // Mantém errorDetail com status
+        }
+        return {
+          success: false,
+          error: errorDetail,
+          statusCode: res.status,
+          isProviderError: true,
+        };
       }
 
       const data = await res.json();
@@ -72,7 +121,7 @@ export const httpProvider = {
     } catch (e) {
       return {
         success: false,
-        error: e.message,
+        error: e.name === 'TimeoutError' ? 'Tempo limite esgotado (timeout)' : (e.message || 'Falha na conexão HTTP'),
         isProviderError: true,
       };
     }

@@ -15,6 +15,7 @@ import {
   Link2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import CosmicGraphCanvas from '../components/graph/CosmicGraphCanvas';
 
 // 1. Utilitário de leitura das variáveis de design tokens do tema
 const cssVar = (n, fallback = '') => {
@@ -215,11 +216,14 @@ export default function Graph() {
 
   const containerRef = useRef(null);
   const cyRef = useRef(null);
+  const cosmicRef = useRef(null);
   const [notaSelecionada, setNotaSelecionada] = useState(null);
   const [layout, setLayout] = useState('cose');
   const [buscaNo, setBuscaNo] = useState('');
-  const [totalArestas, setTotalArestas] = useState(0);
   const [clusterAtivo, setClusterAtivo] = useState('todos');
+  const [viewEngine, setViewEngine] = useState(() => {
+    return localStorage.getItem('nexomente_graph_view_engine') || 'cosmic';
+  });
   const [filtros, setFiltros] = useState({
     nota: true,
     livro: true,
@@ -228,6 +232,15 @@ export default function Graph() {
     biblia: true,
     estudo: true,
   });
+
+  const handleToggleEngine = (newEngine) => {
+    setViewEngine(newEngine);
+    localStorage.setItem('nexomente_graph_view_engine', newEngine);
+    if (newEngine === 'cosmic' && cyRef.current) {
+      cyRef.current.destroy();
+      cyRef.current = null;
+    }
+  };
 
   // Extração robusta de [[WikiLinks]] (captura [[Nota]], [[Nota|alias]] e [[Nota#seção]])
   const extrairLinks = useCallback((conteudo) => {
@@ -254,32 +267,36 @@ export default function Graph() {
     }
   }, []);
 
-  // Montagem e inicialização do Grafo Cytoscape
-  useEffect(() => {
-    if (!containerRef.current || notas.length === 0) return;
-
-    if (cyRef.current) {
-      cyRef.current.destroy();
-    }
-
-    const elementos = [];
+  // Memoização estrita dos nós e arestas compartilhados por ambos os motores
+  const { graphNodes, graphEdges, elementos, totalArestasCount } = useMemo(() => {
+    const elems = [];
+    const gNodes = [];
+    const gEdges = [];
     let arestasCount = 0;
     const ghostMap = new Map();
 
     // 1. Adiciona nós existentes do Vault
     notas.forEach((nota) => {
       if (filtros[nota.tipo] === false) return;
+      const tags = extrairTags(nota);
+      const isSocratic = Boolean(
+        tags.some((t) => typeof t === 'string' && /socrat/i.test(t)) ||
+        (nota.tipo && /socrat/i.test(nota.tipo)) ||
+        (nota.titulo && /socrát|socratic/i.test(nota.titulo))
+      );
 
-      elementos.push({
-        data: {
-          id: nota.id,
-          label: nota.titulo || 'Sem título',
-          tipo: nota.tipo || 'nota',
-          ghost: false,
-          conteudo: nota.conteudo,
-          tags: extrairTags(nota),
-        },
-      });
+      const nodeData = {
+        id: nota.id,
+        label: nota.titulo || 'Sem título',
+        tipo: nota.tipo || 'nota',
+        ghost: false,
+        conteudo: nota.conteudo,
+        tags,
+        isSocratic,
+      };
+
+      elems.push({ data: nodeData });
+      gNodes.push(nodeData);
     });
 
     // 2. Conexões semânticas por Tags compartilhadas
@@ -296,14 +313,15 @@ export default function Graph() {
     Object.values(tagsMap).forEach((notaIds) => {
       if (notaIds.length > 1) {
         for (let i = 0; i < notaIds.length - 1; i++) {
-          elementos.push({
-            data: {
-              id: `edge_tag_${notaIds[i]}_${notaIds[i + 1]}`,
-              source: notaIds[i],
-              target: notaIds[i + 1],
-              tipo: 'tag',
-            },
-          });
+          const edgeId = `edge_tag_${notaIds[i]}_${notaIds[i + 1]}`;
+          const edgeData = {
+            id: edgeId,
+            source: notaIds[i],
+            target: notaIds[i + 1],
+            tipo: 'tag',
+          };
+          elems.push({ data: edgeData });
+          gEdges.push(edgeData);
           arestasCount++;
         }
       }
@@ -324,14 +342,15 @@ export default function Graph() {
 
         if (notaDestino) {
           if (notaDestino.id !== nota.id && filtros[notaDestino.tipo] !== false) {
-            elementos.push({
-              data: {
-                id: `edge_wl_${nota.id}_${notaDestino.id}`,
-                source: nota.id,
-                target: notaDestino.id,
-                tipo: 'wikilink',
-              },
-            });
+            const edgeId = `edge_wl_${nota.id}_${notaDestino.id}`;
+            const edgeData = {
+              id: edgeId,
+              source: nota.id,
+              target: notaDestino.id,
+              tipo: 'wikilink',
+            };
+            elems.push({ data: edgeData });
+            gEdges.push(edgeData);
             arestasCount++;
           }
         } else {
@@ -339,31 +358,57 @@ export default function Graph() {
           const ghostId = `ghost_${linkLower.replace(/\s+/g, '_')}`;
           if (!ghostMap.has(ghostId)) {
             ghostMap.set(ghostId, true);
-            elementos.push({
-              data: {
-                id: ghostId,
-                label: linkTexto,
-                tipo: 'fantasma',
-                ghost: true,
-                conteudo: '',
-                tags: [],
-              },
-            });
+            const ghostNodeData = {
+              id: ghostId,
+              label: linkTexto,
+              tipo: 'fantasma',
+              ghost: true,
+              conteudo: '',
+              tags: [],
+              isSocratic: false,
+            };
+            elems.push({ data: ghostNodeData });
+            gNodes.push(ghostNodeData);
           }
-          elementos.push({
-            data: {
-              id: `edge_ghost_${nota.id}_${ghostId}`,
-              source: nota.id,
-              target: ghostId,
-              tipo: 'wikilink',
-            },
-          });
+          const edgeId = `edge_ghost_${nota.id}_${ghostId}`;
+          const edgeData = {
+            id: edgeId,
+            source: nota.id,
+            target: ghostId,
+            tipo: 'wikilink',
+          };
+          elems.push({ data: edgeData });
+          gEdges.push(edgeData);
           arestasCount++;
         }
       });
     });
 
-    setTotalArestas(arestasCount);
+    return {
+      graphNodes: gNodes,
+      graphEdges: gEdges,
+      elementos: elems,
+      totalArestasCount: arestasCount,
+    };
+  }, [notas, filtros, extrairLinks, extrairTags]);
+
+  const totalArestas = totalArestasCount;
+
+  // Montagem e inicialização do Grafo Cytoscape (somente ativo sob o motor clássico)
+  useEffect(() => {
+    if (viewEngine !== 'cytoscape') {
+      if (cyRef.current) {
+        cyRef.current.destroy();
+        cyRef.current = null;
+      }
+      return;
+    }
+
+    if (!containerRef.current || notas.length === 0) return;
+
+    if (cyRef.current) {
+      cyRef.current.destroy();
+    }
 
     const cy = cytoscape({
       container: containerRef.current,
@@ -444,48 +489,87 @@ export default function Graph() {
       resizeObserver.disconnect();
       if (cyRef.current) {
         cyRef.current.destroy();
+        cyRef.current = null;
       }
     };
-  }, [notas, filtros, layout, extrairLinks, extrairTags]);
+  }, [viewEngine, notas, filtros, layout, elementos]);
 
-  const zoomIn = () => cyRef.current?.zoom(cyRef.current.zoom() * 1.25);
-  const zoomOut = () => cyRef.current?.zoom(cyRef.current.zoom() / 1.25);
+  const zoomIn = () => {
+    if (viewEngine === 'cosmic') {
+      cosmicRef.current?.zoomIn();
+    } else {
+      cyRef.current?.zoom(cyRef.current.zoom() * 1.25);
+    }
+  };
+
+  const zoomOut = () => {
+    if (viewEngine === 'cosmic') {
+      cosmicRef.current?.zoomOut();
+    } else {
+      cyRef.current?.zoom(cyRef.current.zoom() / 1.25);
+    }
+  };
+
   const reset = () => {
-    if (!cyRef.current) return;
-    cyRef.current.fit(undefined, 48);
-    cyRef.current.center();
+    if (viewEngine === 'cosmic') {
+      cosmicRef.current?.reset();
+    } else {
+      if (!cyRef.current) return;
+      cyRef.current.fit(undefined, 48);
+      cyRef.current.center();
+    }
   };
 
   const handleBuscarNo = (termo) => {
     setBuscaNo(termo);
-    if (!cyRef.current || !termo.trim()) return;
+    if (!termo.trim()) return;
 
     const lower = termo.toLowerCase();
-    const targetNode = cyRef.current.nodes().find((node) =>
-      node.data('label')?.toLowerCase().includes(lower)
-    );
 
-    if (targetNode) {
-      cyRef.current.nodes().unselect();
-      targetNode.select();
-      cyRef.current.animate({
-        center: { eles: targetNode },
-        zoom: 1.5,
-        duration: 400,
-      });
-      const data = targetNode.data();
-      if (data.ghost) {
-        setNotaSelecionada({
-          id: null,
-          titulo: data.label,
-          tipo: 'fantasma',
-          ghost: true,
-          conteudo: `Esta nota foi mencionada via [[${data.label}]], mas ainda não existe no seu Vault. Clique em "+ Criar Nota" para materializá-la.`,
-          tags: [],
+    if (viewEngine === 'cytoscape' && cyRef.current) {
+      const targetNode = cyRef.current.nodes().find((node) =>
+        node.data('label')?.toLowerCase().includes(lower)
+      );
+
+      if (targetNode) {
+        cyRef.current.nodes().unselect();
+        targetNode.select();
+        cyRef.current.animate({
+          center: { eles: targetNode },
+          zoom: 1.5,
+          duration: 400,
         });
-      } else {
-        const nota = notas.find((n) => n.id === targetNode.id());
-        if (nota) setNotaSelecionada(nota);
+        const data = targetNode.data();
+        if (data.ghost) {
+          setNotaSelecionada({
+            id: null,
+            titulo: data.label,
+            tipo: 'fantasma',
+            ghost: true,
+            conteudo: `Esta nota foi mencionada via [[${data.label}]], mas ainda não existe no seu Vault. Clique em "+ Criar Nota" para materializá-la.`,
+            tags: [],
+          });
+        } else {
+          const nota = notas.find((n) => n.id === targetNode.id());
+          if (nota) setNotaSelecionada(nota);
+        }
+      }
+    } else if (viewEngine === 'cosmic') {
+      const matching = graphNodes.find((n) => n.label.toLowerCase().includes(lower));
+      if (matching) {
+        if (matching.ghost) {
+          setNotaSelecionada({
+            id: null,
+            titulo: matching.label,
+            tipo: 'fantasma',
+            ghost: true,
+            conteudo: `Esta nota foi mencionada via [[${matching.label}]], mas ainda não existe no seu Vault. Clique em "+ Criar Nota" para materializá-la.`,
+            tags: [],
+          });
+        } else {
+          const nota = notas.find((n) => n.id === matching.id);
+          if (nota) setNotaSelecionada(nota);
+        }
       }
     }
   };
@@ -529,6 +613,36 @@ export default function Graph() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {/* Alternador de Motor: Cósmico 2D Canvas (LearnHarness) vs Cytoscape Clássico */}
+          <div className="flex items-center bg-nx-depth border border-nx-border rounded-lg p-0.5">
+            <button
+              type="button"
+              onClick={() => handleToggleEngine('cosmic')}
+              className={`px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer ${
+                viewEngine === 'cosmic'
+                  ? 'nx-btn-primary shadow-xs'
+                  : 'text-nx-dim hover:text-nx-bright'
+              }`}
+              title="Visualizador 2D Canvas Cósmico (LearnHarness)"
+            >
+              <span>🌌</span>
+              <span className="hidden sm:inline">Cósmico</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleToggleEngine('cytoscape')}
+              className={`px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer ${
+                viewEngine === 'cytoscape'
+                  ? 'nx-btn-primary shadow-xs'
+                  : 'text-nx-dim hover:text-nx-bright'
+              }`}
+              title="Visualizador Clássico (Cytoscape)"
+            >
+              <span>🕸️</span>
+              <span className="hidden sm:inline">Clássico</span>
+            </button>
+          </div>
+
           <div className="relative">
             <Search size={14} className="absolute left-2.5 top-2.5 text-nx-dim" />
             <input
@@ -536,22 +650,24 @@ export default function Graph() {
               placeholder="Buscar nó..."
               value={buscaNo}
               onChange={(e) => handleBuscarNo(e.target.value)}
-              className="pl-8 pr-3 py-1.5 bg-nx-depth border border-nx-border rounded-lg text-xs text-nx-bright placeholder-nx-dim focus:outline-none focus:border-[var(--nx-accent)] w-40 md:w-52 transition-all"
+              className="pl-8 pr-3 py-1.5 bg-nx-depth border border-nx-border rounded-lg text-xs text-nx-bright placeholder-nx-dim focus:outline-none focus:border-[var(--nx-accent)] w-36 md:w-48 transition-all"
             />
           </div>
 
-          <select
-            value={layout}
-            onChange={(e) => setLayout(e.target.value)}
-            aria-label="Layout do grafo"
-            className="px-3 py-1.5 bg-nx-depth border border-nx-border rounded-lg text-xs text-nx-bright focus:outline-none cursor-pointer"
-          >
-            <option value="cose">COSE (Força Gravitacional)</option>
-            <option value="circle">Círculo</option>
-            <option value="grid">Grade</option>
-            <option value="concentric">Concêntrico</option>
-            <option value="breadthfirst">Hierarquia (Árvore)</option>
-          </select>
+          {viewEngine === 'cytoscape' && (
+            <select
+              value={layout}
+              onChange={(e) => setLayout(e.target.value)}
+              aria-label="Layout do grafo"
+              className="px-3 py-1.5 bg-nx-depth border border-nx-border rounded-lg text-xs text-nx-bright focus:outline-none cursor-pointer"
+            >
+              <option value="cose">COSE (Força Gravitacional)</option>
+              <option value="circle">Círculo</option>
+              <option value="grid">Grade</option>
+              <option value="concentric">Concêntrico</option>
+              <option value="breadthfirst">Hierarquia (Árvore)</option>
+            </select>
+          )}
 
           <button
             onClick={zoomIn}
@@ -631,7 +747,7 @@ export default function Graph() {
             </div>
           </div>
 
-          {/* Canvas Cytoscape com estilo Obsidian (.nx-graph-canvas) */}
+          {/* Renderização Condicional do Motor de Grafo (Cósmico LearnHarness vs Cytoscape) */}
           {notas.length === 0 ? (
             <div className="flex-1 relative flex flex-col items-center justify-center bg-nx-depth/40 p-8 text-center">
               <div className="w-14 h-14 rounded-2xl bg-nx-depth border border-nx-border flex items-center justify-center mb-3 text-[var(--nx-accent)]">
@@ -654,6 +770,34 @@ export default function Graph() {
                 + Criar Primeira Nota
               </button>
             </div>
+          ) : viewEngine === 'cosmic' ? (
+            <CosmicGraphCanvas
+              ref={cosmicRef}
+              nodes={graphNodes}
+              edges={graphEdges}
+              onSelectNode={(node) => {
+                if (!node) {
+                  setNotaSelecionada(null);
+                  return;
+                }
+                if (node.ghost) {
+                  setNotaSelecionada({
+                    id: null,
+                    titulo: node.label,
+                    tipo: 'fantasma',
+                    ghost: true,
+                    conteudo: `Esta nota foi mencionada via [[${node.label}]], mas ainda não existe no seu Vault. Clique em "+ Criar Nota" para materializá-la.`,
+                    tags: [],
+                  });
+                } else {
+                  const found = notas.find((n) => n.id === node.id);
+                  if (found) setNotaSelecionada(found);
+                }
+              }}
+              selectedNodeId={notaSelecionada?.id}
+              searchFilter={buscaNo}
+              activeTag={clusterAtivo}
+            />
           ) : (
             <div ref={containerRef} className="flex-1 nx-graph-canvas min-h-[380px] transition-colors" />
           )}
@@ -661,10 +805,14 @@ export default function Graph() {
           {/* HUD Inferior do Grafo */}
           <div className="px-4 py-2.5 bg-nx-surface border-t border-nx-border flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono text-nx-dim">
             <span>
-              Nós: {totalNotas} • Conexões: {totalArestas}
+              Nós: {totalNotas} • Conexões: {totalArestas} • Motor: {viewEngine === 'cosmic' ? '🌌 Cósmico 2D Canvas' : '🕸️ Cytoscape'}
             </span>
             <span className="text-[var(--nx-accent)]">
-              {notas.length > 0 ? 'Dica: Passe o mouse para focar conexões ou arraste para reorganizar' : 'Aguardando criação de notas'}
+              {notas.length > 0
+                ? viewEngine === 'cosmic'
+                  ? 'Dica: Arraste nós/câmera, scroll para zoom centrado, nós dourados = conceitos socráticos'
+                  : 'Dica: Passe o mouse para focar conexões ou arraste para reorganizar'
+                : 'Aguardando criação de notas'}
             </span>
           </div>
         </div>

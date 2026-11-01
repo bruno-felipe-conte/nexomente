@@ -46,6 +46,8 @@
       "linha": 29,
       "implementacao": [
         "app/src/lib/ai/embeddedService.js",
+        "app/src/lib/ai/httpProvider.js",
+        "app/src/lib/ai/socraticPrompts.js",
         "electron/ipc/aiHandlers.js",
         "vite.config.js"
       ],
@@ -53,6 +55,7 @@
         "app/src/store/useAIStore.js",
         "app/src/hooks/useAIModel.js",
         "app/src/lib/parser.js",
+        "app/src/components/ai/AICopilotDrawer.jsx",
         "app/src/pages/AIChat.jsx",
         "app/src/pages/Graph.jsx",
         "app/src/pages/Settings.jsx"
@@ -340,21 +343,39 @@
     },
     {
       "id": "copilot-voice-chat",
-      "nome": "Copiloto Neural - Conversação Bidirecional por Áudio (STT + TTS)",
+      "nome": "Copiloto Neural - Conversação Bidirecional por Áudio (STT + TTS) & Tutor Socrático",
       "arquivo": "app/src/components/ai/AICopilotDrawer.jsx",
       "linha": 195,
-      "fluxo": "Clique no Mic -> useVosk transcreve fala em tempo real (onPartialResult/onResult) -> envia pergunta para aiProvider.askAI -> leitura em voz alta via Web Speech Synthesis (TTS pt-BR) com prevenção de eco",
+      "fluxo": "Alternador de modo no cabeçalho [Assistente | Tutor Socrático] persistido em localStorage('nexomente_copilot_mode') -> no modo socrático injeta socraticPrompts (SOCRATIC_SYSTEM_PROMPT com 5 fases LearnHarness) via aiProvider.chat() -> no modo assistente despacha para aiProvider.askAI() -> áudio bidirecional STT Vosk e síntese neural TTS preservados",
       "usa": ["ai-provider", "ui-store"],
       "afeta": ["AICopilotDrawer"]
     },
     {
       "id": "graph-open-in-editor",
-      "nome": "Grafo de Conhecimento - Câmera Cytoscape & Deep Link",
+      "nome": "Grafo de Conhecimento - Câmera Cósmica/Cytoscape & Deep Link",
       "arquivo": "app/src/pages/Graph.jsx",
-      "linha": 195,
-      "fluxo": "Grafo monta nós de notas e arestas de links/tags -> clique no nó foca câmera -> clique em Abrir no Editor -> setPendingNoteAction({ noteId }) -> setActiveTab('notes')",
-      "usa": ["db-store", "ui-store"],
+      "linha": 210,
+      "fluxo": "Alternador de motor Cósmico (LearnHarness 2D Canvas) vs Clássico (Cytoscape) -> Grafo monta nós e arestas compartilhadas -> clique no nó foca câmera -> clique em Abrir no Editor -> setPendingNoteAction({ noteId }) -> setActiveTab('notes')",
+      "usa": ["db-store", "ui-store", "cosmic-graph-canvas"],
       "afeta": ["Notas"]
+    },
+    {
+      "id": "cosmic-graph-canvas",
+      "nome": "Visualizador de Grafo Cósmico 2D Canvas (LearnHarness)",
+      "arquivo": "app/src/components/graph/CosmicGraphCanvas.jsx",
+      "linha": 45,
+      "fluxo": "Renderização de nós estelares e nebulosas de clusters em Canvas 2D nativo com alta taxa de quadros e zero CPU quando ocioso via dirty-flag -> interação por pan/zoom centrado e clique para seleção",
+      "usa": ["cluster-geometry"],
+      "afeta": ["Graph"]
+    },
+    {
+      "id": "cluster-geometry",
+      "nome": "Geometria de Clusters e Cores Cósmicas (djb2 HSL & Convex Hull)",
+      "arquivo": "app/src/components/graph/clusterGeometry.js",
+      "linha": 18,
+      "fluxo": "Cálculo determinístico de matizes HSL por hash djb2 e polígonos de envoltória convexa para nuvens estelares de agrupamento",
+      "usa": [],
+      "afeta": ["CosmicGraphCanvas"]
     },
     {
       "id": "stats-category-navigate",
