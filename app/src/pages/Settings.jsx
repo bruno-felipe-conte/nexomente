@@ -17,6 +17,14 @@ import { httpProvider } from '../lib/ai/httpProvider';
 import { getActiveProvider, setActiveProvider } from '../lib/ai/aiProvider';
 import toast from 'react-hot-toast';
 
+const PRESET_OPTIONS = [
+  { id: 'gemini', label: '✨ Google Gemini', badge: 'Recomendado' },
+  { id: 'openrouter', label: '🚀 OpenRouter' },
+  { id: 'groq', label: '⚡ Groq' },
+  { id: 'ollama', label: '🦙 Ollama' },
+  { id: 'lmstudio', label: '💻 LM Studio' },
+];
+
 export default function Settings() {
   const { userName: globalUserName, setUserName: setGlobalUserName } = useUIStore();
   const [activeTab, setActiveTab] = useState('perf');
@@ -41,6 +49,16 @@ export default function Settings() {
   const [httpModel, setHttpModel] = useState(
     () => localStorage.getItem('nexomente_ai_http_model') || ''
   );
+  const [selectedPreset, setSelectedPreset] = useState(() => {
+    const url = (localStorage.getItem('nexomente_ai_http_url') || '').toLowerCase();
+    const model = (localStorage.getItem('nexomente_ai_http_model') || '').toLowerCase();
+    if (url.includes('googleapis') || model.includes('gemini')) return 'gemini';
+    if (url.includes('openrouter')) return 'openrouter';
+    if (url.includes('groq')) return 'groq';
+    if (url.includes('11434') || model.includes('llama3.2')) return 'ollama';
+    if (url.includes('1234') || model.includes('local-model')) return 'lmstudio';
+    return null;
+  });
   const [testingConnection, setTestingConnection] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState(null);
 
@@ -97,6 +115,7 @@ export default function Settings() {
   };
 
   const applyPreset = (preset) => {
+    setSelectedPreset(preset);
     if (preset === 'gemini') {
       setHttpUrl('https://generativelanguage.googleapis.com/v1beta/openai');
       setHttpModel('gemini-2.5-flash');
@@ -414,41 +433,37 @@ export default function Settings() {
                         <Sparkles size={12} className="text-accent-main" /> Presets Rápidos de Provedores
                       </label>
                       <div className="flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          onClick={() => applyPreset('gemini')}
-                          className="px-3 py-1.5 rounded-xl bg-accent-main/15 hover:bg-accent-main/25 border border-accent-main/40 text-xs font-bold text-accent-main flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
-                        >
-                          ✨ Google Gemini (Recomendado)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => applyPreset('openrouter')}
-                          className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-medium text-text-hi flex items-center gap-1.5 transition-all cursor-pointer"
-                        >
-                          🚀 OpenRouter
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => applyPreset('groq')}
-                          className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-medium text-text-hi flex items-center gap-1.5 transition-all cursor-pointer"
-                        >
-                          ⚡ Groq
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => applyPreset('ollama')}
-                          className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-medium text-text-hi flex items-center gap-1.5 transition-all cursor-pointer"
-                        >
-                          🦙 Ollama
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => applyPreset('lmstudio')}
-                          className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-medium text-text-hi flex items-center gap-1.5 transition-all cursor-pointer"
-                        >
-                          💻 LM Studio
-                        </button>
+                        {PRESET_OPTIONS.map((item) => {
+                          const isSelected = selectedPreset === item.id;
+                          return (
+                            <button
+                              key={item.id}
+                              type="button"
+                              onClick={() => applyPreset(item.id)}
+                              className={`px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer border ${
+                                isSelected
+                                  ? 'bg-accent-main/20 border-accent-main text-accent-main ring-2 ring-accent-main/40 font-bold shadow-md'
+                                  : 'bg-white/5 hover:bg-white/10 border-white/10 text-text-hi hover:border-white/20'
+                              }`}
+                            >
+                              <span>{item.label}</span>
+                              {item.badge && (
+                                <span
+                                  className={`text-[9px] px-1.5 py-0.5 rounded-full uppercase tracking-wider font-extrabold ${
+                                    isSelected
+                                      ? 'bg-accent-main text-white'
+                                      : 'bg-accent-main/20 text-accent-main border border-accent-main/30'
+                                  }`}
+                                >
+                                  {item.badge}
+                                </span>
+                              )}
+                              {isSelected && (
+                                <span className="w-1.5 h-1.5 rounded-full bg-accent-main animate-pulse" />
+                              )}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
 
