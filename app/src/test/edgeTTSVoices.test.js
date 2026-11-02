@@ -18,23 +18,17 @@ describe('Edge TTS Brazilian Neural Voices - Audit & Resolution Suite', () => {
   });
 
   describe('Catálogo de Vozes Neurais Brasileiras', () => {
-    it('contém exatamente 9 vozes brasileiras de alta fidelidade', () => {
-      expect(NEURAL_VOICES).toHaveLength(9);
-      expect(getAvailableVoices()).toHaveLength(9);
+    it('contém exatamente as 3 vozes brasileiras de alta fidelidade nativas do Edge TTS', () => {
+      expect(NEURAL_VOICES).toHaveLength(3);
+      expect(getAvailableVoices()).toHaveLength(3);
     });
 
-    it('todas as 9 vozes possuem identificador pt-BR válido e metadados completos', () => {
+    it('as 3 vozes possuem identificador pt-BR válido e metadados completos', () => {
       const allVoices = getAvailableVoices();
       const expectedIds = [
         'pt-BR-FranciscaNeural',
         'pt-BR-AntonioNeural',
         'pt-BR-ThalitaMultilingualNeural',
-        'pt-BR-ManuelaNeural',
-        'pt-BR-NicolauNeural',
-        'pt-BR-BrendaNeural',
-        'pt-BR-DonatoNeural',
-        'pt-BR-ElzaNeural',
-        'pt-BR-FabioNeural'
       ];
 
       expectedIds.forEach((id) => {
@@ -61,11 +55,10 @@ describe('Edge TTS Brazilian Neural Voices - Audit & Resolution Suite', () => {
   });
 
   describe('Resolução de Vozes e VOICE_ALIAS_MAP', () => {
-    it('garante que FabioNeural possui voz genuína e não aponta para Francisca', () => {
-      expect(VOICE_ALIAS_MAP['pt-BR-FabioNeural']).toBe('pt-BR-FabioNeural');
-      const voice = getVoiceById('pt-BR-FabioNeural');
-      expect(voice.id).toBe('pt-BR-FabioNeural');
-      expect(voice.name).toBe('Fabio Neural');
+    it('garante que AntonioNeural possui voz genuína e metadados masculinos', () => {
+      const voice = getVoiceById('pt-BR-AntonioNeural');
+      expect(voice.id).toBe('pt-BR-AntonioNeural');
+      expect(voice.name).toContain('Antonio');
       expect(voice.gender).toBe('Masculino');
     });
 
@@ -90,7 +83,7 @@ describe('Edge TTS Brazilian Neural Voices - Audit & Resolution Suite', () => {
   });
 
   describe('Persistência e Seleção de Vozes no Copiloto', () => {
-    it('todas as 9 vozes sobrevivem à validação de localStorage sem descarte', () => {
+    it('todas as vozes oficiais sobrevivem à validação de localStorage sem descarte', () => {
       const allVoices = getAvailableVoices();
 
       allVoices.forEach((v) => {
@@ -138,17 +131,17 @@ describe('Edge TTS Brazilian Neural Voices - Audit & Resolution Suite', () => {
       }
       const audioConstructorSpy = vi.spyOn(globalThis, 'Audio').mockImplementation(MockAudio);
 
-      const manuela = getVoiceById('pt-BR-ManuelaNeural');
-      const speakPromise = neuralTTS.speak(manuela.sampleText, {
-        voice: manuela.id,
-        messageId: `preview-${manuela.id}`
+      const antonio = getVoiceById('pt-BR-AntonioNeural');
+      const speakPromise = neuralTTS.speak(antonio.sampleText, {
+        voice: antonio.id,
+        messageId: `preview-${antonio.id}`
       });
 
       await speakPromise;
 
       expect(fetchSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Manuela'),
-        'pt-BR-ManuelaNeural',
+        expect.stringContaining('Antonio'),
+        'pt-BR-AntonioNeural',
         expect.any(Number)
       );
       expect(audioConstructorSpy).toHaveBeenCalledWith(mockAudioBase64);
@@ -156,7 +149,7 @@ describe('Edge TTS Brazilian Neural Voices - Audit & Resolution Suite', () => {
 
       // Simular evento onplay
       if (mockAudio.onplay) mockAudio.onplay();
-      expect(states.some((s) => s.isPlaying && s.messageId === 'preview-pt-BR-ManuelaNeural')).toBe(true);
+      expect(states.some((s) => s.isPlaying && s.messageId === 'preview-pt-BR-AntonioNeural')).toBe(true);
 
       unsub();
     });

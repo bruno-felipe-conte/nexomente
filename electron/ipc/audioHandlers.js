@@ -28,12 +28,12 @@ const SUPPORTED_VOICES = {
   'pt-BR-AntonioNeural': 'pt-BR-AntonioNeural',
   'pt-BR-ThalitaMultilingualNeural': 'pt-BR-ThalitaMultilingualNeural',
   'pt-BR-ThalitaNeural': 'pt-BR-ThalitaMultilingualNeural',
-  'pt-BR-ManuelaNeural': 'pt-BR-ManuelaNeural',
-  'pt-BR-NicolauNeural': 'pt-BR-NicolauNeural',
-  'pt-BR-BrendaNeural': 'pt-BR-BrendaNeural',
-  'pt-BR-DonatoNeural': 'pt-BR-DonatoNeural',
-  'pt-BR-ElzaNeural': 'pt-BR-ElzaNeural',
-  'pt-BR-FabioNeural': 'pt-BR-FabioNeural',
+  'pt-BR-ManuelaNeural': 'pt-BR-FranciscaNeural',
+  'pt-BR-BrendaNeural': 'pt-BR-ThalitaMultilingualNeural',
+  'pt-BR-ElzaNeural': 'pt-BR-FranciscaNeural',
+  'pt-BR-NicolauNeural': 'pt-BR-AntonioNeural',
+  'pt-BR-DonatoNeural': 'pt-BR-AntonioNeural',
+  'pt-BR-FabioNeural': 'pt-BR-AntonioNeural',
 };
 
 export function registerAudioHandlers() {

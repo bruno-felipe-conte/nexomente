@@ -69,12 +69,12 @@ function embeddedAiDevPlugin() {
                 'pt-BR-AntonioNeural': 'pt-BR-AntonioNeural',
                 'pt-BR-ThalitaMultilingualNeural': 'pt-BR-ThalitaMultilingualNeural',
                 'pt-BR-ThalitaNeural': 'pt-BR-ThalitaMultilingualNeural',
-                'pt-BR-ManuelaNeural': 'pt-BR-ManuelaNeural',
-                'pt-BR-NicolauNeural': 'pt-BR-NicolauNeural',
-                'pt-BR-BrendaNeural': 'pt-BR-BrendaNeural',
-                'pt-BR-DonatoNeural': 'pt-BR-DonatoNeural',
-                'pt-BR-ElzaNeural': 'pt-BR-ElzaNeural',
-                'pt-BR-FabioNeural': 'pt-BR-FabioNeural',
+                'pt-BR-ManuelaNeural': 'pt-BR-FranciscaNeural',
+                'pt-BR-BrendaNeural': 'pt-BR-ThalitaMultilingualNeural',
+                'pt-BR-ElzaNeural': 'pt-BR-FranciscaNeural',
+                'pt-BR-NicolauNeural': 'pt-BR-AntonioNeural',
+                'pt-BR-DonatoNeural': 'pt-BR-AntonioNeural',
+                'pt-BR-FabioNeural': 'pt-BR-AntonioNeural',
               };
               const voice = voiceMap[payload.voice] || 'pt-BR-FranciscaNeural';
               await tts.setMetadata(voice, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);

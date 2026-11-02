@@ -9,84 +9,30 @@ import { formatTextForSpeech, splitIntoSentences } from './speechFormatter.js';
 export const NEURAL_VOICES = [
   {
     id: 'pt-BR-FranciscaNeural',
-    name: 'Francisca Neural',
+    name: 'Francisca Neural (HD)',
     gender: 'Feminina',
-    desc: 'Natural e acolhedora (Padrão)',
-    description: 'Natural e acolhedora',
+    desc: 'Natural, expressiva e acolhedora (Padrão)',
+    description: 'Natural, expressiva e acolhedora',
     recommended: true,
     sampleText: 'Olá! Sou a Francisca, uma voz natural e acolhedora para seus estudos no NexoMente.'
   },
   {
     id: 'pt-BR-AntonioNeural',
-    name: 'Antonio Neural',
+    name: 'Antonio Neural (HD)',
     gender: 'Masculino',
-    desc: 'Didático e formal',
-    description: 'Didático e formal',
+    desc: 'Didático, formal e imponente',
+    description: 'Didático, formal e imponente',
     recommended: false,
     sampleText: 'Olá! Sou o Antonio, com tom didático e formal para acompanhar seu aprendizado.'
   },
   {
     id: 'pt-BR-ThalitaMultilingualNeural',
-    name: 'Thalita Neural',
+    name: 'Thalita Neural (HD)',
     gender: 'Feminina',
-    desc: 'Jovem e dinâmica',
-    description: 'Jovem e dinâmica',
+    desc: 'Jovem, dinâmica e ágil',
+    description: 'Jovem, dinâmica e ágil',
     recommended: false,
     sampleText: 'Olá! Sou a Thalita, uma voz jovem, dinâmica e ágil para o seu dia a dia.'
-  },
-  {
-    id: 'pt-BR-ManuelaNeural',
-    name: 'Manuela Neural',
-    gender: 'Feminina',
-    desc: 'Expressiva e fluida',
-    description: 'Expressiva e fluida',
-    recommended: false,
-    sampleText: 'Olá! Sou a Manuela, uma voz expressiva e fluida para suas leituras e notas.'
-  },
-  {
-    id: 'pt-BR-NicolauNeural',
-    name: 'Nicolau Neural',
-    gender: 'Masculino',
-    desc: 'Articulado e acadêmico',
-    description: 'Articulado e acadêmico',
-    recommended: false,
-    sampleText: 'Olá! Sou o Nicolau, uma voz articulada e acadêmica para guiar suas revisões.'
-  },
-  {
-    id: 'pt-BR-BrendaNeural',
-    name: 'Brenda Neural',
-    gender: 'Feminina',
-    desc: 'Enérgica e amigável',
-    description: 'Enérgica e amigável',
-    recommended: false,
-    sampleText: 'Olá! Sou a Brenda, uma voz enérgica e amigável para impulsionar seu foco.'
-  },
-  {
-    id: 'pt-BR-DonatoNeural',
-    name: 'Donato Neural',
-    gender: 'Masculino',
-    desc: 'Profunda e narrativa',
-    description: 'Profunda e narrativa',
-    recommended: false,
-    sampleText: 'Olá! Sou o Donato, com uma voz profunda e narrativa para suas sessões de estudo.'
-  },
-  {
-    id: 'pt-BR-ElzaNeural',
-    name: 'Elza Neural',
-    gender: 'Feminina',
-    desc: 'Suave e serena',
-    description: 'Suave e serena',
-    recommended: false,
-    sampleText: 'Olá! Sou a Elza, com uma voz suave e serena para momentos de concentração.'
-  },
-  {
-    id: 'pt-BR-FabioNeural',
-    name: 'Fabio Neural',
-    gender: 'Masculino',
-    desc: 'Madura e encorpada',
-    description: 'Madura e encorpada',
-    recommended: false,
-    sampleText: 'Olá! Sou o Fabio, uma voz madura e encorpada para leitura aprofundada.'
   }
 ];
 
@@ -96,12 +42,12 @@ export const VOICE_ALIAS_MAP = {
   'pt-BR-ThalitaMultilingualNeural': 'pt-BR-ThalitaMultilingualNeural',
   'pt-BR-FranciscaNeural': 'pt-BR-FranciscaNeural',
   'pt-BR-AntonioNeural': 'pt-BR-AntonioNeural',
-  'pt-BR-ManuelaNeural': 'pt-BR-ManuelaNeural',
-  'pt-BR-NicolauNeural': 'pt-BR-NicolauNeural',
-  'pt-BR-BrendaNeural': 'pt-BR-BrendaNeural',
-  'pt-BR-DonatoNeural': 'pt-BR-DonatoNeural',
-  'pt-BR-ElzaNeural': 'pt-BR-ElzaNeural',
-  'pt-BR-FabioNeural': 'pt-BR-FabioNeural',
+  'pt-BR-ManuelaNeural': 'pt-BR-FranciscaNeural',
+  'pt-BR-BrendaNeural': 'pt-BR-ThalitaMultilingualNeural',
+  'pt-BR-ElzaNeural': 'pt-BR-FranciscaNeural',
+  'pt-BR-NicolauNeural': 'pt-BR-AntonioNeural',
+  'pt-BR-DonatoNeural': 'pt-BR-AntonioNeural',
+  'pt-BR-FabioNeural': 'pt-BR-AntonioNeural',
   system: 'pt-BR-FranciscaNeural'
 };
 

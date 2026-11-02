@@ -12,19 +12,13 @@ describe('neuralTTS - Motor de Síntese de Voz Neural', () => {
     neuralTTS.stop();
   });
 
-  it('exporta a lista de 9 vozes neurais HD brasileiras com Francisca como padrão', () => {
-    expect(NEURAL_VOICES.length).toBe(9);
+  it('exporta a lista de 3 vozes neurais HD brasileiras autênticas com Francisca como padrão', () => {
+    expect(NEURAL_VOICES.length).toBe(3);
 
     const expectedVoiceIds = [
       'pt-BR-FranciscaNeural',
       'pt-BR-AntonioNeural',
       'pt-BR-ThalitaMultilingualNeural',
-      'pt-BR-ManuelaNeural',
-      'pt-BR-NicolauNeural',
-      'pt-BR-BrendaNeural',
-      'pt-BR-DonatoNeural',
-      'pt-BR-ElzaNeural',
-      'pt-BR-FabioNeural'
     ];
 
     expectedVoiceIds.forEach((id) => {
@@ -40,12 +34,11 @@ describe('neuralTTS - Motor de Síntese de Voz Neural', () => {
     const francisca = NEURAL_VOICES.find((v) => v.id === 'pt-BR-FranciscaNeural');
     expect(francisca.recommended).toBe(true);
 
-    // Garante que FabioNeural não é remapeado para Francisca
-    expect(VOICE_ALIAS_MAP['pt-BR-FabioNeural']).toBe('pt-BR-FabioNeural');
+    expect(VOICE_ALIAS_MAP['pt-BR-AntonioNeural']).toBe('pt-BR-AntonioNeural');
 
     // Valida getAvailableVoices e getVoiceById
-    expect(getAvailableVoices().length).toBe(9);
-    expect(getVoiceById('pt-BR-FabioNeural').id).toBe('pt-BR-FabioNeural');
+    expect(getAvailableVoices().length).toBe(3);
+    expect(getVoiceById('pt-BR-AntonioNeural').id).toBe('pt-BR-AntonioNeural');
     expect(getVoiceById('pt-BR-ThalitaNeural').id).toBe('pt-BR-ThalitaMultilingualNeural');
   });
 
