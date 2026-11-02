@@ -250,6 +250,24 @@
 - **Usa**: `CosmicGraphCanvas.jsx`, `clusterGeometry.js`, Cytoscape.js, `hook: useNotes`, `ui-store`
 - **Afeta**: Navegação relacional entre notas interligadas e renderização estelar 2D de alta fidelidade com 0% de CPU ociosa.
 
+### NÓ: Fila Inteligente de Auto-Tagging de Notas (Offline vs. Online)
+- **Arquivo**: `app/src/lib/ai/tagQueueService.js:1`
+- **Fluxo**: Ao criar ou salvar nota → se provedor online (Gemini/Groq/OpenRouter) estiver conectado e ativo, gera tags contextuais em background e anexa silenciosamente com toast; se offline ou motor local ativo, enfileira nota na tabela `tags_queue` do SQLite WASM sem consumir ciclos pesados de CPU/GPU → ao reconectar ou chavear para provedor online, dispara dreno automático via mutex assíncrono processando os itens pendentes em lote.
+- **Usa**: `tagsQueueRepo.js`, `wasmEngine.js`, `aiProvider.js`, `httpProvider.js`, `useNotes.js`
+- **Afeta**: `Notas.jsx`, `useNotaEditor.js`, metadados de tags de notas.
+
+### NÓ: Repositório de Fila Persistente de Tags (`tags_queue`)
+- **Arquivo**: `app/src/lib/db/repositories/tagsQueueRepo.js:1`
+- **Fluxo**: Opera o ciclo de vida CRUD dos registros de fila no SQLite WASM (`enqueue`, `peek`, `markProcessing`, `markDone`, `markFailed`, `countPending`).
+- **Usa**: `db-store` (`wasmEngine.js`)
+- **Afeta**: `tagQueueService.js`.
+
+### NÓ: Renderizador Reativo de Diagramas Mermaid no Tutor Socrático
+- **Arquivo**: `app/src/components/ai/MermaidViewer.jsx:1`
+- **Fluxo**: Blocos de código ````mermaid emitidos pelo Tutor Socrático em `CopilotMessageContent.jsx` carregam dinamicamente a biblioteca Mermaid (`import('mermaid')`) → renderizam SVG sanitizado via DOMPurify sob tema escuro (#0f172a) com nós destacados "Você está aqui" → suporta zoom, pan, alternância visual/código e fallback tolerante a falhas de sintaxe.
+- **Usa**: `DOMPurify`, `mermaid` (dynamic import), `CopilotMessageContent.jsx`
+- **Afeta**: `AICopilotDrawer.jsx`, mensagens socráticas com fluxogramas e mapas mentais dedutivos.
+
 ### NÓ: Visualizador Cósmico 2D Canvas & Geometria de Clusters (LearnHarness)
 - **Arquivo**: `app/src/components/graph/CosmicGraphCanvas.jsx:45` e `app/src/components/graph/clusterGeometry.js:18`
 - **Fluxo**: Loop de renderização 2D Canvas nativo orientado a dirty-flag (0% CPU ocioso) com suporte a DPR/Retina e zoom centrado no cursor → nós socráticos destacados com halo âmbar e estrela radiante dourada (`#f59e0b`) → agrupamento estelar por matéria/tag via envoltória convexa (`computeClusterHull`) e matizes HSL estáveis por djb2 (`getClusterHue`) → rótulos com transição suave (zoom-gated labels: galáxias quando k < 1.0, notas individuais quando k >= 0.75).
@@ -347,6 +365,8 @@
 | **`useNotes.js`** *(CRUD de Notas e Tags)* | `Notas.jsx`, `NotaLista.jsx`, `CategoriaSelector.jsx`, `BibliotecaPanel.jsx`, `useNotaEditor.js`, `Graph.jsx`, `Statistics.jsx`, `Dashboard.jsx`, `Header.jsx`, teste `useNotes.test.js`, `smoke.test.jsx`. |
 | **`useFlashcards.js`** / **`ankiSrsEngine.js`** *(Algoritmo Anki SRS)* | `Flashcards.jsx`, `FlashcardViewer.jsx`, `useGerador.js`, `Statistics.jsx`, `Header.jsx`, teste `resilienceEdgeCases.test.js`, `sm2.test.js`. |
 | **`CosmicGraphCanvas.jsx` / `clusterGeometry.js`** *(Grafo Cósmico LearnHarness)* | `Graph.jsx`, teste `socraticDLC.test.js`. |
+| **`tagQueueService.js` / `tagsQueueRepo.js`** *(Fila de Auto-Tagging Offline/Online)* | `useNotes.js`, `useNotaEditor.js`, `wasmEngine.js`, `useDBStore.js`, teste `tagQueue.test.js`. |
+| **`MermaidViewer.jsx`** *(Diagramas Mermaid Socráticos)* | `CopilotMessageContent.jsx`, `socraticPrompts.js`, teste `mermaidViewer.test.jsx`. |
 | **`electron/preload.js`** / **Handlers IPC** | `electron/main.js`, `electron/ipc/dbHandlers.js`, `electron/ipc/aiHandlers.js` (`AsyncMutex`), `electron/ipc/windowHandlers.js`, `Header.jsx`, `embeddedService.js`, teste `resilienceEdgeCases.test.js`. |
 
 ---

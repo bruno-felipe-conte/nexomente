@@ -27,7 +27,8 @@
       "linha": 13,
       "implementacao": [
         "app/src/lib/db/wasmEngine.js",
-        "app/src/infra/db/DatabaseAdapter.js"
+        "app/src/infra/db/DatabaseAdapter.js",
+        "app/src/lib/db/repositories/tagsQueueRepo.js"
       ],
       "usado_por": [
         "app/src/hooks/useNotes.js",
@@ -48,6 +49,7 @@
         "app/src/lib/ai/embeddedService.js",
         "app/src/lib/ai/httpProvider.js",
         "app/src/lib/ai/socraticPrompts.js",
+        "app/src/lib/ai/tagQueueService.js",
         "electron/ipc/aiHandlers.js",
         "vite.config.js"
       ],
@@ -444,6 +446,49 @@
         "aiHandlers",
         "FlashcardViewer",
         "GeradorForjaTab"
+      ]
+    },
+    {
+      "id": "tags-queue-service",
+      "nome": "Fila Inteligente de Auto-Tagging de Notas (Offline vs. Online)",
+      "arquivo": "app/src/lib/ai/tagQueueService.js",
+      "linha": 1,
+      "fluxo": "Criação/salvamento de nota -> se online gera tags via IA remota imediatamente; se offline ou local, enfileira no tags_queue do SQLite WASM -> ao reconectar/ativar online, drena automaticamente em background com mutex",
+      "usa": [
+        "db-store",
+        "ai-provider"
+      ],
+      "afeta": [
+        "Notas",
+        "useNotes",
+        "useNotaEditor"
+      ]
+    },
+    {
+      "id": "tags-queue-repo",
+      "nome": "Repositório de Fila Persistente de Tags (SQLite WASM tags_queue)",
+      "arquivo": "app/src/lib/db/repositories/tagsQueueRepo.js",
+      "linha": 1,
+      "fluxo": "Gerenciamento CRUD da tabela tags_queue (enqueue, peek, markProcessing, markDone, markFailed, countPending)",
+      "usa": [
+        "db-store"
+      ],
+      "afeta": [
+        "tags-queue-service"
+      ]
+    },
+    {
+      "id": "socratic-mermaid-viewer",
+      "nome": "Renderizador Reativo de Diagramas e Fluxogramas Mermaid no Copiloto",
+      "arquivo": "app/src/components/ai/MermaidViewer.jsx",
+      "linha": 1,
+      "fluxo": "Bloco ```mermaid recebido no CopilotMessageContent -> carregamento dinâmico import('mermaid') -> renderização SVG com tema escuro #0f172a, sanitização DOMPurify, zoom/pan e nós 'Você está aqui' destacados",
+      "usa": [
+        "ai-provider"
+      ],
+      "afeta": [
+        "CopilotMessageContent",
+        "AICopilotDrawer"
       ]
     }
   ],

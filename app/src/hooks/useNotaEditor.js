@@ -31,6 +31,7 @@ import "katex/dist/katex.min.css";
 import DOMPurify from "dompurify";
 import * as aiProvider from "../lib/ai/aiProvider";
 import { useUIStore } from "../store/useUIStore";
+import { enqueueNote, onTagsUpdated } from "../lib/ai/tagQueueService.js";
 
 const ALLOWED_TAGS = [
   "p", "br", "strong", "em", "u", "s", "code", "pre", "blockquote",
@@ -115,9 +116,21 @@ export function useNotaEditor({ notaSelecionada, editando, update, addTag, setNo
         lastLoadedContentRef.current = html;
         setSaveStatus("saved");
         setLastSavedAt(new Date());
+        if (!atual.tags || atual.tags.length === 0) {
+          enqueueNote(atual.id, { titulo: atual.titulo, conteudo: html }).catch(() => {});
+        }
       }, 600);
     },
   });
+
+  useEffect(() => {
+    const unsubscribe = onTagsUpdated(({ notaId, tags }) => {
+      if (notaRef.current && notaRef.current.id === notaId) {
+        setNotaSelecionada?.(prev => (prev && prev.id === notaId ? { ...prev, tags, isExternalUpdate: true } : prev));
+      }
+    });
+    return unsubscribe;
+  }, [setNotaSelecionada]);
 
   useEffect(() => {
     return () => {
@@ -166,6 +179,7 @@ export function useNotaEditor({ notaSelecionada, editando, update, addTag, setNo
     lastLoadedContentRef.current = conteudo;
     setSaveStatus("saved");
     setLastSavedAt(new Date());
+    enqueueNote(notaSelecionada.id, { titulo: notaSelecionada.titulo, conteudo }).catch(() => {});
   }, [notaSelecionada, editor, update, setNotaSelecionada]);
 
   const salvarImediato = useCallback(() => {

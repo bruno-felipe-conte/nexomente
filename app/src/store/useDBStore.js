@@ -7,6 +7,7 @@ import { createSessoesRepository } from '../lib/db/repositories/sessoesRepo.js';
 import { createFlashcardsRepository } from '../lib/db/repositories/flashcardsRepo.js';
 import { createXpRepository } from '../lib/db/repositories/xpRepo.js';
 import { createPoemasRepository } from '../lib/db/repositories/poemasRepo.js';
+import { createTagsQueueRepository } from '../lib/db/repositories/tagsQueueRepo.js';
 
 export { initDB, saveDB, getDB, createTables, dbPromise };
 
@@ -18,6 +19,7 @@ let defaultRepositoryFactory = (get, save) => ({
   Flashcards: createFlashcardsRepository(get, save),
   XP: createXpRepository(get, save),
   Poemas: createPoemasRepository(get, save),
+  TagsQueue: createTagsQueueRepository(get, save),
 });
 
 export const useDBStore = create((set, get) => {
@@ -84,6 +86,7 @@ export const useDBStore = create((set, get) => {
     Flashcards: repos.Flashcards,
     XP: repos.XP,
     Poemas: repos.Poemas,
+    TagsQueue: repos.TagsQueue,
   };
 });
 

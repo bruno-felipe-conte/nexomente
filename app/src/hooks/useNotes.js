@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useDBStore } from '../store/useDBStore';
 import { LocalStorageAdapter } from '../lib/storage/localAdapter';
+import { enqueueNote } from '../lib/ai/tagQueueService.js';
 
 const notasStorage = new LocalStorageAdapter('notas', []);
 const pastasStorage = new LocalStorageAdapter('pastas', []);
@@ -29,7 +30,7 @@ export function useNotes() {
 
   const create = useCallback((data = {}) => {
     if (isDBReady) {
-      return Notas.create({
+      const id = Notas.create({
         titulo: data.titulo || 'Nova Nota',
         tipo: data.tipo || 'nota',
         conteudo: data.conteudo || '',
@@ -37,6 +38,10 @@ export function useNotes() {
         pasta_id: data.pasta_id || 'pasta_raiz',
         status: data.status || 'ativo'
       });
+      if (id) {
+        enqueueNote(id, { titulo: data.titulo, conteudo: data.conteudo }).catch(() => {});
+      }
+      return id;
     }
     const id = generateId();
     const now = new Date().toISOString();

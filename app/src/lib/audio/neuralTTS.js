@@ -11,22 +11,82 @@ export const NEURAL_VOICES = [
     id: 'pt-BR-FranciscaNeural',
     name: 'Francisca Neural',
     gender: 'Feminina',
-    desc: 'Natural, expressiva e acolhedora (Padrão)',
-    recommended: true
+    desc: 'Natural e acolhedora (Padrão)',
+    description: 'Natural e acolhedora',
+    recommended: true,
+    sampleText: 'Olá! Sou a Francisca, uma voz natural e acolhedora para seus estudos no NexoMente.'
   },
   {
     id: 'pt-BR-AntonioNeural',
     name: 'Antonio Neural',
     gender: 'Masculino',
-    desc: 'Didático, formal e imponente para estudos',
-    recommended: false
+    desc: 'Didático e formal',
+    description: 'Didático e formal',
+    recommended: false,
+    sampleText: 'Olá! Sou o Antonio, com tom didático e formal para acompanhar seu aprendizado.'
   },
   {
     id: 'pt-BR-ThalitaMultilingualNeural',
     name: 'Thalita Neural',
     gender: 'Feminina',
-    desc: 'Jovem, dinâmica e ágil',
-    recommended: false
+    desc: 'Jovem e dinâmica',
+    description: 'Jovem e dinâmica',
+    recommended: false,
+    sampleText: 'Olá! Sou a Thalita, uma voz jovem, dinâmica e ágil para o seu dia a dia.'
+  },
+  {
+    id: 'pt-BR-ManuelaNeural',
+    name: 'Manuela Neural',
+    gender: 'Feminina',
+    desc: 'Expressiva e fluida',
+    description: 'Expressiva e fluida',
+    recommended: false,
+    sampleText: 'Olá! Sou a Manuela, uma voz expressiva e fluida para suas leituras e notas.'
+  },
+  {
+    id: 'pt-BR-NicolauNeural',
+    name: 'Nicolau Neural',
+    gender: 'Masculino',
+    desc: 'Articulado e acadêmico',
+    description: 'Articulado e acadêmico',
+    recommended: false,
+    sampleText: 'Olá! Sou o Nicolau, uma voz articulada e acadêmica para guiar suas revisões.'
+  },
+  {
+    id: 'pt-BR-BrendaNeural',
+    name: 'Brenda Neural',
+    gender: 'Feminina',
+    desc: 'Enérgica e amigável',
+    description: 'Enérgica e amigável',
+    recommended: false,
+    sampleText: 'Olá! Sou a Brenda, uma voz enérgica e amigável para impulsionar seu foco.'
+  },
+  {
+    id: 'pt-BR-DonatoNeural',
+    name: 'Donato Neural',
+    gender: 'Masculino',
+    desc: 'Profunda e narrativa',
+    description: 'Profunda e narrativa',
+    recommended: false,
+    sampleText: 'Olá! Sou o Donato, com uma voz profunda e narrativa para suas sessões de estudo.'
+  },
+  {
+    id: 'pt-BR-ElzaNeural',
+    name: 'Elza Neural',
+    gender: 'Feminina',
+    desc: 'Suave e serena',
+    description: 'Suave e serena',
+    recommended: false,
+    sampleText: 'Olá! Sou a Elza, com uma voz suave e serena para momentos de concentração.'
+  },
+  {
+    id: 'pt-BR-FabioNeural',
+    name: 'Fabio Neural',
+    gender: 'Masculino',
+    desc: 'Madura e encorpada',
+    description: 'Madura e encorpada',
+    recommended: false,
+    sampleText: 'Olá! Sou o Fabio, uma voz madura e encorpada para leitura aprofundada.'
   }
 ];
 
@@ -34,11 +94,32 @@ export const NEURAL_VOICES = [
 export const VOICE_ALIAS_MAP = {
   'pt-BR-ThalitaNeural': 'pt-BR-ThalitaMultilingualNeural',
   'pt-BR-ThalitaMultilingualNeural': 'pt-BR-ThalitaMultilingualNeural',
-  'pt-BR-AntonioNeural': 'pt-BR-AntonioNeural',
   'pt-BR-FranciscaNeural': 'pt-BR-FranciscaNeural',
-  'pt-BR-FabioNeural': 'pt-BR-FranciscaNeural',
+  'pt-BR-AntonioNeural': 'pt-BR-AntonioNeural',
+  'pt-BR-ManuelaNeural': 'pt-BR-ManuelaNeural',
+  'pt-BR-NicolauNeural': 'pt-BR-NicolauNeural',
+  'pt-BR-BrendaNeural': 'pt-BR-BrendaNeural',
+  'pt-BR-DonatoNeural': 'pt-BR-DonatoNeural',
+  'pt-BR-ElzaNeural': 'pt-BR-ElzaNeural',
+  'pt-BR-FabioNeural': 'pt-BR-FabioNeural',
   system: 'pt-BR-FranciscaNeural'
 };
+
+/**
+ * Retorna todas as vozes neurais brasileiras disponíveis.
+ */
+export function getAvailableVoices() {
+  return [...NEURAL_VOICES];
+}
+
+/**
+ * Resolve e retorna uma voz neural pelo seu ID ou alias.
+ */
+export function getVoiceById(id) {
+  if (!id) return NEURAL_VOICES[0];
+  const targetId = VOICE_ALIAS_MAP[id] || id;
+  return NEURAL_VOICES.find((v) => v.id === targetId) || NEURAL_VOICES[0];
+}
 
 class NeuralTTSManager {
   constructor() {
@@ -100,10 +181,24 @@ class NeuralTTSManager {
   }
 
   /**
+   * Retorna todas as vozes neurais brasileiras disponíveis.
+   */
+  getAvailableVoices() {
+    return getAvailableVoices();
+  }
+
+  /**
+   * Resolve e retorna uma voz neural pelo seu ID ou alias.
+   */
+  getVoiceById(id) {
+    return getVoiceById(id);
+  }
+
+  /**
    * Sintetiza áudio chamando o Electron IPC ou o endpoint HTTP do Vite
    */
   async fetchNeuralAudio(text, voice, rate) {
-    const targetVoice = VOICE_ALIAS_MAP[voice] || 'pt-BR-FranciscaNeural';
+    const targetVoice = VOICE_ALIAS_MAP[voice] || (NEURAL_VOICES.some((v) => v.id === voice) ? voice : 'pt-BR-FranciscaNeural');
 
     // 1. Tentar via Electron IPC (se estiver no app Desktop)
     if (typeof window !== 'undefined' && window.electronAPI?.synthesizeSpeech) {
@@ -216,7 +311,7 @@ class NeuralTTSManager {
     const cleanText = formatTextForSpeech(rawText);
     if (!cleanText) return;
 
-    const resolvedVoice = VOICE_ALIAS_MAP[voice] || 'pt-BR-FranciscaNeural';
+    const resolvedVoice = VOICE_ALIAS_MAP[voice] || (NEURAL_VOICES.some((v) => v.id === voice) ? voice : 'pt-BR-FranciscaNeural');
 
     this.isPlaying = true;
     this.currentMessageId = messageId;

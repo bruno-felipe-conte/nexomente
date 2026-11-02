@@ -21,6 +21,7 @@ electron/models/
 *.gguf
 
 # Tooling & Cache
+.agents/
 .codegraph/
 _bmad/
 .gemini/

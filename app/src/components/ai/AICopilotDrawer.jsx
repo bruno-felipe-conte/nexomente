@@ -24,13 +24,15 @@ import {
   Clock,
   Sliders,
   GraduationCap,
+  Play,
+  Square,
 } from 'lucide-react';
 import { useNotes } from '../../hooks/useNotes';
 import { useUIStore } from '../../store/useUIStore';
 import { useFlashcards } from '../../hooks/useFlashcards';
 import { useVosk } from '../../hooks/useVosk';
 import { normalizarTranscricaoCopiloto } from '../../lib/audio/audioDecoder';
-import { neuralTTS, NEURAL_VOICES } from '../../lib/audio/neuralTTS';
+import { neuralTTS, NEURAL_VOICES, VOICE_ALIAS_MAP } from '../../lib/audio/neuralTTS';
 import * as aiProvider from '../../lib/ai/aiProvider';
 import { SOCRATIC_SYSTEM_PROMPT } from '../../lib/ai/socraticPrompts';
 import CopilotMessageContent from './CopilotMessageContent';
@@ -142,13 +144,10 @@ export default function AICopilotDrawer({ isOpen, onClose, onExpandFullScreen })
   );
   const [selectedVoice, setSelectedVoice] = useState(() => {
     const saved = localStorage.getItem('nexomente_copilot_voice');
-    if (saved === 'pt-BR-ThalitaNeural' || saved === 'pt-BR-ThalitaMultilingualNeural') {
-      return 'pt-BR-ThalitaMultilingualNeural';
-    }
-    if (saved === 'pt-BR-AntonioNeural') {
-      return 'pt-BR-AntonioNeural';
-    }
-    return 'pt-BR-FranciscaNeural';
+    if (!saved) return 'pt-BR-FranciscaNeural';
+    const resolved = VOICE_ALIAS_MAP[saved] || saved;
+    const exists = NEURAL_VOICES.some((v) => v.id === resolved);
+    return exists ? resolved : 'pt-BR-FranciscaNeural';
   });
   const [speechRate, setSpeechRate] = useState(
     () => parseFloat(localStorage.getItem('nexomente_copilot_voice_speed') || '1.05')
@@ -638,33 +637,80 @@ export default function AICopilotDrawer({ isOpen, onClose, onExpandFullScreen })
                   <div className="grid grid-cols-3 gap-1.5">
                     {NEURAL_VOICES.map((v) => {
                       const isSelected = selectedVoice === v.id;
+                      const isPreviewPlaying = speakingMessageId === `preview-${v.id}`;
                       return (
-                        <button
+                        <div
                           key={v.id}
-                          type="button"
+                          role="button"
+                          tabIndex={0}
                           onClick={() => {
                             setSelectedVoice(v.id);
                             localStorage.setItem('nexomente_copilot_voice', v.id);
                             toast.success(`Voz: ${v.name}`);
                           }}
-                          className={`p-2 rounded-lg text-left border text-[11px] transition-all cursor-pointer ${
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              setSelectedVoice(v.id);
+                              localStorage.setItem('nexomente_copilot_voice', v.id);
+                              toast.success(`Voz: ${v.name}`);
+                            }
+                          }}
+                          className={`p-2 rounded-lg text-left border text-[11px] transition-all cursor-pointer flex flex-col justify-between ${
                             isSelected
-                              ? 'bg-nx-primary/20 border-nx-primary text-nx-bright shadow-sm'
+                              ? 'bg-nx-primary/20 border-nx-primary text-nx-bright shadow-sm ring-1 ring-nx-primary/30'
                               : 'bg-nx-overlay/40 border-nx-border/60 text-nx-dim hover:text-nx-bright hover:bg-nx-overlay'
                           }`}
                         >
                           <div className="font-bold flex items-center justify-between gap-1">
                             <span className="truncate">{v.name.replace(' Neural', '')}</span>
-                            {v.recommended && (
-                              <span className="text-[8px] bg-nx-primary/30 text-nx-primary px-1 py-0.2 rounded font-mono shrink-0">
-                                HD
-                              </span>
-                            )}
+                            <div className="flex items-center gap-1 shrink-0">
+                              {v.recommended && (
+                                <span className="text-[8px] bg-nx-primary/30 text-nx-primary px-1 py-0.2 rounded font-mono shrink-0">
+                                  HD
+                                </span>
+                              )}
+                              <button
+                                type="button"
+                                data-testid={`preview-voice-${v.id}`}
+                                title={isPreviewPlaying ? `Parar amostra de ${v.name}` : `Ouvir amostra de ${v.name}`}
+                                aria-label={isPreviewPlaying ? `Parar amostra de ${v.name}` : `Ouvir amostra de ${v.name}`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (isPreviewPlaying) {
+                                    neuralTTS.stop();
+                                  } else {
+                                    neuralTTS.speak(
+                                      v.sampleText || `Olá, eu sou a voz ${v.name}...`,
+                                      {
+                                        voice: v.id,
+                                        messageId: `preview-${v.id}`,
+                                        rate: speechRate,
+                                      }
+                                    );
+                                  }
+                                }}
+                                className={`p-1 rounded transition-colors cursor-pointer ${
+                                  isPreviewPlaying
+                                    ? 'bg-nx-primary text-white shadow-sm animate-pulse'
+                                    : 'text-nx-dim hover:text-nx-bright hover:bg-nx-surface/80'
+                                }`}
+                              >
+                                {isPreviewPlaying ? (
+                                  <Square size={10} className="fill-current" />
+                                ) : (
+                                  <Play size={10} className="fill-current" />
+                                )}
+                              </button>
+                            </div>
                           </div>
-                          <div className="text-[9px] text-nx-dim mt-0.5 leading-tight line-clamp-1">
+                          <div
+                            className="text-[9px] text-nx-dim mt-0.5 leading-tight line-clamp-1"
+                            title={v.desc || v.description}
+                          >
                             {v.gender}
                           </div>
-                        </button>
+                        </div>
                       );
                     })}
                   </div>

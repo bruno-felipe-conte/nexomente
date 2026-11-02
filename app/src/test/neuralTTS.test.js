@@ -1,22 +1,52 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { neuralTTS, NEURAL_VOICES } from '../lib/audio/neuralTTS.js';
+import {
+  neuralTTS,
+  NEURAL_VOICES,
+  VOICE_ALIAS_MAP,
+  getAvailableVoices,
+  getVoiceById
+} from '../lib/audio/neuralTTS.js';
 
 describe('neuralTTS - Motor de Síntese de Voz Neural', () => {
   beforeEach(() => {
     neuralTTS.stop();
   });
 
-  it('exporta a lista de 3 vozes neurais HD com Francisca como padrão', () => {
-    expect(NEURAL_VOICES.length).toBe(3);
+  it('exporta a lista de 9 vozes neurais HD brasileiras com Francisca como padrão', () => {
+    expect(NEURAL_VOICES.length).toBe(9);
+
+    const expectedVoiceIds = [
+      'pt-BR-FranciscaNeural',
+      'pt-BR-AntonioNeural',
+      'pt-BR-ThalitaMultilingualNeural',
+      'pt-BR-ManuelaNeural',
+      'pt-BR-NicolauNeural',
+      'pt-BR-BrendaNeural',
+      'pt-BR-DonatoNeural',
+      'pt-BR-ElzaNeural',
+      'pt-BR-FabioNeural'
+    ];
+
+    expectedVoiceIds.forEach((id) => {
+      const voice = NEURAL_VOICES.find((v) => v.id === id);
+      expect(voice).toBeDefined();
+      expect(voice.id).toBe(id);
+      expect(typeof voice.name).toBe('string');
+      expect(['Feminina', 'Masculino']).toContain(voice.gender);
+      expect(typeof voice.sampleText).toBe('string');
+      expect(voice.sampleText.length).toBeGreaterThan(10);
+    });
+
     const francisca = NEURAL_VOICES.find((v) => v.id === 'pt-BR-FranciscaNeural');
-    expect(francisca).toBeDefined();
     expect(francisca.recommended).toBe(true);
 
-    const antonio = NEURAL_VOICES.find((v) => v.id === 'pt-BR-AntonioNeural');
-    expect(antonio).toBeDefined();
+    // Garante que FabioNeural não é remapeado para Francisca
+    expect(VOICE_ALIAS_MAP['pt-BR-FabioNeural']).toBe('pt-BR-FabioNeural');
 
-    const thalita = NEURAL_VOICES.find((v) => v.id === 'pt-BR-ThalitaMultilingualNeural');
-    expect(thalita).toBeDefined();
+    // Valida getAvailableVoices e getVoiceById
+    expect(getAvailableVoices().length).toBe(9);
+    expect(getVoiceById('pt-BR-FabioNeural').id).toBe('pt-BR-FabioNeural');
+    expect(getVoiceById('pt-BR-ThalitaNeural').id).toBe('pt-BR-ThalitaMultilingualNeural');
   });
 
   it('gerencia o ciclo de estado e notifica listeners', () => {

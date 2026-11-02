@@ -238,6 +238,27 @@ export function createTables(db) {
     )
   `);
 
+  db.run(`
+    CREATE TABLE IF NOT EXISTS tags_queue (
+      id TEXT PRIMARY KEY,
+      nota_id TEXT NOT NULL,
+      attempts INTEGER DEFAULT 0,
+      created_at INTEGER,
+      last_attempt INTEGER,
+      status TEXT DEFAULT 'pending'
+    )
+  `);
+
+  db.run(`
+    CREATE INDEX IF NOT EXISTS idx_tags_queue_status_created 
+    ON tags_queue (status, created_at)
+  `);
+
+  db.run(`
+    CREATE INDEX IF NOT EXISTS idx_tags_queue_nota_id 
+    ON tags_queue (nota_id)
+  `);
+
   const pastas = db.exec("SELECT COUNT(*) as count FROM pastas")[0]?.values[0][0] || 0;
   if (pastas === 0) {
     db.run("INSERT INTO pastas (id, nome, cor, icone) VALUES (?, ?, ?, ?)",

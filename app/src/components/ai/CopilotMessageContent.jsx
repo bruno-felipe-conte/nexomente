@@ -12,6 +12,7 @@ import PropTypes from 'prop-types';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import { Copy, Check, Terminal, TrendingUp, BarChart2, GraduationCap } from 'lucide-react';
+import MermaidViewer from './MermaidViewer';
 
 // Renderizador seguro do KaTeX
 function renderLatex(formula, displayMode = false) {
@@ -417,6 +418,11 @@ export default function CopilotMessageContent({ content, isUser = false }) {
             // Bloco de Proposição Socrática / Flashcard FSRS
             if (lang === 'flashcard') {
               return <SocraticFlashcardCard key={idx} code={cleanCode} />;
+            }
+
+            // Diagrama e Fluxograma Conceitual Mermaid.js
+            if (lang === 'mermaid') {
+              return <MermaidViewer key={idx} code={cleanCode} />;
             }
 
             // Gráfico de Função / Plot Matemático
